@@ -6,12 +6,14 @@
     <div class="timeline-bar-track">
         <div class="timeline-bar-fill"></div>
     </div>
-    <span class="timeline-bar-bubble tt-anchor">
-        <img class="timeline-bar-ship" src="@Bar.ShipIconPath" alt="@Bar.ShipName"/>
-        @if (Bar.TargetIconPath is not null) {
-            <img class="timeline-bar-target" src="@Bar.TargetIconPath" alt=""/>
-        }
-    </span>
+    @if (Bar.ShowBubble) {
+        <span class="timeline-bar-bubble tt-anchor">
+            <img class="timeline-bar-ship" src="@Bar.ShipIconPath" alt="@Bar.ShipName"/>
+            @if (Bar.TargetIconPath is not null) {
+                <img class="timeline-bar-target" src="@Bar.TargetIconPath" alt=""/>
+            }
+        </span>
+    }
     <div class="tooltip-floating tooltip-fixed text-sm">
         <span class="font-bold">@Bar.ShipName</span>
         <span class="timeline-dur-text-@Bar.DurationIndex">@Bar.Mission.DurationString</span><br/>

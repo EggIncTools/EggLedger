@@ -14,4 +14,5 @@ public sealed record TimelineBar(
     int DurationIndex,
     string? TargetIconPath,
     DatabaseMission Mission,
-    bool HasData = true);
+    bool HasData = true,
+    bool ShowBubble = true);

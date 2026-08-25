@@ -34,6 +34,7 @@
     @if (_viewMode == ViewMode.Calendar) {
         <MissionCalendarView Missions="_tabFiltered ?? Array.Empty<DatabaseMission>()"
                              InFlightMissions="@TabFilteredInFlight"
+                             ShowFlightRatio="@_opts.CalendarFlightRatio"
                              OnViewMission="ViewMissionAsync"/>
     } else {
         <MissionResultsTable Grouping="_grouping"
@@ -280,10 +281,10 @@
 
     private RenderFragment RenderOptions() => __builder => {
         <div class="flex flex-col gap-3">
-            <button type="button" class="text-base toggle-link whitespace-nowrap w-max" @onclick="@(() => _cardConfigModal!.OpenAsync())">
-                Card Design
-            </button>
             @if (_viewMode == ViewMode.List) {
+                <button type="button" class="text-base toggle-link whitespace-nowrap w-max" @onclick="@(() => _cardConfigModal!.OpenAsync())">
+                    Card Design
+                </button>
                 <div>
                     <span class="font-bold text-gray-400">Display</span>
                     <div class="flex flex-col gap-1 mt-1">
@@ -307,6 +308,14 @@
                     <button type="button" class="tile-group-item @(_opts.SortMethod == MissionSortMethod.Iv ? "active" : "")" @onclick="@(() => SetSortMethod(MissionSortMethod.Iv))">Inventory Visualizer</button>
                 </div>
             </div>
+            @if (_viewMode == ViewMode.Calendar) {
+                <div>
+                    <span class="font-bold text-gray-400">Calendar</span>
+                    <div class="flex flex-col gap-1 mt-1">
+                        <label><input type="checkbox" class="ext-opt-check mr-0_5rem" checked="@_opts.CalendarFlightRatio" @onchange="@(e => SetOpt(MissionViewOptions.KeyCalendarFlightRatio, b => _opts.CalendarFlightRatio = b, e))"/> Show flight time ratio</label>
+                    </div>
+                </div>
+            }
             @if (_viewMode == ViewMode.List) {
                 <div>
                     <span class="font-bold text-gray-400">Mission Sort</span>

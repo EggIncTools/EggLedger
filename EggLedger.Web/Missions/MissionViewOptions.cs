@@ -21,6 +21,7 @@ public sealed class MissionViewOptions {
     public const string KeySortMethod = "mission_sort_method";
     public const string KeyCardPresets = "mission_card_presets";
     public const string KeySortByDropCount = "mission_sort_by_drop_count";
+    public const string KeyCalendarFlightRatio = "calendar_flight_ratio";
 
 
     public bool ViewByDate { get; set; }
@@ -28,6 +29,7 @@ public sealed class MissionViewOptions {
     public MultiViewMode MultiViewMode { get; set; } = MultiViewMode.Off;
     public MissionSortMethod SortMethod { get; set; } = MissionSortMethod.Default;
     public bool SortByDropCount { get; set; }
+    public bool CalendarFlightRatio { get; set; }
 
     public int? MissionTypeTab { get; set; }
 
@@ -96,6 +98,9 @@ public sealed class MissionViewOptions {
         }
         if (settings.TryGetValue(KeySortByDropCount, out var sdc)) {
             SortByDropCount = ParseBool(sdc, SortByDropCount);
+        }
+        if (settings.TryGetValue(KeyCalendarFlightRatio, out var cfr)) {
+            CalendarFlightRatio = ParseBool(cfr, CalendarFlightRatio);
         }
     }
 

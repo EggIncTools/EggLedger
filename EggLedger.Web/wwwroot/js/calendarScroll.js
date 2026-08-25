@@ -10,7 +10,7 @@ function apply(viewport, state, animate) {
   const max = viewport.clientHeight * 0.95;
   state.offset = Math.max(-max, Math.min(max, state.offset));
   strip.style.transition = animate ? "transform 0.18s ease-out" : "none";
-  strip.style.transform = `translateY(calc(-33.3333% + ${-state.offset}px))`;
+  strip.style.transform = `translateY(${-state.offset}px)`;
 }
 
 function settle(viewport, state) {

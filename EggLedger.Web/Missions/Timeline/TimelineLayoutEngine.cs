@@ -4,6 +4,8 @@ using EggLedger.Web.State;
 namespace EggLedger.Web.Missions.Timeline;
 
 public static class TimelineLayoutEngine {
+    private const double LaneGapFraction = 0.004;
+
     public static IReadOnlyList<TimelineBar> Layout(
         IReadOnlyList<DatabaseMission> missions,
         DateTimeOffset visibleStart,
@@ -15,18 +17,17 @@ public static class TimelineLayoutEngine {
         long windowEnd = visibleEnd.ToUnixTimeSeconds();
         long nowUnix = now.ToUnixTimeSeconds();
         double windowSpan = windowEnd - windowStart;
-        long minSpanSeconds = (long)(windowSpan * minWidthPercent / 100);
 
         var intersecting = IntersectingMissions(missions, windowStart, windowEnd);
-        var laneEnds = new List<long>();
+        var laneRights = new List<double>();
         var result = new List<TimelineBar>(intersecting.Count);
 
         foreach (var m in intersecting) {
-            long visualReturn = Math.Max(m.ReturnDT, m.LaunchDT + minSpanSeconds);
-            int lane = AssignLane(laneEnds, m.LaunchDT, visualReturn);
-            var (left, width) = ClipToWindow(m.LaunchDT, visualReturn, windowStart, windowSpan, minWidthPercent / 100);
+            var (left, width) = ClipToWindow(m.LaunchDT, m.ReturnDT, windowStart, windowSpan, minWidthPercent / 100);
+            int lane = AssignLane(laneRights, left, left + width);
             bool isActive = nowUnix < m.ReturnDT;
-            double fill = FillFraction(m.LaunchDT, visualReturn, windowStart, windowEnd, nowUnix, isActive);
+            double fill = FillFraction(m.LaunchDT, m.ReturnDT, windowStart, windowEnd, nowUnix, isActive);
+            long progress = isActive ? Math.Min(nowUnix, m.ReturnDT) : m.ReturnDT;
 
             result.Add(new TimelineBar(
                 MissionId: m.MissiondId,
@@ -40,7 +41,8 @@ public static class TimelineLayoutEngine {
                 DurationIndex: m.DurationType is { } duration ? (int)duration : 3,
                 TargetIconPath: TargetImagePaths.Resolve(m.Target).Path,
                 Mission: m,
-                HasData: noDataIds is null || !noDataIds.Contains(m.MissiondId)));
+                HasData: noDataIds is null || !noDataIds.Contains(m.MissiondId),
+                ShowBubble: progress > windowStart && progress <= windowEnd));
         }
 
         return result;
@@ -58,15 +60,15 @@ public static class TimelineLayoutEngine {
         return intersecting;
     }
 
-    private static int AssignLane(List<long> laneEnds, long launchDt, long returnDt) {
-        for (int i = 0; i < laneEnds.Count; i++) {
-            if (laneEnds[i] <= launchDt) {
-                laneEnds[i] = returnDt;
+    private static int AssignLane(List<double> laneRights, double left, double right) {
+        for (int i = 0; i < laneRights.Count; i++) {
+            if (laneRights[i] + LaneGapFraction <= left) {
+                laneRights[i] = right;
                 return i;
             }
         }
-        laneEnds.Add(returnDt);
-        return laneEnds.Count - 1;
+        laneRights.Add(right);
+        return laneRights.Count - 1;
     }
 
     private static (double Left, double Width) ClipToWindow(

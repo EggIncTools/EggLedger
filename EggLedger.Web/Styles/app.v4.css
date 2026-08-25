@@ -249,12 +249,10 @@
   position: absolute;
   left: 0;
   right: 0;
-  top: 0;
+  top: -100%;
   height: 300%;
   display: flex;
   flex-direction: column;
-  transform: translateY(calc(-100% / 3));
-  will-change: transform;
 }
 
 .timeline-period {
@@ -274,7 +272,7 @@
 
 .timeline-row {
   position: relative;
-  flex: 1 1 0;
+  flex: var(--row-weight, 1) 1 0;
   min-height: 3.25rem;
   overflow: hidden;
   border-bottom: 1px solid color-mix(in srgb, var(--color-gray-700) 60%, transparent);
@@ -314,7 +312,7 @@
   left: calc(var(--tick-pos) * 1%);
   width: 2px;
   background: var(--color-red-500);
-  z-index: 3;
+  z-index: 1;
 }
 
 .timeline-row-lanes {
@@ -324,7 +322,12 @@
   flex-direction: column;
   gap: 0.3rem;
   overflow-y: auto;
+  scrollbar-gutter: stable;
   z-index: 2;
+}
+
+.timeline-row-lanes::-webkit-scrollbar {
+  width: 8px;
 }
 
 .timeline-view-day {
@@ -341,8 +344,8 @@
 
 .timeline-lane {
   position: relative;
-  height: 2.5rem;
-  flex-shrink: 0;
+  flex: 1 1 auto;
+  min-height: 3.25rem;
 }
 
 .timeline-dur-0 {
@@ -407,10 +410,10 @@
 .timeline-bar-bubble {
   position: absolute;
   top: 50%;
-  left: clamp(1.125rem, calc(var(--bar-fill) * 1%), calc(100% - 1.125rem));
+  left: clamp(1.375rem, calc(var(--bar-fill) * 1%), calc(100% - 1.375rem));
   transform: translate(-50%, -50%);
-  height: 2.25rem;
-  width: 2.25rem;
+  height: 2.75rem;
+  width: 2.75rem;
   border-radius: 9999px;
   background: var(--color-darkest);
   border: 2px solid var(--bar-color);
@@ -421,17 +424,17 @@
 }
 
 .timeline-bar-ship {
-  width: 80%;
-  height: 80%;
+  width: 82%;
+  height: 82%;
   object-fit: contain;
 }
 
 .timeline-bar-target {
   position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 55%;
-  height: 55%;
+  right: -2px;
+  bottom: -2px;
+  width: 60%;
+  height: 60%;
   object-fit: contain;
   border-radius: 9999px;
   background: var(--color-darker);
@@ -442,13 +445,13 @@
 .tooltip-host .tooltip-floating {
   visibility: hidden;
   opacity: 0;
-  transform: translateX(calc(-50% + var(--tt-shift-x, 0px))) translateY(calc(-100% - 10px)) scaleY(0.4);
+  transform: translateX(calc(-50% + var(--tt-shift-x, 0px))) translateY(calc(-100% - 10px)) scaleY(0.85);
   transform-origin: 50% 100%;
-  transition: opacity 0.12s ease, transform 0.12s ease, visibility 0.12s;
+  transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s;
 }
 
 .tooltip-host .tooltip-floating.tt-below {
-  transform: translateX(calc(-50% + var(--tt-shift-x, 0px))) translateY(12px) scaleY(0.4);
+  transform: translateX(calc(-50% + var(--tt-shift-x, 0px))) translateY(12px) scaleY(0.85);
   transform-origin: 50% 0%;
 }
 
@@ -465,7 +468,7 @@
 @starting-style {
   .tooltip-host:hover .tooltip-floating {
     opacity: 0;
-    transform: translateX(calc(-50% + var(--tt-shift-x, 0px))) translateY(calc(-100% - 10px)) scaleY(0.4);
+    transform: translateX(calc(-50% + var(--tt-shift-x, 0px))) translateY(calc(-100% - 10px)) scaleY(0.85);
   }
 }
 
@@ -827,9 +830,9 @@
 .report-tooltip {
   z-index: 999999;
   opacity: 0;
-  transform: translateX(-50%) translateY(calc(-100% - 10px)) scaleY(0.4);
+  transform: translateX(-50%) translateY(calc(-100% - 10px)) scaleY(0.85);
   transform-origin: 50% 100%;
-  transition: opacity 0.12s ease, transform 0.12s ease;
+  transition: opacity 0.16s ease, transform 0.16s ease;
 }
 
 .report-tooltip.tt-on {
@@ -838,7 +841,7 @@
 }
 
 .report-tooltip.tt-below {
-  transform: translateX(-50%) translateY(14px) scaleY(0.4);
+  transform: translateX(-50%) translateY(14px) scaleY(0.85);
   transform-origin: 50% 0%;
 }
 
@@ -1374,7 +1377,15 @@ input[type=number] {
 }
 
 .apply-filter-button {
-  @apply mt-0_5rem mr-1rem -ml-px relative p-0.5 text-center space-x-2 px-3 py-1 border border-gray-600 text-sm font-medium rounded-md text-gray-400;
+  @apply mt-0_5rem w-full relative text-center px-3 py-1 border border-gray-600 text-sm font-medium rounded-md text-gray-400;
+}
+
+.calendar-date-input {
+  @apply block w-full rounded-md text-sm bg-darker border border-gray-600 text-gray-300 px-2 py-1.5 tabular-nums [color-scheme:dark];
+}
+
+.calendar-date-input:focus {
+  @apply outline-none border-gray-400;
 }
 
 .section-heading {
