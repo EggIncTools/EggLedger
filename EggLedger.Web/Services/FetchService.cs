@@ -4,6 +4,7 @@ using EggLedger.Domain.Ei;
 using EggLedger.Domain.MissionPacking;
 using EggLedger.Domain.MissionQuery;
 using EggLedger.Web.Data;
+using EggLedger.Web.Settings;
 using Ei;
 
 namespace EggLedger.Web.Services;
@@ -285,7 +286,7 @@ public sealed class FetchService {
 
     private static int ReadWorkerCount(Dictionary<string, string> settings) {
         int n = DefaultWorkerCount;
-        if (settings.TryGetValue("worker_count", out var raw)
+        if (settings.TryGetValue(SettingsModel.KeyWorkerCount, out var raw)
             && int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)) {
             n = parsed;
         }
@@ -293,6 +294,6 @@ public sealed class FetchService {
     }
 
     private static bool ReadRetryFailedSetting(Dictionary<string, string> settings) =>
-        settings.TryGetValue("retry_failed_missions", out var raw)
+        settings.TryGetValue(SettingsModel.KeyRetryFailedMissions, out var raw)
             && bool.TryParse(raw, out var b) && b;
 }

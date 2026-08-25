@@ -1,32 +1,26 @@
 using System.Globalization;
 using System.Linq;
+using Ei;
+using EggLedger.Domain.Ei;
 using EggLedger.Domain.MissionQuery;
 
 namespace EggLedger.Web.Missions;
 
 public static class FilterOptions {
-    private static readonly string[] ShipNames =
-    [
-        "Chicken One", "Chicken Nine", "Chicken Heavy",
-        "BCR", "Quintillion Chicken", "Cornish-Hen Corvette",
-        "Galeggtica", "Defihent", "Voyegger", "Henerprise", "Atreggies Henliner",
-    ];
-
-    private static readonly string[] DurationNames = ["Short", "Standard", "Extended", "Tutorial"];
-
     public static List<FilterOption> GetShipFilterOptions() {
-        var result = new List<FilterOption>(ShipNames.Length);
-        for (int i = 0; i < ShipNames.Length; i++) {
-            result.Add(new FilterOption { Text = ShipNames[i], Value = i.ToString(CultureInfo.InvariantCulture) });
+        var result = new List<FilterOption>();
+        foreach (var s in Enum.GetValues<MissionInfo.Spaceship>().OrderBy(s => (int)s)) {
+            result.Add(new FilterOption { Text = s.Name(), Value = ((int)s).ToString(CultureInfo.InvariantCulture) });
         }
         return result;
     }
 
     public static List<FilterOption> GetDurationFilterOptions() {
-        var result = new List<FilterOption>(DurationNames.Length);
-        for (int i = 0; i < DurationNames.Length; i++) {
+        var result = new List<FilterOption>();
+        foreach (var d in Enum.GetValues<MissionInfo.DurationType>().OrderBy(d => (int)d)) {
+            int i = (int)d;
             result.Add(new FilterOption {
-                Text = DurationNames[i],
+                Text = d.Display(),
                 Value = i.ToString(CultureInfo.InvariantCulture),
                 StyleClass = "text-duration-" + i,
             });
@@ -159,10 +153,8 @@ public static class FilterOptions {
 
     private static string DropPath(PossibleArtifact drop) {
         int addendum = drop.ProtoName.Contains("_STONE", StringComparison.Ordinal) ? 1 : 0;
-        string fixedName = drop.ProtoName
-            .Replace("_FRAGMENT", "", StringComparison.Ordinal)
-            .Replace("ORNATE_GUSSET", "GUSSET", StringComparison.Ordinal)
-            .Replace("VIAL_MARTIAN_DUST", "VIAL_OF_MARTIAN_DUST", StringComparison.Ordinal);
+        string fixedName = ArtifactNameFixups.ApplyDisplayNameOverrides(
+            drop.ProtoName.Replace("_FRAGMENT", "", StringComparison.Ordinal));
         return "artifacts/" + fixedName + "/" + fixedName + "_" + (drop.Level + 1 + addendum) + ".png";
     }
 

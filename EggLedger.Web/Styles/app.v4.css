@@ -203,6 +203,14 @@
   @apply rounded-r-md;
 }
 
+.tile-group-item.active {
+  @apply bg-darkest text-gray-200 border-gray-500;
+}
+
+.tile-group-item:not(.active) {
+  @apply bg-darker text-gray-400 border-gray-700 hover:bg-dark_tab_hover;
+}
+
 .gh-bubble {
   @apply fixed bottom-4 right-4 z-[900] w-11 h-11 inline-flex items-center justify-center
          rounded-full bg-dark border border-gray-600 no-underline

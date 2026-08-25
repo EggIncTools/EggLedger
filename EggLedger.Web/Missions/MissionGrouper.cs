@@ -38,25 +38,19 @@ public static class MissionGrouper {
             return new MissionGrouping { AllVisible = true };
         }
 
+        var byDay = MissionDateBucketing.ByDay(missions, ledgerDate);
+
         var dateMap = new Dictionary<int, Dictionary<int, Dictionary<int, List<DatabaseMission>>>>();
-        foreach (var mission in missions) {
-            var d = ledgerDate(mission.LaunchDT);
-            int y = d.Year;
-            int mo = d.Month;
-            int da = d.Day;
-            if (!dateMap.TryGetValue(y, out var ym)) {
+        foreach (var (day, dayMissions) in byDay) {
+            if (!dateMap.TryGetValue(day.Year, out var ym)) {
                 ym = [];
-                dateMap[y] = ym;
+                dateMap[day.Year] = ym;
             }
-            if (!ym.TryGetValue(mo, out var md)) {
+            if (!ym.TryGetValue(day.Month, out var md)) {
                 md = [];
-                ym[mo] = md;
+                ym[day.Month] = md;
             }
-            if (!md.TryGetValue(da, out var list)) {
-                list = [];
-                md[da] = list;
-            }
-            list.Add(mission);
+            md[day.Day] = dayMissions;
         }
 
         var uniqueYears = new List<int>(dateMap.Keys);

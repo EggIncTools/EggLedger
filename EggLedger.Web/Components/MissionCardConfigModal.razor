@@ -7,7 +7,7 @@
                 <span class="font-bold text-gray-400">Preset</span>
                 <div class="flex items-center gap-2 mt-2 flex-wrap">
                     @foreach (var p in PresetSet.Presets) {
-                        <button type="button" class="tile-group-item @(p.Name == _editingPresetName ? "bg-darkest text-gray-200 border-gray-500" : "bg-darker text-gray-400 border-gray-700")" @onclick="@(() => SwitchTo(p.Name))">@p.Name</button>
+                        <button type="button" class="tile-group-item @(p.Name == _editingPresetName ? "active" : "")" @onclick="@(() => SwitchTo(p.Name))">@p.Name</button>
                     }
                 </div>
                 <div class="flex items-center gap-3 mt-2 flex-wrap">
@@ -31,8 +31,8 @@
             <div class="panel-muted rounded-md p-3">
                 <span class="font-bold text-gray-400">Layout</span>
                 <div class="tile-group mt-2">
-                    <button type="button" class="tile-group-item @(_form.Layout == CardLayout.CompactRow ? "bg-darkest text-gray-200 border-gray-500" : "bg-darker text-gray-400 border-gray-700")" @onclick="@(() => _form.Layout = CardLayout.CompactRow)">Compact row</button>
-                    <button type="button" class="tile-group-item @(_form.Layout == CardLayout.Grid ? "bg-darkest text-gray-200 border-gray-500" : "bg-darker text-gray-400 border-gray-700")" @onclick="@(() => _form.Layout = CardLayout.Grid)">Grid</button>
+                    <button type="button" class="tile-group-item @(_form.Layout == CardLayout.CompactRow ? "active" : "")" @onclick="@(() => _form.Layout = CardLayout.CompactRow)">Compact row</button>
+                    <button type="button" class="tile-group-item @(_form.Layout == CardLayout.Grid ? "active" : "")" @onclick="@(() => _form.Layout = CardLayout.Grid)">Grid</button>
                 </div>
             </div>
 
@@ -64,17 +64,17 @@
                 <div class="flex flex-col gap-2 mt-2">
                     <div class="flex items-center gap-2">
                         <span class="w-24 text-gray-400">Background</span>
-                        <input type="color" class="w-10 h-7 rounded border border-gray-700 bg-transparent cursor-pointer" value="@(_form.BackgroundColor ?? "#3a3a3a")" @onchange="@(e => _form.BackgroundColor = e.Value?.ToString())"/>
+                        <ColorPicker Value="@(_form.BackgroundColor ?? ColorPickerMath.Fallback)" ValueChanged="@(v => _form.BackgroundColor = v)"/>
                         <button type="button" class="text-xs toggle-link" @onclick="@(() => _form.BackgroundColor = null)">Reset</button>
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="w-24 text-gray-400">Border</span>
-                        <input type="color" class="w-10 h-7 rounded border border-gray-700 bg-transparent cursor-pointer" value="@(_form.BorderColor ?? "#3a3a3a")" @onchange="@(e => _form.BorderColor = e.Value?.ToString())"/>
+                        <ColorPicker Value="@(_form.BorderColor ?? ColorPickerMath.Fallback)" ValueChanged="@(v => _form.BorderColor = v)"/>
                         <button type="button" class="text-xs toggle-link" @onclick="@(() => _form.BorderColor = null)">Reset</button>
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="w-24 text-gray-400">Accent</span>
-                        <input type="color" class="w-10 h-7 rounded border border-gray-700 bg-transparent cursor-pointer" value="@(_form.AccentColor ?? "#3a3a3a")" @onchange="@(e => _form.AccentColor = e.Value?.ToString())"/>
+                        <ColorPicker Value="@(_form.AccentColor ?? ColorPickerMath.Fallback)" ValueChanged="@(v => _form.AccentColor = v)"/>
                         <button type="button" class="text-xs toggle-link" @onclick="@(() => _form.AccentColor = null)">Reset</button>
                     </div>
                 </div>
@@ -99,6 +99,7 @@
         <div class="w-1/2 overflow-auto flex flex-col gap-2">
             <span class="font-bold text-gray-400 text-sm">Preview</span>
             <div class="px-2 py-2 shadow-sm block text-xs font-mono text-gray-500 bg-darkest rounded-md flex-1">
+                <MissionCardCustomStyle Config="_form.ToConfig()"/>
                 @if (_previewMission is not null) {
                     <MissionCard Mission="_previewMission" Config="_form.ToConfig()" ViewByDate="false" ViewMissionTimes="true"/>
                 } else {

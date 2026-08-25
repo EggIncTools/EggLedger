@@ -36,22 +36,8 @@ public static class LifetimeSorter {
         _ => DropSorter.SortGroupAlreadyCombed(list),
     };
 
-    public static List<DropLike> SortGroupByCount(IEnumerable<DropLike> collection) {
-        var indexed = new List<(DropLike Item, int Index)>();
-        int i = 0;
-        foreach (var item in collection) {
-            indexed.Add((item, i++));
-        }
-        indexed.Sort((a, b) => {
-            int c = CountComparer(a.Item, b.Item);
-            return c != 0 ? c : a.Index.CompareTo(b.Index);
-        });
-        var result = new List<DropLike>(indexed.Count);
-        foreach (var (item, _) in indexed) {
-            result.Add(item);
-        }
-        return result;
-    }
+    public static List<DropLike> SortGroupByCount(IEnumerable<DropLike> collection) =>
+        DropSorter.StableSort(collection, CountComparer);
 
     private static int CountComparer(DropLike a, DropLike b) {
         if (a.Count != b.Count) {

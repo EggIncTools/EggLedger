@@ -28,10 +28,6 @@
     </div>
 }
 
-@if (!string.IsNullOrEmpty(Config.CustomCss) && CustomCssSanitizer.TryScope(Config.Name, Config.CustomCss, out var scoped, out _) && scoped is not null) {
-    <style>@((MarkupString)scoped)</style>
-}
-
 @code {
     [Parameter] public required DatabaseMission Mission { get; set; }
     [Parameter] public required MissionCardConfig Config { get; set; }

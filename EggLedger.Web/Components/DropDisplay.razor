@@ -21,7 +21,7 @@
                     <div class="tooltip-floating tooltip-anchored text-sm">
                         @item.GameName (T@(item.Level + SpecPathOffset(item)))
                         @if (item.SpecType == "Artifact") {
-                            <span class="text-rarity-@item.Rarity">@RarityWord(item.Rarity) </span>
+                            <span class="text-rarity-@item.Rarity">@FilterOptions.RarityWord(item.Rarity) </span>
                         }
                         × @item.Count
                         @if (item.SpecType is "Artifact" or "Stone") {
@@ -102,12 +102,6 @@
         _ => "bg-gray-900"
     };
 
-    private static readonly string[] Rarities = ["Common", "Rare", "Epic", "Legendary"];
-
-    private static string RarityWord(int rarity) {
-        return rarity >= 0 && rarity < Rarities.Length ? Rarities[rarity] : "";
-    }
-
 
     private static int SpecPathOffset(DropLike item) {
         return item.SpecType == "Stone" ? 2 : 1;
@@ -140,10 +134,8 @@
     }
 
     private static string SpecPath(DropLike item) {
-        var fixedName = item.Name
-            .Replace("_FRAGMENT", "", StringComparison.Ordinal)
-            .Replace("ORNATE_GUSSET", "GUSSET", StringComparison.Ordinal)
-            .Replace("VIAL_MARTIAN_DUST", "VIAL_OF_MARTIAN_DUST", StringComparison.Ordinal);
+        var fixedName = ArtifactNameFixups.ApplyDisplayNameOverrides(
+            item.Name.Replace("_FRAGMENT", "", StringComparison.Ordinal));
         return ContentPaths.Asset($"images/artifacts/{fixedName}/{fixedName}_{item.Level + SpecPathOffset(item)}.png");
     }
 

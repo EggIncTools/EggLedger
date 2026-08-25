@@ -19,9 +19,7 @@
             return (null, "");
         }
 
-        var t = target.ToUpperInvariant()
-            .Replace("ORNATE_GUSSET", "GUSSET", StringComparison.Ordinal)
-            .Replace("VIAL_MARTIAN_DUST", "VIAL_OF_MARTIAN_DUST", StringComparison.Ordinal);
+        var t = ArtifactNameFixups.ApplyDisplayNameOverrides(target.ToUpperInvariant());
         var tier = 4;
         if (t.Contains("_FRAGMENT", StringComparison.Ordinal)) {
             t = t.Replace("_FRAGMENT", "", StringComparison.Ordinal);
