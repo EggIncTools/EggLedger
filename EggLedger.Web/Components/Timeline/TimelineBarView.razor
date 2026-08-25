@@ -1,0 +1,15 @@
+@using EggLedger.Web.Missions.Timeline
+
+<div class="timeline-bar" style="@BarStyle" title="@Bar.ShipName" @onclick="@(() => OnSelect.InvokeAsync(Bar.MissionId))">
+    <div class="timeline-bar-fill"></div>
+    <img class="timeline-bar-icon" src="@Bar.ShipIconPath" alt="@Bar.ShipName"/>
+</div>
+
+@code {
+    [Parameter] public required TimelineBar Bar { get; set; }
+    [Parameter] public EventCallback<string> OnSelect { get; set; }
+
+    private string BarStyle =>
+        FormattableString.Invariant($"--bar-start:{Bar.LeftPercent};--bar-size:{Bar.WidthPercent};--bar-fill:{Bar.FillPercent};");
+
+}

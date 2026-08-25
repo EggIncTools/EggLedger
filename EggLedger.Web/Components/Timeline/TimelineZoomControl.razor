@@ -1,0 +1,14 @@
+@using EggLedger.Web.Missions.Timeline
+
+<div class="tile-group">
+    @foreach (var z in Zooms) {
+        <button type="button" class="tile-group-item @(Value == z ? "active" : "")" @onclick="@(() => OnValueChanged.InvokeAsync(z))">@z.Label()</button>
+    }
+</div>
+
+@code {
+    private static readonly TimelineZoom[] Zooms = [TimelineZoom.Hour, TimelineZoom.Day, TimelineZoom.Week, TimelineZoom.Month];
+
+    [Parameter] public TimelineZoom Value { get; set; }
+    [Parameter] public EventCallback<TimelineZoom> OnValueChanged { get; set; }
+}

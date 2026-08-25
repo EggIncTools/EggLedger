@@ -211,6 +211,59 @@
   @apply bg-darker text-gray-400 border-gray-700 hover:bg-dark_tab_hover;
 }
 
+.timeline-lanes {
+  @apply relative flex flex-col gap-1 min-h-0;
+}
+
+.timeline-lane {
+  @apply relative h-10 shrink-0;
+}
+
+.timeline-bar {
+  @apply absolute inset-y-0 rounded-full overflow-hidden bg-darkest border border-gray-700 cursor-pointer;
+  left: calc(var(--bar-start) * 1%);
+  width: calc(var(--bar-size) * 1%);
+}
+
+.timeline-bar-fill {
+  @apply absolute inset-y-0 left-0 bg-blue-900;
+  width: calc(var(--bar-fill) * 1%);
+}
+
+.timeline-bar-icon {
+  @apply absolute top-1/2 h-6 w-6 object-contain -translate-x-1/2 -translate-y-1/2;
+  left: clamp(0.75rem, calc(var(--bar-fill) * 1%), calc(100% - 0.75rem));
+}
+
+@media (max-width: 767px) {
+  .timeline-lanes {
+    @apply flex-row items-stretch h-full;
+  }
+
+  .timeline-lane {
+    @apply h-auto flex-1;
+  }
+
+  .timeline-bar {
+    @apply inset-x-0;
+    left: 0;
+    width: auto;
+    top: calc(var(--bar-start) * 1%);
+    height: calc(var(--bar-size) * 1%);
+  }
+
+  .timeline-bar-fill {
+    @apply inset-x-0 top-0;
+    width: auto;
+    height: calc(var(--bar-fill) * 1%);
+  }
+
+  .timeline-bar-icon {
+    @apply left-1/2 top-auto;
+    top: clamp(0.75rem, calc(var(--bar-fill) * 1%), calc(100% - 0.75rem));
+  }
+}
+
 .gh-bubble {
   @apply fixed bottom-4 right-4 z-[900] w-11 h-11 inline-flex items-center justify-center
          rounded-full bg-dark border border-gray-600 no-underline

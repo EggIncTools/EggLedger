@@ -1,0 +1,107 @@
+@using System.Globalization
+@using EggLedger.Web.Missions.Timeline
+@using EggLedger.Web.Components.Timeline
+
+<div class="flex flex-col gap-2 min-h-0 flex-1">
+    <div class="flex items-center gap-2 flex-wrap">
+        <TimelineZoomControl Value="_zoom" OnValueChanged="SetZoomAsync"/>
+        <button type="button" class="text-base toggle-link" @onclick="PanBackAsync">&larr; Prev</button>
+        <button type="button" class="text-base toggle-link" @onclick="PanForwardAsync">Next &rarr;</button>
+        <button type="button" class="text-base toggle-link" @onclick="JumpToNowAsync">Today</button>
+        <input type="date" class="reg-filter-input text-sm" value="@_center.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)" @onchange="JumpToDateAsync"/>
+        <span class="text-sm text-gray-400 ml-auto">@_visibleStart.ToString("MMM d, yyyy", CultureInfo.InvariantCulture) - @_visibleEnd.ToString("MMM d, yyyy", CultureInfo.InvariantCulture)</span>
+    </div>
+
+    <div class="flex-1 min-h-0 overflow-auto shadow-sm bg-darkest rounded-md p-2">
+        @if (_lanes.Count == 0) {
+            <div class="text-gray-500 italic p-4">No missions in this range.</div>
+        } else {
+            <div class="timeline-lanes">
+                @foreach (var lane in _lanes) {
+                    <div class="timeline-lane">
+                        @foreach (var bar in lane) {
+                            <TimelineBarView Bar="bar" OnSelect="OnSelectMission"/>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public IReadOnlyList<DatabaseMission> Missions { get; set; } = Array.Empty<DatabaseMission>();
+    [Parameter] public EventCallback<string> OnViewMission { get; set; }
+
+    private TimelineZoom _zoom = TimelineZoom.Day;
+    private DateTimeOffset _center = DateTimeOffset.UtcNow;
+    private DateTimeOffset _visibleStart;
+    private DateTimeOffset _visibleEnd;
+    private List<List<TimelineBar>> _lanes = [];
+
+    protected override void OnInitialized() {
+        Recompute();
+    }
+
+    protected override void OnParametersSet() {
+        Recompute();
+    }
+
+    private void Recompute() {
+        var span = _zoom.WindowSpan();
+        _visibleStart = _center - span / 2;
+        _visibleEnd = _center + span / 2;
+
+        var bars = TimelineLayoutEngine.Layout(Missions, _visibleStart, _visibleEnd, DateTimeOffset.UtcNow);
+
+        var byLane = new Dictionary<int, List<TimelineBar>>();
+        foreach (var bar in bars) {
+            if (!byLane.TryGetValue(bar.Lane, out var list)) {
+                list = [];
+                byLane[bar.Lane] = list;
+            }
+
+            list.Add(bar);
+        }
+
+        _lanes = byLane.OrderBy(kv => kv.Key).Select(kv => kv.Value).ToList();
+    }
+
+    private Task SetZoomAsync(TimelineZoom zoom) {
+        _zoom = zoom;
+        Recompute();
+        return Task.CompletedTask;
+    }
+
+    private Task PanBackAsync() {
+        _center -= _zoom.WindowSpan();
+        Recompute();
+        return Task.CompletedTask;
+    }
+
+    private Task PanForwardAsync() {
+        _center += _zoom.WindowSpan();
+        Recompute();
+        return Task.CompletedTask;
+    }
+
+    private Task JumpToNowAsync() {
+        _center = DateTimeOffset.UtcNow;
+        Recompute();
+        return Task.CompletedTask;
+    }
+
+    private Task JumpToDateAsync(ChangeEventArgs e) {
+        if (DateTimeOffset.TryParse(e.Value?.ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var parsed)) {
+            _center = parsed;
+            Recompute();
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private async Task OnSelectMission(string missionId) {
+        await OnViewMission.InvokeAsync(missionId);
+    }
+
+}

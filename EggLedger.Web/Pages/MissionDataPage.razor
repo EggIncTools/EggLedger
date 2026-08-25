@@ -20,22 +20,31 @@
                      Applying="_applying"
                      LastResultText="@_resultText"
                      OnApply="ApplyFilterAsync">
-    <MissionResultsTable Grouping="_grouping"
-                         ViewByDate="_opts.ViewByDate"
-                         ViewMissionTimes="_opts.ViewMissionTimes"
-                         MultiViewMode="_opts.MultiViewMode"
-                         Config="_cardPresets.ActivePreset()"
-                         SelectedIds="_multiSelectedIds"
-                         TabFiltered="_tabFiltered ?? Array.Empty<DatabaseMission>()"
-                         MissionBeingViewed="_missionBeingViewed"
-                         FlatMissions="_flatSorted"
-                         DropCounts="_dropCounts"
-                         OnViewMission="ViewMissionAsync"
-                         OnViewRow="ViewRowAsync"
-                         OnSelectionChanged="StateHasChanged"
-                         OnGroupingChanged="StateHasChanged"
-                         TileSelector="@(_hasBothTypes ? RenderTileSelector() : null)"
-                         HeaderExtra="@RenderOptionsPopover()"/>
+    <div class="tile-group mb-0_5rem">
+        <button type="button" class="tile-group-item @(_viewMode == ViewMode.List ? "active" : "")" @onclick="@(() => SetViewMode(ViewMode.List))">List</button>
+        <button type="button" class="tile-group-item @(_viewMode == ViewMode.Calendar ? "active" : "")" @onclick="@(() => SetViewMode(ViewMode.Calendar))">Calendar</button>
+    </div>
+    @if (_viewMode == ViewMode.Calendar) {
+        <MissionCalendarView Missions="_tabFiltered ?? Array.Empty<DatabaseMission>()"
+                             OnViewMission="ViewMissionAsync"/>
+    } else {
+        <MissionResultsTable Grouping="_grouping"
+                             ViewByDate="_opts.ViewByDate"
+                             ViewMissionTimes="_opts.ViewMissionTimes"
+                             MultiViewMode="_opts.MultiViewMode"
+                             Config="_cardPresets.ActivePreset()"
+                             SelectedIds="_multiSelectedIds"
+                             TabFiltered="_tabFiltered ?? Array.Empty<DatabaseMission>()"
+                             MissionBeingViewed="_missionBeingViewed"
+                             FlatMissions="_flatSorted"
+                             DropCounts="_dropCounts"
+                             OnViewMission="ViewMissionAsync"
+                             OnViewRow="ViewRowAsync"
+                             OnSelectionChanged="StateHasChanged"
+                             OnGroupingChanged="StateHasChanged"
+                             TileSelector="@(_hasBothTypes ? RenderTileSelector() : null)"
+                             HeaderExtra="@RenderOptionsPopover()"/>
+    }
 </FilterSidebarLayout>
 
 @if (Active.ActiveAccountId is not null && !_loading && _allMissions is { Count: > 0 }) {
@@ -52,6 +61,13 @@
 }
 
 @code {
+
+    private enum ViewMode {
+        List,
+        Calendar
+    }
+
+    private ViewMode _viewMode = ViewMode.List;
     private bool _loading = true;
     private bool _applying;
     private string _resultText = "";
@@ -231,6 +247,11 @@
         }
 
         _multiSelectedIds.RemoveWhere(id => !valid.Contains(id));
+    }
+
+    private void SetViewMode(ViewMode mode) {
+        _viewMode = mode;
+        StateHasChanged();
     }
 
     private void SelectTab(int? tab) {
