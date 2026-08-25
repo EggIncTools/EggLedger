@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img width="384" src="EggLedger.Desktop/assets/icon-1024.png" alt="EggLedger">
+  <img width="384" src="EggLedger.Desktop/icon-512.png" alt="EggLedger">
 </h1>
 
 <p align="center">

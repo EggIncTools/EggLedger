@@ -1,8 +1,8 @@
 using System.Globalization;
 using System.Linq;
-using Ei;
 using EggLedger.Domain.Ei;
 using EggLedger.Domain.MissionQuery;
+using Ei;
 
 namespace EggLedger.Web.Missions;
 
