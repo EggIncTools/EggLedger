@@ -1,3 +1,5 @@
+using EggLedger.Domain.MissionPacking;
+
 namespace EggLedger.Web.Missions.Timeline;
 
 public sealed record TimelineBar(
@@ -8,4 +10,7 @@ public sealed record TimelineBar(
     double FillPercent,
     bool IsActive,
     string ShipIconPath,
-    string ShipName);
+    string ShipName,
+    int DurationIndex,
+    string? TargetIconPath,
+    DatabaseMission Mission);

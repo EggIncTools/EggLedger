@@ -10,27 +10,7 @@
     private string _alt = "";
 
     protected override void OnParametersSet() {
-        (_path, _alt) = TargetImage(Target);
-    }
-
-
-    private static (string?, string) TargetImage(string? target) {
-        if (string.IsNullOrEmpty(target) || target == "UNKNOWN") {
-            return (null, "");
-        }
-
-        var t = ArtifactNameFixups.ApplyDisplayNameOverrides(target.ToUpperInvariant());
-        var tier = 4;
-        if (t.Contains("_FRAGMENT", StringComparison.Ordinal)) {
-            t = t.Replace("_FRAGMENT", "", StringComparison.Ordinal);
-            tier = 1;
-        }
-
-        if (t is "GOLD_METEORITE" or "TAU_CETI_GEODE" or "SOLAR_TITANIUM") {
-            tier = 3;
-        }
-
-        return (ContentPaths.Asset($"images/artifacts/{t}/{t}_{tier}.png"), t);
+        (_path, _alt) = TargetImagePaths.Resolve(Target);
     }
 
 }

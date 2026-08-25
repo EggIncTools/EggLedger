@@ -1,8 +1,27 @@
+@using System.Globalization
 @using EggLedger.Web.Missions.Timeline
+@inject IUserTimeZoneProvider TzProvider
 
-<div class="timeline-bar" style="@BarStyle" title="@Bar.ShipName" @onclick="@(() => OnSelect.InvokeAsync(Bar.MissionId))">
+<div class="timeline-bar timeline-dur-@Bar.DurationIndex tooltip-host" style="@BarStyle" @onclick="@(() => OnSelect.InvokeAsync(Bar.MissionId))">
     <div class="timeline-bar-fill"></div>
-    <img class="timeline-bar-icon" src="@Bar.ShipIconPath" alt="@Bar.ShipName"/>
+    <span class="timeline-bar-bubble tt-anchor">
+        <img class="timeline-bar-ship" src="@Bar.ShipIconPath" alt="@Bar.ShipName"/>
+        @if (Bar.TargetIconPath is not null) {
+            <img class="timeline-bar-target" src="@Bar.TargetIconPath" alt=""/>
+        }
+    </span>
+    <div class="tooltip-floating tooltip-fixed text-sm">
+        <span class="font-bold">@Bar.ShipName</span>
+        <span class="timeline-dur-text-@Bar.DurationIndex">@Bar.Mission.DurationString</span><br/>
+        <span class="text-gray-400">Launched:</span> @FormatTime(Bar.Mission.LaunchDT)<br/>
+        <span class="text-gray-400">@(Bar.IsActive ? "Returns:" : "Returned:")</span> @FormatTime(Bar.Mission.ReturnDT)<br/>
+        <span class="text-gray-400">Capacity:</span> @Bar.Mission.Capacity
+        @if (!string.IsNullOrEmpty(Bar.Mission.Target) && Bar.Mission.Target != "UNKNOWN") {
+            <br/>
+            <span class="text-gray-400">Target:</span>
+            @TargetImagePaths.Resolve(Bar.Mission.Target).Alt
+        }
+    </div>
 </div>
 
 @code {
@@ -11,5 +30,9 @@
 
     private string BarStyle =>
         FormattableString.Invariant($"--bar-start:{Bar.LeftPercent};--bar-size:{Bar.WidthPercent};--bar-fill:{Bar.FillPercent};");
+
+    private string FormatTime(long unixSeconds) =>
+        TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(unixSeconds), TzProvider.TimeZone)
+            .ToString("MMM d, h:mm tt", CultureInfo.InvariantCulture);
 
 }

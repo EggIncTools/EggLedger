@@ -146,6 +146,29 @@ public sealed class TimelineLayoutEngineTests {
     }
 
     [Fact]
+    public void Layout_SetsDurationIndexTargetIconAndMission() {
+        var mission = M("decorated", WindowStart.AddHours(1), WindowStart.AddHours(2));
+        mission.DurationType = Ei.MissionInfo.DurationType.Epic;
+        mission.Target = "PHOENIX_FEATHER";
+
+        var bars = TimelineLayoutEngine.Layout([mission], WindowStart, WindowEnd, WindowStart);
+
+        Assert.Equal(2, bars[0].DurationIndex);
+        Assert.NotNull(bars[0].TargetIconPath);
+        Assert.Contains("PHOENIX_FEATHER", bars[0].TargetIconPath!);
+        Assert.Same(mission, bars[0].Mission);
+    }
+
+    [Fact]
+    public void Layout_MissingDurationAndTargetFallBack() {
+        var bars = TimelineLayoutEngine.Layout(
+            [M("plain", WindowStart.AddHours(1), WindowStart.AddHours(2))], WindowStart, WindowEnd, WindowStart);
+
+        Assert.Equal(3, bars[0].DurationIndex);
+        Assert.Null(bars[0].TargetIconPath);
+    }
+
+    [Fact]
     public void Layout_EmptyInput_ReturnsEmpty() {
         var bars = TimelineLayoutEngine.Layout(Array.Empty<DatabaseMission>(), WindowStart, WindowEnd, WindowStart);
 

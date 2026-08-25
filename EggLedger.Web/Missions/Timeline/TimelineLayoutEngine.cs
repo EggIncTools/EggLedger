@@ -32,7 +32,10 @@ public static class TimelineLayoutEngine {
                 FillPercent: fill * 100,
                 IsActive: isActive,
                 ShipIconPath: ContentPaths.Asset($"images/ships/{m.ShipEnumString}.png"),
-                ShipName: m.ShipString));
+                ShipName: m.ShipString,
+                DurationIndex: m.DurationType is { } duration ? (int)duration : 3,
+                TargetIconPath: TargetImagePaths.Resolve(m.Target).Path,
+                Mission: m));
         }
 
         return result;

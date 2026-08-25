@@ -7,7 +7,7 @@
 </div>
 
 @code {
-    private static readonly TimelineZoom[] Zooms = [TimelineZoom.Hour, TimelineZoom.Day, TimelineZoom.Week, TimelineZoom.Month];
+    private static readonly TimelineZoom[] Zooms = [TimelineZoom.Day, TimelineZoom.Week, TimelineZoom.Month];
 
     [Parameter] public TimelineZoom Value { get; set; }
     [Parameter] public EventCallback<TimelineZoom> OnValueChanged { get; set; }

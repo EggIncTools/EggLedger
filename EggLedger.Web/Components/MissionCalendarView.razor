@@ -5,42 +5,54 @@
 
 <div class="flex flex-col gap-2 min-h-0 flex-1">
     <div class="flex items-center gap-2 flex-wrap">
-        <TimelineZoomControl Value="_zoom" OnValueChanged="SetZoomAsync"/>
-        <button type="button" class="text-base toggle-link" @onclick="PanBackAsync">&larr; Prev</button>
-        <button type="button" class="text-base toggle-link" @onclick="PanForwardAsync">Next &rarr;</button>
-        <button type="button" class="text-base toggle-link" @onclick="JumpToNowAsync">Today</button>
-        <input type="date" class="reg-filter-input text-sm" value="@LocalCenterDate" @onchange="JumpToDateAsync"/>
-        <span class="text-sm text-gray-400 ml-auto">@RangeLabel</span>
+        <TimelineRangePicker RangeLabel="@RangeLabel"
+                             Zoom="_zoom"
+                             DateValue="@LocalCenterDate"
+                             ZoomChanged="SetZoomAsync"
+                             OnPan="PanAsync"
+                             OnToday="JumpToNowAsync"
+                             DateChanged="JumpToDateAsync"/>
     </div>
 
     <div class="flex-1 min-h-0 shadow-sm bg-darkest rounded-md p-2 timeline-shell">
         <div class="timeline-scale">
-            @foreach (var tick in _ticks) {
-                if (tick.Label.Length > 0) {
-                    <span class="timeline-scale-label" style="@TickStyle(tick.LeftPercent)">@tick.Label</span>
+            @if (_zoom == TimelineZoom.Day) {
+                @foreach (var tick in _rows.Count > 0 ? _rows[0].HourTicks : Array.Empty<TimelineTick>()) {
+                    if (tick.Label.Length > 0) {
+                        <span class="timeline-scale-label" style="@TickStyle(tick.LeftPercent)">@tick.Label</span>
+                    }
+                }
+            } else {
+                @for (var i = 0; i < WeekdayNames.Length; i++) {
+                    <span class="timeline-scale-label" style="@TickStyle((i + 0.5) / 7 * 100)">@WeekdayNames[i]</span>
                 }
             }
         </div>
         <div class="timeline-canvas">
-            @foreach (var tick in _ticks) {
-                if (tick.HasLine) {
-                    <div class="@GridClass(tick)" style="@TickStyle(tick.LeftPercent)"></div>
-                }
-            }
-            @if (_nowPercent is { } nowPct) {
-                <div class="timeline-now" style="@TickStyle(nowPct)"></div>
-            }
-            @if (_lanes.Count == 0) {
-                <div class="text-gray-500 italic p-4">No missions in this range.</div>
-            } else {
-                <div class="timeline-lanes">
-                    @foreach (var lane in _lanes) {
-                        <div class="timeline-lane">
-                            @foreach (var bar in lane) {
-                                <TimelineBarView Bar="bar" OnSelect="OnSelectMission"/>
-                            }
-                        </div>
+            @foreach (var row in _rows) {
+                <div class="timeline-row @(row.Row.IsPrimary ? "" : "timeline-row-context")">
+                    @foreach (var cell in row.Cells) {
+                        if (cell.LeftPercent > 0) {
+                            <div class="timeline-grid" style="@TickStyle(cell.LeftPercent)"></div>
+                        }
+
+                        <span class="timeline-cell-label @(cell.Muted ? "timeline-cell-muted" : "")" style="@TickStyle(cell.LeftPercent)">@CellLabel(cell)</span>
                     }
+                    @foreach (var tick in row.HourTicks) {
+                        <div class="timeline-grid" style="@TickStyle(tick.LeftPercent)"></div>
+                    }
+                    @if (row.NowPercent is { } nowPct) {
+                        <div class="timeline-now" style="@TickStyle(nowPct)"></div>
+                    }
+                    <div class="timeline-row-lanes">
+                        @foreach (var lane in row.Lanes) {
+                            <div class="timeline-lane">
+                                @foreach (var bar in lane) {
+                                    <TimelineBarView Bar="bar" OnSelect="OnSelectMission"/>
+                                }
+                            </div>
+                        }
+                    </div>
                 </div>
             }
         </div>
@@ -48,16 +60,23 @@
 </div>
 
 @code {
+    private static readonly string[] WeekdayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
     [Parameter] public IReadOnlyList<DatabaseMission> Missions { get; set; } = Array.Empty<DatabaseMission>();
     [Parameter] public EventCallback<string> OnViewMission { get; set; }
 
-    private TimelineZoom _zoom = TimelineZoom.Day;
+    private TimelineZoom _zoom = TimelineZoom.Month;
     private DateTimeOffset _center = DateTimeOffset.UtcNow;
     private DateTimeOffset _visibleStart;
     private DateTimeOffset _visibleEnd;
-    private IReadOnlyList<TimelineTick> _ticks = [];
-    private double? _nowPercent;
-    private List<List<TimelineBar>> _lanes = [];
+    private List<RowVm> _rows = [];
+
+    private sealed record RowVm(
+        TimelineRow Row,
+        IReadOnlyList<TimelineDayCell> Cells,
+        IReadOnlyList<TimelineTick> HourTicks,
+        List<List<TimelineBar>> Lanes,
+        double? NowPercent);
 
     protected override void OnParametersSet() {
         Recompute();
@@ -66,16 +85,29 @@
     private void Recompute() {
         var tz = TzProvider.TimeZone;
         (_visibleStart, _visibleEnd) = TimelineWindow.Compute(_center, _zoom, tz);
-        var span = _visibleEnd - _visibleStart;
-        _center = _visibleStart + span / 2;
-        _ticks = TimelineTicks.Generate(_visibleStart, _visibleEnd, _zoom, tz);
-
+        _center = _visibleStart + (_visibleEnd - _visibleStart) / 2;
+        int? primaryMonth = _zoom == TimelineZoom.Month ? TimeZoneInfo.ConvertTime(_visibleStart, tz).Month : null;
         var now = DateTimeOffset.UtcNow;
-        _nowPercent = now > _visibleStart && now < _visibleEnd
-            ? (now - _visibleStart).TotalSeconds / span.TotalSeconds * 100
-            : null;
+        _rows = TimelineRows.Build(_zoom, _visibleStart, _visibleEnd, tz)
+            .Select(row => BuildRow(row, tz, now, primaryMonth))
+            .ToList();
+    }
 
-        var bars = TimelineLayoutEngine.Layout(Missions, _visibleStart, _visibleEnd, now);
+    private RowVm BuildRow(TimelineRow row, TimeZoneInfo tz, DateTimeOffset now, int? primaryMonth) {
+        var lanes = GroupLanes(TimelineLayoutEngine.Layout(Missions, row.Start, row.End, now));
+        var cells = _zoom == TimelineZoom.Day
+            ? Array.Empty<TimelineDayCell>()
+            : TimelineTicks.DayCells(row.Start, row.End, tz, primaryMonth);
+        var hourTicks = _zoom == TimelineZoom.Day
+            ? TimelineTicks.HourTicks(row.Start, row.End, tz)
+            : Array.Empty<TimelineTick>();
+        double? nowPercent = now > row.Start && now < row.End
+            ? (now - row.Start).TotalSeconds / (row.End - row.Start).TotalSeconds * 100
+            : null;
+        return new RowVm(row, cells, hourTicks, lanes, nowPercent);
+    }
+
+    private static List<List<TimelineBar>> GroupLanes(IReadOnlyList<TimelineBar> bars) {
         var byLane = new Dictionary<int, List<TimelineBar>>();
         foreach (var bar in bars) {
             if (!byLane.TryGetValue(bar.Lane, out var list)) {
@@ -86,8 +118,13 @@
             list.Add(bar);
         }
 
-        _lanes = byLane.OrderBy(kv => kv.Key).Select(kv => kv.Value).ToList();
+        return byLane.OrderBy(kv => kv.Key).Select(kv => kv.Value).ToList();
     }
+
+    private string CellLabel(TimelineDayCell cell) =>
+        _zoom == TimelineZoom.Month
+            ? cell.LocalDate.Day.ToString(CultureInfo.InvariantCulture)
+            : cell.LocalDate.ToString("M/d", CultureInfo.InvariantCulture);
 
     private string LocalCenterDate =>
         TimeZoneInfo.ConvertTime(_center, TzProvider.TimeZone).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
@@ -108,23 +145,14 @@
     private static string TickStyle(double leftPercent) =>
         FormattableString.Invariant($"--tick-pos:{leftPercent};");
 
-    private static string GridClass(TimelineTick tick) =>
-        tick.IsMajor ? "timeline-grid timeline-grid-major" : "timeline-grid";
-
     private Task SetZoomAsync(TimelineZoom zoom) {
         _zoom = zoom;
         Recompute();
         return Task.CompletedTask;
     }
 
-    private Task PanBackAsync() {
-        _center -= _visibleEnd - _visibleStart;
-        Recompute();
-        return Task.CompletedTask;
-    }
-
-    private Task PanForwardAsync() {
-        _center += _visibleEnd - _visibleStart;
+    private Task PanAsync(int direction) {
+        _center += (_visibleEnd - _visibleStart) * direction;
         Recompute();
         return Task.CompletedTask;
     }

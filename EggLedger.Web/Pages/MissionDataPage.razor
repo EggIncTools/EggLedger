@@ -20,7 +20,7 @@
                      Applying="_applying"
                      LastResultText="@_resultText"
                      OnApply="ApplyFilterAsync">
-    <div class="tile-group mb-0_5rem">
+    <div class="tile-group mt-0_75rem mb-0_5rem">
         <button type="button" class="tile-group-item @(_viewMode == ViewMode.List ? "active" : "")" @onclick="@(() => SetViewMode(ViewMode.List))">List</button>
         <button type="button" class="tile-group-item @(_viewMode == ViewMode.Calendar ? "active" : "")" @onclick="@(() => SetViewMode(ViewMode.Calendar))">Calendar</button>
     </div>

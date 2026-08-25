@@ -47,13 +47,4 @@ public sealed class TimelineWindowTests {
         Assert.Equal(new DateTimeOffset(2026, 9, 1, 0, 0, 0, TimeSpan.Zero), end);
     }
 
-    [Fact]
-    public void Hour_IsSixHoursAlignedToTheHour() {
-        var center = new DateTimeOffset(2026, 8, 25, 14, 45, 0, TimeSpan.Zero);
-
-        var (start, end) = TimelineWindow.Compute(center, TimelineZoom.Hour, Utc);
-
-        Assert.Equal(new DateTimeOffset(2026, 8, 25, 11, 0, 0, TimeSpan.Zero), start);
-        Assert.Equal(new DateTimeOffset(2026, 8, 25, 17, 0, 0, TimeSpan.Zero), end);
-    }
 }

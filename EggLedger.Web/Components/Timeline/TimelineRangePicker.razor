@@ -1,0 +1,41 @@
+@using EggLedger.Web.Missions.Timeline
+
+<div class="relative shrink-0">
+    <button type="button" class="text-base toggle-link whitespace-nowrap" @onclick="Toggle">
+        @RangeLabel &#9662;
+    </button>
+    @if (_open) {
+        <div class="fixed inset-0 z-30" @onclick="Close"></div>
+        <div class="absolute left-0 top-full mt-1 z-40 w-max max-w-[90vw] px-3 py-3 shadow-sm text-sm text-gray-400 bg-darkest border border-gray-700 rounded-md flex flex-col gap-2"
+             @onclick:stopPropagation="true">
+            <TimelineZoomControl Value="Zoom" OnValueChanged="ZoomChanged"/>
+            <div class="flex items-center gap-3">
+                <button type="button" class="text-base toggle-link" @onclick="@(() => OnPan.InvokeAsync(-1))">&larr; Prev</button>
+                <button type="button" class="text-base toggle-link" @onclick="@(() => OnToday.InvokeAsync())">Today</button>
+                <button type="button" class="text-base toggle-link" @onclick="@(() => OnPan.InvokeAsync(1))">Next &rarr;</button>
+            </div>
+            <input type="date" class="reg-filter-input text-sm" value="@DateValue" @onchange="DateChanged"/>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string RangeLabel { get; set; } = "";
+    [Parameter] public TimelineZoom Zoom { get; set; }
+    [Parameter] public string DateValue { get; set; } = "";
+    [Parameter] public EventCallback<TimelineZoom> ZoomChanged { get; set; }
+    [Parameter] public EventCallback<int> OnPan { get; set; }
+    [Parameter] public EventCallback OnToday { get; set; }
+    [Parameter] public EventCallback<ChangeEventArgs> DateChanged { get; set; }
+
+    private bool _open;
+
+    private void Toggle() {
+        _open = !_open;
+    }
+
+    private void Close() {
+        _open = false;
+    }
+
+}
