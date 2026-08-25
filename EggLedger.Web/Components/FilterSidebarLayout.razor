@@ -13,21 +13,24 @@
 } else {
     <section class="flex-1 flex flex-col w-full mx-auto px-4 overflow-hidden bg-darker">
         <div class="flex flex-col md:flex-row md:items-stretch gap-0_75rem mt-0_75rem flex-1 min-h-0">
-            <div class="flex flex-col gap-0_75rem @(_hideFilter ? "md:w-auto" : "md:w-[22rem]") md:shrink-0">
-                <div class="filter-panel mt-0">
-                    <span class="mr-0_5rem h-20 font-bold text-gray-400">Filter</span>
-                    <button type="button" class="text-base toggle-link whitespace-nowrap" @onclick="@(() => _hideFilter = !_hideFilter)">
-                        @(_hideFilter ? "Show" : "Hide")
-                    </button>
+            <div class="flex flex-col gap-0_75rem @(_hideFilter ? "md:w-auto" : "md:w-[27%]") md:shrink-0 min-h-0">
+                <div class="filter-panel mt-0 flex flex-col @(_hideFilter ? "" : "flex-1 min-h-0")">
+                    <div class="shrink-0">
+                        <span class="mr-0_5rem h-20 font-bold text-gray-400">Filter</span>
+                        <button type="button" class="text-base toggle-link whitespace-nowrap" @onclick="@(() => _hideFilter = !_hideFilter)">
+                            @(_hideFilter ? "Show" : "Hide")
+                        </button>
+                    </div>
                     @if (!_hideFilter) {
                         <MissionFilterBar FieldCtx="FieldCtx"
                                           Applying="Applying"
                                           LastResultText="@LastResultText"
+                                          FillHeight="true"
                                           OnApply="OnApply"/>
                     }
                 </div>
                 @if (OptionsContent is not null) {
-                    <div class="filter-panel mt-0">
+                    <div class="filter-panel mt-0 flex-1 min-h-0 overflow-y-auto">
                         <span class="font-bold text-gray-400">Options</span>
                         <div class="mt-1 text-sm">
                             @OptionsContent

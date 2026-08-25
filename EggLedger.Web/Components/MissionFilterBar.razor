@@ -5,7 +5,7 @@
    (legacy per-condition OR rescue). Emits the legacy (and, orFilters) shape so the
    matcher reproduces Vue semantics exactly (see docs/filter-legacy-semantics.md). *@
 
-<div class="max-h-60 overflow-y-auto">
+<div class="@(FillHeight ? "flex-1 min-h-0" : "max-h-60") overflow-y-auto">
     @for (var i = 0; i < _rows.Count; i++) {
         var index = i;
         var row = _rows[index];
@@ -80,6 +80,8 @@
     [Parameter] public bool IsLifetime { get; set; }
 
     [Parameter] public bool ShowApply { get; set; } = true;
+
+    [Parameter] public bool FillHeight { get; set; }
 
     [Parameter] public bool IncludeArtifactFields { get; set; }
 
