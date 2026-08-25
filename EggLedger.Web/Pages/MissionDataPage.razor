@@ -9,6 +9,7 @@
 @inject IndexedDbSettings Settings
 @inject MissionDataCache DataCache
 @inject IUserTimeZoneProvider TzProvider
+@inject InFlightMissionCache InFlight
 
 <PageTitle>EggLedger - Mission Data</PageTitle>
 
@@ -26,6 +27,7 @@
     </div>
     @if (_viewMode == ViewMode.Calendar) {
         <MissionCalendarView Missions="_tabFiltered ?? Array.Empty<DatabaseMission>()"
+                             InFlightMissions="@InFlight.GetForAccount(Active.ActiveAccountId)"
                              OnViewMission="ViewMissionAsync"/>
     } else {
         <MissionResultsTable Grouping="_grouping"

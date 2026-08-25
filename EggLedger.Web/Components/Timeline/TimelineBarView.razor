@@ -2,8 +2,10 @@
 @using EggLedger.Web.Missions.Timeline
 @inject IUserTimeZoneProvider TzProvider
 
-<div class="timeline-bar timeline-dur-@Bar.DurationIndex tooltip-host" style="@BarStyle" @onclick="@(() => OnSelect.InvokeAsync(Bar.MissionId))">
-    <div class="timeline-bar-fill"></div>
+<div class="timeline-bar timeline-dur-@Bar.DurationIndex tooltip-host" style="@BarStyle" data-tt-mode="cursor-x" @onclick="@(() => OnSelect.InvokeAsync(Bar.MissionId))">
+    <div class="timeline-bar-track">
+        <div class="timeline-bar-fill"></div>
+    </div>
     <span class="timeline-bar-bubble tt-anchor">
         <img class="timeline-bar-ship" src="@Bar.ShipIconPath" alt="@Bar.ShipName"/>
         @if (Bar.TargetIconPath is not null) {
@@ -18,8 +20,12 @@
         <span class="text-gray-400">Capacity:</span> @Bar.Mission.Capacity
         @if (!string.IsNullOrEmpty(Bar.Mission.Target) && Bar.Mission.Target != "UNKNOWN") {
             <br/>
-            <span class="text-gray-400">Target:</span>
-            @TargetImagePaths.Resolve(Bar.Mission.Target).Alt
+            <span class="text-gray-400">Target: </span>
+            @NameFormatting.TargetDisplayName(Bar.Mission.Target)
+        }
+        @if (!Bar.HasData) {
+            <br/>
+            <span class="text-gray-500 italic">Still flying, no drop data yet</span>
         }
     </div>
 </div>

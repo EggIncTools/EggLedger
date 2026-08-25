@@ -37,6 +37,7 @@ public static class WebServiceRegistration {
 
         services.AddScoped<IApiPayloadDecoder>(sp => new LocalApiPayloadDecoder(sp.GetRequiredService<ApiClient>()));
 
+        services.AddScoped<InFlightMissionCache>();
         services.AddScoped<FetchService>();
         services.AddScoped<FetchOrchestrator>();
         services.AddScoped<AddAccountService>();

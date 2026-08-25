@@ -137,6 +137,35 @@ public sealed class MissionPacker : IMissionCompiler {
         };
     }
 
+    public DatabaseMission CompileInFlightMission(MissionInfo info) {
+        long launch = (long)info.StartTimeDerived;
+        long returnDt = launch + (long)Math.Floor(info.DurationSeconds);
+
+        float nominalCap = 0;
+        if (TryGetShipCapacities(info.Ship, info.duration_type, out var caps) && (int)info.Level < caps.Length) {
+            nominalCap = caps[(int)info.Level];
+        }
+
+        var mission = new DatabaseMission {
+            LaunchDT = launch,
+            ReturnDT = returnDt,
+            DurationString = info.GetDurationString(),
+            MissiondId = info.Identifier,
+            Ship = info.ShouldSerializeShip() ? info.Ship : null,
+            ShipString = info.Ship.Name(),
+            DurationType = info.ShouldSerializeduration_type() ? info.duration_type : null,
+            Level = (int)info.Level,
+            Capacity = (int)info.Capacity,
+            NominalCapcity = (int)nominalCap,
+            Target = ProperTargetName(info.ShouldSerializeTargetArtifact() ? info.TargetArtifact : null),
+            MissionType = (int)info.Type,
+            MissionTypeString = info.Type.Display(),
+            ShipEnumString = EnumNames.ProtoName(info.Ship),
+        };
+        mission.TargetInt = mission.Target.Length == 0 ? -1 : (int)info.TargetArtifact;
+        return mission;
+    }
+
     private static int ResolveMissionType(int dbMissionType, CompleteMissionResponse mission) {
         int missionType = dbMissionType;
         if (missionType == -1) {

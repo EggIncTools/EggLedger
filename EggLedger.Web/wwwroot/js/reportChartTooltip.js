@@ -1,12 +1,10 @@
-
-
-
-
 (function () {
   if (window.__reportChartTooltipInit) return;
   window.__reportChartTooltipInit = true;
 
   let el = null;
+  let hideTimer = null;
+
   function ensure() {
     if (el) return el;
     el = document.createElement("div");
@@ -17,12 +15,24 @@
   }
 
   function targetWithTT(node) {
-    return node && node.closest ? node.closest("[data-tt]") : null;
+    return node?.closest?.("[data-tt]") ?? null;
+  }
+
+  function place(box, x, y) {
+    const half = box.offsetWidth / 2 + 6;
+    x = Math.min(Math.max(x, half), window.innerWidth - half);
+    box.classList.toggle("tt-below", y - box.offsetHeight - 14 < 4);
+    box.style.left = x + "px";
+    box.style.top = y + "px";
   }
 
   function show(t, x, y) {
     const box = ensure();
-    const lines = (t.getAttribute("data-tt") || "").split("\n");
+    if (hideTimer) {
+      clearTimeout(hideTimer);
+      hideTimer = null;
+    }
+    const lines = (t.dataset.tt || "").split("\n");
     box.innerHTML = "";
     lines.forEach(function (line, i) {
       const d = document.createElement("div");
@@ -30,13 +40,18 @@
       d.textContent = line;
       box.appendChild(d);
     });
-    box.style.left = x + "px";
-    box.style.top = y + "px";
     box.style.display = "block";
+    place(box, x, y);
+    requestAnimationFrame(function () { box.classList.add("tt-on"); });
   }
 
   function hide() {
-    if (el) el.style.display = "none";
+    if (!el) return;
+    el.classList.remove("tt-on");
+    if (hideTimer) clearTimeout(hideTimer);
+    hideTimer = setTimeout(function () {
+      if (el) el.style.display = "none";
+    }, 130);
   }
 
   document.addEventListener("mouseover", function (e) {
@@ -48,8 +63,7 @@
     if (!el || el.style.display === "none") return;
     const t = targetWithTT(e.target);
     if (t) {
-      el.style.left = e.clientX + "px";
-      el.style.top = e.clientY + "px";
+      place(el, e.clientX, e.clientY);
     } else {
       hide();
     }

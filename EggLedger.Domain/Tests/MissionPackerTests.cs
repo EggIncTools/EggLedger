@@ -15,6 +15,49 @@ public class MissionPackerTests {
     }
 
     [Fact]
+    public void CompileInFlightMission_MapsCoreFields() {
+        var info = new MissionInfo {
+            Identifier = "flying-1",
+            StartTimeDerived = 1_700_000_000,
+            DurationSeconds = 3600,
+            Ship = MissionInfo.Spaceship.ChickenOne,
+            duration_type = MissionInfo.DurationType.Short,
+            Level = 0,
+            Capacity = 4,
+            status = MissionInfo.Status.Exploring,
+            TargetArtifact = ArtifactSpec.Name.BookOfBasan,
+        };
+
+        var mission = Packer.CompileInFlightMission(info);
+
+        Assert.Equal("flying-1", mission.MissiondId);
+        Assert.Equal(1_700_000_000, mission.LaunchDT);
+        Assert.Equal(1_700_003_600, mission.ReturnDT);
+        Assert.Equal(MissionInfo.Spaceship.ChickenOne, mission.Ship);
+        Assert.Equal(MissionInfo.DurationType.Short, mission.DurationType);
+        Assert.Equal(4, mission.Capacity);
+        Assert.Equal("BOOK_OF_BASAN", mission.Target);
+        Assert.Equal((int)ArtifactSpec.Name.BookOfBasan, mission.TargetInt);
+        Assert.Equal("CHICKEN_ONE", mission.ShipEnumString);
+    }
+
+    [Fact]
+    public void CompileInFlightMission_NoTarget_HasEmptyTargetAndMinusOne() {
+        var info = new MissionInfo {
+            Identifier = "flying-2",
+            StartTimeDerived = 1_700_000_000,
+            DurationSeconds = 60,
+            Ship = MissionInfo.Spaceship.ChickenOne,
+            duration_type = MissionInfo.DurationType.Short,
+        };
+
+        var mission = Packer.CompileInFlightMission(info);
+
+        Assert.Equal("", mission.Target);
+        Assert.Equal(-1, mission.TargetInt);
+    }
+
+    [Fact]
     public void IsBuggedCap_InsideRange() {
         Assert.True(Packer.IsBuggedCap(MakeTimestampMission(1712900000)));
     }

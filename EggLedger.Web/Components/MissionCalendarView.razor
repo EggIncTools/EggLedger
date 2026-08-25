@@ -2,6 +2,8 @@
 @using EggLedger.Web.Missions.Timeline
 @using EggLedger.Web.Components.Timeline
 @inject IUserTimeZoneProvider TzProvider
+@inject IJSRuntime JS
+@implements IAsyncDisposable
 
 <div class="flex flex-col gap-2 min-h-0 flex-1">
     <div class="flex items-center gap-2 flex-wrap">
@@ -14,10 +16,10 @@
                              DateChanged="JumpToDateAsync"/>
     </div>
 
-    <div class="flex-1 min-h-0 shadow-sm bg-darkest rounded-md p-2 timeline-shell">
+    <div class="flex-1 min-h-0 shadow-sm bg-darkest rounded-md p-2 timeline-shell timeline-view-@ZoomClass">
         <div class="timeline-scale">
             @if (_zoom == TimelineZoom.Day) {
-                @foreach (var tick in _rows.Count > 0 ? _rows[0].HourTicks : Array.Empty<TimelineTick>()) {
+                @foreach (var tick in CurrentHourTicks) {
                     if (tick.Label.Length > 0) {
                         <span class="timeline-scale-label" style="@TickStyle(tick.LeftPercent)">@tick.Label</span>
                     }
@@ -28,48 +30,75 @@
                 }
             }
         </div>
-        <div class="timeline-canvas">
-            @foreach (var row in _rows) {
-                <div class="timeline-row @(row.Row.IsPrimary ? "" : "timeline-row-context")">
-                    @foreach (var cell in row.Cells) {
-                        if (cell.LeftPercent > 0) {
-                            <div class="timeline-grid" style="@TickStyle(cell.LeftPercent)"></div>
-                        }
+        <div class="timeline-viewport" @ref="_viewportRef">
+            <div class="timeline-strip">
+                @foreach (var period in _periods) {
+                    <div class="timeline-period">
+                        <div class="timeline-canvas">
+                            @foreach (var row in period.Rows) {
+                                <div class="timeline-row @(row.Row.IsPrimary ? "" : "timeline-row-context")">
+                                    @foreach (var cell in row.Cells) {
+                                        if (cell.LeftPercent > 0) {
+                                            <div class="timeline-grid" style="@TickStyle(cell.LeftPercent)"></div>
+                                        }
 
-                        <span class="timeline-cell-label @(cell.Muted ? "timeline-cell-muted" : "")" style="@TickStyle(cell.LeftPercent)">@CellLabel(cell)</span>
-                    }
-                    @foreach (var tick in row.HourTicks) {
-                        <div class="timeline-grid" style="@TickStyle(tick.LeftPercent)"></div>
-                    }
-                    @if (row.NowPercent is { } nowPct) {
-                        <div class="timeline-now" style="@TickStyle(nowPct)"></div>
-                    }
-                    <div class="timeline-row-lanes">
-                        @foreach (var lane in row.Lanes) {
-                            <div class="timeline-lane">
-                                @foreach (var bar in lane) {
-                                    <TimelineBarView Bar="bar" OnSelect="OnSelectMission"/>
-                                }
-                            </div>
-                        }
+                                        <span class="timeline-cell-label @(cell.Muted ? "timeline-cell-muted" : "")" style="@TickStyle(cell.LeftPercent)">@CellLabel(cell)</span>
+                                    }
+                                    @foreach (var tick in row.HourTicks) {
+                                        <div class="timeline-grid" style="@TickStyle(tick.LeftPercent)"></div>
+                                    }
+                                    @if (row.NowPercent is { } nowPct) {
+                                        <div class="timeline-now" style="@TickStyle(nowPct)"></div>
+                                    }
+                                    <div class="timeline-row-lanes">
+                                        @foreach (var lane in row.Lanes) {
+                                            <div class="timeline-lane">
+                                                @foreach (var bar in lane) {
+                                                    <TimelineBarView Bar="bar" OnSelect="OnSelectMission"/>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
                     </div>
-                </div>
-            }
+                }
+            </div>
         </div>
     </div>
 </div>
+
+@if (_showStillFlying) {
+    <dialog open class="fixed inset-0 m-auto w-max h-max z-50 rounded-lg bg-dark border border-gray-700 p-4 text-gray-300 shadow-2xl">
+        <div class="flex flex-col items-center gap-2 max-w-72 text-center">
+            <span class="font-bold">Still flying</span>
+            <span class="text-sm text-gray-400">This mission has not returned yet. Drop data becomes available after it lands and the account is fetched again.</span>
+            <button type="button" class="toggle-link text-base" @onclick="CloseStillFlying">Close</button>
+        </div>
+    </dialog>
+}
 
 @code {
     private static readonly string[] WeekdayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
     [Parameter] public IReadOnlyList<DatabaseMission> Missions { get; set; } = Array.Empty<DatabaseMission>();
+    [Parameter] public IReadOnlyList<DatabaseMission> InFlightMissions { get; set; } = Array.Empty<DatabaseMission>();
     [Parameter] public EventCallback<string> OnViewMission { get; set; }
 
     private TimelineZoom _zoom = TimelineZoom.Month;
     private DateTimeOffset _center = DateTimeOffset.UtcNow;
     private DateTimeOffset _visibleStart;
     private DateTimeOffset _visibleEnd;
-    private List<RowVm> _rows = [];
+    private List<PeriodVm> _periods = [];
+    private List<DatabaseMission> _merged = [];
+    private HashSet<string> _noDataIds = [];
+    private bool _showStillFlying;
+
+    private ElementReference _viewportRef;
+    private IJSObjectReference? _scrollModule;
+    private DotNetObjectReference<MissionCalendarView>? _selfRef;
+    private bool _resetScrollPending;
 
     private sealed record RowVm(
         TimelineRow Row,
@@ -78,23 +107,67 @@
         List<List<TimelineBar>> Lanes,
         double? NowPercent);
 
+    private sealed record PeriodVm(DateTimeOffset Start, DateTimeOffset End, List<RowVm> Rows);
+
+    private string ZoomClass => _zoom.ToString().ToLowerInvariant();
+
+    private IReadOnlyList<TimelineTick> CurrentHourTicks =>
+        _periods.Count > 1 && _periods[1].Rows.Count > 0 ? _periods[1].Rows[0].HourTicks : Array.Empty<TimelineTick>();
+
     protected override void OnParametersSet() {
         Recompute();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (firstRender) {
+            _selfRef = DotNetObjectReference.Create(this);
+            _scrollModule = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/EggLedger.Web/js/calendarScroll.js");
+            await _scrollModule.InvokeVoidAsync("init", _viewportRef, _selfRef);
+        } else if (_resetScrollPending && _scrollModule is not null) {
+            _resetScrollPending = false;
+            await _scrollModule.InvokeVoidAsync("reset", _viewportRef);
+        }
+    }
+
+    [JSInvokable]
+    public Task CommitScrollPan(int direction) {
+        _center += (_visibleEnd - _visibleStart) * direction;
+        Recompute();
+        _resetScrollPending = true;
+        StateHasChanged();
+        return Task.CompletedTask;
     }
 
     private void Recompute() {
         var tz = TzProvider.TimeZone;
         (_visibleStart, _visibleEnd) = TimelineWindow.Compute(_center, _zoom, tz);
         _center = _visibleStart + (_visibleEnd - _visibleStart) / 2;
-        int? primaryMonth = _zoom == TimelineZoom.Month ? TimeZoneInfo.ConvertTime(_visibleStart, tz).Month : null;
+
+        var dbIds = new HashSet<string>(Missions.Select(m => m.MissiondId), StringComparer.Ordinal);
+        var inFlight = InFlightMissions.Where(m => !dbIds.Contains(m.MissiondId)).ToList();
+        _noDataIds = inFlight.Select(m => m.MissiondId).ToHashSet(StringComparer.Ordinal);
+        _merged = Missions.Concat(inFlight).ToList();
+
         var now = DateTimeOffset.UtcNow;
-        _rows = TimelineRows.Build(_zoom, _visibleStart, _visibleEnd, tz)
+        var (prevStart, prevEnd) = TimelineWindow.Compute(_visibleStart.AddHours(-1), _zoom, tz);
+        var (nextStart, nextEnd) = TimelineWindow.Compute(_visibleEnd.AddHours(1), _zoom, tz);
+        _periods = [
+            BuildPeriod(prevStart, prevEnd, tz, now),
+            BuildPeriod(_visibleStart, _visibleEnd, tz, now),
+            BuildPeriod(nextStart, nextEnd, tz, now),
+        ];
+    }
+
+    private PeriodVm BuildPeriod(DateTimeOffset start, DateTimeOffset end, TimeZoneInfo tz, DateTimeOffset now) {
+        int? primaryMonth = _zoom == TimelineZoom.Month ? TimeZoneInfo.ConvertTime(start, tz).Month : null;
+        var rows = TimelineRows.Build(_zoom, start, end, tz)
             .Select(row => BuildRow(row, tz, now, primaryMonth))
             .ToList();
+        return new PeriodVm(start, end, rows);
     }
 
     private RowVm BuildRow(TimelineRow row, TimeZoneInfo tz, DateTimeOffset now, int? primaryMonth) {
-        var lanes = GroupLanes(TimelineLayoutEngine.Layout(Missions, row.Start, row.End, now));
+        var bars = TimelineLayoutEngine.Layout(_merged, row.Start, row.End, now, MinWidthPercent, _noDataIds);
         var cells = _zoom == TimelineZoom.Day
             ? Array.Empty<TimelineDayCell>()
             : TimelineTicks.DayCells(row.Start, row.End, tz, primaryMonth);
@@ -104,8 +177,10 @@
         double? nowPercent = now > row.Start && now < row.End
             ? (now - row.Start).TotalSeconds / (row.End - row.Start).TotalSeconds * 100
             : null;
-        return new RowVm(row, cells, hourTicks, lanes, nowPercent);
+        return new RowVm(row, cells, hourTicks, GroupLanes(bars), nowPercent);
     }
+
+    private double MinWidthPercent => _zoom == TimelineZoom.Day ? 1.2 : 2.5;
 
     private static List<List<TimelineBar>> GroupLanes(IReadOnlyList<TimelineBar> bars) {
         var byLane = new Dictionary<int, List<TimelineBar>>();
@@ -174,7 +249,29 @@
     }
 
     private async Task OnSelectMission(string missionId) {
+        if (_noDataIds.Contains(missionId)) {
+            _showStillFlying = true;
+            return;
+        }
+
         await OnViewMission.InvokeAsync(missionId);
+    }
+
+    private void CloseStillFlying() {
+        _showStillFlying = false;
+    }
+
+    public async ValueTask DisposeAsync() {
+        try {
+            if (_scrollModule is not null) {
+                await _scrollModule.InvokeVoidAsync("destroy", _viewportRef);
+                await _scrollModule.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException) {
+        }
+
+        _selfRef?.Dispose();
     }
 
 }

@@ -169,6 +169,45 @@ public sealed class TimelineLayoutEngineTests {
     }
 
     [Fact]
+    public void Layout_MinWidth_SeparatesVisuallyOverlappingBarsIntoLanes() {
+        var missions = new[] {
+            M("first", WindowStart, WindowStart.AddMinutes(30)),
+            M("second", WindowStart.AddMinutes(40), WindowStart.AddMinutes(70)),
+        };
+
+        var bars = TimelineLayoutEngine.Layout(missions, WindowStart, WindowEnd, WindowStart, minWidthPercent: 10);
+
+        var byId = bars.ToDictionary(b => b.MissionId);
+        Assert.NotEqual(byId["first"].Lane, byId["second"].Lane);
+        Assert.Equal(10, byId["first"].WidthPercent, precision: 3);
+    }
+
+    [Fact]
+    public void Layout_MinWidth_KeepsBarInsideTheWindowAtTheRightEdge() {
+        var missions = new[] { M("late", WindowEnd.AddMinutes(-10), WindowEnd) };
+
+        var bars = TimelineLayoutEngine.Layout(missions, WindowStart, WindowEnd, WindowStart, minWidthPercent: 10);
+
+        Assert.Equal(10, bars[0].WidthPercent, precision: 3);
+        Assert.True(bars[0].LeftPercent + bars[0].WidthPercent <= 100.001);
+    }
+
+    [Fact]
+    public void Layout_NoDataIds_MarksBarsWithoutData() {
+        var missions = new[] {
+            M("hasData", WindowStart.AddHours(1), WindowStart.AddHours(2)),
+            M("inFlight", WindowStart.AddHours(3), WindowStart.AddHours(4)),
+        };
+
+        var bars = TimelineLayoutEngine.Layout(
+            missions, WindowStart, WindowEnd, WindowStart, 0, new HashSet<string> { "inFlight" });
+
+        var byId = bars.ToDictionary(b => b.MissionId);
+        Assert.True(byId["hasData"].HasData);
+        Assert.False(byId["inFlight"].HasData);
+    }
+
+    [Fact]
     public void Layout_EmptyInput_ReturnsEmpty() {
         var bars = TimelineLayoutEngine.Layout(Array.Empty<DatabaseMission>(), WindowStart, WindowEnd, WindowStart);
 

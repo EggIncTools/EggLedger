@@ -19,14 +19,16 @@ public sealed class FetchService {
     private readonly IndexedDbAccountStore _accounts;
     private readonly IApiPayloadDecoder _decoder;
     private readonly MissionPacker _packer;
+    private readonly InFlightMissionCache? _inFlight;
 
-    public FetchService(ApiClient api, IndexedDbMissionStore store, IndexedDbSettings settings, IndexedDbAccountStore accounts, IApiPayloadDecoder decoder, MissionPacker? packer = null) {
+    public FetchService(ApiClient api, IndexedDbMissionStore store, IndexedDbSettings settings, IndexedDbAccountStore accounts, IApiPayloadDecoder decoder, MissionPacker? packer = null, InFlightMissionCache? inFlight = null) {
         _api = api;
         _store = store;
         _settings = settings;
         _accounts = accounts;
         _decoder = decoder;
         _packer = packer ?? new MissionPacker(EiafxMissionConfigSource.Instance);
+        _inFlight = inFlight;
     }
 
     public async Task<AppState> FetchPlayerDataAsync(
@@ -56,6 +58,8 @@ public sealed class FetchService {
             return AppState.Interrupted;
         }
 
+
+        StashInFlightMissions(playerId, fc);
 
         var completed = fc.GetCompletedMissions();
         var existing = await _store.GetCompleteMissionIdsAsync(playerId).ConfigureAwait(false) ?? [];
@@ -147,6 +151,13 @@ public sealed class FetchService {
 
         Report(AppState.Success);
         return AppState.Success;
+    }
+
+    private void StashInFlightMissions(string playerId, EggIncFirstContactResponse fc) {
+        _inFlight?.SetForAccount(playerId, fc.GetInProgressMissions()
+            .Where(m => m.status == MissionInfo.Status.Exploring)
+            .Select(_packer.CompileInFlightMission)
+            .ToList());
     }
 
     private async Task<EggIncFirstContactResponse> FetchFirstContactAsync(string playerId, CancellationToken cancellationToken) {

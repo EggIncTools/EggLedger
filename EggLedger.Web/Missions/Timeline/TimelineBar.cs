@@ -13,4 +13,5 @@ public sealed record TimelineBar(
     string ShipName,
     int DurationIndex,
     string? TargetIconPath,
-    DatabaseMission Mission);
+    DatabaseMission Mission,
+    bool HasData = true);
