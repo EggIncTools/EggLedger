@@ -31,6 +31,26 @@
                                 @bound.Prefix<span class="text-green-500">@bound.Highlight</span>@bound.Suffix
                             </span>
                         }
+                        @if (ShowPerShip && LifetimeMissionCount > 0) {
+                            <hr class="mt-0_5rem mb-0_5rem w-full"/>
+                            var perShip = (double)item.Count / LifetimeMissionCount;
+                            <span>
+                                (<span class="text-green-500">@perShip.ToString("0.00000", CultureInfo.InvariantCulture)</span> per ship -
+                                <span class="text-green-500">1</span> : <span class="text-green-500">@((1 / perShip).ToString("0.00", CultureInfo.InvariantCulture))</span>)
+                            </span>
+                        }
+                        @if (LifetimeExpected) {
+                            <hr class="mt-0_5rem mb-0_5rem w-full"/>
+                            var lifetimeCalc = DropCalcs(item);
+                            @if (lifetimeCalc is null || lifetimeCalc.Value.Total == 0) {
+                                <span class="text-red-700">Not enough data to determine drop rate.</span>
+                            } else {
+                                <span class="text-gray-400">
+                                    <span class="text-green-500">@(((double)lifetimeCalc.Value.Seen / lifetimeCalc.Value.Total * MissionTotalDrops).ToString("0.00", CultureInfo.InvariantCulture))</span>
+                                    <span> expected drops</span>
+                                </span>
+                            }
+                        }
                         @if (ShowExpectedDrops) {
                             <hr class="mt-0_5rem mb-0_5rem w-full"/>
                             var calc = DropCalcs(item);
@@ -63,6 +83,12 @@
     [Parameter] public bool ShowExpectedDrops { get; set; }
 
     [Parameter] public int MissionTotalDrops { get; set; }
+
+    [Parameter] public int LifetimeMissionCount { get; set; }
+
+    [Parameter] public bool ShowPerShip { get; set; }
+
+    [Parameter] public bool LifetimeExpected { get; set; }
 
     private DropLike? _hovered;
 

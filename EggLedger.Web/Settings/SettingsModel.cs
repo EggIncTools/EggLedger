@@ -6,6 +6,7 @@ public sealed class SettingsModel {
 
 
     public const string KeyAutoRefreshMenno = "auto_refresh_menno_pref";
+    public const string KeyLastMennoRefresh = "last_menno_data_refresh_at";
     public const string KeyRetryFailedMissions = "retry_failed_missions";
     public const string KeyHideTimeoutErrors = "hide_timeout_errors";
     public const string KeyWorkerCount = "worker_count";
@@ -33,6 +34,8 @@ public sealed class SettingsModel {
     public const int DefaultWindowHeight = 800;
 
     public bool AutoRefreshMenno { get; set; }
+
+    public DateTimeOffset? LastMennoRefreshAt { get; set; }
 
     public bool AutoRetry { get; set; } = true;
 
@@ -74,6 +77,10 @@ public sealed class SettingsModel {
 
     public void LoadFrom(IReadOnlyDictionary<string, string> settings) {
         AutoRefreshMenno = SettingsDictionaryParsing.Bool(settings, KeyAutoRefreshMenno, AutoRefreshMenno);
+        if (settings.TryGetValue(KeyLastMennoRefresh, out var lmr)
+            && DateTimeOffset.TryParse(lmr, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var lmrParsed)) {
+            LastMennoRefreshAt = lmrParsed;
+        }
         AutoRetry = SettingsDictionaryParsing.Bool(settings, KeyRetryFailedMissions, AutoRetry);
         HideTimeoutErrors = SettingsDictionaryParsing.Bool(settings, KeyHideTimeoutErrors, HideTimeoutErrors);
         WorkerCount = ClampWorkerCount(SettingsDictionaryParsing.Int(settings, KeyWorkerCount, WorkerCount));

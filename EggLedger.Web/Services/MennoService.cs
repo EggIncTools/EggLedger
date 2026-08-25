@@ -55,6 +55,11 @@ public sealed class MennoSchemaException : Exception {
     public MennoSchemaException(string message, Exception inner) : base(message, inner) { }
 }
 
+public interface IMennoDataStore {
+    Task<byte[]?> LoadAsync(CancellationToken cancellationToken = default);
+    Task SaveAsync(byte[] utf8Json, CancellationToken cancellationToken = default);
+}
+
 public sealed class MennoService {
     public const string DataUrl =
         "https://eggincdatacollectionsa.blob.core.windows.net/mission-data/all-data.json.gz";
@@ -62,10 +67,16 @@ public sealed class MennoService {
 
 
     private readonly HttpClient _http;
+    private readonly IMennoDataStore? _store;
     private readonly Lock _gate = new();
     private List<ConfigurationItem>? _cache;
     private Task<IReadOnlyList<ConfigurationItem>>? _inFlight;
-    public MennoService(HttpClient http) => _http = http;
+
+    public MennoService(HttpClient http, IMennoDataStore? store = null) {
+        _http = http;
+        _store = store;
+    }
+
     public bool HasData => _cache is { Count: > 0 };
 
     public Task<IReadOnlyList<ConfigurationItem>> EnsureLoadedAsync(CancellationToken cancellationToken = default) {
@@ -83,11 +94,32 @@ public sealed class MennoService {
 
     private async Task<IReadOnlyList<ConfigurationItem>> LoadOnceAsync(CancellationToken cancellationToken) {
         try {
+            var stored = await TryLoadStoredAsync(cancellationToken).ConfigureAwait(false);
+            if (stored is not null) {
+                return stored;
+            }
             return await RefreshAsync(cancellationToken).ConfigureAwait(false);
         } finally {
             lock (_gate) {
                 _inFlight = null;
             }
+        }
+    }
+
+    private async Task<IReadOnlyList<ConfigurationItem>?> TryLoadStoredAsync(CancellationToken cancellationToken) {
+        if (_store is null) {
+            return null;
+        }
+        try {
+            var bytes = await _store.LoadAsync(cancellationToken).ConfigureAwait(false);
+            if (bytes is null || bytes.Length == 0) {
+                return null;
+            }
+            var items = MennoDecode.Decode(bytes);
+            _cache = items;
+            return items;
+        } catch (Exception ex) when (ex is MennoSchemaException or IOException) {
+            return null;
         }
     }
 
@@ -99,6 +131,9 @@ public sealed class MennoService {
 
         var items = MennoDecode.Decode(ms.GetBuffer().AsSpan(0, (int)ms.Length));
         _cache = items;
+        if (_store is not null) {
+            await _store.SaveAsync(ms.ToArray(), cancellationToken).ConfigureAwait(false);
+        }
         return items;
     }
 

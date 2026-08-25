@@ -1,4 +1,5 @@
 @using FilterCondition = global::EggLedger.Web.Missions.FilterCondition
+@inject IndexedDbSettings Settings
 @* Faithful port of the Vue FullFilter. Each AND row builds progressively: field
    first, operator after a field is chosen, value after the operator. A complete
    row gets a yellow OR button that adds an indented "⮡ OR" sibling under it
@@ -102,7 +103,14 @@
 
     private readonly List<Row> _rows = [];
     private readonly Dictionary<string, List<FilterOption>> _optionCache = [];
-    private bool _advancedDrops = true;
+    private bool _advancedDrops;
+
+    protected override async Task OnInitializedAsync() {
+        var settings = await Settings.GetAllSettingsAsync();
+        if (settings.TryGetValue(SettingsModel.KeyAdvancedDropFilter, out var adv)) {
+            _advancedDrops = adv == "true";
+        }
+    }
 
     protected override void OnInitialized() {
         TopLevelFields = IncludeArtifactFields
@@ -294,9 +302,10 @@
                                                      Advanced (family groupings)
                                                  </label>;
 
-    private void OnAdvancedDropsToggled(ChangeEventArgs e) {
+    private async Task OnAdvancedDropsToggled(ChangeEventArgs e) {
         _advancedDrops = e.Value is true;
         _optionCache.Remove("drops");
+        await Settings.SetSettingAsync(SettingsModel.KeyAdvancedDropFilter, _advancedDrops ? "true" : "false");
     }
 
     private List<FilterOption> OptionsFor(FilterFieldDef def) {

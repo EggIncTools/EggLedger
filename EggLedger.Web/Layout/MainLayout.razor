@@ -10,6 +10,7 @@
 @inject IPlatformCapabilities Platform
 @inject IServiceProvider Services
 @inject IUserTimeZoneProvider TzProvider
+@inject IUpdateStatusProvider UpdateStatus
 
 @* No cascading AuthenticationState means no auth gate exists at all (the desktop host's App.razor
    never wraps in CascadingAuthenticationState), so tabs stay enabled there unconditionally. *@
@@ -38,8 +39,16 @@
             <a class="url-link" href="/terms">Terms</a>
             <span class="mx-1">/</span>
             <a class="url-link" href="/privacy">Privacy</a>
+            @if (Platform.IsDesktop && !string.IsNullOrEmpty(UpdateStatus.AvailableVersion)) {
+                <span class="mx-1">/</span>
+                <button type="button" class="url-link text-green-500" @onclick="@(() => _updateModal?.Open())">New version available!</button>
+            }
         </footer>
     </div>
+
+    @if (Platform.IsDesktop) {
+        <UpdateModal @ref="_updateModal"/>
+    }
 
     <FetchStatusPopover/>
     <SupportBubble/>
@@ -69,9 +78,14 @@
 
 
     private bool IsLoggedIn = true;
+    private UpdateModal? _updateModal;
 
     protected override async Task OnInitializedAsync() {
         AdminState.Changed += OnAdminChanged;
+        if (Platform.IsDesktop) {
+            UpdateStatus.Changed += OnUpdateChanged;
+        }
+
         AppStateSvc.AppVersion = AppVersionInfo.Current;
 
         if (AuthStateTask is not null) {
@@ -97,8 +111,15 @@
         InvokeAsync(StateHasChanged);
     }
 
+    private void OnUpdateChanged() {
+        InvokeAsync(StateHasChanged);
+    }
+
     public void Dispose() {
         AdminState.Changed -= OnAdminChanged;
+        if (Platform.IsDesktop) {
+            UpdateStatus.Changed -= OnUpdateChanged;
+        }
     }
 
 }

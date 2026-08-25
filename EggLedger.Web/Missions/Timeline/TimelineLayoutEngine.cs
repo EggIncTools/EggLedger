@@ -42,7 +42,9 @@ public static class TimelineLayoutEngine {
                 TargetIconPath: TargetImagePaths.Resolve(m.Target).Path,
                 Mission: m,
                 HasData: noDataIds is null || !noDataIds.Contains(m.MissiondId),
-                ShowBubble: progress > windowStart && progress <= windowEnd));
+                ShowBubble: progress > windowStart && progress <= windowEnd,
+                ContinuesLeft: m.LaunchDT < windowStart,
+                ContinuesRight: m.ReturnDT > windowEnd));
         }
 
         return result;

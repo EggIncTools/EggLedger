@@ -15,4 +15,6 @@ public sealed record TimelineBar(
     string? TargetIconPath,
     DatabaseMission Mission,
     bool HasData = true,
-    bool ShowBubble = true);
+    bool ShowBubble = true,
+    bool ContinuesLeft = false,
+    bool ContinuesRight = false);

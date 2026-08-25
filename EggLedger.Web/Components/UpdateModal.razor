@@ -1,0 +1,101 @@
+@using Markdig
+@implements IDisposable
+@inject IUpdateStatusProvider UpdateStatus
+@inject IPlatformCapabilities Platform
+
+@* Desktop update prompt: auto-opens once when an update is found, re-openable from the
+   footer link. Renders the GitHub release notes as markdown inside the modal. *@
+
+<ModalOverlay @ref="_modal" OnClose="Close"
+              ContainerClass="w-[92vw] md:w-[46rem] max-h-90vh bg-dark rounded-lg relative flex flex-col p-4">
+    <CloseButton OnClick="Close" Class="absolute top-2 right-2 z-10 rounded-md text-gray-400 hover:text-gray-200 focus:outline-none"/>
+    <div class="text-gray-300 flex flex-col gap-2 text-center min-h-0">
+        <span class="text-lg text-gray-400">
+            New Version of EggLedger Available:
+            <span class="text-green-500">v@(UpdateStatus.AvailableVersion)</span>
+        </span>
+        @if (!string.IsNullOrEmpty(UpdateStatus.ReleaseNotes)) {
+            <span class="text-sm text-gray-400">Update information:</span>
+            <div class="text-left flex-1 min-h-0 bg-darkerer overflow-auto p-3 rounded-md text-sm gh-markdown-content">
+                @RenderedNotes
+            </div>
+        }
+        <div class="mt-2 flex flex-col items-center gap-2">
+            @if (UpdateStatus.Phase == UpdatePhase.Downloading) {
+                <span class="text-sm text-blue-300">
+                    Downloading@(UpdateStatus.TotalBytes > 0 ? $" - {UpdateStatus.DownloadedBytes * 100 / UpdateStatus.TotalBytes}%" : "")...
+                </span>
+            } else if (UpdateStatus.Phase == UpdatePhase.Ready) {
+                <span class="text-sm text-blue-300">Update ready. The app will restart to finish.</span>
+            } else if (UpdateStatus.Phase == UpdatePhase.Failed) {
+                <span class="text-sm text-red-400">Update failed@(string.IsNullOrEmpty(UpdateStatus.Message) ? "." : $": {UpdateStatus.Message}")</span>
+            }
+            @if (UpdateStatus.Phase is UpdatePhase.Available or UpdatePhase.Failed) {
+                <button type="button"
+                        class="px-8 py-2 rounded-md text-white text-sm font-semibold bg-blue-500 border border-blue-600 hover:bg-blue-600 hover:border-blue-700 transition-colors"
+                        @onclick="StartUpdateAsync">
+                    Update Now
+                </button>
+            }
+        </div>
+    </div>
+</ModalOverlay>
+
+@code {
+    private ModalOverlay? _modal;
+    private bool _autoShown;
+
+    private MarkupString RenderedNotes =>
+        (MarkupString)Markdown.ToHtml(UpdateStatus.ReleaseNotes ?? "", NotesPipeline);
+
+    private static readonly MarkdownPipeline NotesPipeline =
+        new MarkdownPipelineBuilder().UseAdvancedExtensions().DisableHtml().Build();
+
+    protected override void OnInitialized() {
+        if (!Platform.IsDesktop) {
+            return;
+        }
+
+        UpdateStatus.Changed += OnStatusChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (firstRender && Platform.IsDesktop && UpdateStatus.Phase == UpdatePhase.UpToDate) {
+            await UpdateStatus.CheckForUpdatesAsync();
+        }
+    }
+
+    public void Open() {
+        if (!string.IsNullOrEmpty(UpdateStatus.AvailableVersion)) {
+            _modal?.Open();
+        }
+    }
+
+    private void OnStatusChanged() {
+        InvokeAsync(() => {
+            if (!_autoShown && UpdateStatus.Phase == UpdatePhase.Available) {
+                _autoShown = true;
+                _modal?.Open();
+            }
+
+            StateHasChanged();
+        });
+    }
+
+    private void Close() {
+        _modal?.Close();
+    }
+
+    private Task StartUpdateAsync() {
+        return string.IsNullOrEmpty(UpdateStatus.AvailableVersion)
+            ? Task.CompletedTask
+            : UpdateStatus.DownloadAndInstallAsync(UpdateStatus.AvailableVersion);
+    }
+
+    public void Dispose() {
+        if (Platform.IsDesktop) {
+            UpdateStatus.Changed -= OnStatusChanged;
+        }
+    }
+
+}

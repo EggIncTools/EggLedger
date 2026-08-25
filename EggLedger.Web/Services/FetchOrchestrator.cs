@@ -12,14 +12,21 @@ public sealed class FetchOrchestrator : IDisposable {
     private readonly AppStateService _appState;
     private readonly IndexedDbSettings _settings;
     private readonly ILogger<FetchOrchestrator> _logger;
+    private readonly IAutoExporter? _autoExporter;
     private CancellationTokenSource? _cts;
     private Timer? _autoHideTimer;
 
-    public FetchOrchestrator(FetchService fetch, AppStateService appState, IndexedDbSettings settings, ILogger<FetchOrchestrator> logger) {
+    public FetchOrchestrator(
+        FetchService fetch,
+        AppStateService appState,
+        IndexedDbSettings settings,
+        ILogger<FetchOrchestrator> logger,
+        IAutoExporter? autoExporter = null) {
         _fetch = fetch;
         _appState = appState;
         _settings = settings;
         _logger = logger;
+        _autoExporter = autoExporter;
     }
 
     public static async Task<List<string>> GetIncompleteAccountsAsync(IndexedDbSettings settings) {
@@ -142,6 +149,22 @@ public sealed class FetchOrchestrator : IDisposable {
             ScheduleAutoHide();
         }
         Changed?.Invoke();
+
+        if (result == AppState.Success) {
+            await TryAutoExportAsync(accountId).ConfigureAwait(false);
+        }
+    }
+
+    private async Task TryAutoExportAsync(string accountId) {
+        if (_autoExporter is null) {
+            return;
+        }
+
+        try {
+            await _autoExporter.RunAfterFetchAsync(accountId).ConfigureAwait(false);
+        } catch (Exception ex) {
+            _logger.LogError(ex, "Auto-export after fetch failed for account {AccountId}", accountId);
+        }
     }
 
     public void StopFetch() {

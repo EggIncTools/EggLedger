@@ -114,7 +114,29 @@ internal static class Program {
         AppDomain.CurrentDomain.UnhandledException += (_, error) =>
             Log("FATAL: " + (error.ExceptionObject.ToString() ?? "Unknown error"));
 
+        StartMennoAutoRefresh(app.Services);
+
         app.Run();
+    }
+
+    private static void StartMennoAutoRefresh(IServiceProvider services) {
+        _ = Task.Run(async () => {
+            try {
+                using var scope = services.CreateScope();
+                var settings = scope.ServiceProvider.GetRequiredService<IndexedDbSettings>();
+                var model = new SettingsModel();
+                model.LoadFrom(await settings.GetAllSettingsAsync().ConfigureAwait(false));
+                if (!model.AutoRefreshMenno) return;
+                if (model.LastMennoRefreshAt is { } last && DateTimeOffset.UtcNow - last < TimeSpan.FromDays(5)) return;
+                var menno = scope.ServiceProvider.GetRequiredService<EggLedger.Web.Services.MennoService>();
+                await menno.RefreshAsync().ConfigureAwait(false);
+                await settings.SetSettingAsync(
+                    SettingsModel.KeyLastMennoRefresh,
+                    DateTimeOffset.UtcNow.ToString("O")).ConfigureAwait(false);
+            } catch (Exception ex) {
+                Log("menno auto-refresh failed: " + ex.Message);
+            }
+        });
     }
 
 

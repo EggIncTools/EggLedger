@@ -8,6 +8,7 @@
 @inject IndexedDbSettings Settings
 @inject MissionDataCache DataCache
 @inject IUserTimeZoneProvider TzProvider
+@inject MennoService Menno
 
 <PageTitle>EggLedger - Lifetime Data</PageTitle>
 
@@ -28,7 +29,11 @@
         <DropDisplayContainer Artifacts="_data!.Artifacts"
                               Stones="_data.Stones"
                               Ingredients="_data.Ingredients"
-                              StoneFragments="_data.StoneFragments"/>
+                              StoneFragments="_data.StoneFragments"
+                              MennoData="_mennoData"
+                              LifetimeMissionCount="_data.MissionCount"
+                              ShowPerShip="_showPerShip"
+                              LifetimeExpected="@(_showExpectedTotals && _allowExpectedTotals)"/>
     </div>
 </FilterSidebarLayout>
 
@@ -45,11 +50,18 @@
 
 @code {
     private const string KeySortMethod = "lifetime_sort_method";
+    private const string KeyShowPerShip = "lifetime_show_drops_per_ship";
+    private const string KeyShowExpectedTotals = "lifetime_show_expected_totals";
     private bool _loading = true;
     private LifetimeData? _data;
     private LifetimeSortMethod _sortMethod = LifetimeSortMethod.Default;
     private bool _applying;
     private string _resultText = "";
+    private bool _showPerShip;
+    private bool _showExpectedTotals;
+    private bool _allowExpectedTotals;
+    private MissionMennoData? _mennoData;
+    private IReadOnlyList<DatabaseMission>? _matchedMissions;
     private MissionFilterMatcher? _matcher;
     private IReadOnlyList<DatabaseMission>? _allMissions;
     private Dictionary<string, List<MissionDrop>>? _allDropsCache;
@@ -60,6 +72,8 @@
         var settings = await Settings.GetAllSettingsAsync();
         _sortMethod = LifetimeSorter.ParseMethod(
             settings.TryGetValue(KeySortMethod, out var s) ? s : null);
+        _showPerShip = settings.TryGetValue(KeyShowPerShip, out var ps) && ps == "true";
+        _showExpectedTotals = settings.TryGetValue(KeyShowExpectedTotals, out var et) && et == "true";
         await LoadAsync();
     }
 
@@ -126,7 +140,54 @@
 
         LifetimeSorter.Sort(data, _sortMethod);
         _data = data;
+        _matchedMissions = _allMissions;
+        await RecomputeMennoAsync();
         StateHasChanged();
+    }
+
+    private async Task RecomputeMennoAsync() {
+        _mennoData = null;
+        var cfg = SingleConfig(_matchedMissions);
+        _allowExpectedTotals = cfg is not null;
+        if (cfg is null || !_showExpectedTotals) {
+            return;
+        }
+
+        try {
+            await Menno.EnsureLoadedAsync();
+        }
+        catch (Exception) {
+            return;
+        }
+
+        var (ship, duration, level, target) = cfg.Value;
+        var configs = Menno.GetData(ship, duration, level, target);
+        var total = 0;
+        foreach (var c in configs) {
+            total += c.TotalDrops;
+        }
+
+        if (configs.Count > 0) {
+            _mennoData = new MissionMennoData { Configs = configs, TotalDropsCount = total };
+        }
+    }
+
+    private static (int Ship, int Duration, int Level, int Target)? SingleConfig(IReadOnlyList<DatabaseMission>? missions) {
+        if (missions is null || missions.Count == 0) {
+            return null;
+        }
+
+        (int, int, int, int)? cfg = null;
+        foreach (var m in missions) {
+            var p = MissionDetailBuilder.MennoParams(m);
+            if (cfg is null) {
+                cfg = p;
+            } else if (cfg != p) {
+                return null;
+            }
+        }
+
+        return cfg;
     }
 
     private async Task<IReadOnlyList<MissionDrop>?> DropsFetcher(string accountId, string missionId) {
@@ -163,6 +224,8 @@
         var data = LifetimeAggregator.Aggregate(filteredDrops);
         LifetimeSorter.Sort(data, _sortMethod);
         _data = data;
+        _matchedMissions = _allMissions.Where(m => matchedIds.Contains(m.MissiondId)).ToList();
+        await RecomputeMennoAsync();
 
         var shown = matchedIds.Count;
         var filteredOut = _allMissions.Count - shown;
@@ -172,16 +235,40 @@
     }
 
     private RenderFragment RenderOptions() => __builder => {
-        <div>
-            <span class="font-bold text-gray-400">Sort Method</span>
-            <div class="tile-group flex-wrap mt-1">
-                <button type="button" class="tile-group-item @(_sortMethod == LifetimeSortMethod.Default ? "active" : "")" @onclick="@(() => SetSortAsync(LifetimeSortMethod.Default))">Default</button>
-                <button type="button" class="tile-group-item @(_sortMethod == LifetimeSortMethod.Iv ? "active" : "")" @onclick="@(() => SetSortAsync(LifetimeSortMethod.Iv))">Inventory Visualizer</button>
-                <button type="button" class="tile-group-item @(_sortMethod == LifetimeSortMethod.Count ? "active" : "")" @onclick="@(() => SetSortAsync(LifetimeSortMethod.Count))">Total Count</button>
-                <button type="button" class="tile-group-item @(_sortMethod == LifetimeSortMethod.Random ? "active" : "")" @onclick="@(() => SetSortAsync(LifetimeSortMethod.Random))">Random</button>
+        <div class="flex flex-col gap-3">
+            <div>
+                <span class="font-bold text-gray-400">Sort Method</span>
+                <div class="tile-group flex-wrap mt-1">
+                    <button type="button" class="tile-group-item @(_sortMethod == LifetimeSortMethod.Default ? "active" : "")" @onclick="@(() => SetSortAsync(LifetimeSortMethod.Default))">Default</button>
+                    <button type="button" class="tile-group-item @(_sortMethod == LifetimeSortMethod.Iv ? "active" : "")" @onclick="@(() => SetSortAsync(LifetimeSortMethod.Iv))">Inventory Visualizer</button>
+                    <button type="button" class="tile-group-item @(_sortMethod == LifetimeSortMethod.Count ? "active" : "")" @onclick="@(() => SetSortAsync(LifetimeSortMethod.Count))">Total Count</button>
+                    <button type="button" class="tile-group-item @(_sortMethod == LifetimeSortMethod.Random ? "active" : "")" @onclick="@(() => SetSortAsync(LifetimeSortMethod.Random))">Random</button>
+                </div>
+            </div>
+            <div>
+                <span class="font-bold text-gray-400">Display</span>
+                <div class="flex flex-col gap-1 mt-1">
+                    <label><input type="checkbox" class="ext-opt-check mr-0_5rem" checked="@_showPerShip" @onchange="ToggleShowPerShipAsync"/> Show 'Average Drops per Ship'</label>
+                    @if (_allowExpectedTotals) {
+                        <label><input type="checkbox" class="ext-opt-check mr-0_5rem" checked="@_showExpectedTotals" @onchange="ToggleExpectedTotalsAsync"/> Show 'Expected Total Drops'</label>
+                    }
+                </div>
             </div>
         </div>
     };
+
+    private async Task ToggleShowPerShipAsync(ChangeEventArgs e) {
+        _showPerShip = e.Value is true;
+        await Settings.SetSettingAsync(KeyShowPerShip, _showPerShip ? "true" : "false");
+        StateHasChanged();
+    }
+
+    private async Task ToggleExpectedTotalsAsync(ChangeEventArgs e) {
+        _showExpectedTotals = e.Value is true;
+        await Settings.SetSettingAsync(KeyShowExpectedTotals, _showExpectedTotals ? "true" : "false");
+        await RecomputeMennoAsync();
+        StateHasChanged();
+    }
 
     private async Task SetSortAsync(LifetimeSortMethod method) {
         _sortMethod = method;

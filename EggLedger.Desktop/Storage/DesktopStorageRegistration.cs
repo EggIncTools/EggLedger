@@ -35,6 +35,16 @@ public static class DesktopStorageRegistration {
         });
         services.RemoveAll<IExportManagement>();
         services.AddScoped<IExportManagement>(sp => sp.GetRequiredService<DesktopExportService>());
+
+        services.RemoveAll<IAutoExporter>();
+        services.AddScoped<IAutoExporter>(sp => new DesktopAutoExporter(
+            dataRootDir,
+            sp.GetRequiredService<IndexedDbSettings>(),
+            sp.GetRequiredService<IMissionStore>(),
+            sp.GetRequiredService<MissionQueryHandlers>()));
+
+        services.RemoveAll<MennoService>();
+        services.AddSingleton(_ => new MennoService(new HttpClient(), new FileMennoDataStore(internalDir)));
         return services;
     }
 

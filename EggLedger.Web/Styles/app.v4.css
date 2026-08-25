@@ -398,6 +398,22 @@
   border: 1px solid color-mix(in srgb, var(--bar-color) 55%, transparent);
 }
 
+.timeline-bar-cut-l .timeline-bar-track {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  clip-path: polygon(0.55rem 0, 100% 0, 100% 100%, 0.55rem 100%, 0 50%);
+}
+
+.timeline-bar-cut-r .timeline-bar-track {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  clip-path: polygon(0 0, calc(100% - 0.55rem) 0, 100% 50%, calc(100% - 0.55rem) 100%, 0 100%);
+}
+
+.timeline-bar-cut-l.timeline-bar-cut-r .timeline-bar-track {
+  clip-path: polygon(0.55rem 0, calc(100% - 0.55rem) 0, 100% 50%, calc(100% - 0.55rem) 100%, 0.55rem 100%, 0 50%);
+}
+
 .timeline-bar-fill {
   position: absolute;
   top: 0;

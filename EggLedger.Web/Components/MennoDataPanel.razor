@@ -1,0 +1,79 @@
+@using System.Globalization
+@inject MennoService Menno
+
+<div class="px-2 py-2 text-sm text-gray-400 bg-darker rounded-md tabular-nums overflow-auto">
+    <span class="mr-0_5rem font-bold text-lg text-gray-400 ledger-underline">Menno's Ship Data</span><br/>
+    <span class="italic text-gray-400">
+        Data last refreshed on
+        <span class="@(Model.LastMennoRefreshAt is null ? "text-red-700" : "text-green-500")">@LastRefreshText</span>
+    </span><br/>
+    <button type="button"
+            class="mt-0_5rem mb-0_5rem px-3 py-1 border border-gray-600 text-sm font-medium rounded-md text-gray-400 ledger-btn disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled="@(_refreshing || OnCooldown)"
+            @onclick="RefreshNowAsync">
+        @(_refreshing ? "Refreshing..." : "Refresh Data Now")
+    </button><br/>
+    @if (OnCooldown) {
+        <span class="italic text-sm text-gray-500">To reduce the load on Menno's API, manual refreshes can be performed once every day</span>
+    }
+    @if (_error.Length > 0) {
+        <span class="text-red-700 text-sm">@_error</span>
+    }
+    <div class="mt-0_5rem">
+        <input id="autoRefreshMennoCheckbox" type="checkbox" class="ext-opt-check mr-0_5rem"
+               checked="@Model.AutoRefreshMenno"
+               @onchange="SetAutoRefreshAsync"/>
+        <label for="autoRefreshMennoCheckbox" class="ext-opt-label">Automatically refresh Menno data once weekly</label>
+    </div>
+    @if (Model.AutoRefreshMenno) {
+        <div class="mt-0_5rem text-xs text-gray-500 italic">
+            @(Model.LastMennoRefreshAt is { } last
+                ? $"Next run after {FormatLocal(last.AddDays(5))}"
+                : "Will run on next launch")
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] [EditorRequired] public SettingsModel Model { get; set; } = default!;
+
+    [Parameter] [EditorRequired] public EventCallback<(string Key, string Value)> OnSetting { get; set; }
+
+    private bool _refreshing;
+    private string _error = "";
+
+    private bool OnCooldown =>
+        Model.LastMennoRefreshAt is { } last && DateTimeOffset.UtcNow - last < TimeSpan.FromDays(1);
+
+    private string LastRefreshText =>
+        Model.LastMennoRefreshAt is { } last ? FormatLocal(last) : "Never";
+
+    private static string FormatLocal(DateTimeOffset t) {
+        return t.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+    }
+
+    private async Task RefreshNowAsync() {
+        _refreshing = true;
+        _error = "";
+        StateHasChanged();
+        try {
+            await Menno.RefreshAsync();
+            var now = DateTimeOffset.UtcNow;
+            Model.LastMennoRefreshAt = now;
+            await OnSetting.InvokeAsync((SettingsModel.KeyLastMennoRefresh, now.ToString("O")));
+        }
+        catch (Exception e) {
+            _error = e.Message;
+        }
+        finally {
+            _refreshing = false;
+        }
+    }
+
+    private async Task SetAutoRefreshAsync(ChangeEventArgs e) {
+        var value = e.Value is bool b ? b : bool.TryParse(e.Value?.ToString(), out var parsed) && parsed;
+        Model.AutoRefreshMenno = value;
+        await OnSetting.InvokeAsync((SettingsModel.KeyAutoRefreshMenno, SettingsModel.FormatBool(value)));
+    }
+
+}

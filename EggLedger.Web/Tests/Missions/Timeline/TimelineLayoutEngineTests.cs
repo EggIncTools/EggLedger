@@ -253,6 +253,25 @@ public sealed class TimelineLayoutEngineTests {
     }
 
     [Fact]
+    public void Layout_MarksBarsThatContinueBeyondTheWindow() {
+        var missions = new[] {
+            M("inside", WindowStart.AddHours(1), WindowStart.AddHours(2)),
+            M("fromLeft", WindowStart.AddHours(-2), WindowStart.AddHours(2)),
+            M("toRight", WindowEnd.AddHours(-2), WindowEnd.AddHours(2)),
+        };
+
+        var bars = TimelineLayoutEngine.Layout(missions, WindowStart, WindowEnd, WindowStart);
+
+        var byId = bars.ToDictionary(b => b.MissionId);
+        Assert.False(byId["inside"].ContinuesLeft);
+        Assert.False(byId["inside"].ContinuesRight);
+        Assert.True(byId["fromLeft"].ContinuesLeft);
+        Assert.False(byId["fromLeft"].ContinuesRight);
+        Assert.False(byId["toRight"].ContinuesLeft);
+        Assert.True(byId["toRight"].ContinuesRight);
+    }
+
+    [Fact]
     public void Layout_EmptyInput_ReturnsEmpty() {
         var bars = TimelineLayoutEngine.Layout(Array.Empty<DatabaseMission>(), WindowStart, WindowEnd, WindowStart);
 

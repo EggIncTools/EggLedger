@@ -45,6 +45,7 @@ public static class WebServiceRegistration {
 
         services.AddScoped<DownloadService>();
         services.AddScoped<IDownloadService>(sp => sp.GetRequiredService<DownloadService>());
+        services.AddScoped<IAutoExporter, BrowserAutoExporter>();
 
         services.AddSingleton<IWeightData>(_ => EiafxWeightData.Instance);
 
