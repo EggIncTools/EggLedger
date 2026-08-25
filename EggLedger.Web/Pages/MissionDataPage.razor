@@ -20,14 +20,20 @@
                      FieldCtx="Config.FieldCtx"
                      Applying="_applying"
                      LastResultText="@_resultText"
+                     OptionsContent="@RenderOptions()"
                      OnApply="ApplyFilterAsync">
-    <div class="tile-group mt-0_75rem mb-0_5rem">
-        <button type="button" class="tile-group-item @(_viewMode == ViewMode.List ? "active" : "")" @onclick="@(() => SetViewMode(ViewMode.List))">List</button>
-        <button type="button" class="tile-group-item @(_viewMode == ViewMode.Calendar ? "active" : "")" @onclick="@(() => SetViewMode(ViewMode.Calendar))">Calendar</button>
+    <div class="flex items-center gap-2 flex-wrap mt-0_75rem mb-0_5rem">
+        <div class="tile-group">
+            <button type="button" class="tile-group-item @(_viewMode == ViewMode.List ? "active" : "")" @onclick="@(() => SetViewMode(ViewMode.List))">List</button>
+            <button type="button" class="tile-group-item @(_viewMode == ViewMode.Calendar ? "active" : "")" @onclick="@(() => SetViewMode(ViewMode.Calendar))">Calendar</button>
+        </div>
+        @if (_hasBothTypes) {
+            @RenderTileSelector()
+        }
     </div>
     @if (_viewMode == ViewMode.Calendar) {
         <MissionCalendarView Missions="_tabFiltered ?? Array.Empty<DatabaseMission>()"
-                             InFlightMissions="@InFlight.GetForAccount(Active.ActiveAccountId)"
+                             InFlightMissions="@TabFilteredInFlight"
                              OnViewMission="ViewMissionAsync"/>
     } else {
         <MissionResultsTable Grouping="_grouping"
@@ -43,9 +49,7 @@
                              OnViewMission="ViewMissionAsync"
                              OnViewRow="ViewRowAsync"
                              OnSelectionChanged="StateHasChanged"
-                             OnGroupingChanged="StateHasChanged"
-                             TileSelector="@(_hasBothTypes ? RenderTileSelector() : null)"
-                             HeaderExtra="@RenderOptionsPopover()"/>
+                             OnGroupingChanged="StateHasChanged"/>
     }
 </FilterSidebarLayout>
 
@@ -270,46 +274,50 @@
         </div>
     };
 
-    private RenderFragment RenderOptionsPopover() => __builder => {
-        <div class="flex items-center gap-2">
-            <button type="button" class="text-base toggle-link whitespace-nowrap" @onclick="@(() => _cardConfigModal!.OpenAsync())">
+    private IReadOnlyList<DatabaseMission> TabFilteredInFlight =>
+        MissionViewOptions.TabFilteredMissions(InFlight.GetForAccount(Active.ActiveAccountId), _opts.MissionTypeTab)
+        ?? Array.Empty<DatabaseMission>();
+
+    private RenderFragment RenderOptions() => __builder => {
+        <div class="flex flex-col gap-3">
+            <button type="button" class="text-base toggle-link whitespace-nowrap w-max" @onclick="@(() => _cardConfigModal!.OpenAsync())">
                 Card Design
             </button>
-            <OptionsPopover>
-                <div class="flex flex-col gap-3">
-                    <div>
-                        <span class="font-bold text-gray-400">Display</span>
-                        <div class="flex flex-col gap-1 mt-1">
-                            <label><input type="checkbox" class="ext-opt-check mr-0_5rem" checked="@_opts.ViewByDate" @onchange="@(e => SetOpt(MissionViewOptions.KeyViewByDate, b => _opts.ViewByDate = b, e))"/> Separate missions by day</label>
-                            <label><input type="checkbox" class="ext-opt-check mr-0_5rem" checked="@_opts.ViewMissionTimes" @onchange="@(e => SetOpt(MissionViewOptions.KeyViewTimes, b => _opts.ViewMissionTimes = b, e))"/> Show launch times</label>
-                        </div>
-                    </div>
-                    <div>
-                        <span class="font-bold text-gray-400">Multi-View Method</span>
-                        <div class="tile-group mt-1">
-                            <button type="button" class="tile-group-item @(_opts.MultiViewMode == MultiViewMode.Off ? "active" : "")" @onclick="@(() => SetMultiView(MultiViewMode.Off))">Off</button>
-                            <button type="button" class="tile-group-item @(_opts.MultiViewMode == MultiViewMode.Row ? "active" : "") @(_opts.SortByDropCount ? "opacity-40 cursor-not-allowed" : "")" disabled="@_opts.SortByDropCount" @onclick="@(() => SetMultiView(MultiViewMode.Row))">Row/Date Select</button>
-                            <button type="button" class="tile-group-item @(_opts.MultiViewMode == MultiViewMode.Free ? "active" : "")" @onclick="@(() => SetMultiView(MultiViewMode.Free))">Free Select</button>
-                        </div>
-                    </div>
-                    <div>
-                        <span class="font-bold text-gray-400">Drops Sort Method</span>
-                        <div class="tile-group mt-1">
-                            <button type="button" class="tile-group-item @(_opts.SortMethod == MissionSortMethod.Default ? "active" : "")" @onclick="@(() => SetSortMethod(MissionSortMethod.Default))">Default</button>
-                            <button type="button" class="tile-group-item @(_opts.SortMethod == MissionSortMethod.Iv ? "active" : "")" @onclick="@(() => SetSortMethod(MissionSortMethod.Iv))">Inventory Visualizer</button>
-                        </div>
-                    </div>
-                    <div>
-                        <span class="font-bold text-gray-400">Mission Sort</span>
-                        <div class="flex flex-col gap-1 mt-1">
-                            <label class="@(_dropCounts.Count == 0 ? "opacity-40 cursor-not-allowed" : "")">
-                                <input type="checkbox" class="ext-opt-check mr-0_5rem" checked="@_opts.SortByDropCount" disabled="@(_dropCounts.Count == 0)" @onchange="ToggleSortByDropCount"/>
-                                Sort by drop count
-                            </label>
-                        </div>
+            @if (_viewMode == ViewMode.List) {
+                <div>
+                    <span class="font-bold text-gray-400">Display</span>
+                    <div class="flex flex-col gap-1 mt-1">
+                        <label><input type="checkbox" class="ext-opt-check mr-0_5rem" checked="@_opts.ViewByDate" @onchange="@(e => SetOpt(MissionViewOptions.KeyViewByDate, b => _opts.ViewByDate = b, e))"/> Separate missions by day</label>
+                        <label><input type="checkbox" class="ext-opt-check mr-0_5rem" checked="@_opts.ViewMissionTimes" @onchange="@(e => SetOpt(MissionViewOptions.KeyViewTimes, b => _opts.ViewMissionTimes = b, e))"/> Show launch times</label>
                     </div>
                 </div>
-            </OptionsPopover>
+                <div>
+                    <span class="font-bold text-gray-400">Multi-View Method</span>
+                    <div class="tile-group flex-wrap mt-1">
+                        <button type="button" class="tile-group-item @(_opts.MultiViewMode == MultiViewMode.Off ? "active" : "")" @onclick="@(() => SetMultiView(MultiViewMode.Off))">Off</button>
+                        <button type="button" class="tile-group-item @(_opts.MultiViewMode == MultiViewMode.Row ? "active" : "") @(_opts.SortByDropCount ? "opacity-40 cursor-not-allowed" : "")" disabled="@_opts.SortByDropCount" @onclick="@(() => SetMultiView(MultiViewMode.Row))">Row/Date Select</button>
+                        <button type="button" class="tile-group-item @(_opts.MultiViewMode == MultiViewMode.Free ? "active" : "")" @onclick="@(() => SetMultiView(MultiViewMode.Free))">Free Select</button>
+                    </div>
+                </div>
+            }
+            <div>
+                <span class="font-bold text-gray-400">Drops Sort Method</span>
+                <div class="tile-group flex-wrap mt-1">
+                    <button type="button" class="tile-group-item @(_opts.SortMethod == MissionSortMethod.Default ? "active" : "")" @onclick="@(() => SetSortMethod(MissionSortMethod.Default))">Default</button>
+                    <button type="button" class="tile-group-item @(_opts.SortMethod == MissionSortMethod.Iv ? "active" : "")" @onclick="@(() => SetSortMethod(MissionSortMethod.Iv))">Inventory Visualizer</button>
+                </div>
+            </div>
+            @if (_viewMode == ViewMode.List) {
+                <div>
+                    <span class="font-bold text-gray-400">Mission Sort</span>
+                    <div class="flex flex-col gap-1 mt-1">
+                        <label class="@(_dropCounts.Count == 0 ? "opacity-40 cursor-not-allowed" : "")">
+                            <input type="checkbox" class="ext-opt-check mr-0_5rem" checked="@_opts.SortByDropCount" disabled="@(_dropCounts.Count == 0)" @onchange="ToggleSortByDropCount"/>
+                            Sort by drop count
+                        </label>
+                    </div>
+                </div>
+            }
         </div>
     };
 

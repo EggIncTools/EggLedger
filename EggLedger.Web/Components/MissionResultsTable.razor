@@ -11,7 +11,6 @@
         <MissionCardCustomStyle Config="Config"/>
         <div class="sticky top-0 z-10 bg-darkest -mx-2 px-2 pt-1 pb-1">
             <div class="flex items-center gap-2 flex-wrap">
-                @TileSelector
                 <span class="text-xl">
                     Missions
                     <button type="button" class="text-xl toggle-link" @onclick="ToggleAll">
@@ -29,11 +28,6 @@
                     @if (!AllSelected) {
                         <button type="button" class="text-base toggle-link" @onclick="SelectAll">Select All</button>
                     }
-                }
-                @if (HeaderExtra is not null) {
-                    <div class="ml-auto flex items-center gap-2">
-                        @HeaderExtra
-                    </div>
                 }
             </div>
             <hr class="mt-0_5rem mb-0_5rem w-full"/>
@@ -143,10 +137,6 @@
     [Parameter] public bool ViewMissionTimes { get; set; }
     [Parameter] public MultiViewMode MultiViewMode { get; set; } = MultiViewMode.Off;
     [Parameter] public MissionCardConfig Config { get; set; } = MissionCardConfig.Classic;
-
-    [Parameter] public RenderFragment? TileSelector { get; set; }
-
-    [Parameter] public RenderFragment? HeaderExtra { get; set; }
 
     [Parameter] public HashSet<string> SelectedIds { get; set; } = new();
 

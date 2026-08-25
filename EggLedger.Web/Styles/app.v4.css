@@ -592,7 +592,7 @@
 }
 
 .filter-container {
-  @apply relative flex flex-row items-center flex-grow;
+  @apply relative flex flex-row flex-wrap items-center flex-grow;
 }
 
 .filter-select-option {

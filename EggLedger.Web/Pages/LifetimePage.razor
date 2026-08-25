@@ -19,10 +19,10 @@
                      FieldCtx="Config.FieldCtx"
                      Applying="_applying"
                      LastResultText="@_resultText"
+                     OptionsContent="@RenderOptions()"
                      OnApply="ApplyFilterAsync">
-    <div class="flex items-center justify-between gap-2 pt-1">
+    <div class="flex items-center gap-2 pt-1">
         <span class="ledger-underline text-base text-gray-400">Data compiled from @_data!.MissionCount Missions</span>
-        @RenderOptionsPopover()
     </div>
     <div class="flex-1 min-h-0 py-1 overflow-auto block text-xs font-mono text-gray-300 text-center">
         <DropDisplayContainer Artifacts="_data!.Artifacts"
@@ -171,18 +171,16 @@
         StateHasChanged();
     }
 
-    private RenderFragment RenderOptionsPopover() => __builder => {
-        <OptionsPopover>
-            <div>
-                <span class="font-bold text-gray-400">Sort Method</span>
-                <div class="tile-group mt-1">
-                    <button type="button" class="tile-group-item @(_sortMethod == LifetimeSortMethod.Default ? "active" : "")" @onclick="@(() => SetSortAsync(LifetimeSortMethod.Default))">Default</button>
-                    <button type="button" class="tile-group-item @(_sortMethod == LifetimeSortMethod.Iv ? "active" : "")" @onclick="@(() => SetSortAsync(LifetimeSortMethod.Iv))">Inventory Visualizer</button>
-                    <button type="button" class="tile-group-item @(_sortMethod == LifetimeSortMethod.Count ? "active" : "")" @onclick="@(() => SetSortAsync(LifetimeSortMethod.Count))">Total Count</button>
-                    <button type="button" class="tile-group-item @(_sortMethod == LifetimeSortMethod.Random ? "active" : "")" @onclick="@(() => SetSortAsync(LifetimeSortMethod.Random))">Random</button>
-                </div>
+    private RenderFragment RenderOptions() => __builder => {
+        <div>
+            <span class="font-bold text-gray-400">Sort Method</span>
+            <div class="tile-group flex-wrap mt-1">
+                <button type="button" class="tile-group-item @(_sortMethod == LifetimeSortMethod.Default ? "active" : "")" @onclick="@(() => SetSortAsync(LifetimeSortMethod.Default))">Default</button>
+                <button type="button" class="tile-group-item @(_sortMethod == LifetimeSortMethod.Iv ? "active" : "")" @onclick="@(() => SetSortAsync(LifetimeSortMethod.Iv))">Inventory Visualizer</button>
+                <button type="button" class="tile-group-item @(_sortMethod == LifetimeSortMethod.Count ? "active" : "")" @onclick="@(() => SetSortAsync(LifetimeSortMethod.Count))">Total Count</button>
+                <button type="button" class="tile-group-item @(_sortMethod == LifetimeSortMethod.Random ? "active" : "")" @onclick="@(() => SetSortAsync(LifetimeSortMethod.Random))">Random</button>
             </div>
-        </OptionsPopover>
+        </div>
     };
 
     private async Task SetSortAsync(LifetimeSortMethod method) {
