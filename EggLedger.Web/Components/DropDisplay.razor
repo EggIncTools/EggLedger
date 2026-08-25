@@ -9,7 +9,7 @@
     </div>
     <div class="ledger-af-repeat">
         @foreach (var item in Items) {
-            <div class="mission-view-rep relative">
+            <div class="mission-view-rep relative tooltip-host">
                 <a class="@RarityBgClass(item)" target="_blank" rel="noopener" href="@ExplorerUrl(item)"
                    @onmouseenter="@(() => ShowTooltip(item))" @onmouseleave="HideTooltip">
                     <img class="h-full w-full" loading="lazy" decoding="async" alt="@item.GameName" src="@SpecPath(item)"/>
@@ -18,7 +18,7 @@
                     }
                 </a>
                 @if (ReferenceEquals(_hovered, item)) {
-                    <div class="tooltip-floating tooltip-anchored text-sm">
+                    <div class="tooltip-floating tooltip-fixed text-sm">
                         @item.GameName (T@(item.Level + SpecPathOffset(item)))
                         @if (item.SpecType == "Artifact") {
                             <span class="text-rarity-@item.Rarity">@FilterOptions.RarityWord(item.Rarity) </span>

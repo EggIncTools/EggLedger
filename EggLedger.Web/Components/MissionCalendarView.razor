@@ -1,6 +1,7 @@
 @using System.Globalization
 @using EggLedger.Web.Missions.Timeline
 @using EggLedger.Web.Components.Timeline
+@inject IUserTimeZoneProvider TzProvider
 
 <div class="flex flex-col gap-2 min-h-0 flex-1">
     <div class="flex items-center gap-2 flex-wrap">
@@ -8,24 +9,41 @@
         <button type="button" class="text-base toggle-link" @onclick="PanBackAsync">&larr; Prev</button>
         <button type="button" class="text-base toggle-link" @onclick="PanForwardAsync">Next &rarr;</button>
         <button type="button" class="text-base toggle-link" @onclick="JumpToNowAsync">Today</button>
-        <input type="date" class="reg-filter-input text-sm" value="@_center.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)" @onchange="JumpToDateAsync"/>
-        <span class="text-sm text-gray-400 ml-auto">@_visibleStart.ToString("MMM d, yyyy", CultureInfo.InvariantCulture) - @_visibleEnd.ToString("MMM d, yyyy", CultureInfo.InvariantCulture)</span>
+        <input type="date" class="reg-filter-input text-sm" value="@LocalCenterDate" @onchange="JumpToDateAsync"/>
+        <span class="text-sm text-gray-400 ml-auto">@RangeLabel</span>
     </div>
 
-    <div class="flex-1 min-h-0 overflow-auto shadow-sm bg-darkest rounded-md p-2">
-        @if (_lanes.Count == 0) {
-            <div class="text-gray-500 italic p-4">No missions in this range.</div>
-        } else {
-            <div class="timeline-lanes">
-                @foreach (var lane in _lanes) {
-                    <div class="timeline-lane">
-                        @foreach (var bar in lane) {
-                            <TimelineBarView Bar="bar" OnSelect="OnSelectMission"/>
-                        }
-                    </div>
+    <div class="flex-1 min-h-0 shadow-sm bg-darkest rounded-md p-2 timeline-shell">
+        <div class="timeline-scale">
+            @foreach (var tick in _ticks) {
+                if (tick.Label.Length > 0) {
+                    <span class="timeline-scale-label" style="@TickStyle(tick.LeftPercent)">@tick.Label</span>
                 }
-            </div>
-        }
+            }
+        </div>
+        <div class="timeline-canvas">
+            @foreach (var tick in _ticks) {
+                if (tick.HasLine) {
+                    <div class="@GridClass(tick)" style="@TickStyle(tick.LeftPercent)"></div>
+                }
+            }
+            @if (_nowPercent is { } nowPct) {
+                <div class="timeline-now" style="@TickStyle(nowPct)"></div>
+            }
+            @if (_lanes.Count == 0) {
+                <div class="text-gray-500 italic p-4">No missions in this range.</div>
+            } else {
+                <div class="timeline-lanes">
+                    @foreach (var lane in _lanes) {
+                        <div class="timeline-lane">
+                            @foreach (var bar in lane) {
+                                <TimelineBarView Bar="bar" OnSelect="OnSelectMission"/>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
     </div>
 </div>
 
@@ -37,23 +55,27 @@
     private DateTimeOffset _center = DateTimeOffset.UtcNow;
     private DateTimeOffset _visibleStart;
     private DateTimeOffset _visibleEnd;
+    private IReadOnlyList<TimelineTick> _ticks = [];
+    private double? _nowPercent;
     private List<List<TimelineBar>> _lanes = [];
-
-    protected override void OnInitialized() {
-        Recompute();
-    }
 
     protected override void OnParametersSet() {
         Recompute();
     }
 
     private void Recompute() {
-        var span = _zoom.WindowSpan();
-        _visibleStart = _center - span / 2;
-        _visibleEnd = _center + span / 2;
+        var tz = TzProvider.TimeZone;
+        (_visibleStart, _visibleEnd) = TimelineWindow.Compute(_center, _zoom, tz);
+        var span = _visibleEnd - _visibleStart;
+        _center = _visibleStart + span / 2;
+        _ticks = TimelineTicks.Generate(_visibleStart, _visibleEnd, _zoom, tz);
 
-        var bars = TimelineLayoutEngine.Layout(Missions, _visibleStart, _visibleEnd, DateTimeOffset.UtcNow);
+        var now = DateTimeOffset.UtcNow;
+        _nowPercent = now > _visibleStart && now < _visibleEnd
+            ? (now - _visibleStart).TotalSeconds / span.TotalSeconds * 100
+            : null;
 
+        var bars = TimelineLayoutEngine.Layout(Missions, _visibleStart, _visibleEnd, now);
         var byLane = new Dictionary<int, List<TimelineBar>>();
         foreach (var bar in bars) {
             if (!byLane.TryGetValue(bar.Lane, out var list)) {
@@ -67,6 +89,28 @@
         _lanes = byLane.OrderBy(kv => kv.Key).Select(kv => kv.Value).ToList();
     }
 
+    private string LocalCenterDate =>
+        TimeZoneInfo.ConvertTime(_center, TzProvider.TimeZone).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+    private string RangeLabel {
+        get {
+            var tz = TzProvider.TimeZone;
+            var start = TimeZoneInfo.ConvertTime(_visibleStart, tz);
+            var end = TimeZoneInfo.ConvertTime(_visibleEnd, tz).AddSeconds(-1);
+            return _zoom switch {
+                TimelineZoom.Month => start.ToString("MMMM yyyy", CultureInfo.InvariantCulture),
+                TimelineZoom.Week => $"{start.ToString("MMM d", CultureInfo.InvariantCulture)} - {end.ToString("MMM d, yyyy", CultureInfo.InvariantCulture)}",
+                _ => start.ToString("MMM d, yyyy", CultureInfo.InvariantCulture),
+            };
+        }
+    }
+
+    private static string TickStyle(double leftPercent) =>
+        FormattableString.Invariant($"--tick-pos:{leftPercent};");
+
+    private static string GridClass(TimelineTick tick) =>
+        tick.IsMajor ? "timeline-grid timeline-grid-major" : "timeline-grid";
+
     private Task SetZoomAsync(TimelineZoom zoom) {
         _zoom = zoom;
         Recompute();
@@ -74,13 +118,13 @@
     }
 
     private Task PanBackAsync() {
-        _center -= _zoom.WindowSpan();
+        _center -= _visibleEnd - _visibleStart;
         Recompute();
         return Task.CompletedTask;
     }
 
     private Task PanForwardAsync() {
-        _center += _zoom.WindowSpan();
+        _center += _visibleEnd - _visibleStart;
         Recompute();
         return Task.CompletedTask;
     }
@@ -92,8 +136,9 @@
     }
 
     private Task JumpToDateAsync(ChangeEventArgs e) {
-        if (DateTimeOffset.TryParse(e.Value?.ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var parsed)) {
-            _center = parsed;
+        if (DateOnly.TryParseExact(e.Value?.ToString(), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed)) {
+            var localNoon = parsed.ToDateTime(new TimeOnly(12, 0));
+            _center = TimelineWindow.ToOffset(localNoon, TzProvider.TimeZone);
             Recompute();
         }
 
