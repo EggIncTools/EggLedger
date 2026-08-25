@@ -78,7 +78,7 @@ internal static class Program {
 
 
 
-        var iconFile = Path.Combine(AppContext.BaseDirectory, "icon-64.png");
+        var iconFile = Path.Combine(AppContext.BaseDirectory, "icon-512.png");
         app.MainWindow.SetTitle("EggLedger");
         if (File.Exists(iconFile)) app.MainWindow.SetIconFile(iconFile);
         app.MainWindow

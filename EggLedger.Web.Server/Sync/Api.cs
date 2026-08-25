@@ -1,6 +1,7 @@
 using EggIdentity.Auth;
 using EggIdentity.Contract;
 using EggIdentity.Metrics;
+using EggLedger.Web.Server.SubProd;
 using EggLedger.Web.Server.Sync.Auth;
 using EggLedger.Web.Server.Sync.Blobs;
 using EggLedger.Web.Server.Sync.Db;
@@ -12,6 +13,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 
@@ -51,7 +53,9 @@ public static class Api {
         app.MapPost("/api/v1/auth/session-from-login", (HttpContext c) => auth.SessionFromLogin(c));
 
         VerifyEndpoint.Map(app, build);
-        app.MapPost("/api/v1/menno/submit", (HttpContext c) => menno.Submit(c));
+        if (!app.Environment.IsStaging() || SubProdFence.Allows("MENNO", Environment.GetEnvironmentVariable)) {
+            app.MapPost("/api/v1/menno/submit", (HttpContext c) => menno.Submit(c));
+        }
 
 
         MapAuthed(app, ["PUT"], "/api/v1/blobs/{name}", store,

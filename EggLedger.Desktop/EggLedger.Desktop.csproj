@@ -31,7 +31,7 @@
   </ItemGroup>
 
     <ItemGroup>
-    <Content Include="icon-64.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="icon-512.png" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   

@@ -10,16 +10,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="EggIdentity.Core" Version="2.0.0" />
-    <PackageReference Include="EggIdentity.Auth" Version="2.0.0" />
-    <PackageReference Include="EggIdentity.Bot" Version="2.0.0" />
-    <PackageReference Include="EggIdentity.Bot.AdminUi" Version="2.0.0" />
-    <PackageReference Include="EggIdentity.Contract" Version="2.0.0" />
-    <PackageReference Include="EggIdentity.Db" Version="2.0.0" />
-    <PackageReference Include="EggIdentity.AdminUi" Version="2.0.0" />
-    <PackageReference Include="EggIdentity.Client" Version="2.0.0" />
-    <PackageReference Include="EggIdentity.Metrics" Version="2.0.0" />
-    <PackageReference Include="EggIdentity.Metrics.AdminUi" Version="2.0.0" />
+    <PackageReference Include="EggIdentity.Auth" Version="2.0.8" />
+    <PackageReference Include="EggIdentity.Bot" Version="2.0.8" />
+    <PackageReference Include="EggIdentity.Bot.AdminUi" Version="2.0.8" />
+    <PackageReference Include="EggIdentity.Contract" Version="2.0.8" />
+    <PackageReference Include="EggIdentity.Db" Version="2.0.8" />
+    <PackageReference Include="EggIdentity.AdminUi" Version="2.0.8" />
+    <PackageReference Include="EggIdentity.Client" Version="2.0.8" />
+    <PackageReference Include="EggIdentity.Metrics" Version="2.0.8" />
+    <PackageReference Include="EggIdentity.Metrics.AdminUi" Version="2.0.8" />
     <PackageReference Include="Npgsql" Version="10.0.3" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.0" />
   </ItemGroup>

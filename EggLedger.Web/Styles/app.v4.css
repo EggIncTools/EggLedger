@@ -284,6 +284,7 @@
   height: 16px;
   display: block;
   flex: none;
+  object-fit: contain;
 }
 
 .nameplate-stack {

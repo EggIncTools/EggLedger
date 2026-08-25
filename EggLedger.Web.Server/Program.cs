@@ -8,6 +8,7 @@ using EggLedger.Web;
 using EggLedger.Web.Data;
 using EggLedger.Web.Server;
 using EggLedger.Web.Server.Components;
+using EggLedger.Web.Server.SubProd;
 using EggLedger.Web.Server.Sync;
 using EggLedger.Web.Services;
 using Microsoft.AspNetCore.Authentication;
@@ -19,10 +20,19 @@ using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
+SubProdFence.ForceSessionIsolation(Environment.SetEnvironmentVariable, builder.Environment.EnvironmentName);
+var fencedGetter = SubProdFence.WrapGetter(Environment.GetEnvironmentVariable, builder.Environment.EnvironmentName, out var subProdFenceReport);
+foreach (var entry in subProdFenceReport) {
+    if (entry.Forced) {
+        Console.Error.WriteLine($"eggledger: sub-prod fence forced {entry.Key} empty");
+    }
+}
 
-
-var cfg = AppConfig.FromEnv(Environment.GetEnvironmentVariable);
+var cfg = AppConfig.FromEnv(fencedGetter);
 var hasDb = !string.IsNullOrEmpty(cfg.DatabaseUrl);
+if (hasDb && builder.Environment.IsStaging()) {
+    SubProdBootGuard.EnsureSubProdDatabase(cfg.DatabaseUrl);
+}
 var build = new VerifyInfo { Name = "EggLedger", Sha256 = cfg.BuildSha, Version = EggLedger.Web.AppVersionInfo.Current, Date = cfg.BuildDate };
 var startedAt = DateTimeOffset.UtcNow;
 

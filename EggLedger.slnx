@@ -4,6 +4,7 @@
   <Project Path="EggLedger.Web.Server/EggLedger.Web.Server.csproj" />
   <Project Path="EggLedger.Desktop/EggLedger.Desktop.csproj" />
   <Project Path="EggLedger.CssBuild/EggLedger.CssBuild.csproj" />
+  <Project Path="EggLedger.SubProd/EggLedger.SubProd.csproj" />
   <Project Path="EggLedger.Domain/Tests/EggLedger.Domain.Tests.csproj" />
   <Project Path="EggLedger.Web/Tests/EggLedger.Web.Tests.csproj" />
   <Project Path="EggLedger.Web.Server/Tests/EggLedger.Web.Server.Tests.csproj" />
