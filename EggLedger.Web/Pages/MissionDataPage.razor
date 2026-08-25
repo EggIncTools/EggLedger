@@ -41,6 +41,8 @@
                              ViewByDate="_opts.ViewByDate"
                              ViewMissionTimes="_opts.ViewMissionTimes"
                              MultiViewMode="_opts.MultiViewMode"
+                             RecolorDC="_opts.RecolorDC"
+                             RecolorBC="_opts.RecolorBC"
                              Config="_cardPresets.ActivePreset()"
                              SelectedIds="_multiSelectedIds"
                              TabFiltered="_tabFiltered ?? Array.Empty<DatabaseMission>()"
@@ -290,6 +292,8 @@
                     <div class="flex flex-col gap-1 mt-1">
                         <label><input type="checkbox" class="ext-opt-check mr-0_5rem" checked="@_opts.ViewByDate" @onchange="@(e => SetOpt(MissionViewOptions.KeyViewByDate, b => _opts.ViewByDate = b, e))"/> Separate missions by day</label>
                         <label><input type="checkbox" class="ext-opt-check mr-0_5rem" checked="@_opts.ViewMissionTimes" @onchange="@(e => SetOpt(MissionViewOptions.KeyViewTimes, b => _opts.ViewMissionTimes = b, e))"/> Show launch times</label>
+                        <label><input type="checkbox" class="ext-opt-check mr-0_5rem" checked="@_opts.RecolorDC" @onchange="@(e => SetOpt(MissionViewOptions.KeyRecolorDC, b => _opts.RecolorDC = b, e))"/> Re-color dubcaps</label>
+                        <label><input type="checkbox" class="ext-opt-check mr-0_5rem" checked="@_opts.RecolorBC" @onchange="@(e => SetOpt(MissionViewOptions.KeyRecolorBC, b => _opts.RecolorBC = b, e))"/> Re-color bugged caps</label>
                     </div>
                 </div>
                 <div>

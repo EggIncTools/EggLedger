@@ -11,7 +11,9 @@
         var row = _rows[index];
 
         @if (index != 0) {
-            <div class="text-gray-400 mt-0_5rem">-- AND --</div>
+            <div class="filter-and-divider">
+                <span>AND</span>
+            </div>
         }
 
         <div class="filter-container">
@@ -21,7 +23,7 @@
 
             @if (RowComplete(row.Cond)) {
                 <button type="button" data-tt="Add alternate filter condition"
-                        class="mr-1rem flex items-center h-6 w-6 justify-center text-sml border text-yellow-700 border-yellow-700 bg-darkest rounded-md bg-transparent py-2 px-4 mt-0_5rem ledger-btn"
+                        class="filter-icon-btn filter-or-btn"
                         disabled="@OrAddDisabled(index)"
                         @onclick="() => AddOr(index)">
                     OR
@@ -30,7 +32,7 @@
 
             @if (FieldOf(row.Cond) is not null) {
                 <button type="button" aria-label="Remove filter condition"
-                        class="mr-1rem flex items-center justify-center text-red-700 text-lg max-w-6 max-h-6 min-w-6 min-h-6 border border-red-700 rounded-md bg-transparent mt-0_5rem ledger-btn"
+                        class="filter-icon-btn filter-remove-btn"
                         @onclick="() => RemoveRow(index)">
                     &times;
                 </button>
@@ -40,15 +42,15 @@
         @for (var oi = 0; oi < row.Or.Count; oi++) {
             var orIndex = oi;
             var orRow = row.Or[orIndex];
-            <div class="ml-2rem filter-container">
-                <div class="text-gray-400 mt-0_5rem mr-1rem"><span class="text-gray text-lg">⮡ </span> OR</div>
+            <div class="filter-or-row filter-container">
+                <span class="filter-or-chip">OR</span>
 
                 @RenderConditionControls(orRow, () => OnOrRowChanged(index))
 
                 @RenderWarning(orRow)
 
                 <button type="button" aria-label="Remove alternate condition"
-                        class="mr-1rem flex items-center justify-center text-red-700 text-lg max-w-6 max-h-6 min-w-6 min-h-6 border border-red-700 rounded-md bg-transparent mt-0_5rem ledger-btn"
+                        class="filter-icon-btn filter-remove-btn"
                         @onclick="() => RemoveOr(index, orIndex)">
                     &times;
                 </button>
@@ -177,7 +179,7 @@
         @if (def is not null) {
             var ops = FilterFields.MissionBarOpsFor(def);
             @if (def.ValueKind == FilterValueKind.Bool) {
-                <span class="text-gray-400 mt-0_5rem mr-1rem">is</span>
+                <span class="text-gray-400">is</span>
             } else {
                 var opMissing = incomplete && string.IsNullOrEmpty(c.Op);
                 <select class="filter-select border-gray-600 text-gray-400 @(ops.Count <= 1 ? "opacity-60 cursor-not-allowed" : "") @(opMissing ? "field-incomplete" : "")"
@@ -256,7 +258,7 @@
     private RenderFragment RenderWarning(FilterCondition c) => __builder => {
         var def = FieldOf(c);
         @if (def is not null && RowIncomplete(c)) {
-            <span class="filter-incomplete-icon mt-0_5rem mr-1rem" data-tt="Fill in the missing field">
+            <span class="filter-incomplete-icon" data-tt="Fill in the missing field">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
                     <circle cx="12" cy="12" r="9"/>
                     <line x1="12" y1="7.5" x2="12" y2="13"/>

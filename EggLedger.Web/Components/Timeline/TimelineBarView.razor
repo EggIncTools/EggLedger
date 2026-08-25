@@ -1,5 +1,4 @@
 @using System.Globalization
-@using EggLedger.Web.Missions.Timeline
 @inject IUserTimeZoneProvider TzProvider
 
 <div class="timeline-bar timeline-dur-@Bar.DurationIndex tooltip-host" style="@BarStyle" data-tt-mode="cursor-x" @onclick="@(() => OnSelect.InvokeAsync(Bar.MissionId))">
@@ -39,8 +38,9 @@
     private string BarStyle =>
         FormattableString.Invariant($"--bar-start:{Bar.LeftPercent};--bar-size:{Bar.WidthPercent};--bar-fill:{Bar.FillPercent};");
 
-    private string FormatTime(long unixSeconds) =>
-        TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(unixSeconds), TzProvider.TimeZone)
+    private string FormatTime(long unixSeconds) {
+        return TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(unixSeconds), TzProvider.TimeZone)
             .ToString("MMM d, h:mm tt", CultureInfo.InvariantCulture);
+    }
 
 }

@@ -1,6 +1,6 @@
 @if (IsOpen) {
-    <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/60" @onclick="OnBackdropClick">
-        <div @ref="_containerRef" class="@ContainerClass" tabindex="@(CaptureKeys ? "-1" : null)"
+    <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/60 modal-backdrop-anim" @onclick="OnBackdropClick">
+        <div @ref="_containerRef" class="modal-panel-anim @ContainerClass" tabindex="@(CaptureKeys ? "-1" : null)"
              @onclick:stopPropagation="true"
              @onkeydown="HandleKeyDown" @onkeydown:preventDefault="PreventKeyDefault">
             @ChildContent

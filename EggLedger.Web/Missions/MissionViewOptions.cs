@@ -22,6 +22,8 @@ public sealed class MissionViewOptions {
     public const string KeyCardPresets = "mission_card_presets";
     public const string KeySortByDropCount = "mission_sort_by_drop_count";
     public const string KeyCalendarFlightRatio = "calendar_flight_ratio";
+    public const string KeyRecolorDC = "mission_recolor_dc";
+    public const string KeyRecolorBC = "mission_recolor_bc";
 
 
     public bool ViewByDate { get; set; }
@@ -30,6 +32,8 @@ public sealed class MissionViewOptions {
     public MissionSortMethod SortMethod { get; set; } = MissionSortMethod.Default;
     public bool SortByDropCount { get; set; }
     public bool CalendarFlightRatio { get; set; }
+    public bool RecolorDC { get; set; }
+    public bool RecolorBC { get; set; }
 
     public int? MissionTypeTab { get; set; }
 
@@ -101,6 +105,12 @@ public sealed class MissionViewOptions {
         }
         if (settings.TryGetValue(KeyCalendarFlightRatio, out var cfr)) {
             CalendarFlightRatio = ParseBool(cfr, CalendarFlightRatio);
+        }
+        if (settings.TryGetValue(KeyRecolorDC, out var rdc)) {
+            RecolorDC = ParseBool(rdc, RecolorDC);
+        }
+        if (settings.TryGetValue(KeyRecolorBC, out var rbc)) {
+            RecolorBC = ParseBool(rbc, RecolorBC);
         }
     }
 

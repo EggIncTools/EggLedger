@@ -1,8 +1,6 @@
-@using System.Globalization
-@using EggLedger.Web.Missions.Timeline
-@using EggLedger.Web.Components.Timeline
 @inject IUserTimeZoneProvider TzProvider
 @inject IJSRuntime JS
+@using System.Globalization
 @implements IAsyncDisposable
 
 <div class="flex flex-col gap-2 min-h-0 flex-1">
@@ -162,7 +160,7 @@
         _periods = [
             BuildPeriod(prevStart, prevEnd, tz, now),
             BuildPeriod(_visibleStart, _visibleEnd, tz, now),
-            BuildPeriod(nextStart, nextEnd, tz, now),
+            BuildPeriod(nextStart, nextEnd, tz, now)
         ];
     }
 
@@ -204,10 +202,11 @@
         return byLane.OrderBy(kv => kv.Key).Select(kv => kv.Value).ToList();
     }
 
-    private string CellLabel(TimelineDayCell cell) =>
-        _zoom == TimelineZoom.Month
+    private string CellLabel(TimelineDayCell cell) {
+        return _zoom == TimelineZoom.Month
             ? cell.LocalDate.Day.ToString(CultureInfo.InvariantCulture)
             : cell.LocalDate.ToString("M/d", CultureInfo.InvariantCulture);
+    }
 
     private string LocalCenterDate =>
         TimeZoneInfo.ConvertTime(_center, TzProvider.TimeZone).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
@@ -220,16 +219,18 @@
             return _zoom switch {
                 TimelineZoom.Month => start.ToString("MMMM yyyy", CultureInfo.InvariantCulture),
                 TimelineZoom.Week => $"{start.ToString("MMM d", CultureInfo.InvariantCulture)} - {end.ToString("MMM d, yyyy", CultureInfo.InvariantCulture)}",
-                _ => start.ToString("MMM d, yyyy", CultureInfo.InvariantCulture),
+                _ => start.ToString("MMM d, yyyy", CultureInfo.InvariantCulture)
             };
         }
     }
 
-    private static string TickStyle(double leftPercent) =>
-        FormattableString.Invariant($"--tick-pos:{leftPercent};");
+    private static string TickStyle(double leftPercent) {
+        return FormattableString.Invariant($"--tick-pos:{leftPercent};");
+    }
 
-    private static string RowStyle(RowVm row) =>
-        FormattableString.Invariant($"--row-weight:{Math.Max(1, row.Lanes.Count)};");
+    private static string RowStyle(RowVm row) {
+        return FormattableString.Invariant($"--row-weight:{Math.Max(1, row.Lanes.Count)};");
+    }
 
     private string FlightRatioText =>
         _flightRatio is { } ratio ? ratio.ToString("P1", CultureInfo.InvariantCulture) : "n/a";

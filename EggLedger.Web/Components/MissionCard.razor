@@ -36,6 +36,8 @@
     [Parameter] public bool ViewByDate { get; set; }
     [Parameter] public bool ViewMissionTimes { get; set; }
     [Parameter] public MultiViewMode MultiViewMode { get; set; }
+    [Parameter] public bool RecolorDC { get; set; }
+    [Parameter] public bool RecolorBC { get; set; }
     [Parameter] public EventCallback<string> OnView { get; set; }
     [Parameter] public EventCallback<(string MissionId, bool Shift)> OnToggleSelected { get; set; }
     [Parameter] public int? DropCount { get; set; }
@@ -115,6 +117,14 @@
     private string RowColorClass(bool altMode) {
         if (IsBeingViewed) {
             return altMode ? "text-selectedmissiondarker" : "text-selectedmission";
+        }
+
+        if (RecolorBC && Mission.IsBuggedCap) {
+            return altMode ? "text-buggedcapdarker" : "text-buggedcap";
+        }
+
+        if (RecolorDC && Mission.IsDubCap) {
+            return altMode ? "text-dubcapdarker" : "text-dubcap";
         }
 
         return altMode ? "text-gray-500" : "text-gray-400";

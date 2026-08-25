@@ -169,11 +169,15 @@
 
     public async Task OpenAsync(string missionId) {
         _multi = null;
-        _data = null;
-        _isLoading = true;
+        _isLoading = false;
+        _data = await BuildAsync(missionId);
+        if (_data is null) {
+            return;
+        }
+
         _modal?.Open();
         StateHasChanged();
-        await LoadAsync(missionId);
+        await PopulateMennoForAsync(missionId);
     }
 
     private async Task OnKeyDown(KeyboardEventArgs e) {
@@ -271,14 +275,18 @@
         _data = await BuildAsync(missionId);
         _isLoading = false;
         StateHasChanged();
+        await PopulateMennoForAsync(missionId);
+    }
 
+    private async Task PopulateMennoForAsync(string missionId) {
+        if (_data is null) {
+            return;
+        }
 
-        if (_data is not null) {
-            var mission = FindMission(missionId);
-            if (mission is not null) {
-                await PopulateMennoAsync(mission, _data);
-                StateHasChanged();
-            }
+        var mission = FindMission(missionId);
+        if (mission is not null) {
+            await PopulateMennoAsync(mission, _data);
+            StateHasChanged();
         }
     }
 
@@ -366,6 +374,8 @@
             : "text-duration-3";
     }
 
-    private static string ProperCase(string value) => NameFormatting.ProperCase(value);
+    private static string ProperCase(string value) {
+        return NameFormatting.ProperCase(value);
+    }
 
 }

@@ -208,6 +208,51 @@ public sealed class TimelineLayoutEngineTests {
     }
 
     [Fact]
+    public void Layout_MinWidth_RightEdgeShiftedBarsNeverOverlapWithinALane() {
+        var missions = new[] {
+            M("earlier", WindowEnd.AddHours(-4), WindowEnd.AddHours(-2)),
+            M("late", WindowEnd.AddMinutes(-10), WindowEnd),
+        };
+
+        var bars = TimelineLayoutEngine.Layout(missions, WindowStart, WindowEnd, WindowStart, minWidthPercent: 20);
+
+        var byId = bars.ToDictionary(b => b.MissionId);
+        Assert.NotEqual(byId["earlier"].Lane, byId["late"].Lane);
+        foreach (var lane in bars.GroupBy(b => b.Lane)) {
+            var ordered = lane.OrderBy(b => b.LeftPercent).ToList();
+            for (int i = 1; i < ordered.Count; i++) {
+                Assert.True(ordered[i - 1].LeftPercent + ordered[i - 1].WidthPercent <= ordered[i].LeftPercent + 0.001);
+            }
+        }
+    }
+
+    [Fact]
+    public void Layout_BubbleShownOnlyInWindowContainingTheReturn() {
+        var mission = M("spanning", WindowStart.AddHours(-30), WindowStart.AddHours(6));
+
+        var earlier = TimelineLayoutEngine.Layout(
+            [mission], WindowStart.AddDays(-1), WindowStart, WindowEnd);
+        var containing = TimelineLayoutEngine.Layout(
+            [mission], WindowStart, WindowEnd, WindowEnd);
+
+        Assert.False(earlier[0].ShowBubble);
+        Assert.True(containing[0].ShowBubble);
+    }
+
+    [Fact]
+    public void Layout_ActiveMissionBubbleFollowsNowIntoTheCurrentWindow() {
+        var mission = M("flying", WindowStart.AddHours(-30), WindowEnd.AddHours(12));
+
+        var current = TimelineLayoutEngine.Layout(
+            [mission], WindowStart, WindowEnd, WindowStart.AddHours(6));
+        var past = TimelineLayoutEngine.Layout(
+            [mission], WindowStart.AddDays(-1), WindowStart, WindowStart.AddHours(6));
+
+        Assert.True(current[0].ShowBubble);
+        Assert.False(past[0].ShowBubble);
+    }
+
+    [Fact]
     public void Layout_EmptyInput_ReturnsEmpty() {
         var bars = TimelineLayoutEngine.Layout(Array.Empty<DatabaseMission>(), WindowStart, WindowEnd, WindowStart);
 

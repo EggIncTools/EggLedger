@@ -13,31 +13,37 @@
 } else {
     <section class="flex-1 flex flex-col w-full mx-auto px-4 overflow-hidden bg-darker">
         <div class="flex flex-col md:flex-row md:items-stretch gap-0_75rem mt-0_75rem flex-1 min-h-0">
-            <div class="flex flex-col gap-0_75rem @(_hideFilter ? "md:w-auto" : "md:w-[27%]") md:shrink-0 min-h-0">
-                <div class="filter-panel mt-0 flex flex-col @(_hideFilter ? "" : "flex-1 min-h-0")">
-                    <div class="shrink-0">
-                        <span class="mr-0_5rem h-20 font-bold text-gray-400">Filter</span>
-                        <button type="button" class="text-base toggle-link whitespace-nowrap" @onclick="@(() => _hideFilter = !_hideFilter)">
-                            @(_hideFilter ? "Show" : "Hide")
-                        </button>
-                    </div>
-                    @if (!_hideFilter) {
+            @if (_collapsed) {
+                <button type="button" class="filter-panel mt-0 sidebar-rail shrink-0" @onclick="@(() => _collapsed = false)" aria-label="Expand filter sidebar">
+                    <span class="sidebar-rail-chevron">&rsaquo;</span>
+                    <span class="sidebar-rail-label">Filter</span>
+                    @if (OptionsContent is not null) {
+                        <span class="sidebar-rail-label">Options</span>
+                    }
+                </button>
+            } else {
+                <div class="flex flex-col gap-0_75rem md:w-[27%] md:shrink-0 min-h-0">
+                    <div class="filter-panel mt-0 flex flex-col flex-1 min-h-0">
+                        <div class="shrink-0 flex items-center justify-between">
+                            <span class="font-bold text-gray-400">Filter</span>
+                            <button type="button" class="toggle-link text-lg leading-none px-1" @onclick="@(() => _collapsed = true)" aria-label="Collapse filter sidebar">&lsaquo;</button>
+                        </div>
                         <MissionFilterBar FieldCtx="FieldCtx"
                                           Applying="Applying"
                                           LastResultText="@LastResultText"
                                           FillHeight="true"
                                           OnApply="OnApply"/>
+                    </div>
+                    @if (OptionsContent is not null) {
+                        <div class="filter-panel mt-0 flex-1 min-h-0 overflow-y-auto">
+                            <span class="font-bold text-gray-400">Options</span>
+                            <div class="mt-1 text-sm">
+                                @OptionsContent
+                            </div>
+                        </div>
                     }
                 </div>
-                @if (OptionsContent is not null) {
-                    <div class="filter-panel mt-0 flex-1 min-h-0 overflow-y-auto">
-                        <span class="font-bold text-gray-400">Options</span>
-                        <div class="mt-1 text-sm">
-                            @OptionsContent
-                        </div>
-                    </div>
-                }
-            </div>
+            }
 
             <div class="flex-1 flex flex-col min-h-0 px-2 pb-20 overflow-auto shadow-sm bg-darkest rounded-md">
                 @ChildContent
@@ -59,7 +65,7 @@
     [Parameter] public RenderFragment? OptionsContent { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    private bool _hideFilter;
+    private bool _collapsed;
 
     private static readonly RenderFragment DefaultLoading = __builder => { <p class="text-gray-500 italic">Loading...</p> };
 }

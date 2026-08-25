@@ -1,5 +1,3 @@
-@using EggLedger.Web.Missions.Timeline
-
 <div class="tile-group w-full">
     @foreach (var z in Zooms) {
         <button type="button" class="tile-group-item flex-1 @(Value == z ? "active" : "")" @onclick="@(() => OnValueChanged.InvokeAsync(z))">@z.Label()</button>
