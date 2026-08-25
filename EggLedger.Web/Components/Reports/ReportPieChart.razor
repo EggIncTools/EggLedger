@@ -15,7 +15,7 @@
     </svg>
     <div class="flex flex-col gap-0.5 overflow-y-auto max-h-full min-w-0">
         @foreach (var seg in Slices()) {
-            <div class="flex items-center gap-1 text-xs min-w-0" title="@seg.Label">
+            <div class="flex items-center gap-1 text-xs min-w-0" data-tt="@seg.Label">
                 <span class="w-2 h-2 rounded-sm shrink-0" style="background-color: @seg.Color;"></span>
                 <span class="text-gray-400 truncate">@seg.Label</span>
                 <span class="text-gray-600 ml-auto shrink-0">@seg.Pct.ToString("0.0", CultureInfo.InvariantCulture)%</span>

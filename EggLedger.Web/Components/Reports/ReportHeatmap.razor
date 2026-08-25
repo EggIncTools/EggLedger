@@ -8,14 +8,14 @@
         <tr>
             <th class="px-1 py-0.5 text-left font-normal w-20 text-gray-600"></th>
             @foreach (var col in Result.ColLabels) {
-                <th class="px-1 py-0.5 text-center font-normal text-gray-400 whitespace-nowrap" title="@col">@col</th>
+                <th class="px-1 py-0.5 text-center font-normal text-gray-400 whitespace-nowrap" data-tt="@col">@col</th>
             }
         </tr>
         </thead>
         <tbody>
         @for (var r = 0; r < Result.RowLabels.Count; r++) {
             <tr>
-                <td class="px-1 py-0.5 text-right pr-2 truncate text-gray-400" title="@Result.RowLabels[r]">@Result.RowLabels[r]</td>
+                <td class="px-1 py-0.5 text-right pr-2 truncate text-gray-400" data-tt="@Result.RowLabels[r]">@Result.RowLabels[r]</td>
                 @for (var c = 0; c < Result.ColLabels.Count; c++) {
                     var cell = Cell(r, c);
                     <td class="text-center px-1 py-0.5 transition-[filter] hover:brightness-[1.4]"

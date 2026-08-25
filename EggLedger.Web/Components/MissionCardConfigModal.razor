@@ -43,8 +43,8 @@
                         <div class="flex items-center gap-2 py-1 border-b border-gray-800 last:border-b-0">
                             <input type="checkbox" checked="@slot.Enabled" @onchange="@(e => SetFieldEnabled(slot, e))"/>
                             <span class="flex-1 text-gray-300">@slot.Field</span>
-                            <button type="button" class="w-6 h-6 flex items-center justify-center text-xs border border-gray-700 rounded-md bg-darkest text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed" disabled="@IsFirst(slot)" @onclick="@(() => MoveField(slot, -1))" title="Move up">&uarr;</button>
-                            <button type="button" class="w-6 h-6 flex items-center justify-center text-xs border border-gray-700 rounded-md bg-darkest text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed" disabled="@IsLast(slot)" @onclick="@(() => MoveField(slot, 1))" title="Move down">&darr;</button>
+                            <button type="button" class="w-6 h-6 flex items-center justify-center text-xs border border-gray-700 rounded-md bg-darkest text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed" disabled="@IsFirst(slot)" @onclick="@(() => MoveField(slot, -1))" aria-label="Move up">&uarr;</button>
+                            <button type="button" class="w-6 h-6 flex items-center justify-center text-xs border border-gray-700 rounded-md bg-darkest text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed" disabled="@IsLast(slot)" @onclick="@(() => MoveField(slot, 1))" aria-label="Move down">&darr;</button>
                         </div>
                     }
                 </div>

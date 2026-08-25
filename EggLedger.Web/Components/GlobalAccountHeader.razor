@@ -40,7 +40,7 @@
         }
 
         @if (Fetch.HasFetchContent && Fetch.PopoverDismissed) {
-            <button type="button" @onclick="Fetch.ReopenPopover" title="Show fetch status"
+            <button type="button" @onclick="Fetch.ReopenPopover" aria-label="Show fetch status"
                     class="relative -bottom-px ml-1.5 flex items-center gap-1 px-2 pt-2 pb-1.5 text-xs font-medium text-yellow-400 border border-gray-600 rounded-t-md bg-darker_tab hover:bg-dark_tab_hover transition-colors whitespace-nowrap tabular-nums">
                 <div class="w-8 h-1.5 rounded-sm overflow-hidden bg-dark">
                     <div class="h-full bg-green-500 transition-all duration-300 rounded-sm" style="width: @(Fetch.Percent)%"></div>

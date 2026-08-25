@@ -48,7 +48,7 @@
                                     <span class="flex items-center gap-2 min-w-0">
                                         @if (!string.IsNullOrEmpty(id.Avatar)) {
                                             <button type="button" class="w-5 h-5 rounded-full shrink-0 overflow-hidden border border-transparent hover:border-gray-500"
-                                                    title="Use this picture" @onclick="item.OnSelectAvatar">
+                                                    data-tt="Use this picture" aria-label="Use this picture" @onclick="item.OnSelectAvatar">
                                                 <img class="w-full h-full object-cover" src="@id.Avatar" alt=""/>
                                             </button>
                                         }
@@ -63,7 +63,7 @@
                                             Unlink
                                         </button>
                                     } else {
-                                        <span class="text-xs text-gray-600 italic" title="Cannot unlink the last login">Linked</span>
+                                        <span class="text-xs text-gray-600 italic" data-tt="Cannot unlink the last login">Linked</span>
                                     }
                                 </td>
                             } else {

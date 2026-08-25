@@ -32,11 +32,11 @@
                             </button>
                         }
                         @if (_editMode) {
-                            <button type="button" class="text-gray-600 hover:text-gray-300 text-xs px-0.5" title="Rename group"
+                            <button type="button" class="text-gray-600 hover:text-gray-300 text-xs px-0.5" aria-label="Rename group"
                                     @onclick:stopPropagation @onclick="() => StartRename(g)">
                                 &#9998;
                             </button>
-                            <button type="button" class="text-gray-600 hover:text-red-400 text-sm" title="Delete group"
+                            <button type="button" class="text-gray-600 hover:text-red-400 text-sm" aria-label="Delete group"
                                     @onclick:stopPropagation @onclick="() => DeleteGroupAsync(g.Id)">
                                 &#215;
                             </button>

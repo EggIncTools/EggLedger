@@ -11,13 +11,13 @@
 <div class="relative bg-dark rounded-lg border border-gray-700 flex flex-col h-full overflow-hidden" style="grid-column: @Pos.Col / span @Pos.W; grid-row: @Pos.Row / span @Pos.H;">
     <div class="flex items-start justify-between gap-2 px-3 pt-3 pb-1.5 border-b border-gray-700/50">
         <div class="min-w-0 flex-1">
-            <span class="text-sm font-medium text-gray-200 truncate block" title="@Def.Name">@DisplayName</span>
+            <span class="text-sm font-medium text-gray-200 truncate block" data-tt="@Def.Name">@DisplayName</span>
             <span class="text-xs text-gray-500 block">@Subtitle</span>
             @if (!string.IsNullOrEmpty(Def.Description)) {
-                <span class="text-xs text-gray-500 truncate block mt-0.5" title="@Def.Description">@Def.Description</span>
+                <span class="text-xs text-gray-500 truncate block mt-0.5" data-tt="@Def.Description">@Def.Description</span>
             }
         </div>
-        <span class="text-xs px-1.5 py-0.5 rounded cursor-default shrink-0 @WeightClass" title="@WeightTitle">@Def.Weight</span>
+        <span class="text-xs px-1.5 py-0.5 rounded cursor-default shrink-0 @WeightClass" data-tt="@WeightTitle">@Def.Weight</span>
     </div>
     <div class="flex-1 min-h-0 p-2">
         @if (_error is not null) {
@@ -78,7 +78,7 @@
             }
 
             <button type="button" class="text-gray-400 hover:text-gray-200 px-1 text-xs leading-none disabled:opacity-40"
-                    title="Duplicate report" disabled="@(_copying || _deleting)" @onclick="CopyAsync">
+                    data-tt="Duplicate report" disabled="@(_copying || _deleting)" @onclick="CopyAsync">
                 @(_copying ? "Copying..." : "Copy")
             </button>
             <button type="button" class="text-blue-400 hover:text-blue-300 px-1 text-xs leading-none disabled:opacity-40"

@@ -5,7 +5,7 @@
 <div class="chart-rows w-full h-full grid gap-x-2 gap-y-1 overflow-y-auto pr-3"
      style="grid-template-columns: max-content 1fr max-content; align-content: start;">
     @foreach (var pair in SortedPairs()) {
-        <span class="text-gray-400 text-xs text-right self-center leading-tight" style="max-width: 9rem;" title="@pair.Label">@pair.Label</span>
+        <span class="text-gray-400 text-xs text-right self-center leading-tight" style="max-width: 9rem;" data-tt="@pair.Label">@pair.Label</span>
         <div class="bg-gray-800 rounded-sm h-4 min-w-0 self-center">
             <div class="h-4 rounded-sm chart-hit"
                  style="width: @BarWidth(pair.Value)%; background-color: @BarColor(pair.Label); cursor: pointer;"

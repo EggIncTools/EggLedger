@@ -23,12 +23,12 @@
             @foreach (var u in SortedUsers()) {
                 <tr>
                     <td class="font-medium text-gray-300">@u.Username @(u.IsAdmin ? "(admin)" : "")</td>
-                    <td class="font-mono text-gray-600" title="@u.DiscordId">@(u.DiscordId ?? "—")</td>
+                    <td class="font-mono text-gray-600">@(u.DiscordId ?? "—")</td>
                     <td class="text-right">@u.MissionCount</td>
                     <td class="text-right">@u.ReportCount</td>
                     <td class="text-right">@u.BackupCount</td>
                     <td class="text-right">@LedgerFormatting.FormatBytes(u.StorageBytes)</td>
-                    <td class="text-right text-gray-600" title="@LastLoginTitle(u.LastSession)">@LastLoginLabel(u.LastSession)</td>
+                    <td class="text-right text-gray-600" data-tt="@LastLoginTitle(u.LastSession)">@LastLoginLabel(u.LastSession)</td>
                     <td class="text-right">
                         @if (!u.IsAdmin) {
                             <button type="button" class="text-red-400 hover:text-red-300" @onclick="() => OnDelete.InvokeAsync(u.UserId)">

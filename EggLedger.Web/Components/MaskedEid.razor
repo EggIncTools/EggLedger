@@ -8,7 +8,7 @@
     } else {
         <span class="masked-eid @(_revealed ? "masked-eid-revealed" : "")"
               @onclick="Toggle" @onclick:stopPropagation="true"
-              title="@(_revealed ? "Click to hide" : "Hover or click to reveal")">
+              data-tt="@(_revealed ? "Click to hide" : "Hover or click to reveal")">
             @Value
         </span>
     }

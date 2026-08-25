@@ -60,7 +60,7 @@
             var legendColors = SeriesColors();
         }
         @for (var c = 0; c < Result.ColLabels.Count; c++) {
-            <div class="flex items-center gap-1" title="@Result.ColLabels[c]">
+            <div class="flex items-center gap-1" data-tt="@Result.ColLabels[c]">
                 <div class="w-2 h-2 rounded-sm shrink-0" style="background-color: @legendColors[c];"></div>
                 <span class="text-xs text-gray-400 truncate max-w-28">@Result.ColLabels[c]</span>
             </div>
