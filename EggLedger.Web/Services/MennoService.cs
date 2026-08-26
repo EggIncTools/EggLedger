@@ -60,22 +60,15 @@ public interface IMennoDataStore {
     Task SaveAsync(byte[] utf8Json, CancellationToken cancellationToken = default);
 }
 
-public sealed class MennoService {
+public sealed class MennoService(HttpClient http, IMennoDataStore? store = null) {
     public const string DataUrl =
         "https://eggincdatacollectionsa.blob.core.windows.net/mission-data/all-data.json.gz";
 
 
 
-    private readonly HttpClient _http;
-    private readonly IMennoDataStore? _store;
     private readonly Lock _gate = new();
     private List<ConfigurationItem>? _cache;
     private Task<IReadOnlyList<ConfigurationItem>>? _inFlight;
-
-    public MennoService(HttpClient http, IMennoDataStore? store = null) {
-        _http = http;
-        _store = store;
-    }
 
     public bool HasData => _cache is { Count: > 0 };
 
@@ -107,11 +100,11 @@ public sealed class MennoService {
     }
 
     private async Task<IReadOnlyList<ConfigurationItem>?> TryLoadStoredAsync(CancellationToken cancellationToken) {
-        if (_store is null) {
+        if (store is null) {
             return null;
         }
         try {
-            var bytes = await _store.LoadAsync(cancellationToken).ConfigureAwait(false);
+            var bytes = await store.LoadAsync(cancellationToken).ConfigureAwait(false);
             if (bytes is null || bytes.Length == 0) {
                 return null;
             }
@@ -124,15 +117,15 @@ public sealed class MennoService {
     }
 
     public async Task<IReadOnlyList<ConfigurationItem>> RefreshAsync(CancellationToken cancellationToken = default) {
-        await using var compressed = await _http.GetStreamAsync(DataUrl, cancellationToken).ConfigureAwait(false);
+        await using var compressed = await http.GetStreamAsync(DataUrl, cancellationToken).ConfigureAwait(false);
         await using var gz = new GZipStream(compressed, CompressionMode.Decompress);
         using var ms = new MemoryStream();
         await gz.CopyToAsync(ms, cancellationToken).ConfigureAwait(false);
 
         var items = MennoDecode.Decode(ms.GetBuffer().AsSpan(0, (int)ms.Length));
         _cache = items;
-        if (_store is not null) {
-            await _store.SaveAsync(ms.ToArray(), cancellationToken).ConfigureAwait(false);
+        if (store is not null) {
+            await store.SaveAsync(ms.ToArray(), cancellationToken).ConfigureAwait(false);
         }
         return items;
     }
@@ -143,7 +136,7 @@ public sealed class MennoService {
 
     public IReadOnlyList<ConfigurationItem> GetData(int shipId, int durationId, int level, int targetId) {
         if (_cache is not { Count: > 0 } items) {
-            return Array.Empty<ConfigurationItem>();
+            return [];
         }
         var matches = Filter(items, shipId, durationId, level, targetId);
         if (matches.Count == 0 && targetId != NoTarget) {

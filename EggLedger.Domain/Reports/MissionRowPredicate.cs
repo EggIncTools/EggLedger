@@ -3,25 +3,17 @@ using System.Globalization;
 namespace EggLedger.Domain.Reports;
 
 
-internal sealed class MissionRowPredicate {
-    private readonly ReportDefinition _def;
-    private readonly ILookup<(string Player, string Mission), ArtifactDropRowData> _dropsByMission;
-
-    public MissionRowPredicate(
-        ReportDefinition def,
-        ILookup<(string Player, string Mission), ArtifactDropRowData> dropsByMission) {
-        _def = def;
-        _dropsByMission = dropsByMission;
-    }
-
+internal sealed class MissionRowPredicate(
+    ReportDefinition def,
+    ILookup<(string Player, string Mission), ArtifactDropRowData> dropsByMission) {
 
     public bool PassesFilters(MissionRowData m) {
-        foreach (var c in _def.Filters.And) {
+        foreach (var c in def.Filters.And) {
             if (!EvalMission(c, m)) {
                 return false;
             }
         }
-        foreach (var group in _def.Filters.Or) {
+        foreach (var group in def.Filters.Or) {
             var any = false;
             var hadClause = false;
             foreach (var c in group) {
@@ -42,12 +34,12 @@ internal sealed class MissionRowPredicate {
 
 
     public bool PassesArtifactFilters(ArtifactDropRowData d) {
-        foreach (var c in _def.Filters.And) {
+        foreach (var c in def.Filters.And) {
             if (IsArtifactScope(c) && !EvalArtifact(c, d)) {
                 return false;
             }
         }
-        foreach (var group in _def.Filters.Or) {
+        foreach (var group in def.Filters.Or) {
             var any = false;
             var hadClause = false;
             foreach (var c in group) {
@@ -129,7 +121,7 @@ internal sealed class MissionRowPredicate {
             }
             return true;
         }
-        var exists = _dropsByMission[(m.PlayerId, m.MissionId)].Any(Matches);
+        var exists = dropsByMission[(m.PlayerId, m.MissionId)].Any(Matches);
         return c.Op == "dnc" ? !exists : exists;
     }
 

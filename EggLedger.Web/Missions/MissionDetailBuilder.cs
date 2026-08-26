@@ -6,8 +6,7 @@ namespace EggLedger.Web.Missions;
 
 public sealed class MissionMennoData {
     public int TotalDropsCount { get; set; }
-    public IReadOnlyList<ConfigurationItem> Configs { get; set; } =
-        Array.Empty<ConfigurationItem>();
+    public IReadOnlyList<ConfigurationItem> Configs { get; set; } = [];
 }
 
 public sealed class ViewMissionData {

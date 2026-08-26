@@ -8,14 +8,11 @@ using EggLedger.Web.Settings;
 
 namespace EggLedger.Desktop.Export;
 
-public sealed class DesktopAutoExporter : AutoExporterBase {
-    private readonly string _exportsDir;
+public sealed class DesktopAutoExporter(
+    string dataRootDir, IndexedDbSettings settings, IMissionStore store, MissionQueryHandlers queries)
+    : AutoExporterBase(settings, store, queries) {
 
-    public DesktopAutoExporter(
-        string dataRootDir, IndexedDbSettings settings, IMissionStore store, MissionQueryHandlers queries)
-        : base(settings, store, queries) {
-        _exportsDir = StoragePaths.ResolveExportsDir(dataRootDir);
-    }
+    private readonly string _exportsDir = StoragePaths.ResolveExportsDir(dataRootDir);
 
     protected override async Task DeliverAsync(
         string accountId,

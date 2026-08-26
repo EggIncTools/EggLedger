@@ -9,5 +9,5 @@ public sealed class EiafxWeightData : IWeightData {
         EiafxData.CraftingWeightOrOne(artifactId, level);
 
     public IReadOnlyList<int> FamilyAfxIds(string familyId) =>
-        EiafxData.FamilyAfxIds.TryGetValue(familyId, out var ids) ? ids : Array.Empty<int>();
+        EiafxData.FamilyAfxIds.TryGetValue(familyId, out var ids) ? ids : [];
 }

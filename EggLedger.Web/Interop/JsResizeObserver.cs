@@ -3,19 +3,14 @@ using Microsoft.JSInterop;
 
 namespace EggLedger.Web.Interop;
 
-public sealed class JsResizeObserver : IAsyncDisposable {
+public sealed class JsResizeObserver(IJSRuntime js) : IAsyncDisposable {
     private const string ModulePath = "./_content/EggLedger.Web/js/resizeObserver.js";
-    private readonly IJSRuntime _js;
     private IJSObjectReference? _module;
     private IJSObjectReference? _handle;
 
-    public JsResizeObserver(IJSRuntime js) {
-        _js = js;
-    }
-
     public async Task ObserveAsync<T>(ElementReference element, DotNetObjectReference<T> dotNetRef, string methodName) where T : class {
         try {
-            _module = await _js.InvokeAsync<IJSObjectReference>("import", ModulePath);
+            _module = await js.InvokeAsync<IJSObjectReference>("import", ModulePath);
             _handle = await _module.InvokeAsync<IJSObjectReference>("observe", element, dotNetRef, methodName);
         } catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or TaskCanceledException) {
         }

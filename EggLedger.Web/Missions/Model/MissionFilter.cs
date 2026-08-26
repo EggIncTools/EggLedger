@@ -1,7 +1,7 @@
 namespace EggLedger.Web.Missions.Model;
 
 public sealed record MissionFilter(IReadOnlyList<FilterGroup> Groups) {
-    public static readonly MissionFilter Empty = new(Array.Empty<FilterGroup>());
+    public static readonly MissionFilter Empty = new([]);
 
     public bool IsEmpty => Groups.Count == 0 || Groups.All(g => g.Conditions.Count == 0);
 }

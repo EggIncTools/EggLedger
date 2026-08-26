@@ -892,10 +892,7 @@
 }
 
 .tooltip-floating {
-  @apply whitespace-nowrap text-center text-gray-300 fixed z-[9999]
-         [border:1px_solid_#ccc] p-[10px] rounded-[4px]
-         [background-color:rgba(33,37,41,0.95)] pointer-events-none
-         [transform:translateX(-50%)_translateY(calc(-100%_-_10px))];
+  border-color: #ccc;
 }
 
 .tooltip-fixed {
@@ -988,20 +985,18 @@
   @apply flex flex-col gap-3 mb-4;
 }
 
-.legal-link {
-  @apply text-accent no-underline;
-}
-
-.legal-link:hover {
-  @apply underline;
-}
-
 .legal-link-btn {
   padding: 0;
   border: 0;
   background: transparent;
   font: inherit;
   cursor: pointer;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.legal-link-btn:hover {
+  text-decoration: underline;
 }
 
 .legal-home-link {

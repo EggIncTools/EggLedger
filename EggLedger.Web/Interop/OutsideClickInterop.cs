@@ -1,28 +1,22 @@
+using EggIdentity.UI;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 
 namespace EggLedger.Web.Interop;
 
-public sealed class OutsideClickRegistration : IAsyncDisposable {
+public sealed class OutsideClickRegistration(
+    OutsideClickInterop interop, Func<Task> onOutsideClick, string? id = null) : IAsyncDisposable {
 
     private static long _nextId;
 
-    private readonly IJSRuntime _js;
-    private readonly Func<Task> _onOutsideClick;
-    private readonly string _id;
+    private readonly string _id = id ?? $"outside-click-{Interlocked.Increment(ref _nextId)}";
     private DotNetObjectReference<OutsideClickRegistration>? _selfRef;
     private bool _registered;
-
-    public OutsideClickRegistration(IJSRuntime js, Func<Task> onOutsideClick, string? id = null) {
-        _js = js;
-        _onOutsideClick = onOutsideClick;
-        _id = id ?? $"outside-click-{Interlocked.Increment(ref _nextId)}";
-    }
 
     public async Task RegisterAsync(ElementReference element) {
         _selfRef ??= DotNetObjectReference.Create(this);
         try {
-            await _js.InvokeVoidAsync("outsideClickRegister", _id, element, _selfRef);
+            await interop.RegisterAsync(_id, element, _selfRef);
             _registered = true;
         } catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or TaskCanceledException) {
         }
@@ -35,7 +29,7 @@ public sealed class OutsideClickRegistration : IAsyncDisposable {
 
         _registered = false;
         try {
-            await _js.InvokeVoidAsync("outsideClickUnregister", _id);
+            await interop.UnregisterAsync(_id);
         } catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or TaskCanceledException) {
         }
     }
@@ -43,7 +37,7 @@ public sealed class OutsideClickRegistration : IAsyncDisposable {
     [JSInvokable]
     public async Task OnOutsideClick() {
         _registered = false;
-        await _onOutsideClick();
+        await onOutsideClick();
     }
 
     public async ValueTask DisposeAsync() {

@@ -67,6 +67,8 @@ public static class WebServiceRegistration {
             logger: sp.GetService<ILogger<GameEventsService>>()));
 
 
+        services.AddScoped<EggIdentity.UI.OutsideClickInterop>();
+
         services.AddScoped<INavigation, BlazorNavigation>();
         services.AddScoped<IBlobCipher, LocalBlobCipher>();
         services.AddScoped<CloudSyncService>();

@@ -52,11 +52,10 @@ public sealed class UpdateService : IUpdateStatusProvider {
     }
 
     public static IReadOnlyList<string> BuildReplaceArgs(int oldPid, string oldPath, string? handshakeAddr, string? handshakeToken) {
-        var args = new List<string>
-        {
+        List<string> args = [
             $"--replace-pid={oldPid.ToString(CultureInfo.InvariantCulture)}",
             $"--replace-path={oldPath}",
-        };
+        ];
         if (!string.IsNullOrEmpty(handshakeAddr) && !string.IsNullOrEmpty(handshakeToken)) {
             args.Add($"--handshake-port={handshakeAddr}");
             args.Add($"--handshake-token={handshakeToken}");

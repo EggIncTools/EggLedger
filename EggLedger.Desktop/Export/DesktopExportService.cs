@@ -5,27 +5,21 @@ using EggLedger.Web.Platform;
 
 namespace EggLedger.Desktop.Export;
 
-public sealed class DesktopExportService : IExportManagement {
-    private readonly string _exportsDir;
-    private readonly IExportFileSystem _fs;
-    private readonly Func<Task<IReadOnlyList<AccountInfo>>>? _accountLookup;
+public sealed class DesktopExportService(
+    string dataRootDir,
+    IExportFileSystem? fs = null,
+    Func<Task<IReadOnlyList<AccountInfo>>>? accountLookup = null) : IExportManagement {
 
-    public DesktopExportService(
-        string dataRootDir,
-        IExportFileSystem? fs = null,
-        Func<Task<IReadOnlyList<AccountInfo>>>? accountLookup = null) {
-        _exportsDir = StoragePaths.ResolveExportsDir(dataRootDir);
-        _fs = fs ?? new PhysicalExportFileSystem();
-        _accountLookup = accountLookup;
-    }
+    private readonly string _exportsDir = StoragePaths.ResolveExportsDir(dataRootDir);
+    private readonly IExportFileSystem _fs = fs ?? new PhysicalExportFileSystem();
 
     public async Task<List<ExportGroup>> ListAsync() {
         var dir = _exportsDir;
         var groups = await Task.Run(() => ExportManagement.ListGroups(dir, _fs));
-        if (_accountLookup is null || groups.Count == 0) {
+        if (accountLookup is null || groups.Count == 0) {
             return groups;
         }
-        var accounts = await _accountLookup();
+        var accounts = await accountLookup();
         var byId = new Dictionary<string, AccountInfo>(StringComparer.Ordinal);
         foreach (var a in accounts) {
             byId[a.Id] = a;

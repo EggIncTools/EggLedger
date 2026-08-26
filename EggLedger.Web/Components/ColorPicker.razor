@@ -1,5 +1,5 @@
 @implements IAsyncDisposable
-@inject IJSRuntime Js
+@inject EggIdentity.UI.OutsideClickInterop OutsideClick
 @* Color math lives in the pure ColorPickerMath helper. Two-way bound through Value/ValueChanged (canonical #rrggbb). *@
 
 <div class="color-picker" @ref="_rootRef">
@@ -72,7 +72,7 @@
     private async Task Toggle() {
         _open = !_open;
         if (_open) {
-            _outsideClick ??= new OutsideClickRegistration(Js, HandleOutsideClickAsync);
+            _outsideClick ??= new OutsideClickRegistration(OutsideClick, HandleOutsideClickAsync);
             await _outsideClick.RegisterAsync(_rootRef);
         } else if (_outsideClick is not null) {
             await _outsideClick.UnregisterAsync();
