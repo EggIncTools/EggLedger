@@ -210,7 +210,7 @@
             ["linkRejected"] = null,
             ["linkError"] = null
         }));
-        var settingsUri = Nav.ToAbsoluteUri("settings").ToString() + cleanUri.Query;
+        var settingsUri = Nav.ToAbsoluteUri("settings") + cleanUri.Query;
         Nav.NavigateTo(settingsUri, replace: true);
     }
 

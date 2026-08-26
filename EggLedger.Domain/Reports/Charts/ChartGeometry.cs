@@ -76,7 +76,7 @@ public static partial class ChartGeometry {
             return [];
         }
         double yRange = h - PadTop - PadBottom;
-        var fracs = new[] { 0.33, 0.67, 1.0 };
+        double[] fracs = [0.33, 0.67, 1.0];
         var ticks = new List<YTick>(3);
         foreach (var frac in fracs) {
             double val = max * frac;

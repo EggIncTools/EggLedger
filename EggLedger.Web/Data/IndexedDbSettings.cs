@@ -1,12 +1,8 @@
 namespace EggLedger.Web.Data;
 
-public sealed class IndexedDbSettings {
-    private readonly IIndexedDb _db;
+public sealed class IndexedDbSettings(IIndexedDb db) {
+    private readonly IIndexedDb _db = db ?? throw new ArgumentNullException(nameof(db));
     private Dictionary<string, string>? _cache;
-
-    public IndexedDbSettings(IIndexedDb db) {
-        _db = db ?? throw new ArgumentNullException(nameof(db));
-    }
 
     public async Task<Dictionary<string, string>> GetAllSettingsAsync() {
         if (_cache is { } cached) {

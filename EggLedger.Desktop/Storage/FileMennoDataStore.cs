@@ -2,12 +2,8 @@ using EggLedger.Web.Services;
 
 namespace EggLedger.Desktop.Storage;
 
-public sealed class FileMennoDataStore : IMennoDataStore {
-    private readonly string _path;
-
-    public FileMennoDataStore(string internalDir) {
-        _path = Path.Combine(internalDir, "menno-data.json");
-    }
+public sealed class FileMennoDataStore(string internalDir) : IMennoDataStore {
+    private readonly string _path = Path.Combine(internalDir, "menno-data.json");
 
     public async Task<byte[]?> LoadAsync(CancellationToken cancellationToken = default) {
         if (!File.Exists(_path)) {

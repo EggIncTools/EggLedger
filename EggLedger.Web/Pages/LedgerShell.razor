@@ -108,33 +108,41 @@
         Shell.SupportOpen = false;
     }
 
-    private static (LedgerView View, bool Settings, bool About)? RouteTarget(string path) => path switch {
-        "/missions" => (LedgerView.Ships, false, false),
-        "/lifetime" => (LedgerView.Drops, false, false),
-        "/reports" => (LedgerView.Reports, false, false),
-        "/settings" => (LedgerView.Ships, true, false),
-        "/about" => (LedgerView.Ships, false, true),
-        _ => null
-    };
+    private static (LedgerView View, bool Settings, bool About)? RouteTarget(string path) {
+        return path switch {
+            "/missions" => (LedgerView.Ships, false, false),
+            "/lifetime" => (LedgerView.Drops, false, false),
+            "/reports" => (LedgerView.Reports, false, false),
+            "/settings" => (LedgerView.Ships, true, false),
+            "/about" => (LedgerView.Ships, false, true),
+            _ => null
+        };
+    }
 
-    private static string ViewSlug(LedgerView view) => view switch {
-        LedgerView.Drops => "drops",
-        LedgerView.Reports => "reports",
-        _ => "ships"
-    };
+    private static string ViewSlug(LedgerView view) {
+        return view switch {
+            LedgerView.Drops => "drops",
+            LedgerView.Reports => "reports",
+            _ => "ships"
+        };
+    }
 
-    private static LedgerView? ViewFromSlug(string? slug) => slug switch {
-        "ships" => LedgerView.Ships,
-        "drops" => LedgerView.Drops,
-        "reports" => LedgerView.Reports,
-        _ => null
-    };
+    private static LedgerView? ViewFromSlug(string? slug) {
+        return slug switch {
+            "ships" => LedgerView.Ships,
+            "drops" => LedgerView.Drops,
+            "reports" => LedgerView.Reports,
+            _ => null
+        };
+    }
 
-    private static string ViewLabel(LedgerView view) => view switch {
-        LedgerView.Drops => "Drops",
-        LedgerView.Reports => "Reports",
-        _ => "Ships"
-    };
+    private static string ViewLabel(LedgerView view) {
+        return view switch {
+            LedgerView.Drops => "Drops",
+            LedgerView.Reports => "Reports",
+            _ => "Ships"
+        };
+    }
 
     private void OnShellChanged() {
         InvokeAsync(StateHasChanged);

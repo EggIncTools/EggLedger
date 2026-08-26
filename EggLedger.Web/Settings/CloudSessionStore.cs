@@ -4,7 +4,7 @@ using EggLedger.Web.Services;
 
 namespace EggLedger.Web.Settings;
 
-public sealed class CloudSessionStore {
+public sealed class CloudSessionStore(IndexedDbSettings settings) {
     public const string KeyToken = "cloud_session_token";
     public const string KeyEncryptionKey = "cloud_encryption_key";
     public const string KeyUsername = "cloud_username";
@@ -14,14 +14,9 @@ public sealed class CloudSessionStore {
     public const string KeyAutoSync = "cloud_auto_sync";
 
     public const string KeyPendingAuthState = "cloud_pending_auth_state";
-    private readonly IndexedDbSettings _settings;
-
-    public CloudSessionStore(IndexedDbSettings settings) {
-        _settings = settings;
-    }
 
     public async Task<CloudSession?> GetSessionAsync() {
-        var all = await _settings.GetAllSettingsAsync();
+        var all = await settings.GetAllSettingsAsync();
         if (!all.TryGetValue(KeyToken, out var token) || string.IsNullOrEmpty(token)) {
             return null;
         }
@@ -33,7 +28,7 @@ public sealed class CloudSessionStore {
     }
 
     public async Task SaveSessionAsync(CloudSession session) {
-        await _settings.SetSettingsAsync(new Dictionary<string, string> {
+        await settings.SetSettingsAsync(new Dictionary<string, string> {
             [KeyToken] = session.Token,
             [KeyEncryptionKey] = session.EncryptionKey,
             [KeyUsername] = session.Username,
@@ -42,7 +37,7 @@ public sealed class CloudSessionStore {
     }
 
     public async Task ClearSessionAsync() {
-        await _settings.SetSettingsAsync(new Dictionary<string, string> {
+        await settings.SetSettingsAsync(new Dictionary<string, string> {
             [KeyToken] = "",
             [KeyEncryptionKey] = "",
             [KeyUsername] = "",
@@ -55,32 +50,32 @@ public sealed class CloudSessionStore {
     public async Task<long> GetLastPullAtAsync() => await GetUnixAsync(KeyLastPullAt);
 
     public async Task SetLastPushAtAsync(long unixSeconds) =>
-        await _settings.SetSettingAsync(KeyLastPushAt, unixSeconds.ToString(CultureInfo.InvariantCulture));
+        await settings.SetSettingAsync(KeyLastPushAt, unixSeconds.ToString(CultureInfo.InvariantCulture));
 
     public async Task SetLastPullAtAsync(long unixSeconds) =>
-        await _settings.SetSettingAsync(KeyLastPullAt, unixSeconds.ToString(CultureInfo.InvariantCulture));
+        await settings.SetSettingAsync(KeyLastPullAt, unixSeconds.ToString(CultureInfo.InvariantCulture));
 
     public async Task<bool> GetAutoSyncAsync() {
-        var all = await _settings.GetAllSettingsAsync();
+        var all = await settings.GetAllSettingsAsync();
         return all.TryGetValue(KeyAutoSync, out var raw) && bool.TryParse(raw, out var v) && v;
     }
 
     public async Task SetAutoSyncAsync(bool enabled) =>
-        await _settings.SetSettingAsync(KeyAutoSync, SettingsModel.FormatBool(enabled));
+        await settings.SetSettingAsync(KeyAutoSync, SettingsModel.FormatBool(enabled));
 
     public async Task<string?> GetPendingAuthStateAsync() {
-        var all = await _settings.GetAllSettingsAsync();
+        var all = await settings.GetAllSettingsAsync();
         return all.TryGetValue(KeyPendingAuthState, out var s) && !string.IsNullOrEmpty(s) ? s : null;
     }
 
     public async Task SetPendingAuthStateAsync(string state) =>
-        await _settings.SetSettingAsync(KeyPendingAuthState, state);
+        await settings.SetSettingAsync(KeyPendingAuthState, state);
 
     public async Task ClearPendingAuthStateAsync() =>
-        await _settings.SetSettingAsync(KeyPendingAuthState, "");
+        await settings.SetSettingAsync(KeyPendingAuthState, "");
 
     private async Task<long> GetUnixAsync(string key) {
-        var all = await _settings.GetAllSettingsAsync();
+        var all = await settings.GetAllSettingsAsync();
         return all.TryGetValue(key, out var raw)
             && long.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var v)
             ? v

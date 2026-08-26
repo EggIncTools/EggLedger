@@ -3,24 +3,14 @@ using Ei;
 
 namespace EggLedger.Domain.MissionQuery;
 
-public sealed class MissionQueryHandlers {
-    private readonly IMissionStore _store;
-    private readonly IArtifactQuality _quality;
-    private readonly IMissionCompiler _compiler;
-
-    public MissionQueryHandlers(IMissionStore store, IArtifactQuality quality, IMissionCompiler compiler) {
-        _store = store;
-        _quality = quality;
-        _compiler = compiler;
-    }
-
+public sealed class MissionQueryHandlers(IMissionStore store, IArtifactQuality quality, IMissionCompiler compiler) {
     public Task<IReadOnlyList<string>?> GetMissionIdsAsync(string playerId) =>
-        _store.GetCompleteMissionIdsAsync(playerId);
+        store.GetCompleteMissionIdsAsync(playerId);
 
     public async Task<List<DatabaseAccount>> GetExistingDataAsync() {
         var result = new List<DatabaseAccount>();
-        foreach (var acct in await _store.GetKnownAccountsAsync()) {
-            var stats = await _store.GetPlayerMissionStatsAsync(acct.Id);
+        foreach (var acct in await store.GetKnownAccountsAsync()) {
+            var stats = await store.GetPlayerMissionStatsAsync(acct.Id);
             if (stats is null) {
                 continue;
             }
@@ -41,28 +31,28 @@ public sealed class MissionQueryHandlers {
     public async Task<IReadOnlyList<IMissionRow>?> ViewMissionsOfEidAsync(string eid) {
 
 
-        _store.QueueArtifactDropsBackfill(eid);
+        store.QueueArtifactDropsBackfill(eid);
 
-        int? pending = await _store.CountPendingFilterColsAsync(eid);
+        int? pending = await store.CountPendingFilterColsAsync(eid);
 
 
         if (pending is 0) {
-            return await _store.GetPlayerMissionMetaAsync(eid);
+            return await store.GetPlayerMissionMetaAsync(eid);
         }
 
 
-        var complete = await _store.GetPlayerCompleteMissionsAsync(eid);
+        var complete = await store.GetPlayerCompleteMissionsAsync(eid);
         if (complete is null) {
             return null;
         }
         var missions = new List<IMissionRow>(complete.Count);
         foreach (var cm in complete) {
-            missions.Add(_compiler.CompileMissionInformation(cm));
+            missions.Add(compiler.CompileMissionInformation(cm));
         }
 
 
         if (pending is > 0) {
-            _store.QueueFilterColBackfill(eid);
+            store.QueueFilterColBackfill(eid);
         }
 
         return missions;
@@ -92,11 +82,11 @@ public sealed class MissionQueryHandlers {
 
 
 
-        var stored = await _store.GetStoredPlayerDropsAsync(playerId);
+        var stored = await store.GetStoredPlayerDropsAsync(playerId);
         if (stored is null) {
             return null;
         }
-        var missionIds = await _store.GetCompleteMissionIdsAsync(playerId);
+        var missionIds = await store.GetCompleteMissionIdsAsync(playerId);
         if (missionIds is null) {
             return null;
         }
@@ -124,7 +114,7 @@ public sealed class MissionQueryHandlers {
     }
 
     public async Task<List<MissionDrop>?> GetShipDropsAsync(string playerId, string missionId) {
-        var cm = await _store.GetCompleteMissionAsync(playerId, missionId);
+        var cm = await store.GetCompleteMissionAsync(playerId, missionId);
         if (cm is null) {
             return null;
         }
@@ -146,7 +136,7 @@ public sealed class MissionQueryHandlers {
             GameName = spec.CasedName(),
             Level = (int)spec.level,
             Rarity = (int)spec.rarity,
-            Quality = _quality.BaseQualityFor(spec),
+            Quality = quality.BaseQualityFor(spec),
             IVOrder = spec.name.InventoryVisualizerOrder(),
         };
 

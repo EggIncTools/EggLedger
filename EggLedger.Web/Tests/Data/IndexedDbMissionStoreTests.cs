@@ -340,7 +340,10 @@ public sealed class IndexedDbMissionStoreTests {
         var (store, db) = Make();
         await store.ReplaceInFlightMissionsAsync("EI1", [InFlight("f1", 100)]);
         db.Seed("inflight_mission", new InFlightMissionRow {
-            PlayerId = "EI1", MissionId = "bad", CapturedAt = 1, Payload = "{not json",
+            PlayerId = "EI1",
+            MissionId = "bad",
+            CapturedAt = 1,
+            Payload = "{not json",
         });
 
         var got = await store.GetInFlightMissionsAsync("EI1");

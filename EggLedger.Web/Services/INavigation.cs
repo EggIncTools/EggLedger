@@ -6,8 +6,6 @@ public interface INavigation {
     void NavigateTo(string url);
 }
 
-public sealed class BlazorNavigation : INavigation {
-    private readonly NavigationManager _nav;
-    public BlazorNavigation(NavigationManager nav) => _nav = nav;
-    public void NavigateTo(string url) => _nav.NavigateTo(url, forceLoad: true);
+public sealed class BlazorNavigation(NavigationManager nav) : INavigation {
+    public void NavigateTo(string url) => nav.NavigateTo(url, forceLoad: true);
 }

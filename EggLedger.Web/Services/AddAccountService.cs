@@ -5,24 +5,15 @@ using EggLedger.Web.Data;
 
 namespace EggLedger.Web.Services;
 
-public sealed class AddAccountService {
+public sealed class AddAccountService(ApiClient api, IndexedDbAccountStore accounts, IApiPayloadDecoder decoder) {
     private static readonly TimeSpan FirstContactTimeout = TimeSpan.FromSeconds(20);
-    private readonly ApiClient _api;
-    private readonly IndexedDbAccountStore _accounts;
-    private readonly IApiPayloadDecoder _decoder;
-
-    public AddAccountService(ApiClient api, IndexedDbAccountStore accounts, IApiPayloadDecoder decoder) {
-        _api = api;
-        _accounts = accounts;
-        _decoder = decoder;
-    }
 
     public async Task<AccountInfo> AddAccountAsync(string eid, CancellationToken cancellationToken = default) {
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         cts.CancelAfter(FirstContactTimeout);
 
-        byte[] payload = await _api.RequestFirstContactRawPayloadAsync(eid, cts.Token).ConfigureAwait(false);
-        var fc = await _decoder.DecodeFirstContactAsync(payload, cts.Token).ConfigureAwait(false);
+        byte[] payload = await api.RequestFirstContactRawPayloadAsync(eid, cts.Token).ConfigureAwait(false);
+        var fc = await decoder.DecodeFirstContactAsync(payload, cts.Token).ConfigureAwait(false);
         var invalid = fc.Validate();
         if (invalid is not null) {
             throw new InvalidOperationException(
@@ -30,7 +21,7 @@ public sealed class AddAccountService {
         }
 
         var account = AccountFactory.FromBackup(eid, fc.Backup!);
-        await _accounts.AddKnownAccountAsync(account).ConfigureAwait(false);
+        await accounts.AddKnownAccountAsync(account).ConfigureAwait(false);
         return account;
     }
 }

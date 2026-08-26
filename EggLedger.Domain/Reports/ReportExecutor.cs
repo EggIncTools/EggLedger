@@ -3,14 +3,9 @@ using EggLedger.Domain.Util;
 
 namespace EggLedger.Domain.Reports;
 
-public sealed class ReportExecutor {
-    private readonly IMissionDb _db;
-    private readonly IWeightData _weights;
-
-    public ReportExecutor(IMissionDb db, IWeightData weights) {
-        _db = db ?? throw new ArgumentNullException(nameof(db));
-        _weights = weights ?? throw new ArgumentNullException(nameof(weights));
-    }
+public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
+    private readonly IMissionDb _db = db ?? throw new ArgumentNullException(nameof(db));
+    private readonly IWeightData _weights = weights ?? throw new ArgumentNullException(nameof(weights));
 
     public ReportResult ExecuteReport(ReportDefinition def) {
         var (whereClause, filterArgs) = QueryBuilder.BuildWhereClause(def.Filters);
@@ -18,7 +13,7 @@ public sealed class ReportExecutor {
         if (whereClause != "") {
             baseWhere += " AND " + whereClause;
         }
-        var args = new List<object?> { def.AccountId };
+        List<object?> args = [def.AccountId];
         args.AddRange(filterArgs);
         var baseArgs = new List<object?>(args);
 

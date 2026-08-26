@@ -17,10 +17,9 @@ public sealed class PhotinoDesktopWindow : IDesktopWindow {
 
     public string? ShowSaveFileDialog(string defaultName) {
         string ext = Path.GetExtension(defaultName).TrimStart('.');
-        var filters = new (string Name, string[] Extensions)[]
-        {
+        (string Name, string[] Extensions)[] filters = [
             (FilterName(ext), [ext]),
-        };
+        ];
         var chosen = Window.ShowSaveFile("Save As", defaultName, filters);
         return string.IsNullOrEmpty(chosen) ? null : chosen;
     }

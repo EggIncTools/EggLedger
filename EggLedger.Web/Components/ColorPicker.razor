@@ -1,5 +1,6 @@
+@using EggIdentity.UI
 @implements IAsyncDisposable
-@inject EggIdentity.UI.OutsideClickInterop OutsideClick
+@inject OutsideClickInterop OutsideClick
 @* Color math lives in the pure ColorPickerMath helper. Two-way bound through Value/ValueChanged (canonical #rrggbb). *@
 
 <div class="color-picker" @ref="_rootRef">

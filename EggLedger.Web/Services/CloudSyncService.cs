@@ -7,24 +7,15 @@ using EggLedger.Web.Platform;
 
 namespace EggLedger.Web.Services;
 
-public sealed class CloudSyncService {
+public sealed class CloudSyncService(
+    HttpClient http, INavigation nav, IBlobCipher cipher, IPlatformCapabilities platform) {
+
     public const string ApiPrefix = "api/v1";
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
-    private readonly HttpClient _http;
-    private readonly INavigation _nav;
-    private readonly IBlobCipher _cipher;
-    private readonly IPlatformCapabilities _platform;
-
-    public CloudSyncService(HttpClient http, INavigation nav, IBlobCipher cipher, IPlatformCapabilities platform) {
-        _http = http;
-        _nav = nav;
-        _cipher = cipher;
-        _platform = platform;
-    }
 
     public async Task<bool> CheckReachableAsync(CancellationToken cancellationToken = default) {
         try {
-            using var resp = await _http.GetAsync($"{ApiPrefix}/verify", cancellationToken).ConfigureAwait(false);
+            using var resp = await http.GetAsync($"{ApiPrefix}/verify", cancellationToken).ConfigureAwait(false);
             return resp.StatusCode == HttpStatusCode.OK;
         } catch (HttpRequestException) {
             return false;
@@ -35,7 +26,7 @@ public sealed class CloudSyncService {
 
     public async Task<string> BeginAuthAsync(CancellationToken cancellationToken = default) {
         AuthInitResponse? init;
-        using (var resp = await _http.GetAsync($"{ApiPrefix}/auth/pair/begin", cancellationToken).ConfigureAwait(false)) {
+        using (var resp = await http.GetAsync($"{ApiPrefix}/auth/pair/begin", cancellationToken).ConfigureAwait(false)) {
             if (!resp.IsSuccessStatusCode) {
                 throw new CloudSyncException($"auth init: server returned {(int)resp.StatusCode}");
             }
@@ -45,17 +36,17 @@ public sealed class CloudSyncService {
             throw new CloudSyncException("auth init: malformed response");
         }
 
-        if (_platform.IsDesktop) {
-            await _platform.OpenUrlAsync(init.Url);
+        if (platform.IsDesktop) {
+            await platform.OpenUrlAsync(init.Url);
         } else {
-            _nav.NavigateTo(init.Url);
+            nav.NavigateTo(init.Url);
         }
         return init.State;
     }
 
     public async Task<PollResult> PollOnceAsync(string state, CancellationToken cancellationToken = default) {
         var url = $"{ApiPrefix}/auth/poll?state={Uri.EscapeDataString(state)}";
-        using var resp = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
+        using var resp = await http.GetAsync(url, cancellationToken).ConfigureAwait(false);
 
         switch (resp.StatusCode) {
             case HttpStatusCode.Accepted:
@@ -74,7 +65,7 @@ public sealed class CloudSyncService {
     }
 
     public async Task<CloudSession> ConnectViaLoginAsync(CancellationToken cancellationToken = default) {
-        using var resp = await _http.PostAsync($"{ApiPrefix}/auth/session-from-login", content: null, cancellationToken).ConfigureAwait(false);
+        using var resp = await http.PostAsync($"{ApiPrefix}/auth/session-from-login", content: null, cancellationToken).ConfigureAwait(false);
         if (resp.StatusCode == HttpStatusCode.Unauthorized) {
             throw new CloudSyncException("session-from-login: not logged in");
         }
@@ -90,13 +81,13 @@ public sealed class CloudSyncService {
         using var req = new HttpRequestMessage(HttpMethod.Delete, $"{ApiPrefix}/auth/session");
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        using var resp = await _http.SendAsync(req, cancellationToken).ConfigureAwait(false);
+        using var resp = await http.SendAsync(req, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task<HttpResponseMessage> SendAuthedAsync(
         CloudSession session, HttpRequestMessage request, string expiredMessage, CancellationToken cancellationToken) {
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", session.Token);
-        var resp = await _http.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        var resp = await http.SendAsync(request, cancellationToken).ConfigureAwait(false);
         if (resp.StatusCode == HttpStatusCode.Unauthorized) {
             resp.Dispose();
             throw new CloudSyncException(expiredMessage);
@@ -106,7 +97,7 @@ public sealed class CloudSyncService {
 
     public async Task PutBlobAsync<T>(CloudSession session, string name, T payload, CancellationToken cancellationToken = default) {
         var plaintext = JsonSerializer.SerializeToUtf8Bytes(payload, Json);
-        var ciphertext = await _cipher.EncryptAsync(session.EncryptionKey, plaintext, cancellationToken).ConfigureAwait(false);
+        var ciphertext = await cipher.EncryptAsync(session.EncryptionKey, plaintext, cancellationToken).ConfigureAwait(false);
 
         using var req = new HttpRequestMessage(HttpMethod.Put, $"{ApiPrefix}/blobs/{Uri.EscapeDataString(name)}");
         req.Content = JsonContent.Create(new PutBlobRequest(ciphertext), options: Json);
@@ -132,7 +123,7 @@ public sealed class CloudSyncService {
             ?? throw new CloudSyncException($"getBlob {name}: malformed response");
         byte[] plaintext;
         try {
-            plaintext = await _cipher.DecryptAsync(session.EncryptionKey, env.Ciphertext, cancellationToken).ConfigureAwait(false);
+            plaintext = await cipher.DecryptAsync(session.EncryptionKey, env.Ciphertext, cancellationToken).ConfigureAwait(false);
         } catch (Exception ex) when (ex is not CloudSyncException) {
             throw new CloudSyncException($"getBlob {name}: decrypt failed: {ex.Message}", ex);
         }

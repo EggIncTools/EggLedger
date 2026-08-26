@@ -2,12 +2,8 @@ using EggLedger.Web.Services;
 
 namespace EggLedger.Desktop.Storage;
 
-public sealed class FileGameEventStore : IGameEventStore {
-    private readonly string _path;
-
-    public FileGameEventStore(string internalDir) {
-        _path = Path.Combine(internalDir, "events.json");
-    }
+public sealed class FileGameEventStore(string internalDir) : IGameEventStore {
+    private readonly string _path = Path.Combine(internalDir, "events.json");
 
     public async Task<byte[]?> LoadAsync(CancellationToken cancellationToken = default) {
         if (!File.Exists(_path)) {

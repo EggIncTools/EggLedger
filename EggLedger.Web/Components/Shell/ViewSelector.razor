@@ -22,10 +22,12 @@
         new(LedgerView.Reports, "Reports", "Saved analysis", "view-btn-reports")
     ];
 
-    private string ButtonClass(ViewOption option) =>
-        Current == option.View ? $"view-btn {option.Variant} on" : $"view-btn {option.Variant}";
+    private string ButtonClass(ViewOption option) {
+        return Current == option.View ? $"view-btn {option.Variant} on" : $"view-btn {option.Variant}";
+    }
 
-    private string AriaPressed(ViewOption option) =>
-        Current == option.View ? "true" : "false";
+    private string AriaPressed(ViewOption option) {
+        return Current == option.View ? "true" : "false";
+    }
 
 }

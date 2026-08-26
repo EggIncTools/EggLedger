@@ -45,7 +45,7 @@ public static class QueryBuilder {
         }
 
         if (clauses.Count == 0) {
-            return ("", new List<object?>());
+            return ("", []);
         }
         return (string.Join(" AND ", clauses), args);
     }
@@ -80,14 +80,14 @@ public static class QueryBuilder {
                     : ("m.is_bugged_cap = 0", []);
             case "drops":
                 if (c.Op is not "c" and not "dnc") {
-                    return ("", new List<object?>());
+                    return ("", []);
                 }
                 if (c.Val == "") {
-                    return ("", new List<object?>());
+                    return ("", []);
                 }
                 var parts = c.Val.Split('_');
 
-                var cols = new[] { "artifact_id", "level", "rarity" };
+                string[] cols = ["artifact_id", "level", "rarity"];
                 var preds = new List<string>();
                 var qargs = new List<object?>();
                 for (var i = 0; i < cols.Length; i++) {
@@ -128,11 +128,11 @@ public static class QueryBuilder {
 
 
                     if (!IsInt(c.Val)) {
-                        return ("", new List<object?>());
+                        return ("", []);
                     }
-                    return ($"{mcol} {c.Op} ?", new List<object?> { c.Val });
+                    return ($"{mcol} {c.Op} ?", [c.Val]);
             }
-            return ("", new List<object?>());
+            return ("", []);
         }
 
         if (ArtifactFieldToColumn.TryGetValue(c.TopLevel, out var acol)) {
@@ -151,21 +151,21 @@ public static class QueryBuilder {
                             break;
                         case "artifact_quality":
                             if (!IsFloat(c.Val)) {
-                                return ("", new List<object?>());
+                                return ("", []);
                             }
                             break;
                         default:
                             if (!IsInt(c.Val)) {
-                                return ("", new List<object?>());
+                                return ("", []);
                             }
                             break;
                     }
-                    return ($"{acol} {c.Op} ?", new List<object?> { c.Val });
+                    return ($"{acol} {c.Op} ?", [c.Val]);
             }
-            return ("", new List<object?>());
+            return ("", []);
         }
 
-        return ("", new List<object?>());
+        return ("", []);
     }
 
     public static string GroupByColumn(string groupBy) => groupBy switch {
@@ -362,7 +362,7 @@ public static class QueryBuilder {
 
     public static (string clause, List<object?> args) FamilyWeightClause(IReadOnlyList<int> ids) {
         if (ids.Count == 0) {
-            return ("", new List<object?>());
+            return ("", []);
         }
         var placeholders = new string[ids.Count];
         var args = new List<object?>(ids.Count);

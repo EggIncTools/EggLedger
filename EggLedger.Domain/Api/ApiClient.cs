@@ -5,34 +5,26 @@ using ProtoBuf;
 
 namespace EggLedger.Domain.Api;
 
-public sealed partial class ApiClient {
+public sealed partial class ApiClient(
+    HttpClient? httpClient = null,
+    string apiPrefix = ApiClient.DefaultApiPrefix,
+    string appVersion = ApiClient.DefaultAppVersion,
+    string appBuild = ApiClient.DefaultAppBuild,
+    uint clientVersion = ApiClient.DefaultClientVersion,
+    Platform platform = ApiClient.DefaultPlatform) {
+
     public const string DefaultAppVersion = "1.35.7";
     public const string DefaultAppBuild = "111343";
     public const uint DefaultClientVersion = 72;
     public const Platform DefaultPlatform = Platform.Ios;
     public const string DefaultApiPrefix = "https://ctx-dot-auxbrainhome.appspot.com";
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(5);
-    private readonly HttpClient _client;
-    public string ApiPrefix { get; }
-    public string AppVersion { get; }
-    public string AppBuild { get; }
-    public uint ClientVersion { get; }
-    public Platform Platform { get; }
-
-    public ApiClient(
-        HttpClient? httpClient = null,
-        string apiPrefix = DefaultApiPrefix,
-        string appVersion = DefaultAppVersion,
-        string appBuild = DefaultAppBuild,
-        uint clientVersion = DefaultClientVersion,
-        Platform platform = DefaultPlatform) {
-        _client = httpClient ?? new HttpClient { Timeout = RequestTimeout };
-        ApiPrefix = apiPrefix;
-        AppVersion = appVersion;
-        AppBuild = appBuild;
-        ClientVersion = clientVersion;
-        Platform = platform;
-    }
+    private readonly HttpClient _client = httpClient ?? new HttpClient { Timeout = RequestTimeout };
+    public string ApiPrefix { get; } = apiPrefix;
+    public string AppVersion { get; } = appVersion;
+    public string AppBuild { get; } = appBuild;
+    public uint ClientVersion { get; } = clientVersion;
+    public Platform Platform { get; } = platform;
 
     public BasicRequestInfo NewBasicRequestInfo(string userId) => new() {
         EiUserId = userId,

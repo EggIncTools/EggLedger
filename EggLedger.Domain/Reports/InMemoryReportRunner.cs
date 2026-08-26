@@ -29,12 +29,8 @@ public sealed record ArtifactDropRowData {
     public double Quality { get; init; }
 }
 
-public sealed class InMemoryReportRunner {
-    private readonly IWeightData _weights;
-
-    public InMemoryReportRunner(IWeightData weights) {
-        _weights = weights ?? throw new ArgumentNullException(nameof(weights));
-    }
+public sealed class InMemoryReportRunner(IWeightData weights) {
+    private readonly IWeightData _weights = weights ?? throw new ArgumentNullException(nameof(weights));
 
     public ReportResult Run(
         ReportDefinition def,
