@@ -5,8 +5,8 @@
             <span class="text-xs text-gray-500 tabular-nums">@Users.Sum(u => u.MissionCount) missions - @LedgerFormatting.FormatBytes(Users.Sum(u => u.StorageBytes)) total</span>
         }
     </div>
-    <div class="admin-table-wrap-scroll">
-        <table class="admin-table w-auto">
+    <div class="overflow-auto max-h-96">
+        <table class="data-table w-auto">
             <thead>
             <tr>
                 <th>@SortHeader("User", "username")</th>

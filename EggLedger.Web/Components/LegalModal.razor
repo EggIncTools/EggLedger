@@ -6,11 +6,13 @@
     </div>
 
     <div class="legal-page flex-1 min-h-0 overflow-y-auto px-6 py-5">
-        @if (Kind == LegalDocument.Terms) {
-            <TermsContent OnCrossLink="OnKindChange"/>
-        } else {
-            <PrivacyContent OnCrossLink="OnKindChange"/>
-        }
+        <div class="prose-legal">
+            @if (Kind == LegalDocument.Terms) {
+                <TermsContent OnCrossLink="OnKindChange"/>
+            } else {
+                <PrivacyContent OnCrossLink="OnKindChange"/>
+            }
+        </div>
     </div>
 </ModalOverlay>
 

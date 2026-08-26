@@ -955,26 +955,6 @@
   border-bottom-color: rgba(33, 37, 41, 0.95);
 }
 
-.tooltip-floating::before {
-  content: '';
-  position: absolute;
-  top: 100%;
-  left: calc(50% + var(--arrow-offset, 0px));
-  transform: translateX(-50%);
-  border: 7px solid transparent;
-  border-top-color: #ccc;
-}
-
-.tooltip-floating::after {
-  content: '';
-  position: absolute;
-  top: 100%;
-  left: calc(50% + var(--arrow-offset, 0px));
-  transform: translateX(-50%) translateY(-1px);
-  border: 6px solid transparent;
-  border-top-color: rgba(33, 37, 41, 0.95);
-}
-
 .double-cap-span {
   @apply text-center [background-image:radial-gradient(rgb(139,_14,_158),_rgb(128,_13,_126),_rgb(92,_9,_91))] rounded-[10px];
 }
@@ -992,40 +972,24 @@
 }
 
 .legal-title {
-  @apply text-[1.4rem] font-semibold leading-tight text-gray-100 m-0 mb-1;
+  @apply text-[1.4rem] font-semibold leading-tight text-gray-100 m-0;
 }
 
 .legal-updated {
-  @apply text-xs text-gray-500 m-0 mb-6;
+  @apply text-xs text-gray-500 m-0 mb-3;
 }
 
 .legal-disclaimer {
-  @apply text-sm text-gray-300 leading-relaxed border border-gray-600 rounded-lg bg-dark px-4 py-3 mb-8 max-w-[80ch]
+  @apply text-sm text-gray-300 leading-relaxed border border-gray-600 rounded-lg bg-dark px-4 py-3 mb-5 max-w-[80ch]
          [border-left:2px_solid_rgb(59_130_246)];
 }
 
 .legal-section {
-  @apply mb-7;
-}
-
-.legal-h2 {
-  @apply text-base font-semibold text-gray-100 mt-0 mb-2;
-}
-
-.legal-p {
-  @apply text-sm text-gray-400 leading-relaxed max-w-[80ch] m-0 mb-3;
-}
-
-.legal-p:last-child {
-  @apply mb-0;
-}
-
-.legal-list {
-  @apply text-sm text-gray-400 leading-relaxed max-w-[80ch] list-disc pl-5 my-3 flex flex-col gap-1.5;
+  @apply flex flex-col gap-3 mb-4;
 }
 
 .legal-link {
-  @apply text-blue-500 no-underline;
+  @apply text-accent no-underline;
 }
 
 .legal-link:hover {
@@ -1076,54 +1040,6 @@
 
 .admin-panel-title {
   @apply font-bold text-gray-400;
-}
-
-.admin-table-wrap {
-  @apply overflow-x-auto rounded-md border border-gray-700/50;
-}
-
-.admin-table-wrap-scroll {
-  @apply overflow-auto rounded-md border border-gray-700/50 max-h-96;
-}
-
-.admin-table {
-  @apply w-full text-xs text-gray-400 tabular-nums;
-}
-
-.admin-table thead {
-  @apply sticky top-0 bg-darkest z-10 text-gray-500;
-}
-
-.admin-table th {
-  @apply text-left py-1 px-2 whitespace-nowrap;
-}
-
-.admin-table td {
-  @apply py-1 px-2 whitespace-nowrap;
-}
-
-.admin-table tbody tr {
-  @apply border-t border-gray-700/50;
-}
-
-.admin-table tbody tr:hover {
-  @apply bg-darker;
-}
-
-.admin-kpi {
-  @apply grid grid-cols-3 gap-2 mb-2;
-}
-
-.admin-kpi-tile {
-  @apply bg-darker border border-gray-700/50 rounded-md p-2 text-center;
-}
-
-.admin-kpi-label {
-  @apply text-xs text-gray-500;
-}
-
-.admin-kpi-value {
-  @apply text-lg font-bold text-gray-300 tabular-nums;
 }
 
 .admin-embed-row {

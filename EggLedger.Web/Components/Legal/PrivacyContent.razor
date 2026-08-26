@@ -8,8 +8,8 @@
 </div>
 
 <section class="legal-section">
-    <h2 class="legal-h2">The short version</h2>
-    <p class="legal-p">
+    <h2>The short version</h2>
+    <p>
         EggLedger reads your mission history from the Egg, Inc. API. There is no advertising, no
         third-party tracking, and no analytics. What is stored, and where, depends on which build
         you use. The desktop app keeps your mission data on your own machine. The hosted web app
@@ -17,34 +17,34 @@
         is never handled here.
     </p>
     <DesktopOnly>
-        <p class="legal-p">You are running the desktop app, so the Desktop app section below applies to you.</p>
+        <p>You are running the desktop app, so the Desktop app section below applies to you.</p>
     </DesktopOnly>
     <WebOnly>
-        <p class="legal-p">You are using the hosted web app, so the Web app section below applies to you.</p>
+        <p>You are using the hosted web app, so the Web app section below applies to you.</p>
     </WebOnly>
 </section>
 
 <section class="legal-section">
-    <h2 class="legal-h2">Signing in</h2>
-    <p class="legal-p">
+    <h2>Signing in</h2>
+    <p>
         Sign-in is handled by EggIdentity, a separate federated authentication service run by the
         same operator. You pick a sign-in source: Discord, Google, Microsoft, or GitHub. Your
         password is never seen or stored by EggLedger.
     </p>
-    <p class="legal-p">
+    <p>
         EggLedger receives only the basic identity needed to recognise you again, such as an
         account identifier, a display name, and an avatar. It does not read your email, messages,
         or server list. EggIdentity has its own
-        <a class="legal-link" href="https://eggidentity.davidarthurcole.me/terms" target="_blank" rel="noopener">terms</a>
+        <a href="https://eggidentity.davidarthurcole.me/terms" target="_blank" rel="noopener">terms</a>
         and
-        <a class="legal-link" href="https://eggidentity.davidarthurcole.me/privacy" target="_blank" rel="noopener">privacy policy</a>
+        <a href="https://eggidentity.davidarthurcole.me/privacy" target="_blank" rel="noopener">privacy policy</a>
         covering the login itself.
     </p>
 </section>
 
 <section class="legal-section">
-    <h2 class="legal-h2">Desktop app</h2>
-    <p class="legal-p">
+    <h2>Desktop app</h2>
+    <p>
         The desktop build stores all config, mission data, and exports in the same directory as
         the EggLedger binary, in a local SQLite database and on-disk files. Nothing is uploaded
         anywhere. The only outbound network calls are to the Egg, Inc. API itself and an
@@ -55,25 +55,25 @@
 </section>
 
 <section class="legal-section">
-    <h2 class="legal-h2">Web app</h2>
-    <p class="legal-p">
+    <h2>Web app</h2>
+    <p>
         The hosted instance runs as a Blazor Server app. Your browser holds a live connection to
         the server while you use it, and your Egg, Inc. backup is decoded server-side. The result
         is stored in a Postgres database, tied to your account. What is stored is:
     </p>
-    <ul class="legal-list">
+    <ul>
         <li><strong>Mission history.</strong> The spaceship missions your fetches return.</li>
         <li><strong>Drops.</strong> The loot recorded against each mission.</li>
         <li><strong>Backups.</strong> The decoded account snapshot each fetch is built from.</li>
         <li><strong>Settings.</strong> The interface and export preferences you have chosen.</li>
         <li><strong>Reports.</strong> The report definitions and groups you have built.</li>
     </ul>
-    <p class="legal-p">
+    <p>
         That data is yours. It is not sold, shared, or used for advertising, and it is not
         profiled. It is kept until it is deleted, as described below. If you would rather nothing
         was stored server-side, use the desktop app instead.
     </p>
-    <p class="legal-p">
+    <p>
         Separately from your account, the server logs API requests that it rejects, recording the
         IP address, path, and user agent, so that abuse can be blocked. Those rows carry no account
         identifier and are not joined to your data.
@@ -81,14 +81,14 @@
 </section>
 
 <section class="legal-section">
-    <h2 class="legal-h2">Settings Sync (optional)</h2>
-    <p class="legal-p">
+    <h2>Settings Sync (optional)</h2>
+    <p>
         Settings Sync lets you carry your settings between devices. On desktop it is off unless
         you turn it on, and turning it on requires signing in. If you never use it, nothing about
         you leaves your machine beyond the Egg, Inc. API calls and the update check described
         above.
     </p>
-    <p class="legal-p">
+    <p>
         Synced settings are encrypted before upload and stored encrypted at rest. The key is
         generated per account by the sync service and handed to your devices when you sign in, so
         this is not a zero-knowledge design: the operator's infrastructure holds the key and can
@@ -98,12 +98,12 @@
 </section>
 
 <section class="legal-section">
-    <h2 class="legal-h2">Cookies</h2>
-    <p class="legal-p">
+    <h2>Cookies</h2>
+    <p>
         The web app uses only strictly-necessary cookies. There are no advertising or tracking
         cookies, so there is no consent banner to click through. The cookies used are:
     </p>
-    <ul class="legal-list">
+    <ul>
         <li>
             <strong>Session cookie.</strong> Keeps your Blazor Server circuit and your sign-in
             connected across page loads. Removed when you log out or close the session.
@@ -113,7 +113,7 @@
             submissions against cross-site request forgery. It does not identify you.
         </li>
     </ul>
-    <p class="legal-p">
+    <p>
         The web app does not keep your preferences in the browser. They are saved server-side in
         your account's settings, along with the rest of your stored data. The desktop app uses no
         cookies; its settings live in the on-disk config described above.
@@ -121,8 +121,8 @@
 </section>
 
 <section class="legal-section">
-    <h2 class="legal-h2">Payments</h2>
-    <p class="legal-p">
+    <h2>Payments</h2>
+    <p>
         Donations are processed entirely by third-party platforms (GitHub Sponsors, Patreon, and
         Buy Me a Coffee). This application never sees, processes, or stores your payment card
         data. Anything to do with billing is held by those platforms under their own privacy
@@ -131,8 +131,8 @@
 </section>
 
 <section class="legal-section">
-    <h2 class="legal-h2">Data retention</h2>
-    <p class="legal-p">
+    <h2>Data retention</h2>
+    <p>
         Desktop data is retained for as long as you keep it on disk. Deleting the app's directory
         removes it completely, with no system-level traces left behind. Web app data is retained
         until it is deleted, either by you through the options below or by the operator on request;
@@ -143,9 +143,9 @@
 </section>
 
 <section class="legal-section">
-    <h2 class="legal-h2">Removing your data</h2>
-    <p class="legal-p">To remove the data stored about you:</p>
-    <ul class="legal-list">
+    <h2>Removing your data</h2>
+    <p>To remove the data stored about you:</p>
+    <ul>
         <li>
             <strong>Desktop.</strong> Delete the EggLedger install directory to remove all local
             data. Use <strong>Delete Remote Data</strong> in the cloud sync settings to remove the
@@ -171,22 +171,22 @@
         </li>
         <li>
             Reach the operator through the
-            <a class="legal-link" href="https://github.com/EggIncTools/EggLedger" target="_blank" rel="noopener">GitHub repository</a>
+            <a href="https://github.com/EggIncTools/EggLedger" target="_blank" rel="noopener">GitHub repository</a>
             or the project
-            <a class="legal-link" href="https://discord.davidarthurcole.me" target="_blank" rel="noopener">Discord server</a>.
+            <a href="https://discord.davidarthurcole.me" target="_blank" rel="noopener">Discord server</a>.
         </li>
     </ul>
 </section>
 
 <section class="legal-section">
-    <h2 class="legal-h2">Changes</h2>
-    <p class="legal-p">
+    <h2>Changes</h2>
+    <p>
         This policy may change as the project evolves. The date at the top reflects the latest
         version. For the terms that govern use of the service, see the
         @if (OnCrossLink.HasDelegate) {
             <button type="button" class="legal-link legal-link-btn" @onclick="OpenTerms">Terms of Service</button>
         } else {
-            <a class="legal-link" href="/terms">Terms of Service</a>
+            <a href="/terms">Terms of Service</a>
         }
         page.
     </p>

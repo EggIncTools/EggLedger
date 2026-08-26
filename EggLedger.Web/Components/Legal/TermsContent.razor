@@ -8,12 +8,12 @@
 </div>
 
 <section class="legal-section">
-    <h2 class="legal-h2">1. What this is</h2>
-    <p class="legal-p">
+    <h2>1. What this is</h2>
+    <p>
         EggLedger exports Egg, Inc. spaceship mission history, including per-mission loot, to
         .xlsx and .csv, and lets you browse, filter, and chart that data. It ships in two forms:
     </p>
-    <ul class="legal-list">
+    <ul>
         <li>
             <strong>Desktop app.</strong> Windows, macOS, and Linux. Your mission data stays on
             your own machine.
@@ -24,22 +24,22 @@
         </li>
     </ul>
     <DesktopOnly>
-        <p class="legal-p">You are running the desktop app, so the Desktop app section below applies to you.</p>
+        <p>You are running the desktop app, so the Desktop app section below applies to you.</p>
     </DesktopOnly>
     <WebOnly>
-        <p class="legal-p">You are using the hosted web app, so the Web app section below applies to you.</p>
+        <p>You are using the hosted web app, so the Web app section below applies to you.</p>
     </WebOnly>
-    <p class="legal-p">
+    <p>
         It is not a game client, a cheat, or a service operated by the game's authors. EggLedger
         was originally created by
-        <a class="legal-link" href="https://github.com/fanaticscripter" target="_blank" rel="noopener">mk2</a>
+        <a href="https://github.com/fanaticscripter" target="_blank" rel="noopener">mk2</a>
         and is now developed and maintained by an individual, David Cole, not a company.
     </p>
 </section>
 
 <section class="legal-section">
-    <h2 class="legal-h2">2. Provided as-is, no warranty</h2>
-    <p class="legal-p">
+    <h2>2. Provided as-is, no warranty</h2>
+    <p>
         The software is licensed under the MIT License (Copyright 2026 David Cole). As that license
         states, it is provided "as is", without warranty of any kind, express or implied. The
         hosted web app and the optional Settings Sync service are offered on the same basis. There
@@ -49,17 +49,17 @@
 </section>
 
 <section class="legal-section">
-    <h2 class="legal-h2">3. Accounts and signing in</h2>
-    <p class="legal-p">
+    <h2>3. Accounts and signing in</h2>
+    <p>
         Signing in is handled by EggIdentity, a separate federated authentication service run by
         the same operator. You pick a sign-in source: Discord, Google, Microsoft, or GitHub.
         EggLedger never sees or stores your password.
     </p>
-    <p class="legal-p">
+    <p>
         EggIdentity has its own
-        <a class="legal-link" href="https://eggidentity.davidarthurcole.me/terms" target="_blank" rel="noopener">terms</a>
+        <a href="https://eggidentity.davidarthurcole.me/terms" target="_blank" rel="noopener">terms</a>
         and
-        <a class="legal-link" href="https://eggidentity.davidarthurcole.me/privacy" target="_blank" rel="noopener">privacy policy</a>,
+        <a href="https://eggidentity.davidarthurcole.me/privacy" target="_blank" rel="noopener">privacy policy</a>,
         and they govern the login itself. Keeping your sign-in source secure is your
         responsibility. The web app requires an account. The desktop app needs one only if you
         turn on Settings Sync.
@@ -67,9 +67,9 @@
 </section>
 
 <section class="legal-section">
-    <h2 class="legal-h2">4. Acceptable use</h2>
-    <p class="legal-p">When you use EggLedger or its hosted services, you agree not to:</p>
-    <ul class="legal-list">
+    <h2>4. Acceptable use</h2>
+    <p>When you use EggLedger or its hosted services, you agree not to:</p>
+    <ul>
         <li>
             Send unwanted or excessive load to auxbrain.com, or use this tool to attack, overload,
             or disrupt the Egg, Inc. API or any other system.
@@ -78,7 +78,7 @@
         <li>Attempt to circumvent authentication or access controls on any hosted service.</li>
         <li>Use the service to harm others, to distribute malware, or for any unlawful purpose.</li>
     </ul>
-    <p class="legal-p">
+    <p>
         EggLedger talks to the Egg, Inc. API the same way the game's own community tools have for
         years. That access exists for legitimate interoperability and personal data export, not as
         a licence to attack a third party's servers. If you run your own build of the software, the
@@ -87,8 +87,8 @@
 </section>
 
 <section class="legal-section">
-    <h2 class="legal-h2">5. No account risk warranty</h2>
-    <p class="legal-p">
+    <h2>5. No account risk warranty</h2>
+    <p>
         No community tool, including this one, is sanctioned by the Egg, Inc. developer. The
         operator is not aware of any negative effects from using EggLedger, and the same
         read-only API access has been used safely by other community tools for years. Even so,
@@ -97,8 +97,8 @@
 </section>
 
 <section class="legal-section">
-    <h2 class="legal-h2">6. Desktop app</h2>
-    <p class="legal-p">
+    <h2>6. Desktop app</h2>
+    <p>
         The desktop app stores config, mission data, and exports next to its own binary. Nothing is
         uploaded unless you turn on Settings Sync. Keeping your own backups of that directory is up
         to you, and the operator cannot recover data you delete or lose.
@@ -106,13 +106,13 @@
 </section>
 
 <section class="legal-section">
-    <h2 class="legal-h2">7. Web app and stored data</h2>
-    <p class="legal-p">
+    <h2>7. Web app and stored data</h2>
+    <p>
         The hosted web app decodes your Egg, Inc. backup on the server and stores the result in its
         database under your account. That covers your mission history, drops, backups, settings,
         and reports. The data is kept until it is deleted.
     </p>
-    <p class="legal-p">
+    <p>
         Disconnecting in settings deletes your synced settings and signs you out; it leaves your
         stored mission data in place. Deleting the account removes everything stored under it, and
         that is done by asking the operator. The hosted app is a convenience, not a backup service,
@@ -121,15 +121,15 @@
         @if (OnCrossLink.HasDelegate) {
             <button type="button" class="legal-link legal-link-btn" @onclick="OpenPrivacy">Privacy &amp; Cookies</button>
         } else {
-            <a class="legal-link" href="/privacy">Privacy &amp; Cookies</a>
+            <a href="/privacy">Privacy &amp; Cookies</a>
         }
         page describes exactly what is stored and how to remove it.
     </p>
 </section>
 
 <section class="legal-section">
-    <h2 class="legal-h2">8. Supporting the project</h2>
-    <p class="legal-p">
+    <h2>8. Supporting the project</h2>
+    <p>
         Supporting the project is entirely voluntary. Donations are handled by third-party
         platforms (GitHub Sponsors, Patreon, and Buy Me a Coffee). This application never
         processes or stores your payment card data. Refunds, billing, and cancellation are
@@ -138,8 +138,8 @@
 </section>
 
 <section class="legal-section">
-    <h2 class="legal-h2">9. Changes to the service</h2>
-    <p class="legal-p">
+    <h2>9. Changes to the service</h2>
+    <p>
         This is a personal project. The operator may change, suspend, or discontinue any part of
         the service, including the hosted web app and Settings Sync, at any time and without
         notice. These terms may also be updated. Continued use after a change means you accept the
@@ -149,8 +149,8 @@
 </section>
 
 <section class="legal-section">
-    <h2 class="legal-h2">10. Limitation of liability</h2>
-    <p class="legal-p">
+    <h2>10. Limitation of liability</h2>
+    <p>
         To the fullest extent permitted by law, the operator is not liable for any damages arising
         from your use of, or inability to use, the software or any hosted service. This is a free
         tool maintained in spare time. The MIT License's limitation of liability applies, and the
@@ -159,12 +159,12 @@
 </section>
 
 <section class="legal-section">
-    <h2 class="legal-h2">11. Contact</h2>
-    <p class="legal-p">
+    <h2>11. Contact</h2>
+    <p>
         Questions about these terms can go to the operator through the project's
-        <a class="legal-link" href="https://github.com/EggIncTools/EggLedger" target="_blank" rel="noopener">GitHub repository</a>
+        <a href="https://github.com/EggIncTools/EggLedger" target="_blank" rel="noopener">GitHub repository</a>
         or the project
-        <a class="legal-link" href="https://discord.davidarthurcole.me" target="_blank" rel="noopener">Discord server</a>.
+        <a href="https://discord.davidarthurcole.me" target="_blank" rel="noopener">Discord server</a>.
     </p>
 </section>
 
