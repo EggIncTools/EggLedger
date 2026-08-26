@@ -1,4 +1,6 @@
-@implements IDisposable
+@using EggIdentity.UI
+@implements IAsyncDisposable
+@inject OutsideClickInterop OutsideClick
 @inject ActiveAccount Active
 @inject AppStateService AppStateSvc
 @inject AccountLoader Loader
@@ -17,19 +19,53 @@
 
     <div class="account-full">
         <div class="account-main-row">
-            <button type="button" class="account-select-btn" disabled="@(!IsLoggedIn)" @onclick="OpenPopover">
-                <span class="min-w-0 flex flex-col items-start leading-tight">
-                    @if (_active is not null) {
-                        <span class="font-medium truncate max-w-full" style="color: #@_active.AccountColor">@_active.Nickname</span>
-                        <span class="text-gray-500 text-xs">@_active.EBString</span>
-                    } else if (!IsLoggedIn) {
-                        <span class="text-gray-500 italic text-xs">Login to add an account</span>
-                    } else {
-                        <span class="text-gray-500 italic text-xs">No account - click to add</span>
-                    }
-                </span>
-                <span class="text-gray-600 text-xs shrink-0">&#9660;</span>
-            </button>
+            <div class="account-select-wrap" @ref="_wrapRef">
+                <button type="button" class="account-select-btn" disabled="@(!IsLoggedIn)" @onclick="OpenPopover">
+                    <span class="min-w-0 flex flex-col items-start leading-tight gap-0.5">
+                        @if (_active is not null) {
+                            <span class="account-option-meta text-gray-400 text-xs">
+                                <MaskedEid Value="@_active.Id"/>
+                            </span>
+                            <span class="flex items-center gap-1.5 max-w-full">
+                                <span class="font-medium truncate" style="color: #@_active.AccountColor">@_active.Nickname</span>
+                                <span class="text-gray-500 text-xs shrink-0">@_active.EBString</span>
+                            </span>
+                            var activeInfo = InfoFor(_active.Id);
+                            @if (activeInfo is { SeString: not "" }) {
+                                <span class="account-option-meta flex items-center gap-1.5 text-xs">
+                                    <span style="color:#a855f7">@activeInfo.SeString SE</span>
+                                    <span style="color:#eab308">@activeInfo.PeCount PE</span>
+                                    @if (activeInfo.TeCount > 0) {
+                                        <span style="color:#c831ff">@activeInfo.TeCount TE</span>
+                                    }
+                                </span>
+                            }
+
+                            var activeStats = StatsFor(_active.Id);
+                            @if (activeStats is not null) {
+                                var since = LedgerFormatting.FormatTimeSince(activeStats.LastMissionReturnDT, NowUnix);
+                                <span class="account-option-meta flex items-center gap-1.5 text-xs text-gray-500">
+                                    <span>@activeStats.MissionCount missions</span>
+                                    @if (since != "") {
+                                        <span class="text-gray-600">(latest @since)</span>
+                                    }
+                                </span>
+                            }
+                        } else if (!IsLoggedIn) {
+                            <span class="text-gray-500 italic text-xs">Login to add an account</span>
+                        } else {
+                            <span class="text-gray-500 italic text-xs">No account - click to add</span>
+                        }
+                    </span>
+                    <span class="text-gray-600 text-xs shrink-0">&#9660;</span>
+                </button>
+
+                @if (_open) {
+                    <div @ref="_popRef" class="account-pop-panel account-dropdown" tabindex="-1" @onkeydown="OnPopoverKeyDown">
+                        @RenderAccountList()
+                    </div>
+                }
+            </div>
 
             @if (Fetch.IsIdle) {
                 <button type="button" class="account-fetch-btn" disabled="@(Active.ActiveAccountId is null)" @onclick="StartFetch">
@@ -50,103 +86,79 @@
                 </button>
             }
         </div>
-
-        @if (_active is not null) {
-            var activeInfo = InfoFor(_active.Id);
-            var activeStats = StatsFor(_active.Id);
-            @if (activeInfo is { SeString: not "" } || activeStats is not null) {
-                <div class="account-meta text-xs">
-                    @if (activeInfo is { SeString: not "" }) {
-                        <span style="color:#a855f7">@activeInfo.SeString SE</span>
-                        <span style="color:#eab308">@activeInfo.PeCount PE</span>
-                        @if (activeInfo.TeCount > 0) {
-                            <span style="color:#c831ff">@activeInfo.TeCount TE</span>
-                        }
-                    }
-                    @if (activeStats is not null) {
-                        <span class="text-gray-500">@activeStats.MissionCount missions</span>
-                        var since = LedgerFormatting.FormatTimeSince(activeStats.LastMissionReturnDT, NowUnix);
-                        @if (since != "") {
-                            <span class="text-gray-600">(latest @since)</span>
-                        }
-                    }
-                </div>
-            }
-        }
     </div>
 </div>
 
-@if (_open) {
-    <dialog open class="account-pop-backdrop" @onclick="ClosePopover">
-        <div @ref="_popRef" class="account-pop-panel" tabindex="-1"
-             @onclick:stopPropagation="true" @onkeydown="OnPopoverKeyDown">
-            <div class="account-pop-head">
-                <span class="text-xs font-bold text-gray-300">Accounts</span>
-                <CloseButton OnClick="ClosePopover" Class="text-gray-400 hover:text-gray-200" IconClass="w-4 h-4"/>
-            </div>
-            <ul class="account-pop-list text-xs">
-                @foreach (var acct in Accounts) {
-                    <li class="flex items-start gap-2 px-3 py-2.5 cursor-pointer hover:bg-darker transition-colors border-b border-gray-800 last:border-b-0"
-                        @onclick="() => Select(acct.Id)">
-                        <span class="text-gray-500 w-3 shrink-0 mt-0.5">
-                            @if (acct.Id == Active.ActiveAccountId) {
-                                <text>&#10003;</text>
-                            }
-                        </span>
-                        <span class="flex-1 min-w-0 flex flex-col gap-0.5">
-                            <span class="text-gray-400">
-                                <MaskedEid Value="@acct.Id" GrayBar="true"/>
-                            </span>
-                            <span class="flex items-center gap-1.5">
-                                <span class="font-medium" style="color: #@acct.AccountColor">@acct.Nickname</span>
-                                <span class="text-gray-500">@acct.EBString</span>
-                            </span>
-                            @{ var info = InfoFor(acct.Id); }
-                            @if (info is { SeString: not "" }) {
-                                <span class="flex items-center gap-1.5 text-gray-500">
-                                    <span style="color:#a855f7">@info.SeString SE</span>
-                                    <span style="color:#eab308">@info.PeCount PE</span>
-                                    @if (info.TeCount > 0) {
-                                        <span style="color:#c831ff">@info.TeCount TE</span>
-                                    }
-                                </span>
-                            }
-                            @{ var stats = StatsFor(acct.Id); }
-                            @if (stats is not null) {
-                                <span class="flex items-center gap-1.5 text-gray-600">
-                                    <span>@stats.MissionCount missions</span>
-                                    @{ var since = LedgerFormatting.FormatTimeSince(stats.LastMissionReturnDT, NowUnix); }
-                                    @if (since != "") {
-                                        <span>(latest @since)</span>
-                                    }
-                                </span>
-                            }
-                        </span>
-                    </li>
-                }
-                <li class="flex flex-col border-t border-gray-800">
-                    <div class="flex">
-                        <button type="button" class="flex-1 px-3 py-2 text-center text-gray-400 hover:bg-darker transition-colors cursor-pointer border-r border-gray-800"
-                                @onclick="OpenSettings">
-                            Account Settings
-                        </button>
-                        <button type="button" class="flex-1 px-3 py-2 text-center text-privacy_blue hover:bg-darker transition-colors cursor-pointer"
-                                @onclick="OpenAddDialog">
-                            Add Account
-                        </button>
-                    </div>
-                    @if (IsLoggedIn && !Platform.IsDesktop) {
-                        <form method="post" action="/api/v1/auth/logout" style="margin:0;">
-                            <button type="submit"
-                                    class="w-full px-3 py-2 text-center text-red-400 hover:bg-red-950 hover:text-red-300 transition-colors cursor-pointer border-t border-gray-800">
-                                Log out
-                            </button>
-                        </form>
-                    }
-                </li>
-            </ul>
+@code {
+
+    private RenderFragment RenderAccountList() => __builder => {
+        <div class="account-pop-head">
+            <span class="text-xs font-bold text-gray-300">Accounts</span>
+            <CloseButton OnClick="ClosePopover" Class="text-gray-400 hover:text-gray-200" IconClass="w-4 h-4"/>
         </div>
-    </dialog>
+        <ul class="account-pop-list text-xs">
+            @foreach (var acct in Accounts) {
+                <li class="flex items-start gap-2 px-3 py-2.5 cursor-pointer hover:bg-darker transition-colors border-b border-gray-800 last:border-b-0"
+                    @onclick="() => Select(acct.Id)">
+                    <span class="text-gray-500 w-3 shrink-0 mt-0.5">
+                        @if (acct.Id == Active.ActiveAccountId) {
+                            <text>&#10003;</text>
+                        }
+                    </span>
+                    <span class="flex-1 min-w-0 flex flex-col gap-0.5">
+                        <span class="text-gray-400">
+                            <MaskedEid Value="@acct.Id"/>
+                        </span>
+                        <span class="flex items-center gap-1.5">
+                            <span class="font-medium" style="color: #@acct.AccountColor">@acct.Nickname</span>
+                            <span class="text-gray-500">@acct.EBString</span>
+                        </span>
+                        @{ var info = InfoFor(acct.Id); }
+                        @if (info is { SeString: not "" }) {
+                            <span class="flex items-center gap-1.5 text-gray-500">
+                                <span style="color:#a855f7">@info.SeString SE</span>
+                                <span style="color:#eab308">@info.PeCount PE</span>
+                                @if (info.TeCount > 0) {
+                                    <span style="color:#c831ff">@info.TeCount TE</span>
+                                }
+                            </span>
+                        }
+                        @{ var stats = StatsFor(acct.Id); }
+                        @if (stats is not null) {
+                            <span class="flex items-center gap-1.5 text-gray-600">
+                                <span>@stats.MissionCount missions</span>
+                                @{ var since = LedgerFormatting.FormatTimeSince(stats.LastMissionReturnDT, NowUnix); }
+                                @if (since != "") {
+                                    <span>(latest @since)</span>
+                                }
+                            </span>
+                        }
+                    </span>
+                </li>
+            }
+            <li class="flex flex-col border-t border-gray-800">
+                <div class="flex">
+                    <button type="button" class="flex-1 px-3 py-2 text-center text-gray-400 hover:bg-darker transition-colors cursor-pointer border-r border-gray-800"
+                            @onclick="OpenSettings">
+                        Account Settings
+                    </button>
+                    <button type="button" class="flex-1 px-3 py-2 text-center text-privacy_blue hover:bg-darker transition-colors cursor-pointer"
+                            @onclick="OpenAddDialog">
+                        Add Account
+                    </button>
+                </div>
+                @if (IsLoggedIn && !Platform.IsDesktop) {
+                    <form method="post" action="/api/v1/auth/logout" style="margin:0;">
+                        <button type="submit"
+                                class="w-full px-3 py-2 text-center text-red-400 hover:bg-red-950 hover:text-red-300 transition-colors cursor-pointer border-t border-gray-800">
+                            Log out
+                        </button>
+                    </form>
+                }
+            </li>
+        </ul>
+    };
+
 }
 
 <AddAccountDialog @ref="_addDialog" Added="OnAccountAdded"/>
@@ -163,6 +175,8 @@
     private AddAccountDialog? _addDialog;
     private IReadOnlyList<DatabaseAccount> _existing = [];
     private ElementReference _popRef;
+    private ElementReference _wrapRef;
+    private OutsideClickRegistration? _outsideClick;
     private bool _focusPending;
     private bool _rendered;
     private bool? _lastWarnedFetchActive;
@@ -311,40 +325,51 @@
         return OnExpandRequest.InvokeAsync();
     }
 
-    private void OpenPopover() {
+    private async Task OpenPopover() {
         _open = true;
         _focusPending = true;
+        _outsideClick ??= new OutsideClickRegistration(OutsideClick, HandleOutsideClickAsync);
+        await _outsideClick.RegisterAsync(_wrapRef);
     }
 
-    private void ClosePopover() {
+    private async Task ClosePopover() {
         _open = false;
-    }
-
-    private void OnPopoverKeyDown(KeyboardEventArgs e) {
-        if (e.Key == "Escape") {
-            _open = false;
+        if (_outsideClick is not null) {
+            await _outsideClick.UnregisterAsync();
         }
     }
 
-    private void Select(string id) {
-        Active.SetActive(id);
+    private async Task HandleOutsideClickAsync() {
         _open = false;
+        await InvokeAsync(StateHasChanged);
     }
 
-    private void OpenAddDialog() {
-        _open = false;
+    private async Task OnPopoverKeyDown(KeyboardEventArgs e) {
+        if (e.Key == "Escape") {
+            await ClosePopover();
+        }
+    }
+
+    private async Task Select(string id) {
+        Active.SetActive(id);
+        await ClosePopover();
+    }
+
+    private async Task OpenAddDialog() {
+        await ClosePopover();
         _addDialog?.Open();
     }
 
-    private void OpenSettings() {
-        _open = false;
+    private async Task OpenSettings() {
+        await ClosePopover();
         Shell.SettingsOpen = true;
     }
 
     private void OnPopoverRequested() {
-        _open = true;
-        _focusPending = true;
-        InvokeAsync(StateHasChanged);
+        InvokeAsync(async () => {
+            await OpenPopover();
+            StateHasChanged();
+        });
     }
 
     private async Task OnAccountAdded(AccountInfo account) {
@@ -353,12 +378,15 @@
         await StartFetch();
     }
 
-    public void Dispose() {
+    public async ValueTask DisposeAsync() {
         Active.Changed -= OnStateChanged;
         AppStateSvc.Changed -= OnStateChanged;
         AppStateSvc.Changed -= OnKnownAccountsChanged;
         Fetch.Changed -= OnStateChanged;
         Shell.AccountPopoverRequested -= OnPopoverRequested;
+        if (_outsideClick is not null) {
+            await _outsideClick.DisposeAsync();
+        }
     }
 
 }

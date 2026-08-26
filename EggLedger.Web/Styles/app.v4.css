@@ -1509,7 +1509,7 @@ input[type=number] {
 
 .ledger-sidebar {
   display: grid;
-  grid-template-rows: minmax(3.5rem, 0.15fr) minmax(6rem, 0.4fr) minmax(6rem, 0.4fr) minmax(2.25rem, 0.05fr);
+  grid-template-rows: auto minmax(6rem, 1fr) minmax(6rem, 1fr) auto;
   gap: 0.5rem;
   width: 27%;
   flex-shrink: 0;
@@ -1518,7 +1518,7 @@ input[type=number] {
 }
 
 .ledger-sidebar.is-reports {
-  grid-template-rows: minmax(3.5rem, 0.15fr) auto minmax(0, 1fr) minmax(2.25rem, 0.05fr);
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
 }
 
 .sidebar-panel {
@@ -1610,9 +1610,9 @@ input[type=number] {
 .sidebar-footer-info {
   display: flex;
   align-items: baseline;
-  gap: 0.35rem;
+  gap: 0.4rem;
   min-width: 0;
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   white-space: nowrap;
   overflow: hidden;
 }
@@ -1657,8 +1657,8 @@ input[type=number] {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 2rem;
+  height: 2rem;
   border: 0;
   border-radius: 0.25rem;
   background: transparent;
@@ -1678,7 +1678,6 @@ input[type=number] {
   align-items: stretch;
   gap: 0.5rem;
   min-height: 0;
-  overflow: hidden;
 }
 
 .account-rail-chip {
@@ -1716,17 +1715,17 @@ input[type=number] {
   min-width: 0;
 }
 
-.account-main-row .account-select-btn {
+.account-select-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
   flex: 1;
   min-width: 0;
 }
 
-.account-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.15rem 0.6rem;
-  padding: 0 0.15rem;
+.account-select-wrap .account-select-btn {
+  width: 100%;
+  flex: 1;
 }
 
 .account-select-btn {
@@ -1793,28 +1792,19 @@ input[type=number] {
   cursor: pointer;
 }
 
-.account-pop-backdrop {
-  position: fixed;
-  inset: 0;
+.account-dropdown {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 0;
   z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  max-width: 100vw;
-  max-height: 100vh;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: rgba(0, 0, 0, 0.45);
+  max-height: min(70vh, 30rem);
 }
 
 .account-pop-panel {
   display: flex;
   flex-direction: column;
   width: 24rem;
-  max-width: 92vw;
+  max-width: min(24rem, calc(100vw - 2rem));
   max-height: 80vh;
   border: 1px solid var(--color-gray-600);
   border-radius: 0.5rem;
@@ -1900,6 +1890,10 @@ input[type=number] {
     top: 0;
     z-index: 30;
     margin-top: 0.75rem;
+  }
+
+  .account-option-meta {
+    display: none;
   }
 
   .sidebar-filter {

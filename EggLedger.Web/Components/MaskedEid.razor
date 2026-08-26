@@ -2,23 +2,17 @@
 @implements IDisposable
 
 @if (ScreenshotSafety.Enabled && IsEid(Value)) {
-    if (GrayBar) {
-        <span>EI</span>
-        <span class="inline-block rounded-sm bg-current select-none align-[-0.05em]" style="width: 16ch; height: 0.8em;"></span>
-    } else {
-        <span class="masked-eid @(_revealed ? "masked-eid-revealed" : "")"
-              @onclick="Toggle" @onclick:stopPropagation="true"
-              data-tt="@(_revealed ? "Click to hide" : "Hover or click to reveal")">
-            @Value
-        </span>
-    }
+    <span class="masked-eid @(_revealed ? "masked-eid-revealed" : "")"
+          @onclick="Toggle" @onclick:stopPropagation="true"
+          data-tt="@(_revealed ? "Click to hide" : "Hover or click to reveal")">
+        @Value
+    </span>
 } else {
     @Value
 }
 
 @code {
     [Parameter] public string Value { get; set; } = "";
-    [Parameter] public bool GrayBar { get; set; }
 
     private bool _revealed;
 
