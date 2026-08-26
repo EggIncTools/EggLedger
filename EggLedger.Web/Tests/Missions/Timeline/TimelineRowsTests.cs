@@ -19,19 +19,16 @@ public sealed class TimelineRowsTests {
     }
 
     [Fact]
-    public void Week_HasAdjacentContextRowsAroundThePrimaryWeek() {
+    public void Week_IsASinglePrimaryRow() {
         var start = new DateTimeOffset(2026, 8, 23, 0, 0, 0, TimeSpan.Zero);
         var end = start.AddDays(7);
 
         var rows = TimelineRows.Build(TimelineZoom.Week, start, end, Utc);
 
-        Assert.Equal(3, rows.Count);
-        Assert.False(rows[0].IsPrimary);
-        Assert.True(rows[1].IsPrimary);
-        Assert.False(rows[2].IsPrimary);
-        Assert.Equal(start.AddDays(-7), rows[0].Start);
-        Assert.Equal(start, rows[1].Start);
-        Assert.Equal(end, rows[2].Start);
+        Assert.Single(rows);
+        Assert.True(rows[0].IsPrimary);
+        Assert.Equal(start, rows[0].Start);
+        Assert.Equal(end, rows[0].End);
     }
 
     [Fact]

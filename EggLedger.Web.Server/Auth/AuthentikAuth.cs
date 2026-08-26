@@ -27,9 +27,8 @@ public static class AuthentikAuth {
             UserIdClaim = AuthScheme.UserIdClaim,
             RoleClaim = AuthScheme.RoleClaim,
             DiscordIdClaim = AuthScheme.DiscordIdClaim,
-            OnResolved = async (result, _, ctx) => {
-
-
+            OnResolved = async (result, identity, ctx) => {
+                identity.AddClaim(new System.Security.Claims.Claim(SessionClaims.Role, result.Role));
 
                 await using var cmd = source.CreateCommand(
                     "INSERT INTO users (user_id, created_at) VALUES ($1, $2) ON CONFLICT (user_id) DO NOTHING");

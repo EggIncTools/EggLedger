@@ -59,6 +59,13 @@ public static class WebServiceRegistration {
 
         services.AddSingleton(_ => new MennoService(new HttpClient()));
 
+        services.AddSingleton(sp => new GameEventsService(
+            new HttpClient { Timeout = GameEventsService.RequestTimeout },
+            Environment.GetEnvironmentVariable(GameEventsService.BaseUrlVariable),
+            Environment.GetEnvironmentVariable(GameEventsService.ApiKeyVariable),
+            store: null,
+            logger: sp.GetService<ILogger<GameEventsService>>()));
+
 
         services.AddScoped<INavigation, BlazorNavigation>();
         services.AddScoped<IBlobCipher, LocalBlobCipher>();

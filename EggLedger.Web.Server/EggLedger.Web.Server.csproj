@@ -15,6 +15,7 @@
     <PackageReference Include="EggIdentity.Bot.AdminUi" Version="2.1.4" />
     <PackageReference Include="EggIdentity.Contract" Version="2.1.4" />
     <PackageReference Include="EggIdentity.Db" Version="2.1.4" />
+    <PackageReference Include="EggIdentity.Fallback" Version="2.1.4" />
     <PackageReference Include="EggIdentity.AdminUi" Version="2.1.4" />
     <PackageReference Include="EggIdentity.Client" Version="2.1.4" />
     <PackageReference Include="EggIdentity.Metrics" Version="2.1.4" />

@@ -1,4 +1,16 @@
 @theme {
+  --color-bg: #242629;
+  --color-panel0: #1c1d1f;
+  --color-panel: #33353a;
+  --color-panel2: #393b40;
+  --color-fg: #e5e7eb;
+  --color-muted: #99a1af;
+  --color-accent: #3b82f6;
+  --color-accent2: #2563eb;
+  --color-ok: #10b981;
+  --color-err: #b91c1c;
+  --color-border: #364153;
+
   --color-white: #ffffff;
   --color-dark: #393b40;
   --color-darkerthandark: #33353a;
@@ -249,14 +261,14 @@
   position: absolute;
   left: 0;
   right: 0;
-  top: -100%;
-  height: 300%;
+  top: var(--strip-top, -100%);
+  height: var(--strip-h, 300%);
   display: flex;
   flex-direction: column;
 }
 
 .timeline-period {
-  height: calc(100% / 3);
+  height: var(--strip-slot-h, calc(100% / 3));
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -276,6 +288,7 @@
   min-height: 3.25rem;
   overflow: hidden;
   border-bottom: 1px solid color-mix(in srgb, var(--color-gray-700) 60%, transparent);
+  transition: opacity 0.18s ease-out;
 }
 
 .timeline-row-context {

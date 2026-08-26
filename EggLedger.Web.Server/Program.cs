@@ -2,8 +2,10 @@ using EggIdentity.Auth;
 using EggIdentity.Bot;
 using EggIdentity.Contract;
 using EggIdentity.Db;
+using EggIdentity.Fallback;
 using EggIdentity.Metrics;
 using EggIdentity.Metrics.AdminUi;
+using EggIdentity.Styles;
 using EggLedger.Web;
 using EggLedger.Web.Data;
 using EggLedger.Web.Server;
@@ -97,6 +99,7 @@ var authBuilder = authentication
             if (identity is not null) {
                 await EggIdentity.Auth.AuthentikAspNetAuth.OnValidatePrincipalCheckRevoked(ctx, identity, EggLedger.Web.Server.Auth.AuthScheme.UserIdClaim, EggLedger.Web.Server.Auth.AuthScheme.RoleClaim);
             }
+            MirrorEggIdentityRoleClaim(ctx);
         };
     });
 
@@ -215,6 +218,24 @@ static string SelfBaseFromUrls() {
     return first.Replace("0.0.0.0", "localhost").Replace("[::]", "localhost").Replace("+", "localhost");
 }
 
+static void MirrorEggIdentityRoleClaim(Microsoft.AspNetCore.Authentication.Cookies.CookieValidatePrincipalContext ctx) {
+    if (ctx.Principal?.Identity is not System.Security.Claims.ClaimsIdentity id) {
+        return;
+    }
+    var role = id.FindFirst(EggLedger.Web.Server.Auth.AuthScheme.RoleClaim)?.Value;
+    var mirror = id.FindFirst(EggIdentity.Auth.SessionClaims.Role);
+    if (mirror?.Value == role) {
+        return;
+    }
+    if (mirror is not null) {
+        id.RemoveClaim(mirror);
+    }
+    if (role is not null) {
+        id.AddClaim(new System.Security.Claims.Claim(EggIdentity.Auth.SessionClaims.Role, role));
+    }
+    ctx.ShouldRenew = true;
+}
+
 
 
 builder.Services.AddScoped<EggLedger.Web.Server.Storage.CurrentUser>();
@@ -239,6 +260,20 @@ builder.Services.AddSingleton(_ =>
 
 builder.Services.AddHttpClient("auxbrain", c => c.BaseAddress = new Uri("https://www.auxbrain.com"));
 
+builder.Services.AddEggIdentityFallback(new FallbackBranding("EggLedger", new Dictionary<string, string> {
+    [ComponentTokens.Bg] = "#242629",
+    [ComponentTokens.Panel0] = "#1c1d1f",
+    [ComponentTokens.Panel] = "#33353a",
+    [ComponentTokens.Panel2] = "#393b40",
+    [ComponentTokens.Fg] = "#e5e7eb",
+    [ComponentTokens.Muted] = "#99a1af",
+    [ComponentTokens.Accent] = "#3b82f6",
+    [ComponentTokens.Accent2] = "#2563eb",
+    [ComponentTokens.Ok] = "#10b981",
+    [ComponentTokens.Err] = "#b91c1c",
+    [ComponentTokens.Border] = "#364153",
+}));
+
 var app = builder.Build();
 
 app.UseForwardedHeaders();
@@ -253,6 +288,8 @@ if (hasDb) {
 
     app.UseMiddleware<EggLedger.Web.Server.Sync.Auth.LoginCallbackMiddleware>();
 }
+
+app.UseEggIdentityFallback();
 
 
 app.UseAntiforgery();
@@ -272,6 +309,10 @@ app.Map("/egg-api/{**rest}", async (HttpContext ctx, IHttpClientFactory factory,
     using var upstream = await client.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ctx.RequestAborted);
     ctx.Response.StatusCode = (int)upstream.StatusCode;
     foreach (var h in upstream.Content.Headers) {
+        if (string.Equals(h.Key, "Content-Length", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(h.Key, "Transfer-Encoding", StringComparison.OrdinalIgnoreCase)) {
+            continue;
+        }
         ctx.Response.Headers[h.Key] = h.Value.ToArray();
     }
     await upstream.Content.CopyToAsync(ctx.Response.Body, ctx.RequestAborted);

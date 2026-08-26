@@ -7,6 +7,7 @@ using EggLedger.Web.Services;
 using EggLedger.Web.State;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace EggLedger.Desktop.Storage;
 
@@ -46,6 +47,14 @@ public static class DesktopStorageRegistration {
 
         services.RemoveAll<MennoService>();
         services.AddSingleton(_ => new MennoService(new HttpClient(), new FileMennoDataStore(internalDir)));
+
+        services.RemoveAll<GameEventsService>();
+        services.AddSingleton(sp => new GameEventsService(
+            new HttpClient { Timeout = GameEventsService.RequestTimeout },
+            Environment.GetEnvironmentVariable(GameEventsService.BaseUrlVariable),
+            Environment.GetEnvironmentVariable(GameEventsService.ApiKeyVariable),
+            new FileGameEventStore(internalDir),
+            sp.GetService<ILogger<GameEventsService>>()));
         return services;
     }
 

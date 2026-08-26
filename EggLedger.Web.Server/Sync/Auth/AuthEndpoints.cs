@@ -70,6 +70,7 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
                 new(ClaimTypes.Name, result.Username),
                 new(EggLedger.Web.Server.Auth.AuthScheme.UserIdClaim, result.UserId.ToString()),
                 new(EggLedger.Web.Server.Auth.AuthScheme.RoleClaim, result.Role),
+                new(SessionClaims.Role, result.Role),
             };
             if (!string.IsNullOrEmpty(result.DiscordId)) {
                 claims.Add(new Claim(EggLedger.Web.Server.Auth.AuthScheme.DiscordIdClaim, result.DiscordId));

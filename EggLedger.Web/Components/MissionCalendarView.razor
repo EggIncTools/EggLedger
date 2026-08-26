@@ -34,12 +34,12 @@
             }
         </div>
         <div class="timeline-viewport" @ref="_viewportRef">
-            <div class="timeline-strip">
+            <div class="timeline-strip" style="@StripStyle">
                 @foreach (var period in _periods) {
                     <div class="timeline-period">
                         <div class="timeline-canvas">
                             @foreach (var row in period.Rows) {
-                                <div class="timeline-row @(row.Row.IsPrimary ? "" : "timeline-row-context")" style="@RowStyle(row)">
+                                <div class="timeline-row @(period.IsCenter && row.Row.IsPrimary ? "" : "timeline-row-context")" style="@RowStyle(row)">
                                     @foreach (var cell in row.Cells) {
                                         if (cell.LeftPercent > 0) {
                                             <div class="timeline-grid" style="@TickStyle(cell.LeftPercent)"></div>
@@ -112,12 +112,24 @@
         List<List<TimelineBar>> Lanes,
         double? NowPercent);
 
-    private sealed record PeriodVm(DateTimeOffset Start, DateTimeOffset End, List<RowVm> Rows);
+    private sealed record PeriodVm(DateTimeOffset Start, DateTimeOffset End, bool IsCenter, List<RowVm> Rows);
 
     private string ZoomClass => _zoom.ToString().ToLowerInvariant();
 
+    private int VisibleSlots => _zoom == TimelineZoom.Week ? 3 : 1;
+
+    private int StripSlots => VisibleSlots + 2;
+
+    private int CenterSlot => StripSlots / 2;
+
+    private string StripStyle =>
+        FormattableString.Invariant(
+            $"--strip-top:calc(-100% * {StripSlots - VisibleSlots} / {2 * VisibleSlots});--strip-h:calc(100% * {StripSlots} / {VisibleSlots});--strip-slot-h:calc(100% / {StripSlots});");
+
     private IReadOnlyList<TimelineTick> CurrentHourTicks =>
-        _periods.Count > 1 && _periods[1].Rows.Count > 0 ? _periods[1].Rows[0].HourTicks : Array.Empty<TimelineTick>();
+        _periods.Count > CenterSlot && _periods[CenterSlot].Rows.Count > 0
+            ? _periods[CenterSlot].Rows[0].HourTicks
+            : Array.Empty<TimelineTick>();
 
     protected override void OnParametersSet() {
         Recompute();
@@ -155,21 +167,28 @@
 
         var now = DateTimeOffset.UtcNow;
         _flightRatio = TimelineFlightRatio.Compute(_merged, _visibleStart, _visibleEnd, now);
-        var (prevStart, prevEnd) = TimelineWindow.Compute(_visibleStart.AddHours(-1), _zoom, tz);
-        var (nextStart, nextEnd) = TimelineWindow.Compute(_visibleEnd.AddHours(1), _zoom, tz);
-        _periods = [
-            BuildPeriod(prevStart, prevEnd, tz, now),
-            BuildPeriod(_visibleStart, _visibleEnd, tz, now),
-            BuildPeriod(nextStart, nextEnd, tz, now)
-        ];
+
+        var windows = new List<(DateTimeOffset Start, DateTimeOffset End)> { (_visibleStart, _visibleEnd) };
+        for (var i = 0; i < CenterSlot; i++) {
+            windows.Insert(0, TimelineWindow.Compute(windows[0].Start.AddHours(-1), _zoom, tz));
+        }
+
+        for (var i = 0; i < CenterSlot; i++) {
+            windows.Add(TimelineWindow.Compute(windows[^1].End.AddHours(1), _zoom, tz));
+        }
+
+        var center = CenterSlot;
+        _periods = windows
+            .Select((w, index) => BuildPeriod(w.Start, w.End, index == center, tz, now))
+            .ToList();
     }
 
-    private PeriodVm BuildPeriod(DateTimeOffset start, DateTimeOffset end, TimeZoneInfo tz, DateTimeOffset now) {
+    private PeriodVm BuildPeriod(DateTimeOffset start, DateTimeOffset end, bool isCenter, TimeZoneInfo tz, DateTimeOffset now) {
         int? primaryMonth = _zoom == TimelineZoom.Month ? TimeZoneInfo.ConvertTime(start, tz).Month : null;
         var rows = TimelineRows.Build(_zoom, start, end, tz)
             .Select(row => BuildRow(row, tz, now, primaryMonth))
             .ToList();
-        return new PeriodVm(start, end, rows);
+        return new PeriodVm(start, end, isCenter, rows);
     }
 
     private RowVm BuildRow(TimelineRow row, TimeZoneInfo tz, DateTimeOffset now, int? primaryMonth) {
@@ -238,18 +257,21 @@
     private Task SetZoomAsync(TimelineZoom zoom) {
         _zoom = zoom;
         Recompute();
+        _resetScrollPending = true;
         return Task.CompletedTask;
     }
 
     private Task PanAsync(int direction) {
         _center += (_visibleEnd - _visibleStart) * direction;
         Recompute();
+        _resetScrollPending = true;
         return Task.CompletedTask;
     }
 
     private Task JumpToNowAsync() {
         _center = DateTimeOffset.UtcNow;
         Recompute();
+        _resetScrollPending = true;
         return Task.CompletedTask;
     }
 
@@ -258,6 +280,7 @@
             var localNoon = parsed.ToDateTime(new TimeOnly(12, 0));
             _center = TimelineWindow.ToOffset(localNoon, TzProvider.TimeZone);
             Recompute();
+            _resetScrollPending = true;
         }
 
         return Task.CompletedTask;

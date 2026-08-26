@@ -115,6 +115,7 @@ internal static class Program {
             Log("FATAL: " + (error.ExceptionObject.ToString() ?? "Unknown error"));
 
         StartMennoAutoRefresh(app.Services);
+        StartGameEventsFeed(app.Services);
 
         app.Run();
     }
@@ -140,6 +141,32 @@ internal static class Program {
     }
 
 
+
+    private static readonly TimeSpan GameEventsPollInterval = TimeSpan.FromMinutes(15);
+
+    private static void StartGameEventsFeed(IServiceProvider services) {
+        var events = services.GetRequiredService<EggLedger.Web.Services.GameEventsService>();
+        if (!events.IsConfigured) return;
+        _ = Task.Run(async () => {
+            await PollGameEventsAsync(events, initial: true).ConfigureAwait(false);
+            using var timer = new PeriodicTimer(GameEventsPollInterval);
+            while (await timer.WaitForNextTickAsync().ConfigureAwait(false)) {
+                await PollGameEventsAsync(events, initial: false).ConfigureAwait(false);
+            }
+        });
+    }
+
+    private static async Task PollGameEventsAsync(
+        EggLedger.Web.Services.GameEventsService events, bool initial) {
+        try {
+            if (initial) {
+                await events.EnsureLoadedAsync().ConfigureAwait(false);
+            }
+            await events.RefreshAsync().ConfigureAwait(false);
+        } catch (Exception ex) {
+            Log("game events poll failed: " + ex.Message);
+        }
+    }
 
     private static void Log(string text) {
         Console.Error.WriteLine(text);
