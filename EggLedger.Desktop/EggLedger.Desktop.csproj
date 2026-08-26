@@ -38,7 +38,7 @@
     <ItemGroup>
     <_WwwrootZipInput Include="wwwroot\**\*" />
     <_WwwrootZipInput Include="..\EggLedger.Web\wwwroot\**\*" />
-    <_WwwrootZipInput Include="..\EggLedger.Web\**\*.razor;..\EggLedger.Web\**\*.razor.css" Exclude="..\EggLedger.Web\bin\**;..\EggLedger.Web\obj\**" />
+    <_WwwrootZipInput Include="..\EggLedger.Web\bin\$(Configuration)\$(TargetFramework)\EggLedger.Web.dll" />
     <_WwwrootZipInput Include="$(MSBuildProjectFullPath)" />
   </ItemGroup>
 

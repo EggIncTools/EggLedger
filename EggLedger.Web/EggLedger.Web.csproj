@@ -23,14 +23,41 @@
   <ItemGroup>
     <_StylesInput Include="Styles\app.v4.css" />
     <_StylesInput Include="**\*.razor" Exclude="bin\**;obj\**;Tests\**" />
-    <_StylesInput Include="..\EggLedger.Web.Server\**\*.razor" Exclude="..\EggLedger.Web.Server\bin\**;..\EggLedger.Web.Server\obj\**" Condition="Exists('..\EggLedger.Web.Server')" />
     <_StylesInput Include="..\EggLedger.Desktop\wwwroot\desktop.html" Condition="Exists('..\EggLedger.Desktop\wwwroot\desktop.html')" />
     <_StylesInput Include="..\EggLedger.CssBuild\**\*.cs" Exclude="..\EggLedger.CssBuild\bin\**;..\EggLedger.CssBuild\obj\**" />
   </ItemGroup>
 
+  <UsingTask TaskName="EggLedgerNewestFileStamp" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <Directory ParameterType="System.String" Required="true" />
+      <SearchPattern ParameterType="System.String" Required="true" />
+      <Stamp ParameterType="System.String" Output="true" />
+    </ParameterGroup>
+    <Task>
+      <Code Type="Fragment" Language="cs"><![CDATA[
+Stamp = "0";
+if (System.IO.Directory.Exists(Directory)) {
+    var max = 0L;
+    foreach (var file in System.IO.Directory.EnumerateFiles(Directory, SearchPattern, System.IO.SearchOption.AllDirectories)) {
+        var ticks = System.IO.File.GetLastWriteTimeUtc(file).Ticks;
+        if (ticks > max) max = ticks;
+    }
+    Stamp = max.ToString();
+}
+]]></Code>
+    </Task>
+  </UsingTask>
+
+  <Target Name="ComputeWebServerRazorStamp">
+    <EggLedgerNewestFileStamp Directory="..\EggLedger.Web.Server" SearchPattern="*.razor">
+      <Output TaskParameter="Stamp" PropertyName="_WebServerRazorStamp" />
+    </EggLedgerNewestFileStamp>
+  </Target>
+
   <Target Name="BuildStyles"
           Condition="'$(BuildStylesCss)' != 'false' And Exists('$(MSBuildProjectDirectory)/../EggLedger.CssBuild/Program.cs')"
-          Inputs="@(_StylesInput)"
+          DependsOnTargets="ComputeWebServerRazorStamp"
+          Inputs="@(_StylesInput);$(_WebServerRazorStamp)"
           Outputs="$(MSBuildProjectDirectory)\wwwroot\styles.css"
           Returns="">
     <Exec Command="dotnet run --project &quot;$(MSBuildProjectDirectory)/../EggLedger.CssBuild&quot; --configuration Release -- &quot;$(MSBuildProjectDirectory)&quot;" />
