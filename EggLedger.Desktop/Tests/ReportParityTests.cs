@@ -69,19 +69,19 @@ public sealed class ReportParityTests {
     private static List<ArtifactDropRowData> Drops() =>
     [
 
-        D("m1", artifactId: 12, rarity: 0, tier: 1, dropIndex: 0, spec: "Artifact"),
-        D("m1", artifactId: 13, rarity: 1, tier: 2, dropIndex: 1, spec: "Stone"),
+        D("m1", artifactId: 12, rarity: 0, tier: 1, dropIndex: 0, quality: 1.5, spec: "Artifact"),
+        D("m1", artifactId: 13, rarity: 1, tier: 2, dropIndex: 1, quality: 2, spec: "Stone"),
 
-        D("m2", artifactId: 12, rarity: 1, tier: 1, dropIndex: 0, spec: "Artifact"),
+        D("m2", artifactId: 12, rarity: 1, tier: 1, dropIndex: 0, quality: 3.25, spec: "Artifact"),
 
-        D("m3", artifactId: 14, rarity: 3, tier: 2, dropIndex: 0, spec: "Artifact"),
+        D("m3", artifactId: 14, rarity: 3, tier: 2, dropIndex: 0, quality: 0.75, spec: "Artifact"),
 
-        D("m4", artifactId: 13, rarity: 0, tier: 1, dropIndex: 0, spec: "Stone"),
+        D("m4", artifactId: 13, rarity: 0, tier: 1, dropIndex: 0, quality: 0, spec: "Stone"),
 
-        D("m5", artifactId: 0, rarity: 0, tier: 0, dropIndex: -1, spec: ""),
+        D("m5", artifactId: 0, rarity: 0, tier: 0, dropIndex: -1, quality: 0, spec: ""),
 
-        D("m6", artifactId: 12, rarity: 2, tier: 3, dropIndex: 0, spec: "Artifact"),
-        D("m6", artifactId: 14, rarity: 2, tier: 1, dropIndex: 1, spec: "Artifact"),
+        D("m6", artifactId: 12, rarity: 2, tier: 3, dropIndex: 0, quality: 2.5, spec: "Artifact"),
+        D("m6", artifactId: 14, rarity: 2, tier: 1, dropIndex: 1, quality: 1.25, spec: "Artifact"),
     ];
 
     private static SqliteConnection SeedSqlite(IReadOnlyList<MissionRowData> missions, IReadOnlyList<ArtifactDropRowData> drops) {
@@ -138,14 +138,12 @@ public sealed class ReportParityTests {
     }
 
     private static void AssertParity(ReportDefinition def, IWeightData weights) {
-        var missions = Missions();
-        var drops = Drops();
-
-        using var conn = SeedSqlite(missions, drops);
+        using var conn = SeedSqlite(Missions(), Drops());
         var sqlDb = new SqliteMissionDb(conn);
         var sqlResult = new ReportExecutor(sqlDb, weights).ExecuteReport(def);
 
-        var memResult = new InMemoryReportRunner(weights).Run(def, missions, drops);
+        var source = SqliteReportSource.Load(sqlDb, Eid);
+        var memResult = new InMemoryReportRunner(weights).Run(def, source.Missions, source.Drops);
 
         Assert.Equal(memResult, sqlResult);
     }
@@ -286,5 +284,254 @@ public sealed class ReportParityTests {
                 AccountId = Eid,
             },
             new NoWeights());
+    }
+
+    [Fact]
+    public void Parity_DateFilter_LaunchOnOrAfter() {
+        AssertParity(
+            new ReportDefinition {
+                Mode = "aggregate",
+                GroupBy = "duration_type",
+                Subject = "missions",
+                AccountId = Eid,
+                Filters = new ReportFilters {
+                    And = [new FilterCondition { TopLevel = "launchDT", Op = ">=", Val = "2025-10-01" }],
+                },
+            },
+            new NoWeights());
+    }
+
+    [Fact]
+    public void Parity_DateFilter_ReturnBefore() {
+        AssertParity(
+            new ReportDefinition {
+                Mode = "aggregate",
+                GroupBy = "ship_type",
+                Subject = "missions",
+                AccountId = Eid,
+                Filters = new ReportFilters {
+                    And = [new FilterCondition { TopLevel = "returnDT", Op = "<", Val = "2025-10-01" }],
+                },
+            },
+            new NoWeights());
+    }
+
+    [Fact]
+    public void Parity_DateFilter_LaunchWindow() {
+        AssertParity(
+            new ReportDefinition {
+                Mode = "aggregate",
+                GroupBy = "ship_type",
+                Subject = "missions",
+                AccountId = Eid,
+                Filters = new ReportFilters {
+                    And = [
+                        new FilterCondition { TopLevel = "launchDT", Op = ">=", Val = "2025-09-18" },
+                        new FilterCondition { TopLevel = "launchDT", Op = "<=", Val = "2025-11-01" },
+                    ],
+                },
+            },
+            new NoWeights());
+    }
+
+    [Fact]
+    public void Parity_TimeSeries_ByWeek() {
+        AssertParity(
+            new ReportDefinition {
+                Mode = "time_series",
+                GroupBy = "time_bucket",
+                TimeBucket = "week",
+                Subject = "missions",
+                AccountId = Eid,
+            },
+            new NoWeights());
+    }
+
+    [Fact]
+    public void Parity_TimePivot_WeekByShip() {
+        AssertParity(
+            new ReportDefinition {
+                Mode = "time_series",
+                GroupBy = "time_bucket",
+                SecondaryGroupBy = "ship_type",
+                TimeBucket = "week",
+                Subject = "missions",
+                AccountId = Eid,
+            },
+            new NoWeights());
+    }
+
+    [Fact]
+    public void Parity_CustomBucket_WindowCoversAllRows() {
+        AssertParity(
+            new ReportDefinition {
+                Mode = "time_series",
+                GroupBy = "time_bucket",
+                TimeBucket = "custom",
+                CustomBucketN = 600,
+                CustomBucketUnit = "month",
+                Subject = "missions",
+                AccountId = Eid,
+            },
+            new NoWeights());
+    }
+
+    [Fact]
+    public void Parity_CustomBucket_WindowExcludesAllRows() {
+        AssertParity(
+            new ReportDefinition {
+                Mode = "time_series",
+                GroupBy = "time_bucket",
+                TimeBucket = "custom",
+                CustomBucketN = 1,
+                CustomBucketUnit = "day",
+                Subject = "missions",
+                AccountId = Eid,
+            },
+            new NoWeights());
+    }
+
+    [Fact]
+    public void Parity_SpecTypeGrouping() {
+        AssertParity(
+            new ReportDefinition { Mode = "aggregate", GroupBy = "spec_type", Subject = "artifacts", AccountId = Eid },
+            new NoWeights());
+    }
+
+    [Fact]
+    public void Parity_QualityFilter_AtOrAboveThreshold() {
+        AssertParity(
+            new ReportDefinition {
+                Mode = "aggregate",
+                GroupBy = "rarity",
+                Subject = "artifacts",
+                AccountId = Eid,
+                Filters = new ReportFilters {
+                    And = [new FilterCondition { TopLevel = "artifact_quality", Op = ">=", Val = "2" }],
+                },
+            },
+            new NoWeights());
+    }
+
+    [Fact]
+    public void Parity_QualityFilter_BelowThreshold_BySpecType() {
+        AssertParity(
+            new ReportDefinition {
+                Mode = "aggregate",
+                GroupBy = "spec_type",
+                Subject = "artifacts",
+                AccountId = Eid,
+                Filters = new ReportFilters {
+                    And = [new FilterCondition { TopLevel = "artifact_quality", Op = "<", Val = "2" }],
+                },
+            },
+            new NoWeights());
+    }
+
+    [Fact]
+    public void Parity_Pivot2D_RowPct() {
+        AssertParity(Pivot2D("row_pct"), new NoWeights());
+    }
+
+    [Fact]
+    public void Parity_Pivot2D_ColPct() {
+        AssertParity(Pivot2D("col_pct"), new NoWeights());
+    }
+
+    [Fact]
+    public void Parity_Pivot2D_GlobalPct() {
+        AssertParity(Pivot2D("global_pct"), new NoWeights());
+    }
+
+    [Fact]
+    public void Parity_FamilyWeighted_Pivot() {
+        AssertParity(
+            new ReportDefinition {
+                Mode = "aggregate",
+                GroupBy = "ship_type",
+                SecondaryGroupBy = "duration_type",
+                Subject = "artifacts",
+                FamilyWeight = "tachyon-stone",
+                AccountId = Eid,
+            },
+            new FixedFamily(12, 13));
+    }
+
+    [Fact]
+    public void Parity_FamilyWeighted_TimeSeries() {
+        AssertParity(
+            new ReportDefinition {
+                Mode = "time_series",
+                GroupBy = "time_bucket",
+                TimeBucket = "month",
+                Subject = "artifacts",
+                FamilyWeight = "tachyon-stone",
+                AccountId = Eid,
+            },
+            new FixedFamily(12, 13));
+    }
+
+    [Fact]
+    public void Parity_FamilyWeighted_TimePivot() {
+        AssertParity(
+            new ReportDefinition {
+                Mode = "time_series",
+                GroupBy = "time_bucket",
+                SecondaryGroupBy = "ship_type",
+                TimeBucket = "month",
+                Subject = "artifacts",
+                FamilyWeight = "tachyon-stone",
+                AccountId = Eid,
+            },
+            new FixedFamily(12, 13));
+    }
+
+    private static ReportDefinition Pivot2D(string normalizeBy) => new() {
+        Mode = "aggregate",
+        GroupBy = "ship_type",
+        SecondaryGroupBy = "duration_type",
+        Subject = "missions",
+        AccountId = Eid,
+        NormalizeBy = normalizeBy,
+    };
+
+    [Fact]
+    public void SqliteReportSource_LoadsSeededRowsForTheAccountOnly() {
+        var missions = Missions();
+        var drops = Drops();
+        missions.Add(M("z1", ship: 1, duration: 0, start: 1758100000, ret: 1758100100) with { PlayerId = "EI2" });
+        drops.Add(D("z1", artifactId: 99, rarity: 3, tier: 1, dropIndex: 0) with { PlayerId = "EI2" });
+
+        using var conn = SeedSqlite(missions, drops);
+        var source = SqliteReportSource.Load(new SqliteMissionDb(conn), Eid);
+
+        Assert.Equal(Missions(), source.Missions);
+        Assert.Equal(Drops(), source.Drops);
+    }
+
+    [Fact]
+    public void SqliteReportSource_ConvertsStoredColumnTypes() {
+        var missions = new List<MissionRowData> {
+            M("x1", ship: 4, duration: 2, start: 1758100000, ret: 1758103600,
+                cap: 12, nominal: 6, target: 3, type: 1, level: 5, dub: true, bugged: true),
+        };
+        var drops = new List<ArtifactDropRowData> {
+            D("x1", artifactId: 21, rarity: 2, tier: 3, dropIndex: 1, quality: 4.25, spec: "Stone"),
+        };
+
+        using var conn = SeedSqlite(missions, drops);
+        var source = SqliteReportSource.Load(new SqliteMissionDb(conn), Eid);
+
+        var mission = Assert.Single(source.Missions);
+        Assert.Equal(missions[0], mission);
+        Assert.Equal(1758100000, mission.StartTimestamp);
+        Assert.Equal(1758103600, mission.ReturnTimestamp);
+        Assert.True(mission.IsDubCap);
+        Assert.True(mission.IsBuggedCap);
+
+        var drop = Assert.Single(source.Drops);
+        Assert.Equal(drops[0], drop);
+        Assert.Equal(4.25, drop.Quality);
+        Assert.Equal("Stone", drop.SpecType);
     }
 }

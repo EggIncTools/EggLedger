@@ -9,6 +9,8 @@ public sealed class SqliteDatabase : IDisposable {
 
     public SqliteConnection Connection { get; }
 
+    public Lock Gate { get; } = new();
+
     public static SqliteDatabase OpenMissionDb(string path) {
         var db = Open(path, isConnectionString: false);
         SqliteMigrationRunner.MigrateMissionDb(db.Connection);

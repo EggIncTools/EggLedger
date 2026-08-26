@@ -9,11 +9,12 @@ public sealed class SqliteIndexedDb : IIndexedDb {
     private readonly SqliteDatabase _missionDb;
     private readonly SqliteDatabase _reportDb;
     private readonly Dictionary<string, StoreMeta> _stores;
-    private readonly Lock _gate = new();
+    private readonly Lock _gate;
 
     public SqliteIndexedDb(SqliteDatabase missionDb, SqliteDatabase reportDb) {
         _missionDb = missionDb ?? throw new ArgumentNullException(nameof(missionDb));
         _reportDb = reportDb ?? throw new ArgumentNullException(nameof(reportDb));
+        _gate = _missionDb.Gate;
         _stores = BuildStoreMeta();
         BindBlobColumns();
     }
@@ -234,6 +235,11 @@ public sealed class SqliteIndexedDb : IIndexedDb {
             keyColumns: ["player_id", "mission_id"],
             autoIncrementColumn: null,
             boolColumns: ["is_dub_cap", "is_bugged_cap"]),
+        [IndexedDbStores.InFlightMission] = new StoreMeta(
+            "inflight_mission", useReportDb: false,
+            keyColumns: ["player_id", "mission_id"],
+            autoIncrementColumn: null,
+            boolColumns: []),
         [IndexedDbStores.Backup] = new StoreMeta(
             "backup", useReportDb: false,
             keyColumns: ["player_id"],

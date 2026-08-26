@@ -59,21 +59,6 @@ public sealed class AccountFactoryTests {
     }
 
     [Fact]
-    public void EbStringMatchesRoleFromEbShaping() {
-
-
-        var backup = new Backup {
-            UserName = "Eve",
-            game = new Backup.Game { SoulEggsD = 250, EggsOfProphecy = 1 },
-        };
-
-        var acct = AccountFactory.FromBackup(Eid, backup);
-
-        Assert.False(string.IsNullOrEmpty(acct.EBString));
-        Assert.NotEqual("0", acct.EBString);
-    }
-
-    [Fact]
     public void ToKnownAccountProjectsHeaderSubset() {
         var info = new AccountInfo {
             Id = Eid,

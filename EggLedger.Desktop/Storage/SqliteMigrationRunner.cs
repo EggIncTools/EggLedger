@@ -6,7 +6,7 @@ using Microsoft.Data.Sqlite;
 namespace EggLedger.Desktop.Storage;
 
 public static class SqliteMigrationRunner {
-    public const int MissionTargetVersion = 9;
+    public const int MissionTargetVersion = 10;
 
     public const int ReportTargetVersion = 12;
 

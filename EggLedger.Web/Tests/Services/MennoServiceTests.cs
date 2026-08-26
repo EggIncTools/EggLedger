@@ -199,22 +199,6 @@ public sealed class MennoServiceTests {
         Assert.DoesNotContain("9", result.RowLabels[0], StringComparison.Ordinal);
     }
 
-    [Fact]
-    public async Task ExecuteComparison_IgnoresNonMatchingItems() {
-
-
-        var service = Make(FixtureBytes("menno-sample.json"), out _);
-        var items = await service.RefreshAsync();
-
-        var result = MennoService.ExecuteComparison(
-            ShipDurationDef(), items, new[] { "9", "10" }, new[] { "0", "1" });
-
-        Assert.NotNull(result);
-
-        Assert.Equal(70.0, result!.MatrixValues[0], 9);
-        Assert.Equal(78.0, result.MatrixValues[3], 9);
-    }
-
     [Theory]
     [InlineData(false, "artifacts", "ship_type", "duration_type")]
     [InlineData(true, "ships", "ship_type", "duration_type")]

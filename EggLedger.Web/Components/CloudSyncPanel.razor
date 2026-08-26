@@ -10,7 +10,9 @@
 @* Owns the 2s/5min auth poll loop around CloudSyncService.PollOnceAsync with cancellation so navigating away cannot leak it. *@
 
 <div class="px-2 py-2 text-sm text-gray-400 bg-darker rounded-md tabular-nums overflow-auto">
-    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-0_5rem">Settings Sync</div>
+    @if (ShowHeading) {
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-0_5rem">Settings Sync</div>
+    }
     @if (_reachableChecking) {
         <div class="mt-0_5rem text-gray-500 italic text-xs">Checking sync server connection...</div>
     } else if (!_reachable) {
@@ -134,6 +136,8 @@
 </div>
 
 @code {
+    [Parameter] public bool ShowHeading { get; set; } = true;
+
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan PollTimeout = TimeSpan.FromMinutes(5);
     private bool _reachableChecking = true;

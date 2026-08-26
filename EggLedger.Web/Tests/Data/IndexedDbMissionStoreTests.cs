@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using EggLedger.Domain.Api;
+using EggLedger.Domain.MissionPacking;
 using EggLedger.Web.Data;
 using Ei;
 using ProtoBuf;
@@ -244,6 +245,113 @@ public sealed class IndexedDbMissionStoreTests {
         Assert.NotNull(rows);
         Assert.Equal(2, rows!.Count);
         Assert.Contains("MissionMetaRow", db.ProjectedTypes);
+    }
+
+    private static DatabaseMission InFlight(string missionId, long launch, int missionType = 0) => new() {
+        MissiondId = missionId,
+        LaunchDT = launch,
+        ReturnDT = launch + 3600,
+        Ship = MissionInfo.Spaceship.Henerprise,
+        ShipString = "Henerprise",
+        ShipEnumString = "HENERPRISE",
+        DurationType = MissionInfo.DurationType.Epic,
+        DurationString = "Extended",
+        Level = 4,
+        Capacity = 30,
+        NominalCapcity = 28,
+        IsDubCap = true,
+        Target = "BOOK_OF_BASAN",
+        TargetInt = 7,
+        MissionType = missionType,
+        MissionTypeString = "Standard",
+    };
+
+    [Fact]
+    public async Task ReplaceInFlightMissionsAsync_RoundTripsEveryField() {
+        var (store, _) = Make();
+
+        Assert.True(await store.ReplaceInFlightMissionsAsync("EI1", [InFlight("f1", 100)]));
+        var got = await store.GetInFlightMissionsAsync("EI1");
+
+        var one = Assert.Single(got);
+        var expected = InFlight("f1", 100);
+        Assert.Equal(expected.MissiondId, one.MissiondId);
+        Assert.Equal(expected.LaunchDT, one.LaunchDT);
+        Assert.Equal(expected.ReturnDT, one.ReturnDT);
+        Assert.Equal(expected.Ship, one.Ship);
+        Assert.Equal(expected.ShipEnumString, one.ShipEnumString);
+        Assert.Equal(expected.DurationType, one.DurationType);
+        Assert.Equal(expected.Level, one.Level);
+        Assert.Equal(expected.Capacity, one.Capacity);
+        Assert.Equal(expected.NominalCapcity, one.NominalCapcity);
+        Assert.True(one.IsDubCap);
+        Assert.Equal(expected.Target, one.Target);
+        Assert.Equal(expected.TargetInt, one.TargetInt);
+        Assert.Equal(expected.MissionTypeString, one.MissionTypeString);
+    }
+
+    [Fact]
+    public async Task ReplaceInFlightMissionsAsync_DropsMissionsMissingFromTheNewSet() {
+        var (store, _) = Make();
+        await store.ReplaceInFlightMissionsAsync("EI1", [InFlight("f1", 100), InFlight("f2", 200)]);
+
+        await store.ReplaceInFlightMissionsAsync("EI1", [InFlight("f2", 250)]);
+        var got = await store.GetInFlightMissionsAsync("EI1");
+
+        var one = Assert.Single(got);
+        Assert.Equal("f2", one.MissiondId);
+        Assert.Equal(250, one.LaunchDT);
+    }
+
+    [Fact]
+    public async Task ReplaceInFlightMissionsAsync_EmptySetClearsThePlayer() {
+        var (store, _) = Make();
+        await store.ReplaceInFlightMissionsAsync("EI1", [InFlight("f1", 100)]);
+
+        await store.ReplaceInFlightMissionsAsync("EI1", []);
+
+        Assert.Empty(await store.GetInFlightMissionsAsync("EI1"));
+    }
+
+    [Fact]
+    public async Task ReplaceInFlightMissionsAsync_LeavesOtherPlayersAlone() {
+        var (store, _) = Make();
+        await store.ReplaceInFlightMissionsAsync("EI1", [InFlight("f1", 100)]);
+        await store.ReplaceInFlightMissionsAsync("EI2", [InFlight("f9", 900)]);
+
+        await store.ReplaceInFlightMissionsAsync("EI1", []);
+
+        Assert.Empty(await store.GetInFlightMissionsAsync("EI1"));
+        Assert.Equal("f9", Assert.Single(await store.GetInFlightMissionsAsync("EI2")).MissiondId);
+    }
+
+    [Fact]
+    public async Task GetInFlightMissionsAsync_OrdersByLaunchTime() {
+        var (store, _) = Make();
+        await store.ReplaceInFlightMissionsAsync("EI1", [InFlight("late", 900), InFlight("early", 100)]);
+
+        var got = await store.GetInFlightMissionsAsync("EI1");
+
+        Assert.Equal(new[] { "early", "late" }, got.Select(m => m.MissiondId).ToArray());
+    }
+
+    [Fact]
+    public async Task GetInFlightMissionsAsync_SkipsUndeserializableRows() {
+        var (store, db) = Make();
+        await store.ReplaceInFlightMissionsAsync("EI1", [InFlight("f1", 100)]);
+        db.Seed("inflight_mission", new InFlightMissionRow {
+            PlayerId = "EI1", MissionId = "bad", CapturedAt = 1, Payload = "{not json",
+        });
+
+        var got = await store.GetInFlightMissionsAsync("EI1");
+
+        Assert.Equal("f1", Assert.Single(got).MissiondId);
+    }
+
+    [Fact]
+    public async Task GetInFlightMissionsAsync_EmptyForUnknownPlayer() {
+        var (store, _) = Make();
+        Assert.Empty(await store.GetInFlightMissionsAsync("EI1"));
     }
 
     private static MissionRow PayloadRow(string playerId, string missionId, double start, string identifier) {

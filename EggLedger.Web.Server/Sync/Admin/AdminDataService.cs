@@ -65,10 +65,6 @@ public sealed class AdminDataService(NpgsqlDataSource source, IdentityApiClient 
         return users;
     }
 
-    public async Task<bool> DeleteUserAsync(Guid userId, CancellationToken ct = default) {
-        await using var cmd = source.CreateCommand("DELETE FROM users WHERE user_id = $1");
-        cmd.Parameters.AddWithValue(userId);
-        var rows = await cmd.ExecuteNonQueryAsync(ct);
-        return rows > 0;
-    }
+    public Task<bool> DeleteUserAsync(Guid userId, CancellationToken ct = default) =>
+        UserDataDeletion.DeleteUserAsync(source, userId, ct);
 }

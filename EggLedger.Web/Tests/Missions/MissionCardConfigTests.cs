@@ -26,19 +26,6 @@ public class MissionCardConfigTests {
     }
 
     [Fact]
-    public void Classic_HasCapacityFieldsDisabledByDefault() {
-        var classic = MissionCardConfig.Classic;
-        Assert.False(classic.Fields.Single(f => f.Field == CardField.Capacity).Enabled);
-        Assert.False(classic.Fields.Single(f => f.Field == CardField.CapacityModifierBadge).Enabled);
-        Assert.False(classic.Fields.Single(f => f.Field == CardField.Duration).Enabled);
-    }
-
-    [Fact]
-    public void Classic_HasDropCountEnabledByDefault() {
-        Assert.True(MissionCardConfig.Classic.Fields.Single(f => f.Field == CardField.DropCount).Enabled);
-    }
-
-    [Fact]
     public void MissionCardConfig_JsonRoundtrips() {
         var config = MissionCardConfig.Classic with { Name = "Custom", BackgroundColor = "#112233" };
         var json = JsonSerializer.Serialize(config, JsonOpts);

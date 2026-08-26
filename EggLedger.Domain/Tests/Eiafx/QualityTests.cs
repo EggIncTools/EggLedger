@@ -6,14 +6,6 @@ namespace EggLedger.Domain.Tests.Eiafx;
 
 public class QualityTests {
     [Fact]
-    public void Config_LoadsArtifactParameters() {
-        var parameters = EiafxConfig.Config.artifact_parameters;
-        Assert.NotEmpty(parameters);
-    }
-
-
-
-    [Fact]
     public void BaseQualityFor_FreshSpecMatchesByValue() {
         var parameters = EiafxConfig.Config.artifact_parameters;
         Assert.NotEmpty(parameters);

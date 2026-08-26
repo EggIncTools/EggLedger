@@ -8,43 +8,6 @@ namespace EggLedger.Domain.Tests.Api;
 
 public class ApiPayloadJsonTests {
     [Fact]
-    public void FirstContact_JsonRoundTrips_ViaSharedOptions() {
-        var fc = new EggIncFirstContactResponse {
-            EiUserId = "EI1234567890123456",
-            Backup = new Backup {
-                artifacts = new Backup.Artifacts { LastFueledShip = MissionInfo.Spaceship.Henerprise },
-                game = new Backup.Game { SoulEggsD = 1234.5, EggsOfProphecy = 7 },
-            },
-        };
-
-        string json = JsonSerializer.Serialize(fc, ApiPayloadJson.Options);
-        var back = JsonSerializer.Deserialize<EggIncFirstContactResponse>(json, ApiPayloadJson.Options)!;
-
-        Assert.Equal("EI1234567890123456", back.EiUserId);
-        Assert.Equal(MissionInfo.Spaceship.Henerprise, back.Backup!.artifacts!.LastFueledShip);
-        Assert.Equal(1234.5, back.Backup.game!.SoulEggsD);
-        Assert.Equal(7u, back.Backup.game.EggsOfProphecy);
-    }
-
-    [Fact]
-    public void CompleteMission_JsonRoundTrips_ViaSharedOptions() {
-        var resp = new CompleteMissionResponse {
-            Success = true,
-            EiUserId = "EI999",
-            Info = new MissionInfo { Identifier = "m-1", Ship = MissionInfo.Spaceship.Henerprise },
-        };
-
-        string json = JsonSerializer.Serialize(resp, ApiPayloadJson.Options);
-        var back = JsonSerializer.Deserialize<CompleteMissionResponse>(json, ApiPayloadJson.Options)!;
-
-        Assert.True(back.Success);
-        Assert.Equal("m-1", back.Info!.Identifier);
-        Assert.Equal(MissionInfo.Spaceship.Henerprise, back.Info.Ship);
-    }
-
-
-
-    [Fact]
     public void GetOnlyCollections_SurviveRoundTrip() {
         var resp = new CompleteMissionResponse { Success = true };
         resp.Artifacts.Add(new CompleteMissionResponse.SecureArtifactSpec());

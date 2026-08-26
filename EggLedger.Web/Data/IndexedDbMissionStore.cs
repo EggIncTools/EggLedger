@@ -1,8 +1,10 @@
 using System.IO.Compression;
+using System.Text.Json;
 using EggLedger.Domain.Api;
 using EggLedger.Domain.MissionPacking;
 using EggLedger.Domain.MissionQuery;
 using Ei;
+using Microsoft.Extensions.Logging;
 
 namespace EggLedger.Web.Data;
 
@@ -11,12 +13,14 @@ public sealed class IndexedDbMissionStore : IMissionStore {
     private readonly MissionPacker _packer;
     private readonly IApiPayloadDecoder _decoder;
     private readonly IndexedDbAccountStore? _accounts;
+    private readonly ILogger<IndexedDbMissionStore>? _logger;
 
-    public IndexedDbMissionStore(IIndexedDb db, IApiPayloadDecoder decoder, MissionPacker? packer = null, IndexedDbAccountStore? accounts = null) {
+    public IndexedDbMissionStore(IIndexedDb db, IApiPayloadDecoder decoder, MissionPacker? packer = null, IndexedDbAccountStore? accounts = null, ILogger<IndexedDbMissionStore>? logger = null) {
         _db = db;
         _decoder = decoder;
         _packer = packer ?? new MissionPacker(EiafxMissionConfigSource.Instance);
         _accounts = accounts;
+        _logger = logger;
     }
 
     public async Task<IReadOnlyList<string>?> GetCompleteMissionIdsAsync(string playerId) {
@@ -315,6 +319,73 @@ public sealed class IndexedDbMissionStore : IMissionStore {
             });
             await _db.PutManyAsync(IndexedDbStores.ArtifactDrops, rows);
         }
+    }
+
+    public async Task<bool> ReplaceInFlightMissionsAsync(string playerId, IReadOnlyList<DatabaseMission> missions) {
+        long capturedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var keep = new HashSet<string>(StringComparer.Ordinal);
+        var rows = new List<object>(missions.Count);
+        foreach (var mission in missions) {
+            if (!keep.Add(mission.MissiondId)) {
+                continue;
+            }
+            rows.Add(new InFlightMissionRow {
+                PlayerId = playerId,
+                MissionId = mission.MissiondId,
+                CapturedAt = capturedAt,
+                Payload = JsonSerializer.Serialize(mission, Rows.JsonOptions),
+            });
+        }
+
+        try {
+            if (rows.Count > 0) {
+                await _db.PutManyAsync(IndexedDbStores.InFlightMission, rows).ConfigureAwait(false);
+            }
+
+            var stored = await _db
+                .GetAllByIndexAsync<InFlightMissionRow>(IndexedDbStores.InFlightMission, IndexedDbStores.PlayerIdIndex, playerId)
+                .ConfigureAwait(false);
+            foreach (var stale in stored.Select(r => r.MissionId).Where(id => !keep.Contains(id))) {
+                await _db.DeleteAsync(
+                    IndexedDbStores.InFlightMission, new object[] { playerId, stale }).ConfigureAwait(false);
+            }
+            return true;
+        } catch (OperationCanceledException) {
+            throw;
+        } catch (Exception ex) {
+            _logger?.LogWarning(ex, "failed to persist in-flight missions for player {PlayerId}", playerId);
+            return false;
+        }
+    }
+
+    public async Task<IReadOnlyList<DatabaseMission>> GetInFlightMissionsAsync(string playerId) {
+        InFlightMissionRow[] rows;
+        try {
+            rows = await _db
+                .GetAllByIndexAsync<InFlightMissionRow>(IndexedDbStores.InFlightMission, IndexedDbStores.PlayerIdIndex, playerId)
+                .ConfigureAwait(false);
+        } catch (OperationCanceledException) {
+            throw;
+        } catch (Exception ex) {
+            _logger?.LogWarning(ex, "failed to read in-flight missions for player {PlayerId}", playerId);
+            return [];
+        }
+
+        var result = new List<DatabaseMission>(rows.Length);
+        foreach (var row in rows) {
+            DatabaseMission? mission;
+            try {
+                mission = JsonSerializer.Deserialize<DatabaseMission>(row.Payload, Rows.JsonOptions);
+            } catch (JsonException) {
+                continue;
+            }
+            if (mission is not null) {
+                result.Add(mission);
+            }
+        }
+
+        result.Sort((a, b) => a.LaunchDT.CompareTo(b.LaunchDT));
+        return result;
     }
 
     private static byte[] Gzip(byte[] data) {

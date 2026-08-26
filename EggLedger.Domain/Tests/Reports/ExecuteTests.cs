@@ -6,33 +6,6 @@ namespace EggLedger.Domain.Tests.Reports;
 
 public class ExecuteTests {
 
-
-    [Fact]
-    public void GapFill_SparseSeries() {
-        var buckets = new[] { "2025-01", "2025-02", "2025-03" };
-        var groups = new[] { "Eagle", "Henerprise" };
-        var cells = new Dictionary<string, Dictionary<string, double>> {
-            ["2025-01"] = new() { ["Eagle"] = 5, ["Henerprise"] = 3 },
-            ["2025-02"] = new() { ["Eagle"] = 7 },
-            ["2025-03"] = new() { ["Eagle"] = 2, ["Henerprise"] = 8 },
-        };
-
-        var nR = buckets.Length;
-        var nC = groups.Length;
-        var matrix = new double[nR * nC];
-        for (var r = 0; r < nR; r++) {
-            for (var c = 0; c < nC; c++) {
-                if (cells.TryGetValue(buckets[r], out var row) && row.TryGetValue(groups[c], out var v)) {
-                    matrix[(r * nC) + c] = v;
-                }
-            }
-        }
-
-        Assert.Equal(0, matrix[(1 * nC) + 1]);
-        Assert.Equal(5, matrix[(0 * nC) + 0]);
-        Assert.Equal(8, matrix[(2 * nC) + 1]);
-    }
-
     private sealed class FakeDb : IMissionDb {
         private readonly Dictionary<string, IReadOnlyList<object?[]>> _byPrefix = new(StringComparer.Ordinal);
         public List<(string sql, IReadOnlyList<object?> args)> Calls { get; } = [];

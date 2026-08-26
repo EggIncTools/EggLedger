@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using EggLedger.Domain.Api;
+using EggLedger.Domain.MissionPacking;
 using EggLedger.Web.Data;
 using EggLedger.Web.Services;
 using EggLedger.Web.Tests.Data;
@@ -53,6 +54,30 @@ public sealed class FetchServiceTests {
                 UserName = "tester",
                 game = new Backup.Game { SoulEggsD = soulEggs },
                 settings = new Backup.Settings { LastBackupTime = lastBackupTime },
+                ArtifactsDb = afxdb,
+            },
+        };
+        return ToApiBody(fc);
+    }
+
+
+    private static string InProgressFirstContactBody(params (string Id, MissionInfo.Status Status)[] inProgress) {
+        var afxdb = new ArtifactsDB();
+        foreach (var (id, status) in inProgress) {
+            afxdb.MissionInfos.Add(new MissionInfo {
+                Identifier = id,
+                status = status,
+                StartTimeDerived = 500,
+                DurationSeconds = 3600,
+                Ship = MissionInfo.Spaceship.Henerprise,
+                duration_type = MissionInfo.DurationType.Epic,
+            });
+        }
+        var fc = new EggIncFirstContactResponse {
+            Backup = new Backup {
+                UserName = "tester",
+                game = new Backup.Game { SoulEggsD = 0 },
+                settings = new Backup.Settings { LastBackupTime = 1000 },
                 ArtifactsDb = afxdb,
             },
         };
@@ -170,6 +195,38 @@ public sealed class FetchServiceTests {
         Assert.Equal(MissionInfo.Spaceship.Henerprise, got.Info.Ship);
         Assert.Single(got.Artifacts);
         Assert.Equal(ArtifactSpec.Name.TachyonDeflector, got.Artifacts[0].Spec!.name);
+    }
+
+    [Fact]
+    public async Task FetchPlayerData_PersistsOnlyExploringInFlightMissions() {
+        var db = new FakeIndexedDb();
+        var handler = new RoutingHandler(
+            InProgressFirstContactBody(
+                ("flying", MissionInfo.Status.Exploring),
+                ("fueling", MissionInfo.Status.Fueling)),
+            CompleteMissionBody);
+        var service = Make(db, handler);
+
+        var final = await service.FetchPlayerDataAsync(Eid, null, CancellationToken.None);
+
+        Assert.Equal(AppState.Success, final);
+        var store = new IndexedDbMissionStore(db, new LocalApiPayloadDecoder(new ApiClient()));
+        var inFlight = await store.GetInFlightMissionsAsync(Eid);
+        Assert.Equal("flying", Assert.Single(inFlight).MissiondId);
+    }
+
+    [Fact]
+    public async Task FetchPlayerData_ReplacesThePreviousInFlightSet() {
+        var db = new FakeIndexedDb();
+        var store = new IndexedDbMissionStore(db, new LocalApiPayloadDecoder(new ApiClient()));
+        await store.ReplaceInFlightMissionsAsync(Eid, [new DatabaseMission { MissiondId = "landed", LaunchDT = 1 }]);
+
+        var handler = new RoutingHandler(
+            InProgressFirstContactBody(("flying", MissionInfo.Status.Exploring)), CompleteMissionBody);
+        await Make(db, handler).FetchPlayerDataAsync(Eid, null, CancellationToken.None);
+
+        var inFlight = await store.GetInFlightMissionsAsync(Eid);
+        Assert.Equal("flying", Assert.Single(inFlight).MissiondId);
     }
 
     [Fact]

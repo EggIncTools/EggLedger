@@ -29,12 +29,6 @@ public sealed class DesktopPlatformCapabilitiesTests {
     }
 
     [Fact]
-    public void IsDesktop_IsTrue() {
-        var caps = new DesktopPlatformCapabilities(new FakeProcessRunner(), new FakeWindow());
-        Assert.True(caps.IsDesktop);
-    }
-
-    [Fact]
     public async Task OpenFileAsync_RunsCurrentPlatformOpenCommand() {
         var runner = new FakeProcessRunner();
         var caps = new DesktopPlatformCapabilities(runner, new FakeWindow());

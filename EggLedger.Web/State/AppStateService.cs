@@ -14,11 +14,6 @@ public sealed class AppStateService {
         set => Set(ref field, value);
     } = [];
 
-    public string ActiveTab {
-        get;
-        set => Set(ref field, value);
-    } = "Mission Data";
-
     public AppState? PipelineState {
         get;
         set => Set(ref field, value);

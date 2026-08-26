@@ -1,4 +1,6 @@
 using EggLedger.Domain.Api;
+using EggLedger.Domain.MissionPacking;
+using EggLedger.Domain.MissionQuery;
 using EggLedger.Web.Data;
 using EggLedger.Web.Services;
 using EggLedger.Web.State;
@@ -199,6 +201,45 @@ public sealed class FetchOrchestratorTests {
 
         Assert.True(firedDuringFetchingMissions);
         Assert.True(firedAtSuccess);
+    }
+
+    [Fact]
+    public async Task StartFetchAsync_OnSuccess_RaisesFetchSucceededWithAccountId() {
+        var db = new FakeIndexedDb();
+        var handler = new RoutingHandler(FirstContactBody(["m1"]), CompleteMissionBody);
+        var orchestrator = Make(db, handler);
+
+        var succeeded = new List<string>();
+        orchestrator.FetchSucceeded += succeeded.Add;
+
+        await orchestrator.StartFetchAsync(Eid);
+
+        Assert.Equal(AppState.Success, orchestrator.TerminalState);
+        Assert.Equal(Eid, Assert.Single(succeeded));
+    }
+
+    [Fact]
+    public async Task AttachedLedgerDataHub_InvalidatesFetchedAccountOnSuccess() {
+        var db = new FakeIndexedDb();
+        var handler = new RoutingHandler(FirstContactBody(["m1"]), CompleteMissionBody);
+        var orchestrator = Make(db, handler);
+
+        using var hub = new LedgerDataHub(
+            _ => Task.FromResult<IReadOnlyList<DatabaseMission>?>([]),
+            _ => Task.FromResult<Dictionary<string, List<MissionDrop>>?>(null),
+            TimeSpan.FromMinutes(5));
+        var invalidated = new List<string>();
+        hub.AccountInvalidated += invalidated.Add;
+        hub.AttachFetch(orchestrator);
+
+        await orchestrator.StartFetchAsync(Eid);
+
+        Assert.Equal(Eid, Assert.Single(invalidated));
+
+        hub.Dispose();
+        await orchestrator.StartFetchAsync(Eid);
+
+        Assert.Single(invalidated);
     }
 
     [Fact]

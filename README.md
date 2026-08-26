@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://eggledger.davidarthurcole.me/"><img src="EggLedger.Desktop/assets/open-web-app.svg" alt="open web app"></a>
-  <a href="https://github.com/DavidArthurCole/EggLedger/releases"><img src="EggLedger.Desktop/assets/download.svg" alt="download desktop"></a>
+  <a href="https://github.com/EggIncTools/EggLedger/releases"><img src="EggLedger.Desktop/assets/download.svg" alt="download desktop"></a>
   <a href="https://discord.davidarthurcole.me"><img src="https://img.shields.io/badge/discord-join%20server-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
 </p>
 
@@ -22,7 +22,7 @@
 This is the recommended way to run EggLedger.<br><br>
 
 Prefer a local app?
-**[Download the desktop build](https://github.com/DavidArthurCole/EggLedger/releases)** instead.
+**[Download the desktop build](https://github.com/EggIncTools/EggLedger/releases)** instead.
 - Same features as the web app
 - (Optionally) Connect to Discord to sync Settings.
 - Runs offline, keeps everything on your machine.

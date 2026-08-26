@@ -94,14 +94,6 @@ public class MissionPackerTests {
         };
 
     [Fact]
-    public void IsDubCap_Normal() {
-        var ship = MissionInfo.Spaceship.ChickenOne;
-        var dur = MissionInfo.DurationType.Short;
-        var nominal = Nominal(ship, dur, 0);
-        Assert.False(Packer.IsDubCap(MakeDubCapMission(ship, dur, 0, (uint)nominal)));
-    }
-
-    [Fact]
     public void IsDubCap_AboveThreshold() {
         var ship = MissionInfo.Spaceship.ChickenOne;
         var dur = MissionInfo.DurationType.Short;

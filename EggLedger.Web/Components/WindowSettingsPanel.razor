@@ -4,7 +4,9 @@
    the Restart Now button shows only when they differ from the loaded values. *@
 
 <div class="px-2 py-2 text-sm text-gray-400 bg-darker rounded-md tabular-nums overflow-auto">
-    <span class="mr-0_5rem font-bold text-lg text-gray-400 ledger-underline">Window &amp; Browser</span>
+    @if (ShowHeading) {
+        <span class="mr-0_5rem font-bold text-lg text-gray-400 ledger-underline">Window &amp; Browser</span>
+    }
     <span class="text-gray-500 text-xs italic ml-1">(effective on restart)</span><br/>
 
     <div class="mt-0_5rem">
@@ -49,6 +51,8 @@
     [Parameter] [EditorRequired] public SettingsModel Model { get; set; } = default!;
 
     [Parameter] [EditorRequired] public EventCallback<(string Key, string Value)> OnSetting { get; set; }
+
+    [Parameter] public bool ShowHeading { get; set; } = true;
 
     private int _width;
     private int _height;

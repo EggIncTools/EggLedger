@@ -1,0 +1,164 @@
+@implements IDisposable
+@inject LedgerShellState Shell
+@inject ShipsViewState Ships
+@inject DropsViewState Drops
+@inject MissionConfigProvider Config
+
+<aside class="ledger-sidebar @(_collapsed ? "is-rail" : "") @(IsReports ? "is-reports" : "")">
+    <AccountFetchHeader OnExpandRequest="Expand"/>
+
+    <div class="filter-panel sidebar-panel sidebar-filter @(_filterOpen ? "" : "sidebar-section-closed")">
+        <div class="sidebar-panel-head">
+            @if (_collapsed) {
+                <button type="button" class="sidebar-rail-expand" aria-label="Expand sidebar" @onclick="Expand">
+                    <span class="sidebar-panel-title">Filter</span>
+                </button>
+            } else {
+                <span class="sidebar-panel-title">Filter</span>
+            }
+            <button type="button" class="sidebar-accordion-btn" aria-label="Toggle filter section"
+                    aria-expanded="@AriaExpanded(_filterOpen)" @onclick="ToggleFilter">
+                @if (_filterOpen) {
+                    <span class="sidebar-accordion-caret">&#9662;</span>
+                } else {
+                    <span class="sidebar-accordion-caret">&#9656;</span>
+                }
+            </button>
+            @if (_collapsed) {
+                <button type="button" class="sidebar-collapse-btn" aria-label="Expand sidebar" @onclick="ToggleRail">&#8250;</button>
+            } else {
+                <button type="button" class="sidebar-collapse-btn" aria-label="Collapse sidebar" @onclick="ToggleRail">&#8249;</button>
+            }
+        </div>
+        <div class="sidebar-panel-body">
+            @if (ActiveContext.EmptyNote is { Length: > 0 }) {
+                <p class="text-xs text-gray-500 italic py-1">@ActiveContext.EmptyNote</p>
+            }
+            <div class="@(IsReports ? "hidden" : "flex flex-col flex-1 min-h-0")">
+                <MissionFilterBar @key="FilterBarKey"
+                                  Context="BarContext"
+                                  Applying="ActiveApplying"
+                                  LastResultText="@ActiveResultText"
+                                  FillHeight="true"
+                                  OnApply="ApplyActiveAsync"/>
+            </div>
+        </div>
+    </div>
+
+    <div class="filter-panel sidebar-panel sidebar-options @(_optionsOpen ? "" : "sidebar-section-closed")">
+        <div class="sidebar-panel-head">
+            @if (_collapsed) {
+                <button type="button" class="sidebar-rail-expand" aria-label="Expand sidebar" @onclick="Expand">
+                    <span class="sidebar-panel-title">Options</span>
+                </button>
+            } else {
+                <span class="sidebar-panel-title">Options</span>
+            }
+            <button type="button" class="sidebar-accordion-btn" aria-label="Toggle options section"
+                    aria-expanded="@AriaExpanded(_optionsOpen)" @onclick="ToggleOptions">
+                @if (_optionsOpen) {
+                    <span class="sidebar-accordion-caret">&#9662;</span>
+                } else {
+                    <span class="sidebar-accordion-caret">&#9656;</span>
+                }
+            </button>
+        </div>
+        <div class="sidebar-panel-body sidebar-scroll-body text-sm">
+            <OptionsHost/>
+        </div>
+    </div>
+
+    <div class="filter-panel sidebar-panel sidebar-footer">
+        <SidebarFooter OnAbout="OpenAbout" OnTerms="OpenTerms" OnPrivacy="OpenPrivacy" OnSupport="OpenSupport"/>
+    </div>
+</aside>
+
+@code {
+    private static readonly object FilterBarKey = new();
+
+    private bool _collapsed;
+    private bool _filterOpen;
+    private bool _optionsOpen;
+
+    private FilterViewContext _shipsContext = FilterViewContext.Empty;
+    private FilterViewContext _dropsContext = FilterViewContext.Empty;
+    private FilterViewContext _reportsContext = FilterViewContext.Empty;
+
+    private bool IsReports => Shell.View == LedgerView.Reports;
+
+    private FilterViewContext ActiveContext => Shell.View switch {
+        LedgerView.Drops => _dropsContext,
+        LedgerView.Reports => _reportsContext,
+        _ => _shipsContext
+    };
+
+    private FilterViewContext BarContext => Shell.View == LedgerView.Drops ? _dropsContext : _shipsContext;
+
+    private bool ActiveApplying => Shell.View == LedgerView.Drops ? Drops.Applying : Ships.Applying;
+
+    private string ActiveResultText => Shell.View == LedgerView.Drops ? Drops.ResultText : Ships.ResultText;
+
+    private static string AriaExpanded(bool open) {
+        return open ? "true" : "false";
+    }
+
+    protected override void OnInitialized() {
+        _shipsContext = new ShipsFilterContext(Config.FieldCtx);
+        _dropsContext = new DropsFilterContext(Config.FieldCtx);
+        _reportsContext = new ReportsFilterContext(Config.FieldCtx);
+        Shell.Changed += OnStateChanged;
+        Ships.Changed += OnStateChanged;
+        Drops.Changed += OnStateChanged;
+    }
+
+    private Task ApplyActiveAsync(MissionFilterBar.LegacyFilter filter) {
+        return Shell.View switch {
+            LedgerView.Drops => Drops.ApplyFilterAsync(filter),
+            LedgerView.Reports => Task.CompletedTask,
+            _ => Ships.ApplyFilterAsync(filter)
+        };
+    }
+
+    private void OpenAbout() {
+        Shell.AboutOpen = true;
+    }
+
+    private void OpenTerms() {
+        Shell.Legal = LegalDocument.Terms;
+    }
+
+    private void OpenPrivacy() {
+        Shell.Legal = LegalDocument.Privacy;
+    }
+
+    private void OpenSupport() {
+        Shell.SupportOpen = true;
+    }
+
+    private void ToggleFilter() {
+        _filterOpen = !_filterOpen;
+    }
+
+    private void ToggleOptions() {
+        _optionsOpen = !_optionsOpen;
+    }
+
+    private void ToggleRail() {
+        _collapsed = !_collapsed;
+    }
+
+    private void Expand() {
+        _collapsed = false;
+    }
+
+    private void OnStateChanged() {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() {
+        Shell.Changed -= OnStateChanged;
+        Ships.Changed -= OnStateChanged;
+        Drops.Changed -= OnStateChanged;
+    }
+
+}

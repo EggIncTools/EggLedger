@@ -1,97 +1,36 @@
 @inherits LayoutComponentBase
 @using Microsoft.AspNetCore.Components.Authorization
-@using Microsoft.Extensions.DependencyInjection
-@implements IDisposable
 @inject AppStateService AppStateSvc
 @inject ScreenshotSafetyState ScreenshotSafety
 @inject IndexedDbSettings Settings
-@inject AdminState AdminState
 @inject AccountLoader Loader
-@inject IPlatformCapabilities Platform
-@inject IServiceProvider Services
 @inject IUserTimeZoneProvider TzProvider
-@inject IUpdateStatusProvider UpdateStatus
 
 @* No cascading AuthenticationState means no auth gate exists at all (the desktop host's App.razor
-   never wraps in CascadingAuthenticationState), so tabs stay enabled there unconditionally. *@
+   never wraps in CascadingAuthenticationState), so the account controls stay enabled there. *@
 <CascadingValue Value="IsLoggedIn" Name="IsLoggedIn">
-    <div class="h-full flex flex-col space-y-3 pb-3 bg-darker">
-        <TabBar Tabs="Tabs" Enabled="IsLoggedIn">
-            <Right>
-                <GlobalAccountHeader/>
-            </Right>
-        </TabBar>
-
+    <div class="h-full flex flex-col pb-3 bg-darker">
         <main class="flex-1 min-h-0 flex flex-col">
             @Body
         </main>
-
-        <footer class="shrink-0 text-center text-sm text-gray-500">
-            <a class="url-link" href="https://github.com/DavidArthurCole/EggLedger" target="_blank" rel="noopener">EggLedger</a>
-            @if (!string.IsNullOrEmpty(AppStateSvc.AppVersion)) {
-                <span> v@(AppStateSvc.AppVersion)</span>
-            }
-            <span>
-                by @@<a class="url-link" href="https://github.com/fanaticscripter" target="_blank" rel="noopener">mk2</a>
-                &amp; @@<a class="url-link" href="https://github.com/DavidArthurCole" target="_blank" rel="noopener">DavidArthurCole</a>
-            </span>
-            <span class="mx-1">·</span>
-            <a class="url-link" href="/terms">Terms</a>
-            <span class="mx-1">/</span>
-            <a class="url-link" href="/privacy">Privacy</a>
-            @if (Platform.IsDesktop && !string.IsNullOrEmpty(UpdateStatus.AvailableVersion)) {
-                <span class="mx-1">/</span>
-                <button type="button" class="url-link text-green-500" @onclick="@(() => _updateModal?.Open())">New version available!</button>
-            }
-        </footer>
     </div>
 
-    @if (Platform.IsDesktop) {
-        <UpdateModal @ref="_updateModal"/>
-    }
-
     <FetchStatusPopover/>
-    <SupportBubble/>
-    <a class="gh-bubble" href="https://github.com/DavidArthurCole/EggLedger" target="_blank" rel="noopener"
-       aria-label="View EggLedger on GitHub">
-        @* Sized via width/height attrs (not just CSS) so the mark stays small before styles.css loads on a hard refresh. *@
-        <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/>
-        </svg>
-    </a>
 </CascadingValue>
 
 @code {
-
-    private static readonly TabBar.TabItem[] _baseTabs = [
-        new("Mission Data", "/missions"),
-        new("Lifetime Data", "/lifetime"),
-        new("Reports", "/reports"),
-        new("Settings", "/settings"),
-        new("About", "/about")
-    ];
-
-    private IReadOnlyList<TabBar.TabItem> Tabs =>
-        AdminState.IsAdmin && !Platform.IsDesktop ? [.. _baseTabs, new TabBar.TabItem("Admin", "/admin")] : _baseTabs;
 
     [CascadingParameter] private Task<AuthenticationState>? AuthStateTask { get; set; }
 
 
     private bool IsLoggedIn = true;
-    private UpdateModal? _updateModal;
 
     protected override async Task OnInitializedAsync() {
-        AdminState.Changed += OnAdminChanged;
-        if (Platform.IsDesktop) {
-            UpdateStatus.Changed += OnUpdateChanged;
-        }
-
         AppStateSvc.AppVersion = AppVersionInfo.Current;
 
         if (AuthStateTask is not null) {
             var authState = await AuthStateTask;
             IsLoggedIn = authState.User.Identity?.IsAuthenticated ?? false;
-            AdminState.IsAdmin = Services.GetService<IAdminAccess>()?.IsAdmin(authState.User) ?? false;
         }
 
         await Loader.EnsureLoadedAsync();
@@ -104,21 +43,6 @@
     protected override async Task OnAfterRenderAsync(bool firstRender) {
         if (firstRender) {
             await TzProvider.EnsureUpToDateAsync();
-        }
-    }
-
-    private void OnAdminChanged() {
-        InvokeAsync(StateHasChanged);
-    }
-
-    private void OnUpdateChanged() {
-        InvokeAsync(StateHasChanged);
-    }
-
-    public void Dispose() {
-        AdminState.Changed -= OnAdminChanged;
-        if (Platform.IsDesktop) {
-            UpdateStatus.Changed -= OnUpdateChanged;
         }
     }
 

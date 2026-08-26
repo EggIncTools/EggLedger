@@ -1,0 +1,138 @@
+@implements IDisposable
+@inject IndexedDbSettings Settings
+@inject IPlatformCapabilities Platform
+@inject SettingsWriteCoordinator Writer
+@inject MissionQueryHandlers Queries
+@inject FetchOrchestrator Fetch
+@inject AccountLoader Loader
+@inject IServiceProvider Services
+
+<ModalOverlay @ref="_modal" OnClose="Close"
+              ContainerClass="w-[92vw] max-w-[48rem] max-h-[88vh] flex flex-col border border-gray-600 rounded-lg bg-darker text-gray-300 shadow-2xl">
+    <div class="flex items-center justify-between shrink-0 px-4 py-3 border-b border-gray-700">
+        <h2 class="text-sm font-bold text-gray-300">Settings</h2>
+        <CloseButton OnClick="Close" Class="text-gray-500 hover:text-gray-300" IconClass="w-4 h-4"/>
+    </div>
+
+    <div class="flex-1 min-h-0 overflow-y-auto px-3 py-3 text-sm text-gray-400">
+        @if (!_loaded) {
+            <p class="text-gray-500 italic">Loading settings...</p>
+        } else {
+            <div class="flex flex-col gap-2">
+                @foreach (var section in Sections()) {
+                    var id = section.Id;
+                    var open = _openSections.Contains(id);
+                    <div class="settings-section @(open ? "is-open" : "")">
+                        <button type="button" class="settings-section-head" aria-expanded="@(open ? "true" : "false")"
+                                @onclick="() => Toggle(id)">
+                            <span class="settings-section-title">@section.Title</span>
+                            @if (open) {
+                                <span class="settings-section-caret">&#9662;</span>
+                            } else {
+                                <span class="settings-section-caret">&#9656;</span>
+                            }
+                        </button>
+                        @if (open) {
+                            <div class="settings-section-body">@section.Body</div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</ModalOverlay>
+
+@code {
+    private const string GeneralSectionId = "general";
+
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private readonly SettingsModel _model = new();
+    private readonly HashSet<string> _openSections = [];
+    private ModalOverlay? _modal;
+    private bool _loaded;
+    private IReadOnlyList<DatabaseAccount> _existing = [];
+
+    private IProfilePanelSlot? ProfileSlot => Services.GetService(typeof(IProfilePanelSlot)) as IProfilePanelSlot;
+
+    private AccountDataPanel.FetchingCard? FetchingCardInfo =>
+        !Fetch.IsIdle && Fetch.FetchingAccountId is { } id && Loader.Accounts.FirstOrDefault(a => a.Id == id) is { } info
+            ? new AccountDataPanel.FetchingCard(id, info.Nickname, info.AccountColor, Fetch.Progress?.Finished ?? 0, Fetch.Progress?.Total ?? 0)
+            : null;
+
+    private RenderFragment WindowBody => @<WindowSettingsPanel Model="_model" OnSetting="OnSettingAsync" ShowHeading="false"/>;
+
+    private RenderFragment StorageBody => @<StorageSettingsPanel Model="_model" OnSetting="OnSettingAsync" ShowHeading="false"/>;
+
+    private RenderFragment ExportsBody => @<ExportManagementPanel Model="_model" OnSetting="OnSettingAsync"/>;
+
+    private RenderFragment MennoBody => @<MennoDataPanel Model="_model" OnSetting="OnSettingAsync" ShowHeading="false"/>;
+
+    private RenderFragment GeneralBody => @<OptionsPanel Model="_model" OnSetting="OnSettingAsync"/>;
+
+    private RenderFragment SyncBody => @<CloudSyncPanel ShowHeading="false"/>;
+
+    private RenderFragment AccountsBody => @<AccountDataPanel Accounts="_existing" Changed="ReloadAccountsAsync" Fetching="FetchingCardInfo"/>;
+
+    protected override async Task OnInitializedAsync() {
+        var all = await Settings.GetAllSettingsAsync();
+        _model.LoadFrom(all);
+        _loaded = true;
+        _openSections.Add(GeneralSectionId);
+
+        Fetch.Changed += OnFetchChanged;
+        await Loader.EnsureLoadedAsync();
+        await ReloadAccountsAsync();
+    }
+
+    protected override void OnAfterRender(bool firstRender) {
+        if (firstRender) {
+            _modal?.Open();
+        }
+    }
+
+    private IEnumerable<(string Id, string Title, RenderFragment Body)> Sections() {
+        if (Platform.IsDesktop) {
+            yield return ("window", "Window & Browser", WindowBody);
+            yield return ("storage", "Storage", StorageBody);
+            yield return ("exports", "Export Management", ExportsBody);
+            yield return ("menno", "Menno Data", MennoBody);
+        } else if (ProfileSlot is { } slot) {
+            yield return ("profile", "Profile", slot.Render());
+        }
+
+        yield return (GeneralSectionId, "General", GeneralBody);
+        yield return ("sync", "Settings Sync", SyncBody);
+        yield return ("accounts", "Account Data", AccountsBody);
+    }
+
+    private void Toggle(string id) {
+        if (!_openSections.Remove(id)) {
+            _openSections.Add(id);
+        }
+    }
+
+    private void OnFetchChanged() {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ReloadAccountsAsync() {
+        _existing = await Queries.GetExistingDataAsync();
+        await Loader.RefreshAsync();
+        StateHasChanged();
+    }
+
+    private async Task OnSettingAsync((string Key, string Value) change) {
+        await Writer.SetAsync(change.Key, change.Value);
+        StateHasChanged();
+    }
+
+    private Task Close() {
+        return OnClose.InvokeAsync();
+    }
+
+    public void Dispose() {
+        Fetch.Changed -= OnFetchChanged;
+    }
+
+}

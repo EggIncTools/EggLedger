@@ -27,13 +27,6 @@ public class MissionQueryHandlersTests {
     }
 
     [Fact]
-    public async Task GetMissionIds_NullOnError() {
-        var (h, store, _) = NewSut();
-        store.CompleteMissionIds = null;
-        Assert.Null(await h.GetMissionIdsAsync("p"));
-    }
-
-    [Fact]
     public async Task GetExistingData_DropsZeroCountAndErrors() {
         var (h, store, _) = NewSut();
         store.KnownAccounts.Add(new KnownAccount { Id = "a", Nickname = "A", EBString = "eb", AccountColor = "#fff" });

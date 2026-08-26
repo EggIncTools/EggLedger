@@ -1,0 +1,90 @@
+@implements IDisposable
+@inject ShipsViewState State
+
+@if (State.AccountId is null) {
+    <p class="text-xs text-gray-500 italic">Select an account to see mission options.</p>
+} else {
+    <div class="flex flex-col gap-3">
+        @if (State.ViewMode == ShipsViewMode.List) {
+            <button type="button" class="panel-dialog-btn" aria-haspopup="dialog" title="Edit mission card design"
+                    @onclick="OpenCardConfigAsync">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" aria-hidden="true">
+                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+                </svg>
+                <span>Card Design...</span>
+            </button>
+            <div>
+                <span class="font-bold text-gray-400">Display</span>
+                <div class="flex flex-col gap-1 mt-1">
+                    <label><input type="checkbox" class="ext-opt-check mr-0_5rem" checked="@State.Opts.ViewByDate" @onchange="@(e => State.SetOptAsync(MissionViewOptions.KeyViewByDate, b => State.Opts.ViewByDate = b, e))"/> Separate missions by day</label>
+                    <label><input type="checkbox" class="ext-opt-check mr-0_5rem" checked="@State.Opts.ViewMissionTimes" @onchange="@(e => State.SetOptAsync(MissionViewOptions.KeyViewTimes, b => State.Opts.ViewMissionTimes = b, e))"/> Show launch times</label>
+                    <label><input type="checkbox" class="ext-opt-check mr-0_5rem" checked="@State.Opts.RecolorDC" @onchange="@(e => State.SetOptAsync(MissionViewOptions.KeyRecolorDC, b => State.Opts.RecolorDC = b, e))"/> Re-color dubcaps</label>
+                    <label><input type="checkbox" class="ext-opt-check mr-0_5rem" checked="@State.Opts.RecolorBC" @onchange="@(e => State.SetOptAsync(MissionViewOptions.KeyRecolorBC, b => State.Opts.RecolorBC = b, e))"/> Re-color bugged caps</label>
+                </div>
+            </div>
+            <div>
+                <span class="font-bold text-gray-400">Multi-View Method</span>
+                <div class="tile-group flex-wrap mt-1">
+                    <button type="button" class="tile-group-item @(State.Opts.MultiViewMode == MultiViewMode.Off ? "active" : "")" @onclick="@(() => State.SetMultiViewAsync(MultiViewMode.Off))">Off</button>
+                    <button type="button" class="tile-group-item @(State.Opts.MultiViewMode == MultiViewMode.Row ? "active" : "") @(State.Opts.SortByDropCount ? "opacity-40 cursor-not-allowed" : "")" disabled="@State.Opts.SortByDropCount" @onclick="@(() => State.SetMultiViewAsync(MultiViewMode.Row))">Row/Date Select</button>
+                    <button type="button" class="tile-group-item @(State.Opts.MultiViewMode == MultiViewMode.Free ? "active" : "")" @onclick="@(() => State.SetMultiViewAsync(MultiViewMode.Free))">Free Select</button>
+                </div>
+            </div>
+        }
+        <div>
+            <span class="font-bold text-gray-400">Drops Sort Method</span>
+            <div class="tile-group flex-wrap mt-1">
+                <button type="button" class="tile-group-item @(State.Opts.SortMethod == MissionSortMethod.Default ? "active" : "")" @onclick="@(() => State.SetSortMethodAsync(MissionSortMethod.Default))">Default</button>
+                <button type="button" class="tile-group-item @(State.Opts.SortMethod == MissionSortMethod.Iv ? "active" : "")" @onclick="@(() => State.SetSortMethodAsync(MissionSortMethod.Iv))">Inventory Visualizer</button>
+            </div>
+        </div>
+        @if (State.ViewMode == ShipsViewMode.Calendar) {
+            <div>
+                <span class="font-bold text-gray-400">Calendar</span>
+                <div class="flex flex-col gap-1 mt-1">
+                    <label><input type="checkbox" class="ext-opt-check mr-0_5rem" checked="@State.Opts.CalendarFlightRatio" @onchange="@(e => State.SetOptAsync(MissionViewOptions.KeyCalendarFlightRatio, b => State.Opts.CalendarFlightRatio = b, e))"/> Show flight time ratio</label>
+                </div>
+            </div>
+        }
+        @if (State.ViewMode == ShipsViewMode.List) {
+            <div>
+                <span class="font-bold text-gray-400">Mission Sort</span>
+                <div class="flex flex-col gap-1 mt-1">
+                    <label class="@(State.DropCounts.Count == 0 ? "opacity-40 cursor-not-allowed" : "")">
+                        <input type="checkbox" class="ext-opt-check mr-0_5rem" checked="@State.Opts.SortByDropCount" disabled="@(State.DropCounts.Count == 0)" @onchange="State.ToggleSortByDropCountAsync"/>
+                        Sort by drop count
+                    </label>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@if (State.AccountId is not null) {
+    <MissionCardConfigModal @ref="_cardConfigModal"
+                            PresetSet="State.CardPresets"
+                            PreviewMission="State.TabFiltered?.FirstOrDefault()"
+                            OnSave="State.SaveCardPresetSetAsync"/>
+}
+
+@code {
+    private MissionCardConfigModal? _cardConfigModal;
+
+    protected override async Task OnInitializedAsync() {
+        State.Changed += OnStateChanged;
+        await State.EnsureInitializedAsync(InvokeAsync);
+    }
+
+    private void OnStateChanged() {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private Task OpenCardConfigAsync() {
+        return _cardConfigModal?.OpenAsync() ?? Task.CompletedTask;
+    }
+
+    public void Dispose() {
+        State.Changed -= OnStateChanged;
+    }
+
+}

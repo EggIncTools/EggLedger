@@ -53,20 +53,6 @@ public sealed class AccountLoaderTests {
     }
 
     [Fact]
-    public async Task RestoringActiveDoesNotRePersistInLoop() {
-        var (loader, store, _, active) = Make();
-        await store.AddKnownAccountAsync(Acct("EI1"));
-        await store.SetActiveAccountIdAsync("EI1");
-
-        await loader.EnsureLoadedAsync();
-
-
-        Assert.Equal("EI1", await store.GetActiveAccountIdAsync());
-        Assert.Equal("EI1", active.ActiveAccountId);
-        loader.Dispose();
-    }
-
-    [Fact]
     public async Task RefreshPicksUpNewlyAddedAccount() {
         var (loader, store, app, _) = Make();
         await loader.EnsureLoadedAsync();

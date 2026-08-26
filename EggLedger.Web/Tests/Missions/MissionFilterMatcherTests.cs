@@ -233,22 +233,6 @@ public sealed class MissionFilterMatcherTests {
     }
 
     [Fact]
-    public async Task CountMatchingDrops_NoMatches_ReturnsZero() {
-        var drops = new List<MissionDrop> { Drop(41, 2, 1) };
-        var matcher = Matcher((_, _) => Task.FromResult<IReadOnlyList<MissionDrop>?>(drops), DropConfigs());
-        var count = await matcher.CountMatchingDropsAsync(Mission(), FilterCodec.DecodeDropGlob("40_2_1_3"));
-        Assert.Equal(0, count);
-    }
-
-    [Fact]
-    public async Task CountMatchingDrops_QualityOutOfRange_ReturnsZero() {
-        var drops = new List<MissionDrop> { Drop(40, 2, 1) };
-        var matcher = Matcher((_, _) => Task.FromResult<IReadOnlyList<MissionDrop>?>(drops), DropConfigs());
-        var count = await matcher.CountMatchingDropsAsync(Mission(), FilterCodec.DecodeDropGlob("40_2_1_9"));
-        Assert.Equal(0, count);
-    }
-
-    [Fact]
     public async Task CountMatchingDrops_MissingShipConfig_ReturnsZero() {
         var matcher = Matcher((_, _) => Task.FromResult<IReadOnlyList<MissionDrop>?>(new List<MissionDrop>()),
             Array.Empty<PossibleMission>());

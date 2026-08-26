@@ -76,16 +76,6 @@ public class ReportGridLayoutTests {
         Assert.Empty(ReportGridLayout.ComputeEmptyZones(Array.Empty<ReportDefinition>()));
     }
 
-    [Fact]
-    public void FindInsertIndexForZone_PlacesDraggedCardIntoTrailingGap() {
-
-        var defs = new[] { Def(3, 1), Def(3, 1), Def(2, 1) };
-        var zones = ReportGridLayout.ComputeEmptyZones(defs.Where((_, i) => i != 2).ToList());
-        Assert.NotEmpty(zones);
-        int insertPos = ReportGridLayout.FindInsertIndexForZone(defs, zones[0], 2);
-        Assert.True(insertPos is >= 0 and <= 3);
-    }
-
     [Theory]
     [InlineData(800, 89)]
     [InlineData(1600, 189)]

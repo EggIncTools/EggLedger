@@ -1,0 +1,31 @@
+<div class="view-selector" role="group" aria-label="Ledger view">
+    @foreach (var option in Options) {
+        <button type="button" @key="option.View"
+                aria-pressed="@AriaPressed(option)"
+                class="@ButtonClass(option)"
+                @onclick="@(() => OnSelect.InvokeAsync(option.View))">
+            <span class="view-btn-label">@option.Label</span>
+            <span class="view-btn-sub">@option.Sub</span>
+        </button>
+    }
+</div>
+
+@code {
+    [Parameter] public LedgerView Current { get; set; }
+    [Parameter] public EventCallback<LedgerView> OnSelect { get; set; }
+
+    private sealed record ViewOption(LedgerView View, string Label, string Sub, string Variant);
+
+    private static readonly ViewOption[] Options = [
+        new(LedgerView.Ships, "Ships", "Mission history", "view-btn-ships"),
+        new(LedgerView.Drops, "Drops", "Lifetime totals", "view-btn-drops"),
+        new(LedgerView.Reports, "Reports", "Saved analysis", "view-btn-reports")
+    ];
+
+    private string ButtonClass(ViewOption option) =>
+        Current == option.View ? $"view-btn {option.Variant} on" : $"view-btn {option.Variant}";
+
+    private string AriaPressed(ViewOption option) =>
+        Current == option.View ? "true" : "false";
+
+}

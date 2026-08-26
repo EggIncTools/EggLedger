@@ -1,0 +1,341 @@
+@implements IDisposable
+@inject ActiveAccount Active
+@inject AppStateService AppStateSvc
+@inject AccountLoader Loader
+@inject FetchOrchestrator Fetch
+@inject MissionQueryHandlers Queries
+@inject IndexedDbSettings SettingsStore
+@inject IJSRuntime Js
+@inject IPlatformCapabilities Platform
+@inject NavigationManager Nav
+@inject LedgerShellState Shell
+
+<div class="filter-panel account-bar">
+    <button type="button" class="account-rail-chip" title="@ChipTitle" aria-label="Expand sidebar" @onclick="RequestExpand">
+        <span class="account-chip-dot" style="background-color: #@ChipColor"></span>
+    </button>
+
+    <div class="account-full">
+        <button type="button" class="account-select-btn" disabled="@(!IsLoggedIn)" @onclick="OpenPopover">
+            <span class="min-w-0 flex flex-col items-start leading-tight">
+                @if (_active is not null) {
+                    <span class="font-medium truncate max-w-full" style="color: #@_active.AccountColor">@_active.Nickname</span>
+                    <span class="text-gray-500 text-xs">@_active.EBString</span>
+                } else if (!IsLoggedIn) {
+                    <span class="text-gray-500 italic text-xs">Login to add an account</span>
+                } else {
+                    <span class="text-gray-500 italic text-xs">No account - click to add</span>
+                }
+            </span>
+            <span class="text-gray-600 text-xs shrink-0">&#9660;</span>
+        </button>
+
+        <div class="flex items-center gap-1.5">
+            @if (Fetch.IsIdle) {
+                <button type="button" class="account-fetch-btn" disabled="@(Active.ActiveAccountId is null)" @onclick="StartFetch">
+                    Fetch
+                </button>
+            } else {
+                <button type="button" class="account-fetch-btn account-stop-btn" @onclick="StopFetch">
+                    Stop
+                </button>
+            }
+
+            @if (Fetch.HasFetchContent && Fetch.PopoverDismissed) {
+                <button type="button" class="account-progress-chip text-yellow-400" aria-label="Show fetch status" @onclick="Fetch.ReopenPopover">
+                    <span class="w-8 h-1.5 rounded-sm overflow-hidden bg-dark">
+                        <span class="block h-full bg-green-500 transition-all duration-300 rounded-sm" style="width: @(Fetch.Percent)%"></span>
+                    </span>
+                    <span>@(Fetch.Percent)%</span>
+                </button>
+            }
+        </div>
+    </div>
+</div>
+
+@if (_open) {
+    <dialog open class="account-pop-backdrop" @onclick="ClosePopover">
+        <div @ref="_popRef" class="account-pop-panel" tabindex="-1"
+             @onclick:stopPropagation="true" @onkeydown="OnPopoverKeyDown">
+            <div class="account-pop-head">
+                <span class="text-xs font-bold text-gray-300">Accounts</span>
+                <CloseButton OnClick="ClosePopover" Class="text-gray-400 hover:text-gray-200" IconClass="w-4 h-4"/>
+            </div>
+            <ul class="account-pop-list text-xs">
+                @foreach (var acct in Accounts) {
+                    <li class="flex items-start gap-2 px-3 py-2.5 cursor-pointer hover:bg-darker transition-colors border-b border-gray-800 last:border-b-0"
+                        @onclick="() => Select(acct.Id)">
+                        <span class="text-gray-500 w-3 shrink-0 mt-0.5">
+                            @if (acct.Id == Active.ActiveAccountId) {
+                                <text>&#10003;</text>
+                            }
+                        </span>
+                        <span class="flex-1 min-w-0 flex flex-col gap-0.5">
+                            <span class="text-gray-400">
+                                <MaskedEid Value="@acct.Id" GrayBar="true"/>
+                            </span>
+                            <span class="flex items-center gap-1.5">
+                                <span class="font-medium" style="color: #@acct.AccountColor">@acct.Nickname</span>
+                                <span class="text-gray-500">@acct.EBString</span>
+                            </span>
+                            @{ var info = InfoFor(acct.Id); }
+                            @if (info is { SeString: not "" }) {
+                                <span class="flex items-center gap-1.5 text-gray-500">
+                                    <span style="color:#a855f7">@info.SeString SE</span>
+                                    <span style="color:#eab308">@info.PeCount PE</span>
+                                    @if (info.TeCount > 0) {
+                                        <span style="color:#c831ff">@info.TeCount TE</span>
+                                    }
+                                </span>
+                            }
+                            @{ var stats = StatsFor(acct.Id); }
+                            @if (stats is not null) {
+                                <span class="flex items-center gap-1.5 text-gray-600">
+                                    <span>@stats.MissionCount missions</span>
+                                    @{ var since = LedgerFormatting.FormatTimeSince(stats.LastMissionReturnDT, NowUnix); }
+                                    @if (since != "") {
+                                        <span>(latest @since)</span>
+                                    }
+                                </span>
+                            }
+                        </span>
+                    </li>
+                }
+                <li class="flex flex-col border-t border-gray-800">
+                    <div class="flex">
+                        <button type="button" class="flex-1 px-3 py-2 text-center text-gray-400 hover:bg-darker transition-colors cursor-pointer border-r border-gray-800"
+                                @onclick="OpenSettings">
+                            Account Settings
+                        </button>
+                        <button type="button" class="flex-1 px-3 py-2 text-center text-privacy_blue hover:bg-darker transition-colors cursor-pointer"
+                                @onclick="OpenAddDialog">
+                            Add Account
+                        </button>
+                    </div>
+                    @if (IsLoggedIn && !Platform.IsDesktop) {
+                        <form method="post" action="/api/v1/auth/logout" style="margin:0;">
+                            <button type="submit"
+                                    class="w-full px-3 py-2 text-center text-red-400 hover:bg-red-950 hover:text-red-300 transition-colors cursor-pointer border-t border-gray-800">
+                                Log out
+                            </button>
+                        </form>
+                    }
+                </li>
+            </ul>
+        </div>
+    </dialog>
+}
+
+<AddAccountDialog @ref="_addDialog" Added="OnAccountAdded"/>
+
+@code {
+
+    [CascadingParameter(Name = "IsLoggedIn")]
+    private bool IsLoggedIn { get; set; } = true;
+
+    [Parameter] public EventCallback OnExpandRequest { get; set; }
+
+    private bool _open;
+    private KnownAccount? _active;
+    private AddAccountDialog? _addDialog;
+    private IReadOnlyList<DatabaseAccount> _existing = [];
+    private ElementReference _popRef;
+    private bool _focusPending;
+    private bool _rendered;
+    private bool? _lastWarnedFetchActive;
+
+    private static double NowUnix => DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+    private IReadOnlyList<KnownAccount> Accounts =>
+        AppStateSvc.KnownAccounts;
+
+    private string ChipColor => _active?.AccountColor ?? "6b7280";
+
+    private string ChipTitle => _active?.Nickname ?? "No account selected";
+
+    private AccountInfo? InfoFor(string id) {
+        return Loader.Accounts.FirstOrDefault(a => a.Id == id);
+    }
+
+    private DatabaseAccount? StatsFor(string id) {
+        return _existing.FirstOrDefault(a => a.Id == id);
+    }
+
+    private static readonly string[] LinkResultQueryKeys = ["linked=", "linkConflict=", "linkRejected=", "linkError="];
+
+    protected override async Task OnInitializedAsync() {
+        Active.Changed += OnStateChanged;
+        AppStateSvc.Changed += OnStateChanged;
+        AppStateSvc.Changed += OnKnownAccountsChanged;
+        Fetch.Changed += OnStateChanged;
+        Shell.AccountPopoverRequested += OnPopoverRequested;
+        RefreshActive();
+        await RefreshExistingAsync();
+        await ResumeIncompleteFetchAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (firstRender) {
+            if (IsLoggedIn) {
+                ReopenSettingsAfterLinkReturn();
+            }
+
+            _rendered = true;
+            await SyncUnloadWarningAsync();
+        }
+
+        if (!_focusPending || !_open) {
+            return;
+        }
+
+        _focusPending = false;
+        try {
+            await _popRef.FocusAsync();
+        }
+        catch (JSDisconnectedException) {
+        }
+        catch (JSException) {
+        }
+    }
+
+    private void ReopenSettingsAfterLinkReturn() {
+        var query = new Uri(Nav.Uri).Query;
+        if (query.Length == 0 || !LinkResultQueryKeys.Any(query.Contains)) {
+            return;
+        }
+
+        var cleanUri = new Uri(Nav.GetUriWithQueryParameters(new Dictionary<string, object?> {
+            ["linked"] = null,
+            ["linkConflict"] = null,
+            ["linkRejected"] = null,
+            ["linkError"] = null
+        }));
+        var settingsUri = Nav.ToAbsoluteUri("settings").ToString() + cleanUri.Query;
+        Nav.NavigateTo(settingsUri, replace: true);
+    }
+
+    private async Task ResumeIncompleteFetchAsync() {
+        if (!Fetch.IsIdle) {
+            return;
+        }
+
+        var incomplete = await FetchOrchestrator.GetIncompleteAccountsAsync(SettingsStore);
+        var knownIds = AppStateSvc.KnownAccounts.Select(a => a.Id).ToHashSet();
+        if (incomplete.FirstOrDefault(knownIds.Contains) is { } resumeId) {
+            _ = StartFetchFor(resumeId);
+        }
+    }
+
+    private void OnStateChanged() {
+        RefreshActive();
+        _ = SyncUnloadWarningAsync();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnKnownAccountsChanged() {
+        InvokeAsync(async () => {
+            await RefreshExistingAsync();
+            StateHasChanged();
+        });
+    }
+
+    private async Task SyncUnloadWarningAsync() {
+        if (!_rendered) {
+            return;
+        }
+
+        var active = !Fetch.IsIdle;
+        if (active == _lastWarnedFetchActive) {
+            return;
+        }
+
+        _lastWarnedFetchActive = active;
+        try {
+            await Js.InvokeVoidAsync("setFetchInProgressWarning", active);
+        }
+        catch (JSDisconnectedException) {
+        }
+    }
+
+    private void RefreshActive() {
+        _active = AppStateSvc.KnownAccounts.FirstOrDefault(a => a.Id == Active.ActiveAccountId);
+    }
+
+    private async Task RefreshExistingAsync() {
+        _existing = await Queries.GetExistingDataAsync();
+    }
+
+    private async Task StartFetch() {
+        if (Active.ActiveAccountId is not { } id) {
+            return;
+        }
+
+        await StartFetchFor(id);
+    }
+
+    private async Task StartFetchFor(string id) {
+        await Fetch.StartFetchAsync(id);
+        await RefreshExistingAsync();
+        await Loader.RefreshAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void StopFetch() {
+        Fetch.StopFetch();
+    }
+
+    private Task RequestExpand() {
+        return OnExpandRequest.InvokeAsync();
+    }
+
+    private void OpenPopover() {
+        _open = true;
+        _focusPending = true;
+    }
+
+    private void ClosePopover() {
+        _open = false;
+    }
+
+    private void OnPopoverKeyDown(KeyboardEventArgs e) {
+        if (e.Key == "Escape") {
+            _open = false;
+        }
+    }
+
+    private void Select(string id) {
+        Active.SetActive(id);
+        _open = false;
+    }
+
+    private void OpenAddDialog() {
+        _open = false;
+        _addDialog?.Open();
+    }
+
+    private void OpenSettings() {
+        _open = false;
+        Shell.SettingsOpen = true;
+    }
+
+    private void OnPopoverRequested() {
+        _open = true;
+        _focusPending = true;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnAccountAdded(AccountInfo account) {
+        await Loader.RefreshAsync();
+        Active.SetActive(account.Id);
+        await StartFetch();
+    }
+
+    public void Dispose() {
+        Active.Changed -= OnStateChanged;
+        AppStateSvc.Changed -= OnStateChanged;
+        AppStateSvc.Changed -= OnKnownAccountsChanged;
+        Fetch.Changed -= OnStateChanged;
+        Shell.AccountPopoverRequested -= OnPopoverRequested;
+    }
+
+}

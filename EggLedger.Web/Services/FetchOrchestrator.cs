@@ -51,6 +51,7 @@ public sealed class FetchOrchestrator : IDisposable {
         Progress is { Total: > 0 } p ? (int)Math.Round((double)p.Finished / p.Total * 100) : 0;
 
     public event Action? Changed;
+    public event Action<string>? FetchSucceeded;
 
     public void DismissPopover() {
         PopoverDismissed = true;
@@ -151,6 +152,7 @@ public sealed class FetchOrchestrator : IDisposable {
         Changed?.Invoke();
 
         if (result == AppState.Success) {
+            FetchSucceeded?.Invoke(accountId);
             await TryAutoExportAsync(accountId).ConfigureAwait(false);
         }
     }

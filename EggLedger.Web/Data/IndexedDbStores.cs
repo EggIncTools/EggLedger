@@ -2,6 +2,7 @@ namespace EggLedger.Web.Data;
 
 public static class IndexedDbStores {
     public const string Mission = "mission";
+    public const string InFlightMission = "inflight_mission";
     public const string Backup = "backup";
     public const string ArtifactDrops = "artifact_drops";
     public const string Settings = "settings";

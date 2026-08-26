@@ -1,0 +1,96 @@
+@implements IDisposable
+@inject LedgerShellState Shell
+@inject IndexedDbSettings Settings
+@inject SettingsWriteCoordinator Writer
+
+<div class="options-host">
+    <div class="options-host-body">
+        @if (Shell.View == LedgerView.Drops) {
+            <DropsOptionsPanel/>
+        } else if (Shell.View == LedgerView.Reports) {
+            <ReportsOptionsPanel/>
+        } else {
+            <ShipsOptionsPanel/>
+        }
+    </div>
+
+    <div class="settings-section @(_generalOpen ? "is-open" : "")">
+        <button type="button" class="settings-section-head" aria-expanded="@(_generalOpen ? "true" : "false")"
+                @onclick="ToggleGeneral">
+            <span class="settings-section-title">General</span>
+            @if (_generalOpen) {
+                <span class="settings-section-caret">&#9662;</span>
+            } else {
+                <span class="settings-section-caret">&#9656;</span>
+            }
+        </button>
+        @if (_generalOpen) {
+            <div class="settings-section-body options-general-body">
+                @if (_loaded) {
+                    <OptionsPanel Model="_model" OnSetting="OnSettingAsync" ShowHeading="false"/>
+                } else {
+                    <p class="text-xs text-gray-500 italic">Loading settings...</p>
+                }
+            </div>
+        }
+    </div>
+
+    <button type="button" class="panel-dialog-btn options-host-settings" aria-haspopup="dialog"
+            title="Open all settings" @onclick="OpenSettings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+        <span>All settings...</span>
+    </button>
+</div>
+
+@code {
+    private readonly SettingsModel _model = new();
+    private bool _generalOpen;
+    private bool _loaded;
+    private bool _settingsWasOpen;
+
+    protected override void OnInitialized() {
+        Shell.Changed += OnShellChanged;
+    }
+
+    private async Task ToggleGeneral() {
+        _generalOpen = !_generalOpen;
+        if (_generalOpen && !_loaded) {
+            await ReloadModelAsync();
+        }
+    }
+
+    private async Task ReloadModelAsync() {
+        var all = await Settings.GetAllSettingsAsync();
+        _model.LoadFrom(all);
+        _loaded = true;
+        StateHasChanged();
+    }
+
+    private async Task OnSettingAsync((string Key, string Value) change) {
+        await Writer.SetAsync(change.Key, change.Value);
+        StateHasChanged();
+    }
+
+    private void OpenSettings() {
+        Shell.SettingsOpen = true;
+    }
+
+    private void OnShellChanged() {
+        var closed = _settingsWasOpen && !Shell.SettingsOpen;
+        _settingsWasOpen = Shell.SettingsOpen;
+        if (closed && _loaded) {
+            InvokeAsync(ReloadModelAsync);
+            return;
+        }
+
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() {
+        Shell.Changed -= OnShellChanged;
+    }
+
+}

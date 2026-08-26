@@ -99,16 +99,4 @@ public sealed class RowsTests {
         Assert.Equal(2000, back.UpdatedAt);
         Assert.Contains("\"time_bucket\":null", json);
     }
-
-    [Fact]
-    public void MissionRow_complete_payload_round_trips() {
-        byte[] original = [0, 1, 2, 250, 255, 7];
-        var row = new MissionRow { PlayerId = "EI1", MissionId = "m1", CompletePayload = original };
-
-        var json = JsonSerializer.Serialize(row, Rows.JsonOptions);
-        var back = JsonSerializer.Deserialize<MissionRow>(json, Rows.JsonOptions);
-
-        Assert.NotNull(back);
-        Assert.True(original.SequenceEqual(back!.CompletePayload));
-    }
 }

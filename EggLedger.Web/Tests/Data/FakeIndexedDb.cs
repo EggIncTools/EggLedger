@@ -23,6 +23,7 @@ public sealed class FakeIndexedDb : IIndexedDb {
         ReportGroupRow g => g.Id,
         SettingRow s => s.Key,
         BackupRow b => b.PlayerId,
+        InFlightMissionRow f => f.PlayerId + ":" + f.MissionId,
         _ => null,
     };
 
@@ -80,6 +81,7 @@ public sealed class FakeIndexedDb : IIndexedDb {
 
     private static object? IndexValue<T>(T row, string index) => (row, index) switch {
         (MissionRow m, "player_id") => m.PlayerId,
+        (InFlightMissionRow f, "player_id") => f.PlayerId,
         (ArtifactDropRow d, "player_id") => d.PlayerId,
         (ReportRow r, "account_id") => r.AccountId,
         (ReportGroupRow g, "account_id") => g.AccountId,
@@ -135,15 +137,16 @@ public sealed class FakeIndexedDb : IIndexedDb {
 
 
 
-    private static bool KeyMatches(object row, object key) =>
-        row is MissionRow m && key is object[] { Length: 2 } k
-            ? m.PlayerId.Equals(k[0]) && m.MissionId.Equals(k[1])
-            : KeyOf(row)?.Equals(key) == true;
+    private static bool KeyMatches(object row, object key) => (row, key) switch {
+        (MissionRow m, object[] { Length: 2 } k) => m.PlayerId.Equals(k[0]) && m.MissionId.Equals(k[1]),
+        (InFlightMissionRow f, object[] { Length: 2 } k) => f.PlayerId.Equals(k[0]) && f.MissionId.Equals(k[1]),
+        _ => KeyOf(row)?.Equals(key) == true,
+    };
 
     public ValueTask DeleteAsync(string store, object key) {
         lock (_gate) {
             if (_stores.TryGetValue(store, out var list)) {
-                list.RemoveAll(r => KeyOf(r)?.Equals(key) == true);
+                list.RemoveAll(r => KeyMatches(r, key));
             }
         }
         return ValueTask.CompletedTask;

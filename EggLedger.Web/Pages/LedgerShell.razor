@@ -1,0 +1,154 @@
+@page "/"
+@page "/missions"
+@page "/lifetime"
+@page "/reports"
+@page "/settings"
+@page "/about"
+@implements IDisposable
+@inject LedgerShellState Shell
+@inject NavigationManager Nav
+@inject IJSRuntime Js
+
+<PageTitle>EggLedger - @ViewLabel(Shell.View)</PageTitle>
+
+<div class="ledger-shell">
+    <LedgerSidebar/>
+
+    <div class="ledger-content">
+        <div class="shrink-0">
+            <ViewSelector Current="Shell.View" OnSelect="SelectView"/>
+        </div>
+
+        <div class="ledger-surface @(Shell.View == LedgerView.Reports ? "overflow-hidden" : "overflow-auto")">
+            @if (Shell.View == LedgerView.Drops) {
+                <DropsView/>
+            } else if (Shell.View == LedgerView.Reports) {
+                <ReportsView/>
+            } else {
+                <ShipsView/>
+            }
+        </div>
+    </div>
+</div>
+
+@if (Shell.SettingsOpen) {
+    <SettingsModal OnClose="CloseSettings"/>
+}
+
+@if (Shell.AboutOpen) {
+    <AboutModal OnClose="CloseAbout"/>
+}
+
+@if (Shell.Legal is { } legal) {
+    <LegalModal Kind="legal" OnKindChange="SwapLegal" OnClose="CloseLegal"/>
+}
+
+@if (Shell.SupportOpen) {
+    <SupportModal OnClose="CloseSupport"/>
+}
+
+@code {
+    private bool _routePinned;
+    private LedgerView? _writtenView;
+
+    protected override void OnInitialized() {
+        Shell.Changed += OnShellChanged;
+        Nav.LocationChanged += OnLocationChanged;
+        ApplyRoute();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (firstRender && !_routePinned) {
+            var slug = await Js.InvokeAsync<string>("eggLedgerShellNav.readView");
+            if (ViewFromSlug(slug) is { } fromHash) {
+                Shell.SetView(fromHash);
+            }
+        }
+
+        if (_writtenView != Shell.View) {
+            _writtenView = Shell.View;
+            await Js.InvokeVoidAsync("eggLedgerShellNav.writeView", ViewSlug(Shell.View));
+        }
+    }
+
+    private void SelectView(LedgerView view) {
+        Shell.SetView(view);
+    }
+
+    private void ApplyRoute() {
+        var path = "/" + Nav.ToBaseRelativePath(Nav.Uri).Split('?', '#')[0].Trim('/').ToLowerInvariant();
+        if (RouteTarget(path) is not { } target) {
+            return;
+        }
+
+        _routePinned = true;
+        Shell.SetView(target.View);
+        Shell.CloseModals();
+        Shell.SettingsOpen = target.Settings;
+        Shell.AboutOpen = target.About;
+    }
+
+    private void CloseSettings() {
+        Shell.SettingsOpen = false;
+    }
+
+    private void CloseAbout() {
+        Shell.AboutOpen = false;
+    }
+
+    private void CloseLegal() {
+        Shell.Legal = null;
+    }
+
+    private void SwapLegal(LegalDocument kind) {
+        Shell.Legal = kind;
+    }
+
+    private void CloseSupport() {
+        Shell.SupportOpen = false;
+    }
+
+    private static (LedgerView View, bool Settings, bool About)? RouteTarget(string path) => path switch {
+        "/missions" => (LedgerView.Ships, false, false),
+        "/lifetime" => (LedgerView.Drops, false, false),
+        "/reports" => (LedgerView.Reports, false, false),
+        "/settings" => (LedgerView.Ships, true, false),
+        "/about" => (LedgerView.Ships, false, true),
+        _ => null
+    };
+
+    private static string ViewSlug(LedgerView view) => view switch {
+        LedgerView.Drops => "drops",
+        LedgerView.Reports => "reports",
+        _ => "ships"
+    };
+
+    private static LedgerView? ViewFromSlug(string? slug) => slug switch {
+        "ships" => LedgerView.Ships,
+        "drops" => LedgerView.Drops,
+        "reports" => LedgerView.Reports,
+        _ => null
+    };
+
+    private static string ViewLabel(LedgerView view) => view switch {
+        LedgerView.Drops => "Drops",
+        LedgerView.Reports => "Reports",
+        _ => "Ships"
+    };
+
+    private void OnShellChanged() {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) {
+        _writtenView = null;
+        ApplyRoute();
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() {
+        Shell.Changed -= OnShellChanged;
+        Nav.LocationChanged -= OnLocationChanged;
+    }
+
+}

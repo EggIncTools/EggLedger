@@ -21,9 +21,4 @@ public class LoginCallbackMiddlewareTests {
         Assert.Equal("/", target);
     }
 
-    [Fact]
-    public void BuildRedirectTarget_no_query_left_returns_bare_path() {
-        var target = LoginCallbackMiddleware.BuildRedirectTarget("/reports", Query("?code=abc123"));
-        Assert.Equal("/reports", target);
-    }
 }

@@ -1,0 +1,52 @@
+@implements IDisposable
+@inject DropsViewState State
+
+@if (State.AccountId is null) {
+    <p class="text-gray-500 italic mt-0_75rem">Select an account in the sidebar to view its lifetime data.</p>
+} else if (State.Loading) {
+    @LifetimeLoadingContent
+} else if (State.Data is null || State.Data.MissionCount == 0) {
+    <NoDataFallback/>
+} else {
+    <div class="flex items-center gap-2 pt-1">
+        <span class="ledger-underline text-base text-gray-400">Data compiled from @State.Data.MissionCount Missions</span>
+    </div>
+    <div class="flex-1 min-h-0 py-1 overflow-auto block text-xs font-mono text-gray-300 text-center">
+        <DropDisplayContainer Artifacts="State.Data.Artifacts"
+                              Stones="State.Data.Stones"
+                              Ingredients="State.Data.Ingredients"
+                              StoneFragments="State.Data.StoneFragments"
+                              MennoData="State.MennoData"
+                              LifetimeMissionCount="State.Data.MissionCount"
+                              ShowPerShip="State.ShowPerShip"
+                              LifetimeExpected="@(State.ShowExpectedTotals && State.AllowExpectedTotals)"/>
+    </div>
+}
+
+@code {
+
+    private static readonly RenderFragment LifetimeLoadingContent = __builder => {
+        <div class="mt-8 flex flex-col items-center justify-center gap-2">
+            <span class="p-0_5rem text-lg">Lifetime data is being compiled, please wait...</span>
+            <img src="@ContentPaths.Asset("images/loading.gif")" alt="Loading..." class="xl-ico"/>
+        </div>
+    };
+
+}
+
+@code {
+
+    protected override async Task OnInitializedAsync() {
+        State.Changed += OnStateChanged;
+        await State.EnsureInitializedAsync(InvokeAsync);
+    }
+
+    private void OnStateChanged() {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() {
+        State.Changed -= OnStateChanged;
+    }
+
+}

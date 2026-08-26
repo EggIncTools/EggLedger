@@ -11,6 +11,9 @@ public sealed class IndexedDbReportRunnerTests {
         public IReadOnlyList<int> FamilyAfxIds(string familyId) => Array.Empty<int>();
     }
 
+    private static IndexedDbReportRunner Runner(IIndexedDb db) =>
+        new(new ReportSourceCache(IndexedDbReportSource.Loader(db)), new NoWeights());
+
     private static MissionRow Mission(string id, int ship, double start) => new() {
         PlayerId = Eid,
         MissionId = id,
@@ -29,7 +32,7 @@ public sealed class IndexedDbReportRunnerTests {
         db.Seed("mission", Mission("c", ship: 3, start: 300));
         db.Seed("mission", Mission("other", ship: 9, start: 400) with { PlayerId = "EI2" });
 
-        var sut = new IndexedDbReportRunner(db, new NoWeights());
+        var sut = Runner(db);
         var def = new ReportDefinition {
             Mode = "aggregate",
             GroupBy = "ship_type",
@@ -83,7 +86,7 @@ public sealed class IndexedDbReportRunnerTests {
             Level = 0,
         });
 
-        var sut = new IndexedDbReportRunner(db, new NoWeights());
+        var sut = Runner(db);
         var def = new ReportDefinition {
             Mode = "aggregate",
             GroupBy = "rarity",
@@ -120,7 +123,7 @@ public sealed class IndexedDbReportRunnerTests {
             Level = 0,
         });
 
-        var sut = new IndexedDbReportRunner(db, new NoWeights());
+        var sut = Runner(db);
         var def = new ReportDefinition {
             Mode = "aggregate",
             GroupBy = "rarity",
@@ -138,7 +141,7 @@ public sealed class IndexedDbReportRunnerTests {
     [Fact]
     public async Task RunReportAsync_EmptyWhenNoRows() {
         var db = new FakeIndexedDb();
-        var sut = new IndexedDbReportRunner(db, new NoWeights());
+        var sut = Runner(db);
         var def = new ReportDefinition {
             Mode = "aggregate",
             GroupBy = "ship_type",

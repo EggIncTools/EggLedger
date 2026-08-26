@@ -1,5 +1,6 @@
 @using FilterCondition = global::EggLedger.Web.Missions.FilterCondition
 @inject IndexedDbSettings Settings
+@inject FilterState Filters
 @* Faithful port of the Vue FullFilter. Each AND row builds progressively: field
    first, operator after a field is chosen, value after the operator. A complete
    row gets a yellow OR button that adds an indented "⮡ OR" sibling under it
@@ -7,9 +8,9 @@
    matcher reproduces Vue semantics exactly (see docs/filter-legacy-semantics.md). *@
 
 <div class="@(FillHeight ? "flex-1 min-h-0" : "max-h-60") overflow-y-auto">
-    @for (var i = 0; i < _rows.Count; i++) {
+    @for (var i = 0; i < _draft.Rows.Count; i++) {
         var index = i;
-        var row = _rows[index];
+        var row = _draft.Rows[index];
 
         @if (index != 0) {
             <div class="filter-and-divider">
@@ -18,7 +19,7 @@
         }
 
         <div class="filter-container">
-            @RenderConditionControls(row.Cond, () => OnRowChanged(index))
+            @RenderConditionControls(row.Cond, OnRowChanged)
 
             @RenderWarning(row.Cond)
 
@@ -46,7 +47,7 @@
             <div class="filter-or-row filter-container">
                 <span class="filter-or-chip">OR</span>
 
-                @RenderConditionControls(orRow, () => OnOrRowChanged(index))
+                @RenderConditionControls(orRow, NoOp)
 
                 @RenderWarning(orRow)
 
@@ -76,17 +77,14 @@
 }
 
 @code {
-    [Parameter] public FilterFieldCtx FieldCtx { get; set; } = new();
+    [Parameter] public FilterViewContext Context { get; set; } = FilterViewContext.Empty;
     [Parameter] public bool Applying { get; set; }
     [Parameter] public string LastResultText { get; set; } = "";
     [Parameter] public EventCallback<LegacyFilter> OnApply { get; set; }
-    [Parameter] public bool IsLifetime { get; set; }
 
     [Parameter] public bool ShowApply { get; set; } = true;
 
     [Parameter] public bool FillHeight { get; set; }
-
-    [Parameter] public bool IncludeArtifactFields { get; set; }
 
     [Parameter] public IReadOnlyList<FilterCondition>? InitialAnd { get; set; }
 
@@ -96,51 +94,41 @@
         IReadOnlyList<FilterCondition> And,
         IReadOnlyList<IReadOnlyList<FilterCondition>?> Or);
 
-    private sealed class Row {
-        public FilterCondition Cond { get; } = new();
-        public List<FilterCondition> Or { get; } = [];
-    }
-
-    private readonly List<Row> _rows = [];
     private readonly Dictionary<string, List<FilterOption>> _optionCache = [];
-    private bool _advancedDrops;
+    private FilterDraft _draft = new();
+    private FilterViewContext? _bound;
+    private PersistedSetting<bool>? _advancedDropsSetting;
 
-    protected override async Task OnInitializedAsync() {
-        var settings = await Settings.GetAllSettingsAsync();
-        if (settings.TryGetValue(SettingsModel.KeyAdvancedDropFilter, out var adv)) {
-            _advancedDrops = adv == "true";
-        }
-    }
+    private bool AdvancedDrops => _advancedDropsSetting?.Value ?? false;
+
+    private FilterFieldCtx FieldCtx => Context.Fields;
 
     protected override void OnInitialized() {
-        TopLevelFields = IncludeArtifactFields
+        BindContext();
+    }
+
+    protected override async Task OnInitializedAsync() {
+        _advancedDropsSetting = PersistedSetting.Bool(Settings, SettingsModel.KeyAdvancedDropFilter);
+        await _advancedDropsSetting.LoadAsync();
+    }
+
+    protected override void OnParametersSet() {
+        BindContext();
+    }
+
+    private void BindContext() {
+        if (_bound is { } bound && bound.BindsLike(Context)) {
+            _bound = Context;
+            return;
+        }
+
+        _bound = Context;
+        _optionCache.Clear();
+        TopLevelFields = Context.IncludeArtifactFields
             ? [.. FilterFields.ReportFilterFields]
             : FilterFields.ReportMissionFields();
 
-        if (InitialAnd is { Count: > 0 }) {
-            for (var i = 0; i < InitialAnd.Count; i++) {
-                var row = new Row();
-                Copy(InitialAnd[i], row.Cond);
-                var siblings = InitialOr is not null && i < InitialOr.Count ? InitialOr[i] : null;
-                if (siblings is not null)
-                    foreach (var s in siblings) {
-                        var sc = new FilterCondition();
-                        Copy(s, sc);
-                        row.Or.Add(sc);
-                    }
-
-                _rows.Add(row);
-            }
-        }
-
-        if (_rows.Count == 0 || !string.IsNullOrEmpty(_rows[^1].Cond.TopLevel))
-            _rows.Add(new Row());
-    }
-
-    private static void Copy(FilterCondition from, FilterCondition to) {
-        to.TopLevel = from.TopLevel;
-        to.Op = from.Op;
-        to.Val = from.Val;
+        _draft = Filters.Resolve(Context, InitialAnd, InitialOr);
     }
 
     private List<FilterFieldDef> TopLevelFields { get; set; } = [];
@@ -149,9 +137,8 @@
         return string.IsNullOrEmpty(c.TopLevel) ? null : FilterFields.GetReportField(c.TopLevel);
     }
 
-    private bool RowComplete(FilterCondition c) {
-        var def = FieldOf(c);
-        return def is not null && !string.IsNullOrEmpty(c.Op) && c.Val.Length > 0;
+    private static bool RowComplete(FilterCondition c) {
+        return FilterDraft.IsComplete(c);
     }
 
     private bool RowIncomplete(FilterCondition c) {
@@ -162,7 +149,7 @@
     }
 
     private bool OrAddDisabled(int index) {
-        var or = _rows[index].Or;
+        var or = _draft.Rows[index].Or;
         if (or.Count == 0)
             return false;
         return !RowComplete(or[^1]);
@@ -298,14 +285,15 @@
     }
 
     private RenderFragment DropAdvancedFooter => @<label class="flex items-center gap-1.5 text-xs text-gray-400 cursor-pointer select-none">
-                                                     <input type="checkbox" class="ext-opt-check" checked="@_advancedDrops" @onchange="OnAdvancedDropsToggled"/>
+                                                     <input type="checkbox" class="ext-opt-check" checked="@AdvancedDrops" @onchange="OnAdvancedDropsToggled"/>
                                                      Advanced (family groupings)
                                                  </label>;
 
     private async Task OnAdvancedDropsToggled(ChangeEventArgs e) {
-        _advancedDrops = e.Value is true;
         _optionCache.Remove("drops");
-        await Settings.SetSettingAsync(SettingsModel.KeyAdvancedDropFilter, _advancedDrops ? "true" : "false");
+        if (_advancedDropsSetting is { } setting) {
+            await setting.SetAsync(e.Value is true);
+        }
     }
 
     private List<FilterOption> OptionsFor(FilterFieldDef def) {
@@ -315,7 +303,7 @@
             return cached;
 
         var opts = def.Key == "drops"
-            ? FilterOptions.GetDropFilterOptions(FieldCtx.ArtifactConfigs, FieldCtx.MaxQuality, _advancedDrops)
+            ? FilterOptions.GetDropFilterOptions(FieldCtx.ArtifactConfigs, FieldCtx.MaxQuality, AdvancedDrops)
             : def.OptionsSource(FieldCtx);
         _optionCache[def.Key] = opts;
         return opts;
@@ -341,56 +329,34 @@
         c.Val = "";
     }
 
-    private void OnRowChanged(int index) {
-        EnsureTrailingRow();
+    private static void NoOp() {
     }
 
-    private void OnOrRowChanged(int index) {
-    }
-
-    private void EnsureTrailingRow() {
-        var last = _rows[^1].Cond;
-        if (!string.IsNullOrEmpty(last.TopLevel))
-            _rows.Add(new Row());
+    private void OnRowChanged() {
+        _draft.EnsureTrailingRow();
     }
 
     private void AddOr(int index) {
         if (OrAddDisabled(index))
             return;
-        _rows[index].Or.Add(new FilterCondition());
+        _draft.Rows[index].Or.Add(new FilterCondition());
     }
 
     private void RemoveRow(int index) {
-        _rows.RemoveAt(index);
-        if (_rows.Count == 0)
-            _rows.Add(new Row());
+        _draft.RemoveRow(index);
     }
 
     private void RemoveOr(int index, int orIndex) {
-        _rows[index].Or.RemoveAt(orIndex);
+        _draft.Rows[index].Or.RemoveAt(orIndex);
     }
 
     public LegacyFilter BuildFilter() {
-        var and = new List<FilterCondition>();
-        var or = new List<IReadOnlyList<FilterCondition>?>();
-
-        foreach (var row in _rows) {
-            if (!RowComplete(row.Cond))
-                continue;
-            and.Add(Clone(row.Cond));
-            var siblings = row.Or.Where(RowComplete).Select(Clone).ToList();
-            or.Add(siblings.Count > 0 ? siblings : null);
-        }
-
+        var (and, or) = _draft.CompleteConditions();
         return new LegacyFilter(and, or);
     }
 
     private async Task ApplyAsync() {
         await OnApply.InvokeAsync(BuildFilter());
-    }
-
-    private static FilterCondition Clone(FilterCondition c) {
-        return new FilterCondition(c.TopLevel, c.Op, c.Val);
     }
 
 }

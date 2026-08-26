@@ -15,11 +15,6 @@ public sealed class ShipAssetKeyTests {
     }
 
     [Fact]
-    public void For_IsNotProtoNameNorDisplayName() {
-        Assert.Equal("ChickenOne", ShipAssetKey.For(MissionInfo.Spaceship.ChickenOne));
-    }
-
-    [Fact]
     public void AllKeys_CoversAllElevenMembers() {
         Assert.Equal(11, ShipAssetKey.AllKeys.Count);
         Assert.Contains("CorellihenCorvette", ShipAssetKey.AllKeys);

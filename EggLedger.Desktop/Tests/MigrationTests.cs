@@ -39,15 +39,21 @@ public sealed class MigrationTests {
     }
 
     [Fact]
-    public void MissionDb_FreshMigratesToV9() {
+    public void MissionDb_FreshMigratesToV10() {
         using var conn = FreshConnection();
         SqliteMigrationRunner.MigrateMissionDb(conn);
 
-        Assert.Equal(9, UserVersion(conn));
+        Assert.Equal(10, UserVersion(conn));
         Assert.True(TableExists(conn, "mission"));
         Assert.True(TableExists(conn, "backup"));
         Assert.True(TableExists(conn, "settings"));
         Assert.True(TableExists(conn, "artifact_drops"));
+        Assert.True(TableExists(conn, "inflight_mission"));
+
+        var inFlightCols = Columns(conn, "inflight_mission");
+        foreach (var expected in new[] { "player_id", "mission_id", "captured_at", "payload" }) {
+            Assert.Contains(expected, inFlightCols);
+        }
 
         var missionCols = Columns(conn, "mission");
         foreach (var expected in new[]
@@ -86,13 +92,13 @@ public sealed class MigrationTests {
     public void MissionDb_RerunIsNoOp() {
         using var conn = FreshConnection();
         SqliteMigrationRunner.MigrateMissionDb(conn);
-        Assert.Equal(9, UserVersion(conn));
+        Assert.Equal(10, UserVersion(conn));
 
 
 
         SqliteMigrationRunner.MigrateMissionDb(conn);
         SqliteMigrationRunner.MigrateMissionDb(conn);
-        Assert.Equal(9, UserVersion(conn));
+        Assert.Equal(10, UserVersion(conn));
     }
 
     [Fact]
@@ -111,7 +117,7 @@ public sealed class MigrationTests {
         var dir = Path.GetDirectoryName(path)!;
         try {
             using var db = SqliteDatabase.OpenMissionDb(path);
-            Assert.Equal(9, UserVersion(db.Connection));
+            Assert.Equal(10, UserVersion(db.Connection));
 
             using var cmd = db.Connection.CreateCommand();
             cmd.CommandText = "PRAGMA foreign_keys;";

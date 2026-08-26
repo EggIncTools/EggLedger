@@ -260,8 +260,7 @@
                         <span class="text-xs text-gray-400">Filters</span>
                         <MissionFilterBar @ref="_filterBar"
                                           @key="_filterBarKey"
-                                          FieldCtx="Config.FieldCtx"
-                                          IncludeArtifactFields="true"
+                                          Context="_filterContext"
                                           ShowApply="false"
                                           InitialAnd="_initialAnd"
                                           InitialOr="_initialOr"/>
@@ -309,6 +308,7 @@
     private long _createdAt;
     private int _sortOrder;
     private MissionFilterBar? _filterBar;
+    private FilterViewContext _filterContext = FilterViewContext.Empty;
     private int _filterBarKey;
     private IReadOnlyList<WebCondition>? _initialAnd;
     private IReadOnlyList<IReadOnlyList<WebCondition>?>? _initialOr;
@@ -337,6 +337,10 @@
         public int GridH { get; set; } = 2;
         public int MinSampleSize { get; set; }
         public bool MennoEnabled { get; set; }
+    }
+
+    protected override void OnInitialized() {
+        _filterContext = new ReportsFilterContext(Config.FieldCtx);
     }
 
     public Task OpenForCreateAsync() {

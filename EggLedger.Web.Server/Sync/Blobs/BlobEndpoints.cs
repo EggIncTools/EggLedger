@@ -111,10 +111,8 @@ public sealed class BlobEndpoints(NpgsqlDataSource source, ILogger<BlobEndpoints
 
     public async Task DeleteUser(HttpContext ctx) {
         var userId = UserId(ctx);
-        await using var cmd = source.CreateCommand("DELETE FROM users WHERE user_id = $1");
-        cmd.Parameters.AddWithValue(userId);
         try {
-            await cmd.ExecuteNonQueryAsync(ctx.RequestAborted);
+            await UserDataDeletion.DeleteUserAsync(source, userId, ctx.RequestAborted);
         } catch (Exception ex) {
             logger.LogWarning(ex, "blobs: failed to delete user {UserId}", userId);
             await WriteTextAsync(ctx, StatusCodes.Status500InternalServerError, "internal error\n");

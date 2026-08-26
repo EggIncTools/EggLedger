@@ -7,12 +7,16 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="10.0.0" />
-    <PackageReference Include="EggIdentity.Styles" Version="2.0.8" />
+    <PackageReference Include="EggIdentity.Styles" Version="2.1.4" />
     <PackageReference Include="Markdig" Version="0.41.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\EggLedger.Domain\EggLedger.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="EggLedger.Web.Tests" />
   </ItemGroup>
 
   <ItemGroup>

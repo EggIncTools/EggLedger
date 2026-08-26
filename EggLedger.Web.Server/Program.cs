@@ -172,7 +172,7 @@ if (hasDb) {
             Token = cfg.BotToken,
             AppId = cfg.DiscordClientId,
             GuildId = cfg.GuildId,
-            RepoUrl = "https://github.com/DavidArthurCole/EggLedger",
+            RepoUrl = "https://github.com/EggIncTools/EggLedger",
             Build = build,
             DeployAgentUrl = cfg.DeployAgentUrl,
             DeployAgentSecret = cfg.DeployAgentSecret,
@@ -185,7 +185,7 @@ if (hasDb) {
                 BuildHash = build.Sha256,
                 DeployStatus = "online",
                 UptimeSince = startedAt,
-                RepoUrl = "https://github.com/DavidArthurCole/EggLedger",
+                RepoUrl = "https://github.com/EggIncTools/EggLedger",
             }),
         });
         builder.Services.AddSingleton<EggLedger.Web.Server.Bot.EggLedgerBotHostedService>();

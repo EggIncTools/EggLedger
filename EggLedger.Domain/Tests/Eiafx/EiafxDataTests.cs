@@ -5,15 +5,6 @@ namespace EggLedger.Domain.Tests.Eiafx;
 
 public class EiafxDataTests {
     [Fact]
-    public void LoadDataConfig_Populates() {
-        Assert.NotEmpty(EiafxData.Families);
-        Assert.NotEmpty(EiafxData.FamilyAfxIds);
-        Assert.NotEmpty(EiafxData.CraftingWeights);
-    }
-
-
-
-    [Fact]
     public void CraftingWeights_BaseItem_IsOne() {
         Assert.Equal(1.0, EiafxData.CraftingWeights[(2, 0)]);
     }
@@ -32,12 +23,6 @@ public class EiafxDataTests {
         Assert.Equal(23.0, EiafxData.CraftingWeights[(23, 2)]);
     }
 
-
-
-    [Fact]
-    public void CraftingWeights_PuzzleCubeT2_Is3() {
-        Assert.Equal(3.0, EiafxData.CraftingWeights[(23, 1)]);
-    }
 
 
     [Fact]

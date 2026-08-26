@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   build-test:
-    uses: DavidArthurCole/EggIdentity/.github/workflows/dotnet-ci.yml@main
+    uses: EggIncTools/EggIdentity/.github/workflows/dotnet-ci.yml@main
     with:
       solution: EggLedger.slnx
       packages-auth: true
@@ -24,7 +24,7 @@ jobs:
   fast-deploy:
     needs: build-test
     if: github.event_name == 'push'
-    uses: DavidArthurCole/EggIdentity/.github/workflows/fast-deploy-trigger.yml@main
+    uses: EggIncTools/EggIdentity/.github/workflows/fast-deploy-trigger.yml@main
     with:
       app: EggLedger
       agent-url: https://eggidentity.davidarthurcole.me/agent

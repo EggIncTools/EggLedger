@@ -1,0 +1,107 @@
+@implements IDisposable
+@implements IShipsViewActions
+@inject ShipsViewState State
+
+@if (State.AccountId is null) {
+    <p class="text-gray-500 italic mt-0_75rem">Select an account in the sidebar to view its missions.</p>
+} else if (State.Loading) {
+    <p class="text-gray-500 italic mt-0_75rem">Loading...</p>
+} else if (State.AllMissions is null || State.AllMissions.Count == 0) {
+    <NoDataFallback/>
+} else {
+    <div class="flex items-center gap-2 flex-wrap mt-0_75rem mb-0_5rem">
+        <div class="tile-group">
+            <button type="button" class="tile-group-item @(State.ViewMode == ShipsViewMode.List ? "active" : "")" @onclick="@(() => State.SetViewMode(ShipsViewMode.List))">List</button>
+            <button type="button" class="tile-group-item @(State.ViewMode == ShipsViewMode.Calendar ? "active" : "")" @onclick="@(() => State.SetViewMode(ShipsViewMode.Calendar))">Calendar</button>
+        </div>
+        @if (State.HasBothTypes) {
+            @RenderTileSelector()
+        }
+    </div>
+    @if (State.ViewMode == ShipsViewMode.Calendar) {
+        <MissionCalendarView Missions="State.TabFiltered ?? Array.Empty<DatabaseMission>()"
+                             InFlightMissions="@State.TabFilteredInFlight"
+                             ShowFlightRatio="@State.Opts.CalendarFlightRatio"
+                             OnViewMission="ViewMissionAsync"/>
+    } else {
+        <MissionResultsTable Grouping="State.Grouping"
+                             ViewByDate="State.Opts.ViewByDate"
+                             ViewMissionTimes="State.Opts.ViewMissionTimes"
+                             MultiViewMode="State.Opts.MultiViewMode"
+                             RecolorDC="State.Opts.RecolorDC"
+                             RecolorBC="State.Opts.RecolorBC"
+                             Config="State.CardPresets.ActivePreset()"
+                             SelectedIds="State.MultiSelectedIds"
+                             TabFiltered="State.TabFiltered ?? Array.Empty<DatabaseMission>()"
+                             MissionBeingViewed="State.MissionBeingViewed"
+                             FlatMissions="State.FlatSorted"
+                             DropCounts="State.DropCounts"
+                             OnViewMission="ViewMissionAsync"
+                             OnViewRow="ViewRowAsync"
+                             OnSelectionChanged="StateHasChanged"
+                             OnGroupingChanged="StateHasChanged"/>
+    }
+
+    <MissionOverlay @ref="_overlay"
+                    AccountId="@State.AccountId"
+                    FilteredMissions="State.FlatSorted ?? State.TabFiltered ?? Array.Empty<DatabaseMission>()"
+                    SortMethod="State.Opts.SortMethod"
+                    ShowExpectedDrops="State.CardPresets.ActivePreset().ShowExpectedDropsPerShip"/>
+}
+
+@code {
+    private MissionOverlay? _overlay;
+
+    protected override async Task OnInitializedAsync() {
+        State.Changed += OnStateChanged;
+        State.Actions = this;
+        await State.EnsureInitializedAsync(InvokeAsync);
+    }
+
+    private void OnStateChanged() {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private RenderFragment RenderTileSelector() => __builder => {
+        <div class="tile-group">
+            <button type="button" class="tile-group-item @(State.Opts.MissionTypeTab is null ? "active" : "")" @onclick="@(() => State.SelectTab(null))">All <span class="text-gray-500 ml-1">(@(State.Filtered?.Count ?? 0))</span></button>
+            <button type="button" class="tile-group-item @(State.Opts.MissionTypeTab == 0 ? "active" : "")" @onclick="@(() => State.SelectTab(0))">Home <span class="text-gray-500 ml-1">(@State.CountOfType(0))</span></button>
+            <button type="button" class="tile-group-item @(State.Opts.MissionTypeTab == 1 ? "active" : "")" @onclick="@(() => State.SelectTab(1))">Virtue <span class="text-gray-500 ml-1">(@State.CountOfType(1))</span></button>
+        </div>
+    };
+
+    public async Task ResortAsync(MissionSortMethod method) {
+        if (_overlay is not null) {
+            await _overlay.ReSortAsync(method);
+        }
+    }
+
+    private async Task ViewMissionAsync(string missionId) {
+        State.SetMissionBeingViewed(missionId);
+        if (_overlay is not null) {
+            await _overlay.OpenAsync(missionId);
+        }
+    }
+
+    private async Task ViewRowAsync(IReadOnlyList<string> missionIds) {
+        if (missionIds.Count == 0 || _overlay is null) {
+            return;
+        }
+
+        if (missionIds.Count == 1) {
+            await ViewMissionAsync(missionIds[0]);
+            return;
+        }
+
+        State.SetMissionBeingViewed(null);
+        await _overlay.OpenMultiAsync(missionIds);
+    }
+
+    public void Dispose() {
+        State.Changed -= OnStateChanged;
+        if (ReferenceEquals(State.Actions, this)) {
+            State.Actions = null;
+        }
+    }
+
+}

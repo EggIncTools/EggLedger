@@ -7,6 +7,7 @@ using EggLedger.Web.Platform;
 using EggLedger.Web.Services;
 using EggLedger.Web.State;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace EggLedger.Web;
 
@@ -21,8 +22,14 @@ public static class WebServiceRegistration {
         services.AddScoped<IndexedDbMissionStore>(sp => new IndexedDbMissionStore(
             sp.GetRequiredService<IIndexedDb>(),
             sp.GetRequiredService<IApiPayloadDecoder>(),
-            accounts: sp.GetRequiredService<IndexedDbAccountStore>()));
+            accounts: sp.GetRequiredService<IndexedDbAccountStore>(),
+            logger: sp.GetService<ILogger<IndexedDbMissionStore>>()));
         services.AddScoped<IMissionStore>(sp => sp.GetRequiredService<IndexedDbMissionStore>());
+        services.AddScoped<IReportSourceCache>(sp => {
+            var cache = new ReportSourceCache(IndexedDbReportSource.Loader(sp.GetRequiredService<IIndexedDb>()));
+            cache.AttachHub(sp.GetRequiredService<LedgerDataHub>());
+            return cache;
+        });
         services.AddScoped<IndexedDbReportRunner>();
         services.AddScoped<IReportRunner>(sp => sp.GetRequiredService<IndexedDbReportRunner>());
 
@@ -37,7 +44,6 @@ public static class WebServiceRegistration {
 
         services.AddScoped<IApiPayloadDecoder>(sp => new LocalApiPayloadDecoder(sp.GetRequiredService<ApiClient>()));
 
-        services.AddScoped<InFlightMissionCache>();
         services.AddScoped<FetchService>();
         services.AddScoped<FetchOrchestrator>();
         services.AddScoped<AddAccountService>();
@@ -60,13 +66,21 @@ public static class WebServiceRegistration {
         services.AddScoped<CloudAutoSyncCoordinator>();
         services.AddScoped<AdminState>();
         services.AddScoped<EggLedger.Web.Settings.CloudSessionStore>();
+        services.AddScoped<EggLedger.Web.Settings.SettingsWriteCoordinator>();
 
 
         services.AddScoped<ActiveAccount>();
         services.AddScoped<ScreenshotSafetyState>();
         services.AddScoped<AppStateService>();
-        services.AddScoped<MissionDataCache>();
+        services.AddScoped(sp => {
+            var hub = new LedgerDataHub(
+                sp.GetRequiredService<MissionQueryHandlers>(),
+                sp.GetRequiredService<IndexedDbMissionStore>());
+            hub.AttachFetch(sp.GetRequiredService<FetchOrchestrator>());
+            return hub;
+        });
         services.AddScoped<AccountLoader>();
+        services.AddLedgerState();
         services.AddScoped<IPlatformCapabilities, BrowserPlatformCapabilities>();
 
 

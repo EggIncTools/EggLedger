@@ -228,6 +228,8 @@ public sealed class PostgresIndexedDb : IIndexedDb {
     private static Dictionary<string, StoreMeta> BuildStoreMeta() => new(StringComparer.Ordinal) {
         [IndexedDbStores.Mission] = new StoreMeta("el_mission", ["player_id", "mission_id"], autoIncrementColumn: null,
             blobColumns: ["complete_payload"]),
+        [IndexedDbStores.InFlightMission] = new StoreMeta("el_inflight_mission", ["player_id", "mission_id"],
+            autoIncrementColumn: null, blobColumns: []),
         [IndexedDbStores.Backup] = new StoreMeta("el_backup", ["player_id"], autoIncrementColumn: null,
             blobColumns: ["payload"]),
         [IndexedDbStores.ArtifactDrops] = new StoreMeta("el_artifact_drops", ["id"], autoIncrementColumn: "id",

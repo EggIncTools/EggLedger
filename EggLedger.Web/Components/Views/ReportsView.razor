@@ -1,0 +1,116 @@
+@implements IDisposable
+@implements IReportsViewActions
+@inject ReportsViewState State
+
+@if (State.AccountId is null) {
+    <div class="flex-1 flex items-center justify-center">
+        <p class="text-xs text-gray-500">Select an account in the sidebar to view its reports.</p>
+    </div>
+} else {
+    <div class="flex items-center gap-1.5 px-2 pt-1.5 pb-1.5 shrink-0 flex-wrap">
+        <button type="button"
+                class="text-sm px-4 py-1.5 rounded-full transition-colors @(State.SelectedGroup is null ? "bg-indigo-700 text-white" : "text-gray-400 hover:text-gray-200")"
+                @onclick="() => State.SelectGroup(null)">
+            All
+        </button>
+        @foreach (var g in State.Groups) {
+            <div class="relative flex items-center">
+                @if (State.EditMode && State.RenamingGroupId == g.Id) {
+                    <input class="text-sm px-2 py-1 rounded bg-darker border border-gray-600 text-gray-200 focus:outline-none focus:border-blue-500 w-28"
+                           @bind="State.RenameGroupName" @bind:event="oninput"
+                           @onkeydown="e => RenameKeyDown(e, g.Id)" @onblur="() => State.CommitRenameAsync(g.Id)" @onclick:stopPropagation autofocus/>
+                } else {
+                    <button type="button"
+                            class="text-sm px-4 py-1.5 rounded-full transition-colors @(State.SelectedGroup == g.Id ? "bg-indigo-700 text-white" : "text-gray-400 hover:text-gray-200")"
+                            @onclick="() => State.SelectGroup(g.Id)">
+                        @g.Name
+                    </button>
+                }
+                @if (State.EditMode) {
+                    <button type="button" class="text-gray-600 hover:text-gray-300 text-xs px-0.5" aria-label="Rename group"
+                            @onclick:stopPropagation @onclick="() => State.StartRename(g)">
+                        &#9998;
+                    </button>
+                    <button type="button" class="text-gray-600 hover:text-red-400 text-sm" aria-label="Delete group"
+                            @onclick:stopPropagation @onclick="() => DeleteGroupAsync(g.Id)">
+                        &#215;
+                    </button>
+                }
+            </div>
+        }
+    </div>
+
+    <ReportGrid @ref="_grid" AccountId="@State.AccountId" GroupFilter="@State.SelectedGroup"
+                EditMode="State.EditMode" Groups="State.Groups" OnEdit="OpenEdit"/>
+}
+
+<ReportBuilderPanel @ref="_builder" AccountId="@(State.AccountId ?? "")"
+                    GroupId="@State.SelectedGroup" Saved="OnSavedAsync"/>
+
+@code {
+    private ReportGrid? _grid;
+    private ReportBuilderPanel? _builder;
+
+    protected override async Task OnInitializedAsync() {
+        State.Changed += OnStateChanged;
+        State.Actions = this;
+        await State.EnsureInitializedAsync(InvokeAsync);
+    }
+
+    protected override Task OnParametersSetAsync() {
+        return State.EnsureAccountLoadedAsync();
+    }
+
+    private void OnStateChanged() {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public async Task NewReportAsync() {
+        if (_builder is not null) {
+            await _builder.OpenForCreateAsync();
+        }
+    }
+
+    private async Task OpenEdit(ReportDefinition def) {
+        if (_builder is not null) {
+            await _builder.OpenForEditAsync(def);
+        }
+    }
+
+    private async Task OnSavedAsync() {
+        if (_grid is not null) {
+            await _grid.ReloadAsync();
+        }
+    }
+
+    private async Task RenameKeyDown(KeyboardEventArgs e, string groupId) {
+        if (e.Key == "Enter") {
+            await State.CommitRenameAsync(groupId);
+        } else if (e.Key == "Escape") {
+            State.CancelRename();
+        }
+    }
+
+    private async Task DeleteGroupAsync(string id) {
+        await State.DeleteGroupAsync(id);
+        if (_grid is not null) {
+            await _grid.ReloadAsync();
+        }
+    }
+
+    public Task ExportAllAsync() {
+        return _grid?.ExportAllAsync() ?? Task.CompletedTask;
+    }
+
+    public Task ImportAsync() {
+        return _grid?.ImportAsync() ?? Task.CompletedTask;
+    }
+
+    public void Dispose() {
+        State.Changed -= OnStateChanged;
+        if (ReferenceEquals(State.Actions, this)) {
+            State.Actions = null;
+        }
+    }
+
+}

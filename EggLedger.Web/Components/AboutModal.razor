@@ -1,0 +1,250 @@
+@implements IDisposable
+@inject IPlatformCapabilities Platform
+@inject IUpdateStatusProvider UpdateStatus
+
+<ModalOverlay @ref="_modal" OnClose="Close"
+              ContainerClass="w-[92vw] max-w-[62rem] max-h-[88vh] flex flex-col border border-gray-600 rounded-lg bg-darker text-gray-300 shadow-2xl">
+    <div class="flex items-center justify-between shrink-0 px-4 py-3 border-b border-gray-700">
+        <h2 class="text-sm font-bold text-gray-300">About EggLedger</h2>
+        <CloseButton OnClick="Close" Class="text-gray-500 hover:text-gray-300" IconClass="w-4 h-4"/>
+    </div>
+
+    <div class="flex-1 min-h-0 overflow-y-auto px-4 py-3 text-sm text-gray-400">
+        <DesktopOnly>
+            <div class="flex items-center gap-3 p-3 rounded-lg bg-blue-950/40 border border-blue-700/40 mb-4">
+                @switch (UpdateStatus.Phase) {
+                    case UpdatePhase.Checking:
+                        <p class="text-blue-200/80 text-xs">Checking for updates...</p>
+                        break;
+                    case UpdatePhase.Available:
+                        <p class="text-blue-200/80 text-xs font-semibold flex-1">Update v@UpdateStatus.AvailableVersion available</p>
+                        <button type="button" class="shrink-0 inline-flex items-center px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-colors" @onclick="InstallUpdate">Update now</button>
+                        break;
+                    case UpdatePhase.Downloading:
+                        <p class="text-blue-200/60 text-xs">Downloading update@(UpdateStatus.TotalBytes > 0 ? $" ({UpdateStatus.DownloadedBytes * 100 / UpdateStatus.TotalBytes}%)" : "")...</p>
+                        break;
+                    case UpdatePhase.Ready:
+                        <p class="text-blue-200/80 text-xs">Update ready. The app will restart to finish.</p>
+                        break;
+                    case UpdatePhase.Failed:
+                        <p class="text-red-400 text-xs flex-1">Update failed@(string.IsNullOrEmpty(UpdateStatus.Message) ? "." : $": {UpdateStatus.Message}")</p>
+                        <button type="button" class="shrink-0 inline-flex items-center px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-colors" @onclick="CheckUpdate">Try again</button>
+                        break;
+                    default:
+                        <p class="text-blue-200/80 text-xs flex-1">EggLedger is up to date.</p>
+                        <button type="button" class="shrink-0 inline-flex items-center px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-colors" @onclick="CheckUpdate">Check for updates</button>
+                        break;
+                }
+            </div>
+        </DesktopOnly>
+
+        <div class="space-y-5">
+            <div class="about-group about-ships">
+                <h3 class="about-group-title">About the project</h3>
+                <div class="columns-1 md:columns-2 gap-3 space-y-3">
+                    <div class="about-card">
+                        <h4 class="about-card-title">Is mk2 back?</h4>
+                        <p>No. This tool is now being developed independently - the community has taken over mk2's orphaned tools since he went AWOL in 2022.</p>
+                        <p><i>For EggLedger specifically</i>, I (<a class="url-link" target="_blank" rel="noopener" href="https://github.com/DavidArthurCole">DavidArthurCole</a>) am the active developer and maintainer.</p>
+                        <p>Join my <a class="url-link" target="_blank" rel="noopener" href="https://discord.davidarthurcole.me">Discord server</a> for EggLedger support, bug reports, and general discussion.</p>
+                        <p>You can also reach me directly on <a class="url-link" target="_blank" rel="noopener" href="https://discord.com/users/258383847148879874">Discord</a> (<span class="text-duration-0">@@davidarthurcole</span>) or <a class="url-link" target="_blank" rel="noopener" href="https://github.com/EggIncTools/EggLedger/issues/new/choose">open a GitHub Issue</a>.</p>
+                    </div>
+
+                    <div class="about-card">
+                        <h4 class="about-card-title">What does EggLedger do?</h4>
+                        <p>Exports spaceship mission data - including loot from each mission - to .xlsx and .csv for further analysis.</p>
+                        <p>It extends the <a class="url-link" target="_blank" rel="noopener" href="https://wasmegg-carpet.netlify.app/rockets-tracker/">rockets tracker</a> to answer questions like "which mission dropped this artifact?" and "how many times did this item drop?" that can't be answered there.</p>
+                        <p>It also lets you browse and filter mission data in-app.</p>
+                    </div>
+
+                    <div class="about-card">
+                        <h4 class="about-card-title">Where do I get @@mk2's autograph?</h4>
+                        <p><a class="url-link" target="_blank" rel="noopener" href="https://areyousure.netlify.app/">Are you sure</a> you want @@mk2's autograph?</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="about-group about-drops">
+                <h3 class="about-group-title">Getting started</h3>
+                <div class="columns-1 md:columns-2 gap-3 space-y-3">
+                    <div class="about-card">
+                        <h4 class="about-card-title">How do I use EggLedger?</h4>
+                        <ul class="about-list-1">
+                            <li>Open the account selector in the sidebar and choose <b>Add Account</b>, then enter your EID</li>
+                            <li>
+                                With your account selected, press <b>Fetch</b> in the sidebar
+                                <ul class="about-list-2">
+                                    <li>First fetch may take a while if you have many completed missions</li>
+                                    <li>Subsequent fetches only pull new missions</li>
+                                    <li>Multiple accounts can be added and switched between at any time</li>
+                                </ul>
+                            </li>
+                            <li>Browse and filter your mission history in the <b>Ships</b> view</li>
+                            <li>View lifetime drop totals and statistics in the <b>Drops</b> view</li>
+                            <li>Build custom charts and breakdowns in the <b>Reports</b> view</li>
+                        </ul>
+                    </div>
+
+                    <div class="about-card">
+                        <h4 class="about-card-title">Where do I find my Egg, Inc. account ID?</h4>
+                        <ul class="about-list-1">
+                            <li>Open the game menu <img src="@ContentPaths.Asset("images/icon_menu.webp")" alt="Menu Icon" class="game-btn-ico"/></li>
+                            <li>Choose Settings <img src="@ContentPaths.Asset("images/icon_settings.webp")" alt="Settings Icon" class="game-btn-ico"/></li>
+                            <li>Choose &nbsp;<span class="p-0.5 text-xs rounded-md bg-privacy_blue w-4 pl-3 pr-3"> Privacy &amp; Data </span></li>
+                            <li>
+                                Your EID is at the bottom
+                                <ul class="about-list-2">
+                                    <li><span class="ledger-underline">It should look like EI1234567890123456</span>. That's the letters "EI" followed by 16 digits.</li>
+                                    <li>Use the Copy button (<img src="@ContentPaths.Asset("images/icon_copy.webp")" alt="Help Icon" class="game-btn-ico"/>) to copy your EID to clipboard</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="about-group about-reports">
+                <h3 class="about-group-title">Privacy &amp; data</h3>
+                <div class="columns-1 md:columns-2 gap-3 space-y-3">
+                    <DesktopOnly>
+                        <div class="about-card">
+                            <h4 class="about-card-title">Is my data shared with anyone?</h4>
+                            <p>No. The desktop app talks directly to the Egg, Inc. API - all mission data stays 100% local. No analytics are collected.</p>
+                            <p>The only third-party request is an occasional update check against github.com. No personal data is attached and no logs are available to me.</p>
+                            <p>Unless you contact me directly, I have no way to know you're even using this tool.</p>
+                        </div>
+
+                        <div class="about-card">
+                            <h4 class="about-card-title">Is the Settings Sync feature private?</h4>
+                            <p>Settings Sync is fully optional. If you never sign in, nothing leaves your machine beyond the Egg, Inc. API calls and the update check described above.</p>
+                            <p>If you do use it, your settings are encrypted before upload and stored encrypted. The key belongs to your account and is managed by the sync service, so <span class="ledger-underline">this is not zero-knowledge</span>: the operator's infrastructure can technically read synced settings.</p>
+                            <p>Sign-in runs through EggIdentity and only verifies who you are. No settings data passes through the provider you sign in with.</p>
+                        </div>
+
+                        <div class="about-card">
+                            <h4 class="about-card-title">Where does EggLedger store data?</h4>
+                            <p>All config, data, and exports are stored in the same directory as the EggLedger binary.</p>
+                            <p><span class="ledger-underline">Put EggLedger in a directory of its own and don't touch the "internal" folder</span> - doing so risks data corruption.</p>
+                            <p>To uninstall, just delete the directory. No system-level traces are left behind.</p>
+                        </div>
+                    </DesktopOnly>
+
+                    <WebOnly>
+                        <div class="about-card">
+                            <h4 class="about-card-title">Where does the web app store my data?</h4>
+                            <p>Your backups are decoded on the server and stored in a Postgres database under your account. That covers your mission history, the loot recorded against it, the backups those are built from, your settings, and your reports.</p>
+                            <p>It is never sold, shared, or used for advertising, and no analytics are collected. The server does keep a log of rejected API requests (IP address, path, and user agent) for abuse protection; those rows are not linked to your account.</p>
+                            <p>The desktop app is the fully local option if you would rather nothing was stored server side.</p>
+                        </div>
+
+                        <div class="about-card">
+                            <h4 class="about-card-title">How do I sign in?</h4>
+                            <p>Sign-in runs through EggIdentity, a separate federated login service. You can use Discord, Google, Microsoft, or GitHub.</p>
+                            <p>EggLedger receives only the basic identity needed to recognise you again. Your password is never handled here.</p>
+                        </div>
+
+                        <div class="about-card">
+                            <h4 class="about-card-title">How do I delete my data?</h4>
+                            <p><b>Disconnect</b> in the Settings cloud sync section deletes your synced settings and signs you out. It does not remove your stored mission data.</p>
+                            <p>To delete the account itself, contact the operator. That removes your mission history, drops, backups, settings, and reports along with the account.</p>
+                        </div>
+                    </WebOnly>
+                </div>
+            </div>
+
+            <div class="about-group about-neutral">
+                <h3 class="about-group-title">Troubleshooting</h3>
+                <div class="columns-1 md:columns-2 gap-3 space-y-3">
+                    <div class="about-card">
+                        <h4 class="about-card-title">Why are recent missions missing?</h4>
+                        <p>Your server backup is probably out of date. Watch the freshness message when your backup is fetched.</p>
+                        <p>The game backs up every few minutes when network allows, but it's unpredictable. <span class="ledger-underline">Force-closing and reopening the game, or switching farms, reliably triggers a new backup.</span></p>
+                        <p>Even after a backup, it may take a minute or two before the API serves the updated data.</p>
+                    </div>
+
+                    <div class="about-card">
+                        <h4 class="about-card-title">Are there account risks?</h4>
+                        <p>I'm not aware of any negative effects. The <a class="url-link" target="_blank" rel="noopener" href="https://wasmegg-carpet.netlify.app/rockets-tracker/">rockets tracker</a> has safely used the same techniques for years.</p>
+                        <p>That said, no community tools are sanctioned by the Egg, Inc. developer. You use them at your own risk.</p>
+                    </div>
+
+                    <div class="about-card">
+                        <h4 class="about-card-title">Known issues</h4>
+                        <ul class="about-list-1">
+                            <DesktopOnly>
+                                <li>On macOS, clicking the dock icon can open a new browser window</li>
+                                <li>On Windows, the taskbar icon resolution is low</li>
+                            </DesktopOnly>
+                            <li>
+                                Some missions may fail to fetch
+                                <ul class="about-list-2">
+                                    <li>Occasional API timeouts are normal - a second fetch usually resolves them</li>
+                                    <li>If the same mission fails repeatedly, please reach out</li>
+                                </ul>
+                            </li>
+                            <li>The Ships view can be slow with very large mission histories</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="about-credits">
+                <p>
+                    EggLedger by
+                    <a class="url-link" target="_blank" rel="noopener" href="https://github.com/fanaticscripter">mk2</a>
+                    and
+                    <a class="url-link" target="_blank" rel="noopener" href="https://github.com/DavidArthurCole">DavidArthurCole</a>.
+                </p>
+                <p>
+                    Signing in uses EggIdentity, a separate login service with its own
+                    <a class="url-link" target="_blank" rel="noopener" href="https://eggidentity.davidarthurcole.me/terms">terms</a>
+                    and
+                    <a class="url-link" target="_blank" rel="noopener" href="https://eggidentity.davidarthurcole.me/privacy">privacy policy</a>.
+                </p>
+            </div>
+        </div>
+    </div>
+</ModalOverlay>
+
+@code {
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private ModalOverlay? _modal;
+
+    protected override void OnInitialized() {
+        if (Platform.IsDesktop) {
+            UpdateStatus.Changed += OnUpdateChanged;
+        }
+    }
+
+    protected override void OnAfterRender(bool firstRender) {
+        if (firstRender) {
+            _modal?.Open();
+        }
+    }
+
+    private void OnUpdateChanged() {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private Task CheckUpdate() {
+        return UpdateStatus.CheckForUpdatesAsync(true);
+    }
+
+    private Task InstallUpdate() {
+        return string.IsNullOrEmpty(UpdateStatus.AvailableVersion)
+            ? Task.CompletedTask
+            : UpdateStatus.DownloadAndInstallAsync(UpdateStatus.AvailableVersion);
+    }
+
+    private Task Close() {
+        return OnClose.InvokeAsync();
+    }
+
+    public void Dispose() {
+        if (Platform.IsDesktop) {
+            UpdateStatus.Changed -= OnUpdateChanged;
+        }
+    }
+
+}

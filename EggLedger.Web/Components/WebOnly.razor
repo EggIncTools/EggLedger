@@ -1,0 +1,10 @@
+@inject IPlatformCapabilities Platform
+
+@if (!Platform.IsDesktop) {
+    @ChildContent
+}
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+}

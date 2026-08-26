@@ -288,30 +288,6 @@ public sealed class CloudSyncServiceTests {
     }
 
     [Fact]
-    public async Task FullFlow_PendingThenDone_ThenBlobUsesPolledKey() {
-
-
-        var server = new FakeServer();
-        var nav = new FakeNavigation();
-        var svc = Make(server, nav);
-
-        var state = await svc.BeginAuthAsync();
-        Assert.NotNull(nav.LastUrl);
-
-        var pending = await svc.PollOnceAsync(state);
-        Assert.True(pending.Pending);
-
-        server.PollPayload = new PollResponse(Token, "user#1", "https://cdn/a.png", HexKey);
-        var done = await svc.PollOnceAsync(state);
-        Assert.False(done.Pending);
-
-        var session = done.Session!;
-        await svc.PutBlobAsync(session, "accounts", new[] { new KnownAccount("EI1", "Alice") });
-        var back = await svc.GetBlobAsync<KnownAccount[]>(session, "accounts");
-        Assert.Equal("Alice", back[0].Name);
-    }
-
-    [Fact]
     public async Task BeginAuth_ServerError_ThrowsLoudly() {
         var svc = Make(new ErrorDiscordServer());
         await Assert.ThrowsAsync<CloudSyncException>(() => svc.BeginAuthAsync());

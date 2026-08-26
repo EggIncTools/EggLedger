@@ -57,6 +57,17 @@ public sealed record MissionMetaRow {
     [JsonPropertyName("nominal_capacity")] public int NominalCapacity { get; init; }
 }
 
+public sealed record InFlightMissionRow {
+    [JsonPropertyName("player_id")]
+    public string PlayerId { get; init; } = "";
+    [JsonPropertyName("mission_id")]
+    public string MissionId { get; init; } = "";
+    [JsonPropertyName("captured_at")]
+    public long CapturedAt { get; init; }
+    [JsonPropertyName("payload")]
+    public string Payload { get; init; } = "";
+}
+
 public sealed record BackupRow {
     [JsonPropertyName("player_id")]
     public string PlayerId { get; init; } = "";

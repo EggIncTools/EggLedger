@@ -1,0 +1,44 @@
+@implements IDisposable
+@inject DropsViewState State
+
+@if (State.AccountId is null) {
+    <p class="text-xs text-gray-500 italic">Select an account to see drop options.</p>
+} else {
+    <div class="flex flex-col gap-3">
+        <div>
+            <span class="font-bold text-gray-400">Sort Method</span>
+            <div class="tile-group flex-wrap mt-1">
+                <button type="button" class="tile-group-item @(State.SortMethod == LifetimeSortMethod.Default ? "active" : "")" @onclick="@(() => State.SetSortAsync(LifetimeSortMethod.Default))">Default</button>
+                <button type="button" class="tile-group-item @(State.SortMethod == LifetimeSortMethod.Iv ? "active" : "")" @onclick="@(() => State.SetSortAsync(LifetimeSortMethod.Iv))">Inventory Visualizer</button>
+                <button type="button" class="tile-group-item @(State.SortMethod == LifetimeSortMethod.Count ? "active" : "")" @onclick="@(() => State.SetSortAsync(LifetimeSortMethod.Count))">Total Count</button>
+                <button type="button" class="tile-group-item @(State.SortMethod == LifetimeSortMethod.Random ? "active" : "")" @onclick="@(() => State.SetSortAsync(LifetimeSortMethod.Random))">Random</button>
+            </div>
+        </div>
+        <div>
+            <span class="font-bold text-gray-400">Display</span>
+            <div class="flex flex-col gap-1 mt-1">
+                <label><input type="checkbox" class="ext-opt-check mr-0_5rem" checked="@State.ShowPerShip" @onchange="State.ToggleShowPerShipAsync"/> Show 'Average Drops per Ship'</label>
+                @if (State.AllowExpectedTotals) {
+                    <label><input type="checkbox" class="ext-opt-check mr-0_5rem" checked="@State.ShowExpectedTotals" @onchange="State.ToggleExpectedTotalsAsync"/> Show 'Expected Total Drops'</label>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+
+    protected override async Task OnInitializedAsync() {
+        State.Changed += OnStateChanged;
+        await State.EnsureInitializedAsync(InvokeAsync);
+    }
+
+    private void OnStateChanged() {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() {
+        State.Changed -= OnStateChanged;
+    }
+
+}
