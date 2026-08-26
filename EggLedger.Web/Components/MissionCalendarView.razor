@@ -13,8 +13,20 @@
                              OnToday="JumpToNowAsync"
                              DateChanged="JumpToDateAsync"/>
         @if (ShowFlightRatio) {
-            <span class="text-sm text-gray-400 tabular-nums" data-tt="Total ship flight time within this period, as a share of 3 ships flying nonstop">
-                Flight ratio: @FlightRatioText
+            <span class="airtime-stat" data-tt="Mission airtime this period, against all 3 mission slots flying nonstop. Split by farm when home and virtue missions both flew.">
+                <span class="airtime-label">Airtime</span>
+                @if (_flightSlices is not { Count: > 0 } slices) {
+                    <span class="airtime-chip">n/a</span>
+                } else if (slices.Count == 1) {
+                    <span class="airtime-chip">@Pct(slices[0].Ratio)</span>
+                } else {
+                    @foreach (var slice in slices) {
+                        <span class="airtime-chip @(slice.IsVirtue ? "airtime-virtue" : "airtime-home")">
+                            <span class="airtime-farm">@(slice.IsVirtue ? "Virtue" : "Home")</span>
+                            @Pct(slice.Ratio)
+                        </span>
+                    }
+                }
             </span>
         }
     </div>
@@ -97,7 +109,7 @@
     private List<PeriodVm> _periods = [];
     private List<DatabaseMission> _merged = [];
     private HashSet<string> _noDataIds = [];
-    private double? _flightRatio;
+    private IReadOnlyList<FlightRatioSlice>? _flightSlices;
     private bool _showStillFlying;
 
     private ElementReference _viewportRef;
@@ -166,7 +178,7 @@
         _merged = Missions.Concat(inFlight).ToList();
 
         var now = DateTimeOffset.UtcNow;
-        _flightRatio = TimelineFlightRatio.Compute(_merged, _visibleStart, _visibleEnd, now);
+        _flightSlices = TimelineFlightRatio.ComputeByFarm(_merged, _visibleStart, _visibleEnd, now);
 
         var windows = new List<(DateTimeOffset Start, DateTimeOffset End)> { (_visibleStart, _visibleEnd) };
         for (var i = 0; i < CenterSlot; i++) {
@@ -251,8 +263,9 @@
         return FormattableString.Invariant($"--row-weight:{Math.Max(1, row.Lanes.Count)};");
     }
 
-    private string FlightRatioText =>
-        _flightRatio is { } ratio ? ratio.ToString("P1", CultureInfo.InvariantCulture) : "n/a";
+    private static string Pct(double ratio) {
+        return ratio.ToString("P1", CultureInfo.InvariantCulture);
+    }
 
     private Task SetZoomAsync(TimelineZoom zoom) {
         _zoom = zoom;

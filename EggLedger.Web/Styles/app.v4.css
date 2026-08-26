@@ -56,6 +56,8 @@
   --color-duration-1: rgb(139, 93, 246);
   --color-duration-2: rgb(246, 168, 35);
   --color-duration-3: rgb(115, 128, 140);
+  --color-farm-home: rgb(69, 159, 246);
+  --color-farm-virtue: rgb(246, 168, 35);
   --color-tutorial: rgb(115, 128, 140);
   --color-short: rgb(69, 159, 246);
   --color-standard: rgb(139, 93, 246);
@@ -247,6 +249,49 @@
   white-space: nowrap;
 }
 
+.airtime-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.airtime-label {
+  color: var(--color-gray-500);
+}
+
+.airtime-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  padding: 0.1rem 0.55rem;
+  border-radius: 9999px;
+  border: 1px solid var(--color-gray-600);
+  background-color: var(--color-darker);
+  color: var(--color-gray-300);
+  font-variant-numeric: tabular-nums;
+}
+
+.airtime-home {
+  border-color: color-mix(in srgb, var(--color-farm-home) 55%, transparent);
+  background-color: color-mix(in srgb, var(--color-farm-home) 10%, var(--color-darker));
+  color: var(--color-farm-home);
+}
+
+.airtime-virtue {
+  border-color: color-mix(in srgb, var(--color-farm-virtue) 55%, transparent);
+  background-color: color-mix(in srgb, var(--color-farm-virtue) 10%, var(--color-darker));
+  color: var(--color-farm-virtue);
+}
+
+.airtime-farm {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
+}
+
 .timeline-viewport {
   position: relative;
   flex: 1;
@@ -345,20 +390,26 @@
 
 .timeline-view-day {
   --bar-h: 2.25rem;
+  --bubble-h: 2.75rem;
+  --lane-min: 3.25rem;
 }
 
 .timeline-view-week {
   --bar-h: 1.5rem;
+  --bubble-h: 2.25rem;
+  --lane-min: 2.5rem;
 }
 
 .timeline-view-month {
   --bar-h: 1.125rem;
+  --bubble-h: 1.75rem;
+  --lane-min: 1.9rem;
 }
 
 .timeline-lane {
   position: relative;
   flex: 1 1 auto;
-  min-height: 3.25rem;
+  min-height: var(--lane-min, 3.25rem);
 }
 
 .timeline-dur-0 {
@@ -439,10 +490,10 @@
 .timeline-bar-bubble {
   position: absolute;
   top: 50%;
-  left: clamp(1.375rem, calc(var(--bar-fill) * 1%), calc(100% - 1.375rem));
+  left: clamp(calc(var(--bubble-h, 2.75rem) / 2), calc(var(--bar-fill) * 1%), calc(100% - var(--bubble-h, 2.75rem) / 2));
   transform: translate(-50%, -50%);
-  height: 2.75rem;
-  width: 2.75rem;
+  height: var(--bubble-h, 2.75rem);
+  width: var(--bubble-h, 2.75rem);
   border-radius: 9999px;
   background: var(--color-darkest);
   border: 2px solid var(--bar-color);
@@ -1556,10 +1607,24 @@ input[type=number] {
   width: 100%;
 }
 
-.sidebar-footer-version {
-  font-size: 0.7rem;
-  color: var(--color-gray-500);
+.sidebar-footer-info {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  min-width: 0;
+  font-size: 0.8rem;
   white-space: nowrap;
+  overflow: hidden;
+}
+
+.sidebar-footer-version {
+  color: var(--color-blue-500);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sidebar-footer-authors {
+  color: var(--color-gray-400);
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -1642,6 +1707,26 @@ input[type=number] {
   gap: 0.35rem;
   flex: 1;
   min-width: 0;
+}
+
+.account-main-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.account-main-row .account-select-btn {
+  flex: 1;
+  min-width: 0;
+}
+
+.account-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.15rem 0.6rem;
+  padding: 0 0.15rem;
 }
 
 .account-select-btn {

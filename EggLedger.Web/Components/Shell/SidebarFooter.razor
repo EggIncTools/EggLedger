@@ -4,12 +4,18 @@
 @inject IUpdateStatusProvider UpdateStatus
 
 <div class="sidebar-footer-row">
-    <span class="sidebar-footer-version">
-        @if (!string.IsNullOrEmpty(AppStateSvc.AppVersion)) {
-            <text>v@(AppStateSvc.AppVersion)</text>
-        } else {
-            <text>EggLedger</text>
-        }
+    <span class="sidebar-footer-info">
+        <span class="sidebar-footer-version">
+            @if (!string.IsNullOrEmpty(AppStateSvc.AppVersion)) {
+                <text>v@(AppStateSvc.AppVersion)</text>
+            } else {
+                <text>EggLedger</text>
+            }
+        </span>
+        <span class="sidebar-footer-authors">
+            by <a class="url-link" href="https://github.com/fanaticscripter" target="_blank" rel="noopener">@@mk2</a>
+            &amp; <a class="url-link" href="https://github.com/DavidArthurCole" target="_blank" rel="noopener">@@DavidArthurCole</a>
+        </span>
     </span>
 
     @if (UpdateAvailable) {

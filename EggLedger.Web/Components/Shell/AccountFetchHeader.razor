@@ -16,21 +16,21 @@
     </button>
 
     <div class="account-full">
-        <button type="button" class="account-select-btn" disabled="@(!IsLoggedIn)" @onclick="OpenPopover">
-            <span class="min-w-0 flex flex-col items-start leading-tight">
-                @if (_active is not null) {
-                    <span class="font-medium truncate max-w-full" style="color: #@_active.AccountColor">@_active.Nickname</span>
-                    <span class="text-gray-500 text-xs">@_active.EBString</span>
-                } else if (!IsLoggedIn) {
-                    <span class="text-gray-500 italic text-xs">Login to add an account</span>
-                } else {
-                    <span class="text-gray-500 italic text-xs">No account - click to add</span>
-                }
-            </span>
-            <span class="text-gray-600 text-xs shrink-0">&#9660;</span>
-        </button>
+        <div class="account-main-row">
+            <button type="button" class="account-select-btn" disabled="@(!IsLoggedIn)" @onclick="OpenPopover">
+                <span class="min-w-0 flex flex-col items-start leading-tight">
+                    @if (_active is not null) {
+                        <span class="font-medium truncate max-w-full" style="color: #@_active.AccountColor">@_active.Nickname</span>
+                        <span class="text-gray-500 text-xs">@_active.EBString</span>
+                    } else if (!IsLoggedIn) {
+                        <span class="text-gray-500 italic text-xs">Login to add an account</span>
+                    } else {
+                        <span class="text-gray-500 italic text-xs">No account - click to add</span>
+                    }
+                </span>
+                <span class="text-gray-600 text-xs shrink-0">&#9660;</span>
+            </button>
 
-        <div class="flex items-center gap-1.5">
             @if (Fetch.IsIdle) {
                 <button type="button" class="account-fetch-btn" disabled="@(Active.ActiveAccountId is null)" @onclick="StartFetch">
                     Fetch
@@ -50,6 +50,29 @@
                 </button>
             }
         </div>
+
+        @if (_active is not null) {
+            var activeInfo = InfoFor(_active.Id);
+            var activeStats = StatsFor(_active.Id);
+            @if (activeInfo is { SeString: not "" } || activeStats is not null) {
+                <div class="account-meta text-xs">
+                    @if (activeInfo is { SeString: not "" }) {
+                        <span style="color:#a855f7">@activeInfo.SeString SE</span>
+                        <span style="color:#eab308">@activeInfo.PeCount PE</span>
+                        @if (activeInfo.TeCount > 0) {
+                            <span style="color:#c831ff">@activeInfo.TeCount TE</span>
+                        }
+                    }
+                    @if (activeStats is not null) {
+                        <span class="text-gray-500">@activeStats.MissionCount missions</span>
+                        var since = LedgerFormatting.FormatTimeSince(activeStats.LastMissionReturnDT, NowUnix);
+                        @if (since != "") {
+                            <span class="text-gray-600">(latest @since)</span>
+                        }
+                    }
+                </div>
+            }
+        }
     </div>
 </div>
 
