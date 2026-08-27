@@ -3,9 +3,7 @@
    per-day "View row" button; Free Select adds a per-mission checkbox. *@
 
 @if (Grouping is null || Grouping.Missions.Count == 0) {
-    <div class="filter-form text-lg">
-        <span class="mt-0_5rem ml-1rem">No missions to display.</span>
-    </div>
+    <p class="text-gray-500 italic mt-0_75rem">No missions to display.</p>
 } else {
     <div id="missionListDiv" class="mt-0_5rem px-2 py-1 shadow-sm block text-xs font-mono text-gray-500 bg-darkest rounded-md">
         <MissionCardCustomStyle Config="Config"/>

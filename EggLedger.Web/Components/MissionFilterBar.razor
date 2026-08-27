@@ -67,8 +67,9 @@
 
     <button type="button" class="ledger-btn apply-filter-button apply-filter-button-primary" disabled="@Applying" @onclick="ApplyAsync">Apply Filter</button>
     @if (Applying) {
-        <span class="text-green-700 mt-0_5rem block">
-            <i>Applying filter, please wait...</i>
+        <span class="filter-applying">
+            <img class="filter-applying-spinner" src="@ContentPaths.Asset("images/loading.gif")" alt=""/>
+            Applying filter...
         </span>
     } else if (LastResultText is { Length: > 0 }) {
         <div class="mt-0_5rem">
@@ -270,7 +271,7 @@
     private static RenderFragment RenderResultText(string text) => __builder => {
         var match = ResultTextPattern.Match(text);
         if (!match.Success) {
-            <span class="text-green-700">@text</span>
+            <span class="filter-result-badge filter-result-badge-error">@text</span>
             return;
         }
 

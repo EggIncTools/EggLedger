@@ -779,6 +779,12 @@
   font-weight: 600;
 }
 
+.filter-result-badge-error {
+  border-color: color-mix(in srgb, var(--color-red-500) 60%, transparent);
+  background: color-mix(in srgb, var(--color-red-500) 12%, transparent);
+  color: var(--color-red-400);
+}
+
 .filter-result-counts {
   color: var(--color-gray-300);
 }
@@ -1461,10 +1467,6 @@ input[type=number] {
   @apply underline underline-offset-2;
 }
 
-.filter-form {
-  @apply flex-1 px-2 py-1 shadow-sm block font-mono text-gray-500 bg-darkest rounded-md;
-}
-
 .ledger-list {
   @apply absolute z-10 mt-1 w-full bg-darkerer shadow-lg max-h-60 rounded-md py-1 text-gray-400 ring-1 ring-black ring-opacity-5 overflow-auto text-sm;
 }
@@ -2130,6 +2132,20 @@ input[type=number] {
     opacity: 0;
     transform: scale(0.96);
   }
+}
+
+.filter-applying {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  color: var(--color-gray-400);
+  font-size: 0.85rem;
+}
+
+.filter-applying-spinner {
+  width: 1rem;
+  height: 1rem;
 }
 
 .menno-status-pill {

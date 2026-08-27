@@ -11,7 +11,7 @@
 
 <div @ref="_gridRef" class="flex-1 min-h-0 overflow-y-auto pt-0 pb-20 px-3 flex flex-col gap-3">
     @if (!string.IsNullOrEmpty(_actionMessage)) {
-        <span class="text-xs text-gray-400 self-end">@_actionMessage</span>
+        <span class="text-xs self-end @(_actionMessageIsError ? "text-red-400" : "text-gray-400")">@_actionMessage</span>
     }
     @if (_defs.Count == 0) {
         <div class="text-xs text-gray-500 text-center mt-8">No reports yet. Click "New Report" to create one.</div>
@@ -46,6 +46,7 @@
     private List<ReportDefinition> _defs = new();
     private int? _draggingIndex;
     private string? _actionMessage;
+    private bool _actionMessageIsError;
     private ElementReference _gridRef;
     private JsResizeObserver? _resizeObserver;
     private DotNetObjectReference<ReportGrid>? _selfRef;
@@ -135,6 +136,7 @@
         var json = JsonSerializer.Serialize(defs, new JsonSerializerOptions { WriteIndented = true });
         await Downloader.DownloadJsonAsync(json, $"reports-export-{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}.json");
         _actionMessage = $"Exported {defs.Count} report(s)";
+        _actionMessageIsError = false;
         StateHasChanged();
         ClearMessageLater();
     }
@@ -161,9 +163,11 @@
             }
 
             _actionMessage = $"Imported {defs.Count} report(s)";
+            _actionMessageIsError = false;
         }
         catch (JsonException) {
             _actionMessage = "Import failed - invalid file";
+            _actionMessageIsError = true;
         }
 
         await ReloadAsync();
