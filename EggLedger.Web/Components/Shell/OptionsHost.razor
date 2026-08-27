@@ -1,7 +1,5 @@
 @implements IDisposable
 @inject LedgerShellState Shell
-@inject IndexedDbSettings Settings
-@inject SettingsWriteCoordinator Writer
 
 <div class="options-host">
     <div class="options-host-body">
@@ -11,66 +9,15 @@
             <ShipsOptionsPanel/>
         }
     </div>
-
-    <div class="settings-section @(_generalOpen ? "is-open" : "")">
-        <button type="button" class="settings-section-head" aria-expanded="@(_generalOpen ? "true" : "false")"
-                @onclick="ToggleGeneral">
-            <span class="settings-section-title">General</span>
-            @if (_generalOpen) {
-                <span class="settings-section-caret">&#9662;</span>
-            } else {
-                <span class="settings-section-caret">&#9656;</span>
-            }
-        </button>
-        @if (_generalOpen) {
-            <div class="settings-section-body options-general-body">
-                @if (_loaded) {
-                    <OptionsPanel Model="_model" OnSetting="OnSettingAsync" ShowHeading="false"/>
-                } else {
-                    <p class="text-xs text-gray-500 italic">Loading settings...</p>
-                }
-            </div>
-        }
-    </div>
 </div>
 
 @code {
-    private readonly SettingsModel _model = new();
-    private bool _generalOpen;
-    private bool _loaded;
-    private bool _settingsWasOpen;
 
     protected override void OnInitialized() {
         Shell.Changed += OnShellChanged;
     }
 
-    private async Task ToggleGeneral() {
-        _generalOpen = !_generalOpen;
-        if (_generalOpen && !_loaded) {
-            await ReloadModelAsync();
-        }
-    }
-
-    private async Task ReloadModelAsync() {
-        var all = await Settings.GetAllSettingsAsync();
-        _model.LoadFrom(all);
-        _loaded = true;
-        StateHasChanged();
-    }
-
-    private async Task OnSettingAsync((string Key, string Value) change) {
-        await Writer.SetAsync(change.Key, change.Value);
-        StateHasChanged();
-    }
-
     private void OnShellChanged() {
-        var closed = _settingsWasOpen && !Shell.SettingsOpen;
-        _settingsWasOpen = Shell.SettingsOpen;
-        if (closed && _loaded) {
-            InvokeAsync(ReloadModelAsync);
-            return;
-        }
-
         InvokeAsync(StateHasChanged);
     }
 

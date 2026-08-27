@@ -5,13 +5,11 @@
 
 <div class="sidebar-footer-row">
     <span class="sidebar-footer-info">
-        <span class="sidebar-footer-version">
-            @if (!string.IsNullOrEmpty(AppStateSvc.AppVersion)) {
-                <text>v@(AppStateSvc.AppVersion)</text>
-            } else {
-                <text>EggLedger</text>
-            }
-        </span>
+        <img class="sidebar-footer-logo" src="@ContentPaths.Asset("images/icon-512.png")" alt="" width="18" height="18"/>
+        <span class="sidebar-footer-brand">EggLedger</span>
+        @if (!string.IsNullOrEmpty(AppStateSvc.AppVersion)) {
+            <span class="sidebar-footer-version">v@(AppStateSvc.AppVersion)</span>
+        }
         <span class="sidebar-footer-authors">
             by <a class="url-link" href="https://github.com/fanaticscripter" target="_blank" rel="noopener">@@mk2</a>
             &amp; <a class="url-link" href="https://github.com/DavidArthurCole" target="_blank" rel="noopener">@@DavidArthurCole</a>

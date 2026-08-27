@@ -22,14 +22,6 @@
                     <label><input type="checkbox" class="ext-opt-check mr-0_5rem" checked="@State.Opts.RecolorBC" @onchange="@(e => State.SetOptAsync(MissionViewOptions.KeyRecolorBC, b => State.Opts.RecolorBC = b, e))"/> Re-color bugged caps</label>
                 </div>
             </div>
-            <div>
-                <span class="font-bold text-gray-400">Multi-View Method</span>
-                <div class="tile-group flex-wrap mt-1">
-                    <button type="button" class="tile-group-item @(State.Opts.MultiViewMode == MultiViewMode.Off ? "active" : "")" @onclick="@(() => State.SetMultiViewAsync(MultiViewMode.Off))">Off</button>
-                    <button type="button" class="tile-group-item @(State.Opts.MultiViewMode == MultiViewMode.Row ? "active" : "") @(State.Opts.SortByDropCount ? "opacity-40 cursor-not-allowed" : "")" disabled="@State.Opts.SortByDropCount" @onclick="@(() => State.SetMultiViewAsync(MultiViewMode.Row))">Row/Date Select</button>
-                    <button type="button" class="tile-group-item @(State.Opts.MultiViewMode == MultiViewMode.Free ? "active" : "")" @onclick="@(() => State.SetMultiViewAsync(MultiViewMode.Free))">Free Select</button>
-                </div>
-            </div>
         }
         <div>
             <span class="font-bold text-gray-400">Drops Sort Method</span>

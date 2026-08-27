@@ -17,6 +17,9 @@
         @if (State.HasBothTypes) {
             @RenderTileSelector()
         }
+        @if (State.ViewMode == ShipsViewMode.List) {
+            @RenderListControlSet()
+        }
     </div>
     @if (State.ViewMode == ShipsViewMode.Calendar) {
         <MissionCalendarView Missions="State.TabFiltered ?? Array.Empty<DatabaseMission>()"
@@ -71,6 +74,65 @@
             <button type="button" class="tile-group-item @(State.Opts.MissionTypeTab == 1 ? "active" : "")" @onclick="@(() => State.SelectTab(1))">Virtue <span class="text-gray-500 ml-1">(@State.CountOfType(1))</span></button>
         </div>
     };
+
+    private bool AllMultiSelected =>
+        (State.TabFiltered?.Count ?? 0) > 0 && State.MultiSelectedIds.Count >= (State.TabFiltered?.Count ?? 0);
+
+    private RenderFragment RenderListControlSet() => __builder => {
+        <div class="list-control-set ml-auto">
+            <div class="tile-group">
+                <button type="button" class="tile-group-item @(State.Opts.MultiViewMode == MultiViewMode.Off ? "active" : "")"
+                        title="Multi-select off" @onclick="@(() => State.SetMultiViewAsync(MultiViewMode.Off))">
+                    Off
+                </button>
+                <button type="button" class="tile-group-item @(State.Opts.MultiViewMode == MultiViewMode.Row ? "active" : "") @(State.Opts.SortByDropCount ? "opacity-40 cursor-not-allowed" : "")"
+                        disabled="@State.Opts.SortByDropCount" title="Row/Date Select" @onclick="@(() => State.SetMultiViewAsync(MultiViewMode.Row))">
+                    Row/Date
+                </button>
+                <button type="button" class="tile-group-item @(State.Opts.MultiViewMode == MultiViewMode.Free ? "active" : "")"
+                        title="Free Select" @onclick="@(() => State.SetMultiViewAsync(MultiViewMode.Free))">
+                    Free
+                </button>
+            </div>
+            @if (State.Opts.MultiViewMode == MultiViewMode.Free) {
+                <div class="list-control-actions">
+                    <button type="button" class="list-control-action-btn" disabled="@(State.MultiSelectedIds.Count == 0)" @onclick="ViewSelectedMultiAsync">
+                        View Selected (@State.MultiSelectedIds.Count)
+                    </button>
+                    @if (State.MultiSelectedIds.Count > 0) {
+                        <button type="button" class="list-control-action-btn" @onclick="DeselectAllMulti">Deselect All</button>
+                    }
+                    @if (!AllMultiSelected) {
+                        <button type="button" class="list-control-action-btn" @onclick="SelectAllMulti">Select All</button>
+                    }
+                </div>
+            }
+        </div>
+    };
+
+    private async Task ViewSelectedMultiAsync() {
+        var ids = new List<string>();
+        foreach (var m in State.TabFiltered ?? Array.Empty<DatabaseMission>()) {
+            if (State.MultiSelectedIds.Contains(m.MissiondId)) {
+                ids.Add(m.MissiondId);
+            }
+        }
+
+        await ViewRowAsync(ids);
+    }
+
+    private void SelectAllMulti() {
+        foreach (var m in State.TabFiltered ?? Array.Empty<DatabaseMission>()) {
+            State.MultiSelectedIds.Add(m.MissiondId);
+        }
+
+        StateHasChanged();
+    }
+
+    private void DeselectAllMulti() {
+        State.MultiSelectedIds.Clear();
+        StateHasChanged();
+    }
 
     public async Task ResortAsync(MissionSortMethod method) {
         if (_overlay is not null) {

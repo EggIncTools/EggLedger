@@ -45,6 +45,8 @@ public sealed class DropsViewState(
 
     public LifetimeData? Data { get; private set; }
 
+    public DropsWidgetStats? WidgetStats { get; private set; }
+
     public LifetimeSortMethod SortMethod => _sortMethod.Value;
 
     public bool Applying { get; private set; }
@@ -86,6 +88,7 @@ public sealed class DropsViewState(
         var id = active.ActiveAccountId;
         if (id is null) {
             Data = null;
+            WidgetStats = null;
             Changed?.Invoke();
             return;
         }
@@ -106,6 +109,7 @@ public sealed class DropsViewState(
         if (dropsByMission is null) {
             if (filterGeneration == _filterGeneration) {
                 Data = null;
+                WidgetStats = null;
             }
 
             Changed?.Invoke();
@@ -121,6 +125,7 @@ public sealed class DropsViewState(
         if (data is null) {
             if (filterGeneration == _filterGeneration) {
                 Data = null;
+                WidgetStats = null;
             }
 
             Changed?.Invoke();
@@ -138,7 +143,8 @@ public sealed class DropsViewState(
         if (filterGeneration == _filterGeneration) {
             LifetimeSorter.Sort(data, SortMethod);
             Data = data;
-            _matchedMissions = _allMissions;
+            _matchedMissions = missions;
+            WidgetStats = DropsWidgetStats.Compute(missions, data.Artifacts);
             await RecomputeMennoAsync(
                 () => generation == _loadGeneration && filterGeneration == _filterGeneration);
             if (generation != _loadGeneration) {
@@ -183,7 +189,9 @@ public sealed class DropsViewState(
             var data = LifetimeAggregator.Aggregate(filteredDrops);
             LifetimeSorter.Sort(data, SortMethod);
             Data = data;
-            _matchedMissions = missions.Where(m => matchedIds.Contains(m.MissiondId)).ToList();
+            var matched = missions.Where(m => matchedIds.Contains(m.MissiondId)).ToList();
+            _matchedMissions = matched;
+            WidgetStats = DropsWidgetStats.Compute(matched, data.Artifacts);
             await RecomputeMennoAsync(() => generation == _filterGeneration);
             if (generation != _filterGeneration) {
                 return;

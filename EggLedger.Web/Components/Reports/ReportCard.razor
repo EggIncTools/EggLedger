@@ -109,8 +109,6 @@
     </div>
 </div>
 
-<MennoLoadingModal @ref="_mennoModal"/>
-
 @code {
     [Parameter] [EditorRequired] public ReportDefinition Def { get; set; } = new();
     [Parameter] [EditorRequired] public GridCardPos Pos { get; set; }
@@ -129,7 +127,6 @@
     private bool _confirmingDelete;
     private bool _copying;
     private bool _deleting;
-    private MennoLoadingModal? _mennoModal;
     private string ColorOr => string.IsNullOrEmpty(Def.Color) ? "#6366f1" : Def.Color;
     private string NormalizeOr => string.IsNullOrEmpty(Def.NormalizeBy) ? "none" : Def.NormalizeBy;
     private string DisplayName => string.IsNullOrEmpty(Def.Name) ? "Untitled report" : Def.Name;
@@ -283,15 +280,7 @@
         }
 
         try {
-            if (!Menno.HasData && _mennoModal is not null) {
-                await _mennoModal.OpenAsync();
-                try {
-                    await Menno.EnsureLoadedAsync();
-                }
-                finally {
-                    await _mennoModal.CloseAsync();
-                }
-            } else if (!Menno.HasData) {
+            if (!Menno.HasData) {
                 await Menno.EnsureLoadedAsync();
             }
 

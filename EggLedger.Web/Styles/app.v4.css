@@ -225,6 +225,41 @@
   @apply bg-darker text-gray-400 border-gray-700 hover:bg-dark_tab_hover;
 }
 
+.list-control-set {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.list-control-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.list-control-action-btn {
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--color-gray-700);
+  border-radius: 0.375rem;
+  background-color: var(--color-darker);
+  color: var(--color-gray-400);
+  font-size: 0.7rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.list-control-action-btn:hover:not(:disabled) {
+  border-color: var(--color-gray-500);
+  color: var(--color-gray-200);
+}
+
+.list-control-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .timeline-shell {
   display: flex;
   flex-direction: column;
@@ -1619,7 +1654,8 @@ input[type=number] {
   display: grid;
   grid-template-rows: auto minmax(6rem, 1fr) minmax(6rem, 1fr) auto;
   gap: 0.5rem;
-  width: 27%;
+  width: fit-content;
+  min-width: 15rem;
   flex-shrink: 0;
   min-height: 0;
   padding-top: 0.75rem;
@@ -1723,6 +1759,17 @@ input[type=number] {
   font-size: 0.95rem;
   white-space: nowrap;
   overflow: hidden;
+}
+
+.sidebar-footer-logo {
+  border-radius: 0.2rem;
+  flex-shrink: 0;
+}
+
+.sidebar-footer-brand {
+  color: var(--color-gray-200);
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .sidebar-footer-version {
@@ -2076,55 +2123,21 @@ input[type=number] {
   }
 }
 
-.menno-loading {
-  padding: 0;
-  border: 1px solid var(--color-border);
-  border-radius: 0.5rem;
-  background-color: var(--color-dark);
-  color: var(--color-text);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  max-width: 32rem;
-}
-
-.menno-body {
-  padding: var(--space-4);
-  text-align: center;
-}
-
-.menno-title {
-  display: block;
-  font-size: 1.25rem;
-  color: var(--color-text-muted);
-  margin-bottom: var(--space-3);
-}
-
-.menno-rule {
-  border: none;
-  border-top: 1px solid var(--color-border-soft);
-  margin: var(--space-3) 0;
-}
-
-.menno-text {
-  margin: 0;
-  font-size: 1rem;
-  line-height: 1.4;
-}
-
-.menno-spinner-row {
-  display: flex;
-  flex-direction: column;
+.menno-status-pill {
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--color-gray-700);
+  border-radius: 9999px;
+  background-color: var(--color-darker);
+  color: var(--color-gray-400);
+  font-size: 0.7rem;
 }
 
-.menno-spinner {
-  width: 2.5rem;
-  height: 2.5rem;
-}
-
-.menno-phase {
-  font-size: 0.75rem;
-  color: var(--color-text-muted);
+.menno-status-spinner {
+  width: 0.9rem;
+  height: 0.9rem;
 }
 
 .section-heading {
@@ -2230,11 +2243,6 @@ input[type=number] {
   padding: 0.75rem;
 }
 
-.options-general-body {
-  padding: 0.4rem;
-  overflow-x: auto;
-}
-
 .about-group {
   border-left: 2px solid var(--about-accent);
   padding-left: 0.75rem;
@@ -2318,4 +2326,184 @@ input[type=number] {
   display: none;
   height: 0;
   width: 0;
+}
+
+.stat-widget-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.6rem;
+  margin: 0 1px 0.75rem;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.5rem;
+  background-color: var(--color-dark);
+  border: 1px solid var(--color-gray-800);
+  text-align: left;
+}
+
+.stat-card-wide {
+  grid-column: span 2;
+}
+
+.stat-card-ship {
+  align-items: center;
+  text-align: center;
+}
+
+.stat-card-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--color-gray-500);
+  text-transform: uppercase;
+}
+
+.stat-card-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-gray-200);
+  line-height: 1.2;
+}
+
+.stat-card-value-sm {
+  font-size: 0.9rem;
+}
+
+.stat-card-sub {
+  font-size: 0.65rem;
+  color: var(--color-gray-500);
+}
+
+.stat-ship-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  object-fit: contain;
+  margin: 0.15rem 0;
+}
+
+.stat-bar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  width: 100%;
+  margin-top: 0.15rem;
+}
+
+.stat-bar-row {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr 2.5rem;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.65rem;
+}
+
+.stat-bar-label {
+  color: var(--color-gray-400);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stat-bar-track {
+  height: 0.4rem;
+  border-radius: 9999px;
+  background-color: var(--color-darker);
+  overflow: hidden;
+}
+
+.stat-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 9999px;
+  background-color: var(--color-blue-500);
+}
+
+.stat-bar-fill-rarity-0 {
+  background-color: var(--color-rarity-0);
+}
+
+.stat-bar-fill-rarity-1 {
+  background-color: var(--color-rarity-1);
+}
+
+.stat-bar-fill-rarity-2 {
+  background-color: var(--color-rarity-2);
+}
+
+.stat-bar-fill-rarity-3 {
+  background-color: var(--color-rarity-3);
+}
+
+.stat-bar-count {
+  text-align: right;
+  color: var(--color-gray-500);
+}
+
+.stat-split-bar {
+  display: flex;
+  width: 100%;
+  height: 0.5rem;
+  border-radius: 9999px;
+  overflow: hidden;
+  background-color: var(--color-darker);
+  margin-top: 0.15rem;
+}
+
+.stat-split-home {
+  background-color: var(--color-farm-home);
+}
+
+.stat-split-virtue {
+  background-color: var(--color-farm-virtue);
+}
+
+.stat-split-legend {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.65rem;
+  color: var(--color-gray-400);
+  margin-top: 0.3rem;
+}
+
+.stat-legend-dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  margin-right: 0.3rem;
+}
+
+.stat-legend-home {
+  background-color: var(--color-farm-home);
+}
+
+.stat-legend-virtue {
+  background-color: var(--color-farm-virtue);
+}
+
+.stat-luck-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.stat-luck-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-gray-200);
+}
+
+.stat-luck-bugged {
+  color: var(--color-red-400);
+}
+
+.stat-luck-label {
+  font-size: 0.65rem;
+  color: var(--color-gray-500);
 }

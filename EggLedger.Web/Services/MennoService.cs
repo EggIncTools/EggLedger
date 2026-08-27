@@ -72,6 +72,10 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null)
 
     public bool HasData => _cache is { Count: > 0 };
 
+    public bool IsLoading { get; private set; }
+
+    public event Action? Changed;
+
     public Task<IReadOnlyList<ConfigurationItem>> EnsureLoadedAsync(CancellationToken cancellationToken = default) {
         if (_cache is { Count: > 0 } cached) {
             return Task.FromResult<IReadOnlyList<ConfigurationItem>>(cached);
@@ -80,7 +84,11 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null)
             if (_cache is { Count: > 0 } cachedLocked) {
                 return Task.FromResult<IReadOnlyList<ConfigurationItem>>(cachedLocked);
             }
-            _inFlight ??= LoadOnceAsync(cancellationToken);
+            if (_inFlight is null) {
+                IsLoading = true;
+                Changed?.Invoke();
+                _inFlight = LoadOnceAsync(cancellationToken);
+            }
             return _inFlight;
         }
     }
@@ -96,6 +104,8 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null)
             lock (_gate) {
                 _inFlight = null;
             }
+            IsLoading = false;
+            Changed?.Invoke();
         }
     }
 

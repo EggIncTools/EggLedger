@@ -1,6 +1,6 @@
 @using System.Globalization
 @* Year/month/day collapse tree, each mission a clickable row. Multi-view: Row/Date adds a
-   per-day "View row" button; Free Select adds a per-mission checkbox plus a Select All header. *@
+   per-day "View row" button; Free Select adds a per-mission checkbox. *@
 
 @if (Grouping is null || Grouping.Missions.Count == 0) {
     <div class="filter-form text-lg">
@@ -17,18 +17,6 @@
                         @(AllExpanded ? "Collapse All" : "Expand All")
                     </button>
                 </span>
-                @if (MultiViewMode == MultiViewMode.Free) {
-                    <button type="button" class="text-base toggle-link" disabled="@(SelectedIds.Count == 0)" @onclick="ViewSelected">
-                        View Selected (@SelectedIds.Count)
-                    </button>
-                    @if (SelectedIds.Count > 0) {
-                        <button type="button" class="text-base toggle-link" @onclick="DeselectAll">Deselect All</button>
-                    }
-
-                    @if (!AllSelected) {
-                        <button type="button" class="text-base toggle-link" @onclick="SelectAll">Select All</button>
-                    }
-                }
             </div>
             <hr class="mt-0_5rem mb-0_5rem w-full"/>
         </div>
@@ -166,23 +154,10 @@
         await OnViewMission.InvokeAsync(missionId);
     }
 
-    private bool AllSelected => TabFiltered.Count > 0 && SelectedIds.Count >= TabFiltered.Count;
-
     private async Task ViewRow(int yi, int mi, int di) {
         var ids = new List<string>();
         foreach (var m in Grouping!.Missions[yi][mi][di]) {
             ids.Add(m.MissiondId);
-        }
-
-        await OnViewRow.InvokeAsync(ids);
-    }
-
-    private async Task ViewSelected() {
-        var ids = new List<string>();
-        foreach (var m in TabFiltered) {
-            if (SelectedIds.Contains(m.MissiondId)) {
-                ids.Add(m.MissiondId);
-            }
         }
 
         await OnViewRow.InvokeAsync(ids);
@@ -233,19 +208,6 @@
         }
 
         return true;
-    }
-
-    private async Task SelectAll() {
-        foreach (var m in TabFiltered) {
-            SelectedIds.Add(m.MissiondId);
-        }
-
-        await OnSelectionChanged.InvokeAsync();
-    }
-
-    private async Task DeselectAll() {
-        SelectedIds.Clear();
-        await OnSelectionChanged.InvokeAsync();
     }
 
     private bool DayVisible(int yi, int mi, int di) {

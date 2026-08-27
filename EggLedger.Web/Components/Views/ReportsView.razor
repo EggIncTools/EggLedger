@@ -1,6 +1,7 @@
 @implements IDisposable
 @implements IReportsViewActions
 @inject ReportsViewState State
+@inject MennoService Menno
 
 @if (State.AccountId is null) {
     <div class="flex-1 flex items-center justify-center">
@@ -54,6 +55,12 @@
             </button>
         </div>
         <div class="flex items-center gap-1.5 flex-wrap">
+            @if (Menno.IsLoading) {
+                <span class="menno-status-pill" title="Downloading Menno's community ship data">
+                    <img class="menno-status-spinner" src="@ContentPaths.Asset("images/loading.gif")" alt=""/>
+                    Syncing community data...
+                </span>
+            }
             <button type="button" class="ledger-btn apply-filter-button !mt-0 !w-auto" @onclick="State.RequestNewReportAsync">+ New Report</button>
             <button type="button" class="ledger-btn apply-filter-button !mt-0 !w-auto" @onclick="State.RequestExportAllAsync">Export All</button>
             <button type="button" class="ledger-btn apply-filter-button !mt-0 !w-auto" @onclick="State.RequestImportAsync">Import</button>
@@ -73,6 +80,7 @@
 
     protected override async Task OnInitializedAsync() {
         State.Changed += OnStateChanged;
+        Menno.Changed += OnStateChanged;
         State.Actions = this;
         await State.EnsureInitializedAsync(InvokeAsync);
     }
@@ -136,6 +144,7 @@
 
     public void Dispose() {
         State.Changed -= OnStateChanged;
+        Menno.Changed -= OnStateChanged;
         if (ReferenceEquals(State.Actions, this)) {
             State.Actions = null;
         }

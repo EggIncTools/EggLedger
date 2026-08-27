@@ -24,34 +24,29 @@
                 <button type="button" class="account-select-btn" disabled="@(!IsLoggedIn)" @onclick="OpenPopover">
                     <span class="min-w-0 flex flex-col items-start leading-tight gap-0.5">
                         @if (_active is not null) {
-                            <span class="account-option-meta text-gray-400 text-xs">
-                                <MaskedEid Value="@_active.Id"/>
-                            </span>
-                            <span class="flex items-center gap-1.5 max-w-full">
+                            <span class="flex items-center flex-wrap gap-1.5 max-w-full">
                                 <span class="font-medium truncate" style="color: #@_active.AccountColor">@_active.Nickname</span>
                                 <span class="text-gray-500 text-xs shrink-0">@_active.EBString</span>
-                            </span>
-                            var activeInfo = InfoFor(_active.Id);
-                            @if (activeInfo is { SeString: not "" }) {
-                                <span class="account-option-meta flex items-center gap-1.5 text-xs">
-                                    <span style="color:#a855f7">@activeInfo.SeString SE</span>
-                                    <span style="color:#eab308">@activeInfo.PeCount PE</span>
+                                @{ var activeInfo = InfoFor(_active.Id); }
+                                @if (activeInfo is { SeString: not "" }) {
+                                    <span class="text-xs" style="color:#a855f7">@activeInfo.SeString SE</span>
+                                    <span class="text-xs" style="color:#eab308">@activeInfo.PeCount PE</span>
                                     @if (activeInfo.TeCount > 0) {
-                                        <span style="color:#c831ff">@activeInfo.TeCount TE</span>
+                                        <span class="text-xs" style="color:#c831ff">@activeInfo.TeCount TE</span>
                                     }
-                                </span>
-                            }
-
-                            var activeStats = StatsFor(_active.Id);
-                            @if (activeStats is not null) {
-                                var since = LedgerFormatting.FormatTimeSince(activeStats.LastMissionReturnDT, NowUnix);
-                                <span class="account-option-meta flex items-center gap-1.5 text-xs text-gray-500">
+                                }
+                            </span>
+                            <span class="account-option-meta flex items-center flex-wrap gap-1.5 text-xs text-gray-500 max-w-full">
+                                <MaskedEid Value="@_active.Id"/>
+                                @{ var activeStats = StatsFor(_active.Id); }
+                                @if (activeStats is not null) {
+                                    var since = LedgerFormatting.FormatTimeSince(activeStats.LastMissionReturnDT, NowUnix);
                                     <span>@activeStats.MissionCount missions</span>
                                     @if (since != "") {
                                         <span class="text-gray-600">(latest @since)</span>
                                     }
-                                </span>
-                            }
+                                }
+                            </span>
                         } else if (!IsLoggedIn) {
                             <span class="text-gray-500 italic text-xs">Login to add an account</span>
                         } else {
@@ -123,33 +118,31 @@
                         }
                     </span>
                     <span class="flex-1 min-w-0 flex flex-col gap-0.5">
-                        <span class="text-gray-400">
-                            <MaskedEid Value="@acct.Id"/>
-                        </span>
-                        <span class="flex items-center gap-1.5">
+                        <span class="flex items-center flex-wrap gap-1.5">
                             <span class="font-medium" style="color: #@acct.AccountColor">@acct.Nickname</span>
                             <span class="text-gray-500">@acct.EBString</span>
-                        </span>
-                        @{ var info = InfoFor(acct.Id); }
-                        @if (info is { SeString: not "" }) {
-                            <span class="flex items-center gap-1.5 text-gray-500">
+                            @{ var info = InfoFor(acct.Id); }
+                            @if (info is { SeString: not "" }) {
                                 <span style="color:#a855f7">@info.SeString SE</span>
                                 <span style="color:#eab308">@info.PeCount PE</span>
                                 @if (info.TeCount > 0) {
                                     <span style="color:#c831ff">@info.TeCount TE</span>
                                 }
+                            }
+                        </span>
+                        <span class="flex items-center flex-wrap gap-1.5 text-gray-500">
+                            <span class="text-gray-400">
+                                <MaskedEid Value="@acct.Id"/>
                             </span>
-                        }
-                        @{ var stats = StatsFor(acct.Id); }
-                        @if (stats is not null) {
-                            <span class="flex items-center gap-1.5 text-gray-600">
+                            @{ var stats = StatsFor(acct.Id); }
+                            @if (stats is not null) {
+                                var since = LedgerFormatting.FormatTimeSince(stats.LastMissionReturnDT, NowUnix);
                                 <span>@stats.MissionCount missions</span>
-                                @{ var since = LedgerFormatting.FormatTimeSince(stats.LastMissionReturnDT, NowUnix); }
                                 @if (since != "") {
-                                    <span>(latest @since)</span>
+                                    <span class="text-gray-600">(latest @since)</span>
                                 }
-                            </span>
-                        }
+                            }
+                        </span>
                     </span>
                 </li>
             }
