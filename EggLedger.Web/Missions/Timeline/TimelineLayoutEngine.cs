@@ -4,7 +4,7 @@ using EggLedger.Web.State;
 namespace EggLedger.Web.Missions.Timeline;
 
 public static class TimelineLayoutEngine {
-    private const double LaneGapFraction = 0.004;
+    private const double LaneGapFraction = 0.05;
 
     public static IReadOnlyList<TimelineBar> Layout(
         IReadOnlyList<DatabaseMission> missions,
@@ -23,8 +23,8 @@ public static class TimelineLayoutEngine {
         var result = new List<TimelineBar>(intersecting.Count);
 
         foreach (var m in intersecting) {
-            var (left, width) = ClipToWindow(m.LaunchDT, m.ReturnDT, windowStart, windowSpan, minWidthPercent / 100);
-            int lane = AssignLane(laneRights, left, left + width);
+            var (left, width, rawRight) = ClipToWindow(m.LaunchDT, m.ReturnDT, windowStart, windowSpan, minWidthPercent / 100);
+            int lane = AssignLane(laneRights, left, rawRight);
             bool isActive = nowUnix < m.ReturnDT;
             double fill = FillFraction(m.LaunchDT, m.ReturnDT, windowStart, windowEnd, nowUnix, isActive);
             long progress = isActive ? Math.Min(nowUnix, m.ReturnDT) : m.ReturnDT;
@@ -73,21 +73,22 @@ public static class TimelineLayoutEngine {
         return laneRights.Count - 1;
     }
 
-    private static (double Left, double Width) ClipToWindow(
+    private static (double Left, double Width, double RawRight) ClipToWindow(
         long launchDt, long returnDt, long windowStart, double windowSpan, double minWidthFraction) {
         if (windowSpan <= 0) {
-            return (0, 1);
+            return (0, 1, 1);
         }
         double left = Math.Max(0, (launchDt - windowStart) / windowSpan);
         double right = Math.Min(1, (returnDt - windowStart) / windowSpan);
         double width = Math.Max(0, right - left);
+        double rawRight = left + width;
         if (minWidthFraction > 0 && width < minWidthFraction) {
             width = Math.Min(minWidthFraction, 1);
             if (left + width > 1) {
                 left = 1 - width;
             }
         }
-        return (left, width);
+        return (left, width, rawRight);
     }
 
     private static double FillFraction(long launchDt, long returnDt, long windowStart, long windowEnd, long nowUnix, bool isActive) {
