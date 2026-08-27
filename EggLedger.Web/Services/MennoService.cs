@@ -205,8 +205,10 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null)
         string pctMode = def.NormalizeBy;
         bool isPct = pctMode is "row_pct" or "col_pct" or "global_pct";
 
+        var filteredItems = FilterByReportConditions(def, items);
+
         var (familyDrops, estimatedMissions) = AccumulateDrops(
-            items, rowMatcher, colMatcher, rawRowLabels, rawColLabels, nR, nC, isPct, def, familySet);
+            filteredItems, rowMatcher, colMatcher, rawRowLabels, rawColLabels, nR, nC, isPct, def, familySet);
 
         var (shipAxis, durAxis) = ResolveAxisRoles(def);
 
@@ -363,6 +365,77 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null)
         }
 
         return (matrixValues, airtimeMatrixValues);
+    }
+
+    internal static IReadOnlyList<ConfigurationItem> FilterByReportConditions(
+        ReportDefinition def, IReadOnlyList<ConfigurationItem> items) {
+        if (def.Filters.And.Count == 0 && def.Filters.Or.Count == 0) {
+            return items;
+        }
+        var result = new List<ConfigurationItem>(items.Count);
+        foreach (var item in items) {
+            if (PassesReportFilters(def, item)) {
+                result.Add(item);
+            }
+        }
+        return result;
+    }
+
+    private static bool PassesReportFilters(ReportDefinition def, ConfigurationItem item) {
+        foreach (var c in def.Filters.And) {
+            if (!EvalCondition(c, item)) {
+                return false;
+            }
+        }
+        foreach (var group in def.Filters.Or) {
+            if (group.Count == 0) {
+                continue;
+            }
+            var any = false;
+            foreach (var c in group) {
+                if (EvalCondition(c, item)) {
+                    any = true;
+                    break;
+                }
+            }
+            if (!any) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static bool EvalCondition(FilterCondition c, ConfigurationItem item) {
+        var sc = item.ShipConfiguration;
+        var ac = item.ArtifactConfiguration;
+        return c.TopLevel switch {
+            "ship" => sc?.ShipType is { } st && CompareNumeric(c, st.Id),
+            "duration" => sc?.ShipDurationType is { } dt && CompareNumeric(c, dt.Id),
+            "level" => sc is not null && CompareNumeric(c, sc.Level),
+            "target" => sc?.TargetArtifact is { } ta && CompareNumeric(c, ta.Id),
+            "artifact_rarity" => ac?.ArtifactRarity is { } r && CompareNumeric(c, r.Id),
+            "artifact_tier" => ac is not null && CompareNumeric(c, ac.ArtifactLevel),
+            "artifact_name" => ac?.ArtifactType is { } at && CompareNumeric(c, at.Id),
+            _ => true,
+        };
+    }
+
+    private static bool CompareNumeric(FilterCondition c, long actual) {
+        if (c.Op is not ("=" or "!=" or ">" or "<" or ">=" or "<=")) {
+            return true;
+        }
+        if (!TryInt(c.Val, out var target)) {
+            return true;
+        }
+        return c.Op switch {
+            "=" => actual == target,
+            "!=" => actual != target,
+            ">" => actual > target,
+            "<" => actual < target,
+            ">=" => actual >= target,
+            "<=" => actual <= target,
+            _ => true,
+        };
     }
 
     private delegate bool MennoMatcher(ConfigurationItem item, string rawVal);

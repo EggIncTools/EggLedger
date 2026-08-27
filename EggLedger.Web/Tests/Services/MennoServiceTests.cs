@@ -227,4 +227,48 @@ public sealed class MennoServiceTests {
         Assert.Null(MennoService.ExecuteComparison(
             def, Array.Empty<ConfigurationItem>(), new[] { "9" }, new[] { "0" }));
     }
+
+    [Fact]
+    public async Task ExecuteComparison_FilterOnNonAxisField_ExcludesNonMatchingItems() {
+        var service = Make(FixtureBytes("menno-sample.json"), out _);
+        var items = await service.RefreshAsync();
+
+        var baseline = MennoService.ExecuteComparison(
+            ShipDurationDef(), items, new[] { "9" }, new[] { "0" });
+        Assert.NotEqual(0.0, baseline!.MatrixValues[0]);
+
+        var def = ShipDurationDef();
+        def.Filters = new ReportFilters {
+            And = [new FilterCondition { TopLevel = "target", Op = "=", Val = "99999" }],
+        };
+
+        var result = MennoService.ExecuteComparison(
+            def, items, new[] { "9" }, new[] { "0" });
+
+        Assert.NotNull(result);
+        Assert.Equal(0.0, result!.MatrixValues[0], 9);
+    }
+
+    [Fact]
+    public async Task ExecuteComparison_FilterOnScopeOutsideGroupByAxes_RestrictsMatch() {
+        var service = Make(FixtureBytes("menno-sample.json"), out _);
+        var items = await service.RefreshAsync();
+
+        var def = new ReportDefinition {
+            MennoEnabled = true,
+            Subject = "artifacts",
+            GroupBy = "artifact_name",
+            SecondaryGroupBy = "rarity",
+            Weight = "gold",
+            Filters = new ReportFilters {
+                And = [new FilterCondition { TopLevel = "ship", Op = "=", Val = "10" }],
+            },
+        };
+
+        var result = MennoService.ExecuteComparison(
+            def, items, new[] { "1" }, new[] { "0" });
+
+        Assert.NotNull(result);
+        Assert.Equal(0.0, result!.MatrixValues[0], 9);
+    }
 }
