@@ -2007,6 +2007,7 @@ input[type=number] {
 @media (min-width: 768px) {
   .ledger-sidebar.is-rail {
     width: 2.75rem;
+    min-width: 2.75rem;
     grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr) 0;
   }
 
