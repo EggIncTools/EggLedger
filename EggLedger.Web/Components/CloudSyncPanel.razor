@@ -60,13 +60,13 @@
 
         <div class="mt-0_5rem flex items-center gap-2 flex-wrap">
             @if (!_connected) {
-                <button type="button" class="ledger-btn apply-filter-button !mt-0 !mr-0 !ml-0 disabled:opacity-60"
+                <button type="button" class="ledger-btn apply-filter-button !w-auto !mt-0 !mr-0 !ml-0 disabled:opacity-60"
                         disabled="@_authWaiting" @onclick="@(() => Platform.IsDesktop ? ConnectAsync() : ReconnectAsync())">
                     @(_authWaiting ? "Waiting for sign-in..." : "Connect account")
                 </button>
             } else {
                 <button type="button"
-                        class="ledger-btn apply-filter-button !mt-0 !mr-0 !ml-0 !bg-blue-700 !text-white hover:!bg-blue-600 !border-blue-500 flex items-center gap-1.5"
+                        class="ledger-btn apply-filter-button !w-auto !mt-0 !mr-0 !ml-0 !bg-blue-700 !text-white hover:!bg-blue-600 !border-blue-500 flex items-center gap-1.5"
                         disabled="@_syncInProgress" @onclick="SyncNowAsync">
                     @if (!_syncInProgress) {
                         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -76,7 +76,7 @@
                     @(_syncInProgress ? "Syncing..." : "Sync")
                 </button>
                 <button type="button"
-                        class="ledger-btn apply-filter-button !mt-0 !mr-0 !ml-0 !bg-gray-700 !text-gray-200 hover:!bg-gray-600 !border-gray-500 flex items-center gap-1.5"
+                        class="ledger-btn apply-filter-button !w-auto !mt-0 !mr-0 !ml-0 !bg-gray-700 !text-gray-200 hover:!bg-gray-600 !border-gray-500 flex items-center gap-1.5"
                         disabled="@_restoreInProgress" @onclick="RestoreNowAsync">
                     @if (!_restoreInProgress) {
                         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -88,24 +88,24 @@
                 @if (_confirmingDelete) {
                     <span class="text-xs text-red-400">Delete all remote data?</span>
                     <button type="button"
-                            class="ledger-btn apply-filter-button !mt-0 !mr-0 !ml-0 !text-gray-300 !bg-gray-700 hover:!bg-gray-600 !border-gray-500"
+                            class="ledger-btn apply-filter-button !w-auto !mt-0 !mr-0 !ml-0 !text-gray-300 !bg-gray-700 hover:!bg-gray-600 !border-gray-500"
                             @onclick="() => _confirmingDelete = false">
                         Cancel
                     </button>
                     <button type="button"
-                            class="ledger-btn apply-filter-button !mt-0 !mr-0 !ml-0 !bg-red-900 !text-red-200 hover:!bg-red-800 !border-red-700"
+                            class="ledger-btn apply-filter-button !w-auto !mt-0 !mr-0 !ml-0 !bg-red-900 !text-red-200 hover:!bg-red-800 !border-red-700"
                             disabled="@_deleteInProgress" @onclick="DeleteRemoteAsync">
                         @(_deleteInProgress ? "Deleting..." : "Yes, delete")
                     </button>
                 } else {
                     <button type="button"
-                            class="ledger-btn apply-filter-button !mt-0 !mr-0 !ml-0 !bg-red-900 !text-red-200 hover:!bg-red-800 !border-red-700"
+                            class="ledger-btn apply-filter-button !w-auto !mt-0 !mr-0 !ml-0 !bg-red-900 !text-red-200 hover:!bg-red-800 !border-red-700"
                             @onclick="DisconnectAsync">
                         Disconnect
                     </button>
                     @if (Platform.IsDesktop) {
                         <button type="button"
-                                class="ledger-btn apply-filter-button !mt-0 !mr-0 !ml-0 !bg-red-900/60 !text-red-300 hover:!bg-red-900 !border-red-800"
+                                class="ledger-btn apply-filter-button !w-auto !mt-0 !mr-0 !ml-0 !bg-red-900/60 !text-red-300 hover:!bg-red-900 !border-red-800"
                                 @onclick="() => _confirmingDelete = true">
                             Delete Remote Data
                         </button>

@@ -81,14 +81,69 @@
                 </table>
             </ProvidersTemplate>
         </ProfilePanel>
+
+        <hr class="mt-0_5rem mb-0_5rem border-gray-700"/>
+        <span class="mr-0_5rem font-bold text-sm text-gray-400 ledger-underline">Preferences</span>
+        <div class="mt-0_5rem flex items-end gap-2 flex-wrap">
+            <label class="flex flex-col gap-1 text-xs text-gray-500">
+                Timezone
+                <input type="text" class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500 w-44"
+                       placeholder="e.g. America/New_York" @bind="_timezone" @bind:event="oninput"/>
+            </label>
+            <label class="flex flex-col gap-1 text-xs text-gray-500">
+                Language
+                <input type="text" class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500 w-24"
+                       placeholder="e.g. en" @bind="_language" @bind:event="oninput"/>
+            </label>
+            <button type="button" class="ledger-btn apply-filter-button !w-auto !mt-0 !mr-0 !ml-0" disabled="@_prefsSaving" @onclick="SavePreferencesAsync">
+                @(_prefsSaving ? "Saving..." : "Save")
+            </button>
+            @if (_prefsSaved) {
+                <span class="text-xs text-green-400">Saved.</span>
+            }
+            @if (_prefsError is not null) {
+                <span class="text-xs text-red-400">@_prefsError</span>
+            }
+        </div>
     </div>
 }
 
 @code {
     private string _sessionToken = "";
+    private string _timezone = "";
+    private string _language = "";
+    private bool _prefsSaving;
+    private bool _prefsSaved;
+    private string? _prefsError;
 
-    protected override void OnInitialized() {
+    protected override async Task OnInitializedAsync() {
         _sessionToken = HttpContextAccessor.HttpContext?.Request.Cookies[EggIdentitySession.CookieName] ?? "";
+        if (!string.IsNullOrEmpty(_sessionToken)) {
+            var profile = await Identity.GetProfileAsync(_sessionToken, CancellationToken.None);
+            _timezone = profile?.Timezone ?? "";
+            _language = profile?.Language ?? "";
+        }
+    }
+
+    private async Task SavePreferencesAsync() {
+        _prefsSaving = true;
+        _prefsSaved = false;
+        _prefsError = null;
+        try {
+            var tz = string.IsNullOrWhiteSpace(_timezone) ? null : _timezone.Trim();
+            var lang = string.IsNullOrWhiteSpace(_language) ? null : _language.Trim();
+            var ok = await Identity.SetPreferencesAsync(_sessionToken, tz, lang, null, CancellationToken.None);
+            _prefsSaved = ok;
+            if (!ok) {
+                _prefsError = "Could not save preferences.";
+            }
+        }
+        catch (Exception ex) {
+            _prefsError = ex.Message;
+        }
+        finally {
+            _prefsSaving = false;
+        }
     }
 
     private static string Cap(string s) {

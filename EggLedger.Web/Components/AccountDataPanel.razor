@@ -49,16 +49,16 @@
                         }
                     </div>
                     <div class="flex items-center gap-2 mt-2 flex-wrap">
-                        <button type="button" class="ledger-btn apply-filter-button !mt-0 !mr-0 !ml-0" disabled="@_busy"
+                        <button type="button" class="ledger-btn apply-filter-button !w-auto !mt-0 !mr-0 !ml-0" disabled="@_busy"
                                 @onclick="() => ExportCsv(acct.Id, acct.Nickname)">
                             Export CSV
                         </button>
-                        <button type="button" class="ledger-btn apply-filter-button !mt-0 !mr-0 !ml-0" disabled="@_busy"
+                        <button type="button" class="ledger-btn apply-filter-button !w-auto !mt-0 !mr-0 !ml-0" disabled="@_busy"
                                 @onclick="() => ExportXlsx(acct.Id, acct.Nickname)">
                             Export XLSX
                         </button>
                         <button type="button"
-                                class="ledger-btn apply-filter-button !mt-0 !mr-0 !ml-0 !bg-gray-700 !text-gray-200 hover:!bg-gray-600 !border-gray-500"
+                                class="ledger-btn apply-filter-button !w-auto !mt-0 !mr-0 !ml-0 !bg-gray-700 !text-gray-200 hover:!bg-gray-600 !border-gray-500"
                                 disabled="@_busy" @onclick="() => Delete(acct.Id)"
                                 data-tt="Removes this account from your account list only. Its cached mission data stays on this device.">
                             Forget account
@@ -66,18 +66,18 @@
                         @if (_confirmingDeleteId == acct.Id) {
                             <span class="text-xs text-red-400">Delete all data for this account?</span>
                             <button type="button"
-                                    class="ledger-btn apply-filter-button !mt-0 !mr-0 !ml-0 !text-gray-300 !bg-gray-700 hover:!bg-gray-600 !border-gray-500"
+                                    class="ledger-btn apply-filter-button !w-auto !mt-0 !mr-0 !ml-0 !text-gray-300 !bg-gray-700 hover:!bg-gray-600 !border-gray-500"
                                     @onclick="() => _confirmingDeleteId = null">
                                 Cancel
                             </button>
                             <button type="button"
-                                    class="ledger-btn apply-filter-button !mt-0 !mr-0 !ml-0 !bg-red-900 !text-red-200 hover:!bg-red-800 !border-red-700"
+                                    class="ledger-btn apply-filter-button !w-auto !mt-0 !mr-0 !ml-0 !bg-red-900 !text-red-200 hover:!bg-red-800 !border-red-700"
                                     disabled="@(_busy || Fetching?.Id == acct.Id)" @onclick="() => DeleteAllDataAsync(acct.Id)">
                                 @(_busy ? "Deleting..." : "Yes, delete")
                             </button>
                         } else {
                             <button type="button"
-                                    class="ledger-btn apply-filter-button !mt-0 !mr-0 !ml-0 !bg-red-900/60 !text-red-300 hover:!bg-red-900 !border-red-800"
+                                    class="ledger-btn apply-filter-button !w-auto !mt-0 !mr-0 !ml-0 !bg-red-900/60 !text-red-300 hover:!bg-red-900 !border-red-800"
                                     disabled="@(_busy || Fetching?.Id == acct.Id)" @onclick="() => _confirmingDeleteId = acct.Id"
                                     data-tt="@(Fetching?.Id == acct.Id ? "Can't delete while a fetch is in progress for this account." : "Permanently deletes this account's cached mission data from this device, and from cloud sync on your next sync.")">
                                 Delete my data
