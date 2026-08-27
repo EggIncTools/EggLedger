@@ -1746,19 +1746,27 @@ input[type=number] {
 
 .sidebar-footer-row {
   display: flex;
-  align-items: center;
-  gap: 0.25rem;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
   width: 100%;
 }
 
 .sidebar-footer-info {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 0.4rem;
   min-width: 0;
   font-size: 0.95rem;
   white-space: nowrap;
   overflow: hidden;
+}
+
+.sidebar-footer-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  width: 100%;
 }
 
 .sidebar-footer-logo {
