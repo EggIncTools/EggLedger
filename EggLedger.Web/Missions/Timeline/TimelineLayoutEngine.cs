@@ -4,7 +4,7 @@ using EggLedger.Web.State;
 namespace EggLedger.Web.Missions.Timeline;
 
 public static class TimelineLayoutEngine {
-    private const double LaneGapFraction = 0.05;
+    private const double LaneGapFraction = 0.0001;
 
     public static IReadOnlyList<TimelineBar> Layout(
         IReadOnlyList<DatabaseMission> missions,

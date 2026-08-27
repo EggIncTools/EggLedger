@@ -509,7 +509,7 @@
   top: calc(50% - var(--bar-h, 2.25rem) / 2);
   height: var(--bar-h, 2.25rem);
   left: calc(var(--bar-start) * 1%);
-  width: calc(var(--bar-size) * 1%);
+  width: calc(var(--bar-size) * 1% - 4px);
   cursor: pointer;
 }
 

@@ -128,7 +128,6 @@ public sealed class FetchService {
 
     private async Task StashInFlightMissionsAsync(string playerId, EggIncFirstContactResponse fc) {
         var missions = fc.GetInProgressMissions()
-            .Where(m => m.status == MissionInfo.Status.Exploring)
             .Select(_packer.CompileInFlightMission)
             .ToList();
 

@@ -48,7 +48,8 @@ public sealed class FetchOrchestrator : IDisposable {
                                or AppState.Success or AppState.Failed or AppState.Interrupted;
 
     public int Percent =>
-        Progress is { Total: > 0 } p ? (int)Math.Round((double)p.Finished / p.Total * 100) : 0;
+        TerminalState == AppState.Success ? 100
+        : Progress is { Total: > 0 } p ? (int)Math.Round((double)p.Finished / p.Total * 100) : 0;
 
     public event Action? Changed;
     public event Action<string>? FetchSucceeded;
@@ -143,6 +144,7 @@ public sealed class FetchOrchestrator : IDisposable {
         }
 
         TerminalState = result;
+        HasFetchContent = true;
         _appState.PipelineState = TerminalState;
         if (!LogExpanded) {
             ScheduleAutoHide();
