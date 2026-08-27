@@ -56,7 +56,7 @@ public sealed class TimelineLayoutEngineTests {
     public void Layout_NonOverlappingMissionsShareOneLane() {
         var missions = new[] {
             M("first", WindowStart.AddHours(1), WindowStart.AddHours(2)),
-            M("second", WindowStart.AddHours(3), WindowStart.AddHours(4)),
+            M("second", WindowStart.AddHours(5), WindowStart.AddHours(6)),
         };
 
         var bars = TimelineLayoutEngine.Layout(missions, WindowStart, WindowEnd, WindowStart);
@@ -83,7 +83,7 @@ public sealed class TimelineLayoutEngineTests {
         var missions = new[] {
             M("a", WindowStart.AddHours(1), WindowStart.AddHours(2)),
             M("b", WindowStart.AddHours(1), WindowStart.AddHours(2)),
-            M("c", WindowStart.AddHours(3), WindowStart.AddHours(4)),
+            M("c", WindowStart.AddHours(6), WindowStart.AddHours(7)),
         };
 
         var bars = TimelineLayoutEngine.Layout(missions, WindowStart, WindowEnd, WindowStart);
