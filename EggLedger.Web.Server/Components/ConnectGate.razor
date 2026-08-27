@@ -7,37 +7,40 @@
 @inject NavigationManager Nav
 @inject IdentityApiClient Identity
 @inject IJSRuntime JS
+@using EggLedger.Web.State
 @implements IAsyncDisposable
 <div class="flex flex-col items-center justify-center gap-4 py-16 text-center">
-    <h1 class="text-xl font-semibold text-gray-200">Connect your account</h1>
-    <p class="max-w-md text-sm text-gray-400">
-        EggLedger stores your mission history on the server, scoped to your account.
-        Log in to get started. Your data is private to you.
-    </p>
-    <div class="flex flex-row items-center justify-center gap-3">
-        @if (!string.IsNullOrEmpty(Cfg.IdentityWidgetUrl)) {
-            <div class="auth-source-anchor">
-                <button type="button" class="discord-btn disabled:opacity-60" disabled="@_loading" @onclick="Toggle" @ref="_button">
-                    @(_loading ? "Loading..." : "Login")
-                </button>
-                @if (_sources is not null) {
-                    <div class="auth-source-menu" @ref="_menu">
-                        @foreach (var source in _sources) {
-                            <a class="auth-source-btn" href="@Abs(source.Url)">
-                                @if (!string.IsNullOrEmpty(source.IconUrl)) {
-                                    <img class="auth-source-logo" src="@Abs(source.IconUrl)" alt=""/>
-                                }
-                                <span>@source.Name</span>
-                            </a>
-                        }
-                    </div>
-                } else if (_error is not null) {
-                    <div class="auth-source-menu" @ref="_menu">
-                        <p class="text-red-500 text-sm" style="margin:0;padding:0.3rem 0.5rem;">@_error</p>
-                    </div>
-                }
-            </div>
-        }
+    <div class="connect-gate-card">
+        <img class="connect-gate-logo" src="@ContentPaths.Asset("images/icon-512.png")" alt="EggLedger" width="48" height="48"/>
+        <h1 class="text-xl font-semibold text-gray-200">Log in to EggLedger</h1>
+        <p class="max-w-md text-sm text-gray-400">
+            Your mission history is stored server-side under your account, private to you.
+        </p>
+        <div class="flex flex-row items-center justify-center gap-3">
+            @if (!string.IsNullOrEmpty(Cfg.IdentityWidgetUrl)) {
+                <div class="auth-source-anchor">
+                    <button type="button" class="discord-btn disabled:opacity-60" disabled="@_loading" @onclick="Toggle" @ref="_button">
+                        @(_loading ? "Loading..." : "Login")
+                    </button>
+                    @if (_sources is not null) {
+                        <div class="auth-source-menu" @ref="_menu">
+                            @foreach (var source in _sources) {
+                                <a class="auth-source-btn" href="@Abs(source.Url)">
+                                    @if (!string.IsNullOrEmpty(source.IconUrl)) {
+                                        <img class="auth-source-logo" src="@Abs(source.IconUrl)" alt=""/>
+                                    }
+                                    <span>@source.Name</span>
+                                </a>
+                            }
+                        </div>
+                    } else if (_error is not null) {
+                        <div class="auth-source-menu" @ref="_menu">
+                            <p class="text-red-500 text-sm" style="margin:0;padding:0.3rem 0.5rem;">@_error</p>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
     </div>
 </div>
 

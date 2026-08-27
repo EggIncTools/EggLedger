@@ -4,7 +4,7 @@
    (insertBefore/parentNode-null crashes). Backdrop click closes. Drops show a rarity ring. *@
 
 <input type="text" readonly placeholder="@Placeholder"
-       class="filter-select w-auto border-gray-600 @(Selected?.StyleClass ?? "text-gray-400") cursor-pointer @(Incomplete ? "field-incomplete" : "")"
+       class="filter-select border-gray-600 @(Selected?.StyleClass ?? "text-gray-400") cursor-pointer @(Incomplete ? "field-incomplete" : "")"
        value="@(Selected?.Text ?? "")"
        @onclick="Open"/>
 
@@ -153,7 +153,7 @@
                 data-tt="@TooltipText(opt)" data-tt-classes="@TooltipClasses(opt)"
                 @onclick="() => Choose(opt)">
             @if (!string.IsNullOrEmpty(opt.ImagePath)) {
-                <img class="h-full w-full @RingClass(opt)" loading="lazy" decoding="async"
+                <img class="popup-opt-chip-icon @RingClass(opt)" loading="lazy" decoding="async"
                      alt="@opt.Text" src="@ImageSrc(opt)"/>
             }
             @if (!string.IsNullOrEmpty(opt.Badge)) {

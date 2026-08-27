@@ -35,17 +35,24 @@
 
         await Loader.EnsureLoadedAsync();
 
-        _ = DropsState.EnsureInitializedAsync(InvokeAsync);
-        _ = ReportsState.EnsureInitializedAsync(InvokeAsync);
-
         var settings = await Settings.GetAllSettingsAsync();
         if (settings.TryGetValue(SettingsModel.KeyScreenshotSafety, out var v))
             ScreenshotSafety.Enabled = v == "true";
     }
 
+    private static async Task PreloadAsync(Func<Task> ensureInitialized) {
+        try {
+            await ensureInitialized();
+        }
+        catch {
+        }
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender) {
         if (firstRender) {
             await TzProvider.EnsureUpToDateAsync();
+            _ = PreloadAsync(() => DropsState.EnsureInitializedAsync(InvokeAsync));
+            _ = PreloadAsync(() => ReportsState.EnsureInitializedAsync(InvokeAsync));
         }
     }
 

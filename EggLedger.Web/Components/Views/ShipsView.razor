@@ -4,7 +4,7 @@
 
 @if (State.AccountId is null) {
     <p class="text-gray-500 italic mt-0_75rem">Select an account in the sidebar to view its missions.</p>
-} else if (State.Loading) {
+} else if (State.Loading && State.AllMissions is null) {
     <p class="text-gray-500 italic mt-0_75rem">Loading...</p>
 } else if (State.AllMissions is null || State.AllMissions.Count == 0) {
     <NoDataFallback/>

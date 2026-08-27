@@ -39,6 +39,19 @@
                     }
                 </div>
             }
+            @if (State.ShowNewGroup) {
+                <input class="text-sm px-2 py-1 rounded bg-darker border border-gray-600 text-gray-200 focus:outline-none focus:border-blue-500 w-28"
+                       placeholder="Group name" @bind="State.NewGroupName" @bind:event="oninput"
+                       @onkeydown="GroupKeyDown" autofocus/>
+                <button type="button" class="text-xs px-2 py-1 rounded bg-darkerer text-gray-300 hover:text-gray-100" @onclick="State.CreateGroupAsync">Add</button>
+                <button type="button" class="text-xs px-2 py-1 rounded bg-darkerer text-gray-400 hover:text-gray-200" @onclick="State.CancelNewGroup">Cancel</button>
+            } else {
+                <button type="button" class="text-sm px-3 py-1.5 rounded-full bg-darkerer text-gray-400 hover:text-gray-200" @onclick="State.BeginNewGroup">+ Group</button>
+            }
+            <button type="button" class="text-sm px-3 py-1.5 rounded-full bg-darkerer @(State.EditMode ? "text-indigo-400" : "text-gray-400 hover:text-gray-200")"
+                    @onclick="State.ToggleEditMode">
+                @(State.EditMode ? "Done Editing" : "Edit Groups")
+            </button>
         </div>
         <div class="flex items-center gap-1.5 flex-wrap">
             <button type="button" class="ledger-btn apply-filter-button !mt-0 !w-auto" @onclick="State.RequestNewReportAsync">+ New Report</button>
@@ -87,6 +100,14 @@
     private async Task OnSavedAsync() {
         if (_grid is not null) {
             await _grid.ReloadAsync();
+        }
+    }
+
+    private async Task GroupKeyDown(KeyboardEventArgs e) {
+        if (e.Key == "Enter") {
+            await State.CreateGroupAsync();
+        } else if (e.Key == "Escape") {
+            State.CancelNewGroup();
         }
     }
 

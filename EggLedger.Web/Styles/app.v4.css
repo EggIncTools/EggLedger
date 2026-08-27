@@ -587,6 +587,14 @@
   }
 }
 
+.connect-gate-card {
+  @apply flex flex-col items-center gap-3 px-8 py-8 rounded-lg border border-gray-700 bg-darker [box-shadow:0_10px_30px_rgba(0,0,0,0.35)];
+}
+
+.connect-gate-logo {
+  @apply rounded-md;
+}
+
 .discord-btn {
   @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-md text-sm font-semibold text-white
          [background-color:#5865f2] [transition:background-color_0.15s_ease];
@@ -795,7 +803,7 @@
 }
 
 .filter-select {
-  @apply block rounded-md text-sm bg-darkest tabular-nums appearance-none pl-0_5rem pt-0_5rem pb-0_5rem pr-select [color-scheme:dark];
+  @apply block rounded-md text-sm bg-darkest tabular-nums appearance-none pl-0_5rem pt-0_5rem pb-0_5rem pr-select [color-scheme:dark] min-w-0 flex-1;
 }
 
 .filter-select:focus {
@@ -895,15 +903,19 @@
 }
 
 .popup-opt-chip {
-  @apply relative inline-flex items-center justify-center w-12 h-12 p-1 rounded-md cursor-pointer select-none [outline:none];
+  @apply relative inline-flex items-center justify-center w-12 h-12 rounded-md cursor-pointer select-none [outline:none];
 }
 
 .popup-opt-chip:hover {
   @apply bg-darker;
 }
 
+.popup-opt-chip-icon {
+  @apply w-8 h-8 object-contain;
+}
+
 .popup-opt-chip-badge {
-  @apply absolute bottom-0 -right-1 h-1rem leading-1rem px-1 text-[0.6rem] whitespace-nowrap rounded-full ring-1 ring-white bg-darkerer;
+  @apply absolute bottom-0 -right-1 h-1rem leading-1rem px-1 text-[0.6rem] whitespace-nowrap rounded-full border border-gray-700 bg-darkerer;
 }
 
 .popup-search-row {
@@ -1180,7 +1192,7 @@
 }
 
 .fetch-log-inline {
-  @apply px-3 py-2 rounded-md border border-gray-700 bg-darkest text-xs text-gray-400 tabular-nums;
+  @apply px-3 py-2 text-xs text-gray-400 tabular-nums;
 }
 
 .fetch-log-workers {
@@ -1544,15 +1556,16 @@ input[type=number] {
 }
 
 .apply-filter-button.apply-filter-button-primary {
-  background-color: var(--color-accent);
-  border-color: var(--color-accent);
-  color: var(--color-bg);
+  background-color: #4338ca;
+  border-color: #4338ca;
+  color: var(--color-gray-100);
   font-weight: 600;
-  transition: filter 0.12s ease;
+  transition: background-color 0.12s ease, border-color 0.12s ease;
 }
 
 .apply-filter-button.apply-filter-button-primary:hover:not(:disabled) {
-  filter: brightness(1.08);
+  background-color: #4f46e5;
+  border-color: #4f46e5;
 }
 
 .apply-filter-button.apply-filter-button-primary:disabled {
@@ -1874,17 +1887,34 @@ input[type=number] {
   color: var(--color-red-400);
 }
 
-.account-progress-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.2rem 0.5rem;
-  border: 1px solid var(--color-gray-600);
+.fetch-log-section {
+  margin-top: 0.4rem;
+  border: 1px solid var(--color-gray-700);
   border-radius: 0.375rem;
-  background-color: var(--color-darker);
+  background-color: var(--color-darkest);
+  overflow: hidden;
+}
+
+.fetch-log-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0.3rem 0.6rem;
+  background: none;
+  border: none;
   font-size: 0.7rem;
   font-variant-numeric: tabular-nums;
   cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.fetch-log-header:hover {
+  background-color: var(--color-darker);
+}
+
+.fetch-log-section.is-open .fetch-log-header {
+  border-bottom: 1px solid var(--color-gray-700);
 }
 
 .account-dropdown {
@@ -2046,6 +2076,57 @@ input[type=number] {
   }
 }
 
+.menno-loading {
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  background-color: var(--color-dark);
+  color: var(--color-text);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  max-width: 32rem;
+}
+
+.menno-body {
+  padding: var(--space-4);
+  text-align: center;
+}
+
+.menno-title {
+  display: block;
+  font-size: 1.25rem;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-3);
+}
+
+.menno-rule {
+  border: none;
+  border-top: 1px solid var(--color-border-soft);
+  margin: var(--space-3) 0;
+}
+
+.menno-text {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.menno-spinner-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.menno-spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.menno-phase {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
 .section-heading {
   @apply font-bold text-base text-gray-400;
 }
@@ -2103,12 +2184,6 @@ input[type=number] {
 
 .options-host-body {
   flex: 0 0 auto;
-}
-
-.options-host-settings {
-  width: 100%;
-  justify-content: center;
-  margin-top: auto;
 }
 
 .settings-section {

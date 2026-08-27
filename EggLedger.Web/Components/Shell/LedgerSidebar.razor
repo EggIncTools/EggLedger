@@ -74,7 +74,7 @@
     </div>
 
     <div class="filter-panel sidebar-panel sidebar-footer">
-        <SidebarFooter OnAbout="OpenAbout" OnTerms="OpenTerms" OnPrivacy="OpenPrivacy" OnSupport="OpenSupport"/>
+        <SidebarFooter OnSettings="OpenSettings" OnAbout="OpenAbout" OnTerms="OpenTerms" OnPrivacy="OpenPrivacy" OnSupport="OpenSupport"/>
     </div>
 </aside>
 
@@ -122,6 +122,10 @@
             LedgerView.Reports => Task.CompletedTask,
             _ => Ships.ApplyFilterAsync(filter)
         };
+    }
+
+    private void OpenSettings() {
+        Shell.SettingsOpen = true;
     }
 
     private void OpenAbout() {

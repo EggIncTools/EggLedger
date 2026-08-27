@@ -77,9 +77,11 @@
                     Stop
                 </button>
             }
+        </div>
 
-            @if (Fetch.HasFetchContent) {
-                <button type="button" class="account-progress-chip text-yellow-400"
+        @if (Fetch.HasFetchContent) {
+            <div class="fetch-log-section @(Fetch.LogExpanded ? "is-open" : "")">
+                <button type="button" class="fetch-log-header text-yellow-400"
                         aria-label="@(Fetch.LogExpanded ? "Hide fetch log" : "Show fetch log")"
                         aria-expanded="@(Fetch.LogExpanded ? "true" : "false")" @onclick="Fetch.ToggleLog">
                     <span class="w-8 h-1.5 rounded-sm overflow-hidden bg-dark">
@@ -88,18 +90,17 @@
                     <span>@(Fetch.Percent)%</span>
                     <span class="fetch-log-caret">@(Fetch.LogExpanded ? "▾" : "▸")</span>
                 </button>
-            }
-        </div>
-
-        @if (Fetch.HasFetchContent && Fetch.LogExpanded) {
-            <div class="fetch-log-inline">
-                @if (!Fetch.IsIdle) {
-                    <div class="fetch-log-workers">
-                        <span class="section-heading text-xs">Parallel Download Workers</span>
-                        <WorkerCountSlider WorkerCount="_workerCount" WorkerCountChanged="SetWorkerCountAsync" ShowWarningBox="false"/>
+                @if (Fetch.LogExpanded) {
+                    <div class="fetch-log-inline">
+                        @if (!Fetch.IsIdle) {
+                            <div class="fetch-log-workers">
+                                <span class="section-heading text-xs">Parallel Download Workers</span>
+                                <WorkerCountSlider WorkerCount="_workerCount" WorkerCountChanged="SetWorkerCountAsync" ShowWarningBox="false"/>
+                            </div>
+                        }
+                        <FetchLogPanel/>
                     </div>
                 }
-                <FetchLogPanel/>
             </div>
         }
     </div>
