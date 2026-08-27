@@ -111,7 +111,7 @@
     [Parameter] public bool ShowFlightRatio { get; set; }
     [Parameter] public EventCallback<string> OnViewMission { get; set; }
 
-    private TimelineZoom _zoom = TimelineZoom.Week;
+    private TimelineZoom _zoom = TimelineZoom.Month;
     private DateTimeOffset _center = DateTimeOffset.UtcNow;
     private DateTimeOffset _visibleStart;
     private DateTimeOffset _visibleEnd;

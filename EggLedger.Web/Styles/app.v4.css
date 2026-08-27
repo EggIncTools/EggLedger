@@ -438,7 +438,8 @@
   inset: 1.3rem 0 0.2rem 0;
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  justify-content: center;
+  gap: 0.15rem;
   overflow-y: auto;
   scrollbar-gutter: stable;
   z-index: 2;
@@ -449,27 +450,26 @@
 }
 
 .timeline-view-day {
-  --bar-h: 2.25rem;
-  --bubble-h: 2.75rem;
-  --lane-min: 3.25rem;
+  --bar-h: 2.5rem;
+  --bubble-h: 3.1rem;
+  --lane-min: 3.4rem;
 }
 
 .timeline-view-week {
-  --bar-h: 1.5rem;
-  --bubble-h: 2.25rem;
-  --lane-min: 2.5rem;
+  --bar-h: 1.75rem;
+  --bubble-h: 2.6rem;
+  --lane-min: 2.75rem;
 }
 
 .timeline-view-month {
-  --bar-h: 1.125rem;
-  --bubble-h: 1.75rem;
-  --lane-min: 1.9rem;
+  --bar-h: 1.35rem;
+  --bubble-h: 2.1rem;
+  --lane-min: 2.2rem;
 }
 
 .timeline-lane {
   position: relative;
-  flex: 1 1 auto;
-  min-height: var(--lane-min, 3.25rem);
+  flex: 0 0 var(--lane-min, 3.25rem);
 }
 
 .timeline-dur-0 {
