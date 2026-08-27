@@ -1,4 +1,6 @@
+using EggLedger.Domain.Ei;
 using EggLedger.Domain.MissionPacking;
+using Ei;
 
 namespace EggLedger.Web.Missions;
 
@@ -28,7 +30,7 @@ public sealed class DropsWidgetStats {
         }
 
         var shipCounts = new Dictionary<string, (string Name, int Count)>(StringComparer.Ordinal);
-        var durationCounts = new Dictionary<string, int>(StringComparer.Ordinal);
+        var durationCounts = new Dictionary<int, int>();
         var oldestLaunch = long.MaxValue;
         double airtimeSeconds = 0;
         var home = 0;
@@ -44,7 +46,10 @@ public sealed class DropsWidgetStats {
                 shipCounts[shipKey] = (m.ShipString, 1);
             }
 
-            durationCounts[m.DurationString] = durationCounts.GetValueOrDefault(m.DurationString) + 1;
+            if (m.DurationType is { } dur) {
+                var durKey = (int)dur;
+                durationCounts[durKey] = durationCounts.GetValueOrDefault(durKey) + 1;
+            }
 
             if (m.LaunchDT < oldestLaunch) {
                 oldestLaunch = m.LaunchDT;
@@ -82,8 +87,8 @@ public sealed class DropsWidgetStats {
             BuggedCapCount = buggedCap,
             Ships = TopShips(shipCounts),
             Durations = [.. durationCounts
-                .Select(kv => new DurationCount(kv.Key, kv.Value))
-                .OrderByDescending(d => d.Count)],
+                .OrderBy(kv => kv.Key)
+                .Select(kv => new DurationCount(((MissionInfo.DurationType)kv.Key).Display(), kv.Value))],
             ArtifactRarities = [.. rarityCounts
                 .Select(kv => new RarityCount(kv.Key, kv.Value))
                 .OrderByDescending(r => r.Rarity)],

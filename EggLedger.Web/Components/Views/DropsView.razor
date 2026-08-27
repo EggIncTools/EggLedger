@@ -9,7 +9,6 @@
     <NoDataFallback/>
 } else {
     <div class="flex-1 min-h-0 py-1 overflow-auto block text-xs font-mono text-gray-300 text-center">
-        <DropsWidgets Stats="State.WidgetStats"/>
         <DropDisplayContainer Artifacts="State.Data.Artifacts"
                               Stones="State.Data.Stones"
                               Ingredients="State.Data.Ingredients"
@@ -18,6 +17,23 @@
                               LifetimeMissionCount="State.Data.MissionCount"
                               ShowPerShip="State.ShowPerShip"
                               LifetimeExpected="@(State.ShowExpectedTotals && State.AllowExpectedTotals)"/>
+
+        <div class="settings-section drops-widgets-section @(_widgetsOpen ? "is-open" : "")">
+            <button type="button" class="settings-section-head" aria-expanded="@(_widgetsOpen ? "true" : "false")"
+                    @onclick="ToggleWidgets">
+                <span class="settings-section-title">Stats</span>
+                @if (_widgetsOpen) {
+                    <span class="settings-section-caret">&#9662;</span>
+                } else {
+                    <span class="settings-section-caret">&#9656;</span>
+                }
+            </button>
+            @if (_widgetsOpen) {
+                <div class="settings-section-body">
+                    <DropsWidgets Stats="State.WidgetStats"/>
+                </div>
+            }
+        </div>
     </div>
 }
 
@@ -34,6 +50,8 @@
 
 @code {
 
+    private bool _widgetsOpen = true;
+
     protected override async Task OnInitializedAsync() {
         State.Changed += OnStateChanged;
         await State.EnsureInitializedAsync(InvokeAsync);
@@ -41,6 +59,10 @@
 
     private void OnStateChanged() {
         InvokeAsync(StateHasChanged);
+    }
+
+    private void ToggleWidgets() {
+        _widgetsOpen = !_widgetsOpen;
     }
 
     public void Dispose() {

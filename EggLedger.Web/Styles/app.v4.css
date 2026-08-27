@@ -1747,7 +1747,7 @@ input[type=number] {
 .sidebar-footer-row {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
+  align-items: center;
   gap: 0.35rem;
   width: 100%;
 }
@@ -1765,6 +1765,7 @@ input[type=number] {
 .sidebar-footer-actions-row {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.25rem;
   width: 100%;
 }
@@ -1813,7 +1814,6 @@ input[type=number] {
   display: flex;
   align-items: center;
   gap: 0.1rem;
-  margin-left: auto;
 }
 
 .sidebar-footer-btn {
@@ -2337,9 +2337,13 @@ input[type=number] {
   width: 0;
 }
 
+.drops-widgets-section {
+  margin: 0.75rem 1px 0;
+}
+
 .stat-widget-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 15rem));
   gap: 0.6rem;
   margin: 0 1px 0.75rem;
 }
@@ -2348,7 +2352,7 @@ input[type=number] {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.15rem;
+  gap: 0.3rem;
   padding: 0.65rem 0.85rem;
   border-radius: 0.5rem;
   background-color: var(--color-dark);
@@ -2360,11 +2364,6 @@ input[type=number] {
   grid-column: span 2;
 }
 
-.stat-card-ship {
-  align-items: center;
-  text-align: center;
-}
-
 .stat-card-label {
   font-size: 0.65rem;
   font-weight: 700;
@@ -2373,15 +2372,10 @@ input[type=number] {
   text-transform: uppercase;
 }
 
-.stat-card-value {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: var(--color-gray-200);
-  line-height: 1.2;
-}
-
 .stat-card-value-sm {
   font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-gray-200);
 }
 
 .stat-card-sub {
@@ -2389,11 +2383,44 @@ input[type=number] {
   color: var(--color-gray-500);
 }
 
+.stat-mini-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.stat-mini-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-gray-200);
+}
+
+.stat-mini-label {
+  font-size: 0.65rem;
+  color: var(--color-gray-500);
+}
+
+.stat-ship-headline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 0.1rem;
+}
+
+.stat-ship-headline-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
 .stat-ship-icon {
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2rem;
+  height: 2rem;
   object-fit: contain;
-  margin: 0.15rem 0;
+  flex-shrink: 0;
 }
 
 .stat-bar-list {
@@ -2401,12 +2428,12 @@ input[type=number] {
   flex-direction: column;
   gap: 0.3rem;
   width: 100%;
-  margin-top: 0.15rem;
+  margin-top: 0.3rem;
 }
 
 .stat-bar-row {
   display: grid;
-  grid-template-columns: 5.5rem 1fr 2.5rem;
+  grid-template-columns: 4.5rem 1fr 2.5rem;
   align-items: center;
   gap: 0.4rem;
   font-size: 0.65rem;
@@ -2496,23 +2523,6 @@ input[type=number] {
   background-color: var(--color-farm-virtue);
 }
 
-.stat-luck-row {
-  display: flex;
-  align-items: baseline;
-  gap: 0.4rem;
-}
-
-.stat-luck-value {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--color-gray-200);
-}
-
 .stat-luck-bugged {
   color: var(--color-red-400);
-}
-
-.stat-luck-label {
-  font-size: 0.65rem;
-  color: var(--color-gray-500);
 }

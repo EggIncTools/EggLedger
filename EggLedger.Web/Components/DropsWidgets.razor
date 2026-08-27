@@ -5,32 +5,36 @@
 @if (Stats is { MissionCount: > 0 } s) {
     <div class="stat-widget-grid">
         <div class="stat-card">
-            <span class="stat-card-label">Missions Tracked</span>
-            <span class="stat-card-value">@s.MissionCount.ToString("N0", CultureInfo.InvariantCulture)</span>
-            @if (TrackingSince is { Length: > 0 } since) {
-                <span class="stat-card-sub">since @since</span>
-            }
-        </div>
-
-        <div class="stat-card">
-            <span class="stat-card-label">Total Airtime</span>
-            <span class="stat-card-value">@FormatAirtime(s.TotalAirtimeHours)</span>
-            <span class="stat-card-sub">across all tracked ships</span>
-        </div>
-
-        @if (TopShip is { } top) {
-            <div class="stat-card stat-card-ship">
-                <span class="stat-card-label">Most-Sent Ship</span>
-                @if (top.ShipEnumString.Length > 0) {
-                    <img class="stat-ship-icon" src="@ContentPaths.Asset($"images/ships/{top.ShipEnumString}.png")" alt="@top.ShipName"/>
-                }
-                <span class="stat-card-value stat-card-value-sm">@top.ShipName</span>
-                <span class="stat-card-sub">@top.Count.ToString("N0", CultureInfo.InvariantCulture) launches (@Pct(top.Count, s.MissionCount))</span>
+            <span class="stat-card-label">Overview</span>
+            <div class="stat-mini-row">
+                <span class="stat-mini-value">@s.MissionCount.ToString("N0", CultureInfo.InvariantCulture)</span>
+                <span class="stat-mini-label">missions@(TrackingSince is { Length: > 0 } since ? $" ({since})" : "")</span>
             </div>
-        }
+            <div class="stat-mini-row">
+                <span class="stat-mini-value">@FormatAirtime(s.TotalAirtimeHours)</span>
+                <span class="stat-mini-label">total airtime</span>
+            </div>
+            <div class="stat-mini-row">
+                <span class="stat-mini-value">@Pct(s.DubCapCount, s.MissionCount)</span>
+                <span class="stat-mini-label">dub-capped</span>
+                <span class="stat-mini-value stat-luck-bugged">@Pct(s.BuggedCapCount, s.MissionCount)</span>
+                <span class="stat-mini-label">bugged</span>
+            </div>
+        </div>
 
         <div class="stat-card stat-card-wide">
             <span class="stat-card-label">Fleet Mix</span>
+            @if (TopShip is { } top) {
+                <div class="stat-ship-headline">
+                    @if (top.ShipEnumString.Length > 0) {
+                        <img class="stat-ship-icon" src="@ContentPaths.Asset($"images/ships/{top.ShipEnumString}.png")" alt="@top.ShipName"/>
+                    }
+                    <div class="stat-ship-headline-text">
+                        <span class="stat-card-value-sm">@top.ShipName</span>
+                        <span class="stat-card-sub">@top.Count.ToString("N0", CultureInfo.InvariantCulture) launches (@Pct(top.Count, s.MissionCount))</span>
+                    </div>
+                </div>
+            }
             <div class="stat-bar-list">
                 @foreach (var ship in s.Ships) {
                     <div class="stat-bar-row">
@@ -45,19 +49,7 @@
         </div>
 
         <div class="stat-card stat-card-wide">
-            <span class="stat-card-label">Home / Virtue Split</span>
-            <span class="stat-split-bar">
-                <span class="stat-split-home" style="width: @(Pct(s.HomeCount, s.MissionCount))"></span>
-                <span class="stat-split-virtue" style="width: @(Pct(s.VirtueCount, s.MissionCount))"></span>
-            </span>
-            <div class="stat-split-legend">
-                <span><span class="stat-legend-dot stat-legend-home"></span>Home @s.HomeCount.ToString("N0", CultureInfo.InvariantCulture)</span>
-                <span><span class="stat-legend-dot stat-legend-virtue"></span>Virtue @s.VirtueCount.ToString("N0", CultureInfo.InvariantCulture)</span>
-            </div>
-        </div>
-
-        <div class="stat-card stat-card-wide">
-            <span class="stat-card-label">Duration Mix</span>
+            <span class="stat-card-label">Mission Mix</span>
             <div class="stat-bar-list">
                 @foreach (var d in s.Durations) {
                     <div class="stat-bar-row">
@@ -69,17 +61,13 @@
                     </div>
                 }
             </div>
-        </div>
-
-        <div class="stat-card">
-            <span class="stat-card-label">Capacity Luck</span>
-            <div class="stat-luck-row">
-                <span class="stat-luck-value">@Pct(s.DubCapCount, s.MissionCount)</span>
-                <span class="stat-luck-label">dub-capped</span>
-            </div>
-            <div class="stat-luck-row">
-                <span class="stat-luck-value stat-luck-bugged">@Pct(s.BuggedCapCount, s.MissionCount)</span>
-                <span class="stat-luck-label">bugged</span>
+            <span class="stat-split-bar">
+                <span class="stat-split-home" style="width: @(Pct(s.HomeCount, s.MissionCount))"></span>
+                <span class="stat-split-virtue" style="width: @(Pct(s.VirtueCount, s.MissionCount))"></span>
+            </span>
+            <div class="stat-split-legend">
+                <span><span class="stat-legend-dot stat-legend-home"></span>Home @s.HomeCount.ToString("N0", CultureInfo.InvariantCulture)</span>
+                <span><span class="stat-legend-dot stat-legend-virtue"></span>Virtue @s.VirtueCount.ToString("N0", CultureInfo.InvariantCulture)</span>
             </div>
         </div>
 
