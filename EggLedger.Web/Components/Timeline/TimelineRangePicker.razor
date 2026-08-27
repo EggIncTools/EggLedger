@@ -1,5 +1,5 @@
 <div class="relative shrink-0">
-    <button type="button" class="text-base toggle-link whitespace-nowrap" @onclick="Toggle">
+    <button type="button" class="range-picker-trigger whitespace-nowrap" @onclick="Toggle">
         @RangeLabel &#9662;
     </button>
     @if (_open) {
@@ -8,9 +8,9 @@
              @onclick:stopPropagation="true">
             <TimelineZoomControl Value="Zoom" OnValueChanged="ZoomChanged"/>
             <div class="flex items-center justify-between w-full">
-                <button type="button" class="text-base toggle-link" @onclick="@(() => OnPan.InvokeAsync(-1))">&larr; Prev</button>
+                <button type="button" class="text-base toggle-link @(PrevDisabled ? "opacity-40 cursor-not-allowed pointer-events-none" : "")" disabled="@PrevDisabled" @onclick="@(() => OnPan.InvokeAsync(-1))">&larr; Prev</button>
                 <button type="button" class="text-base toggle-link" @onclick="@(() => OnToday.InvokeAsync())">Today</button>
-                <button type="button" class="text-base toggle-link" @onclick="@(() => OnPan.InvokeAsync(1))">Next &rarr;</button>
+                <button type="button" class="text-base toggle-link @(NextDisabled ? "opacity-40 cursor-not-allowed pointer-events-none" : "")" disabled="@NextDisabled" @onclick="@(() => OnPan.InvokeAsync(1))">Next &rarr;</button>
             </div>
             <input type="date" class="calendar-date-input" value="@DateValue" @onchange="DateChanged"/>
         </div>
@@ -21,6 +21,8 @@
     [Parameter] public string RangeLabel { get; set; } = "";
     [Parameter] public TimelineZoom Zoom { get; set; }
     [Parameter] public string DateValue { get; set; } = "";
+    [Parameter] public bool PrevDisabled { get; set; }
+    [Parameter] public bool NextDisabled { get; set; }
     [Parameter] public EventCallback<TimelineZoom> ZoomChanged { get; set; }
     [Parameter] public EventCallback<int> OnPan { get; set; }
     [Parameter] public EventCallback OnToday { get; set; }

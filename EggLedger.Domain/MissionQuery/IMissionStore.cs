@@ -21,6 +21,8 @@ public interface IMissionStore {
 
     Task<IReadOnlyList<StoredDrop>?> GetStoredPlayerDropsAsync(string playerId);
 
+    Task DeleteAllForPlayerAsync(string playerId);
+
     void QueueFilterColBackfill(string eid);
 
     void QueueArtifactDropsBackfill(string playerId);

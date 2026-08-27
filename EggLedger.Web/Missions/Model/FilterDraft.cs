@@ -65,7 +65,7 @@ public sealed class FilterDraft {
     }
 
     public void EnsureTrailingRow() {
-        if (Rows.Count == 0 || !string.IsNullOrEmpty(Rows[^1].Cond.TopLevel)) {
+        if (Rows.Count == 0 || IsComplete(Rows[^1].Cond)) {
             Rows.Add(new FilterDraftRow());
         }
     }

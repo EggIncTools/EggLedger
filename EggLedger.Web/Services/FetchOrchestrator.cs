@@ -40,7 +40,7 @@ public sealed class FetchOrchestrator : IDisposable {
     public string? FetchingAccountId { get; private set; }
 
     public bool HasFetchContent { get; private set; }
-    public bool PopoverDismissed { get; private set; }
+    public bool LogExpanded { get; private set; }
 
     public bool IsIdle => TerminalState is not null
                            || Progress is null
@@ -53,16 +53,14 @@ public sealed class FetchOrchestrator : IDisposable {
     public event Action? Changed;
     public event Action<string>? FetchSucceeded;
 
-    public void DismissPopover() {
-        PopoverDismissed = true;
-        ScheduleAutoHide();
-        Changed?.Invoke();
-    }
-
-    public void ReopenPopover() {
-        PopoverDismissed = false;
-        _autoHideTimer?.Dispose();
-        _autoHideTimer = null;
+    public void ToggleLog() {
+        LogExpanded = !LogExpanded;
+        if (LogExpanded) {
+            _autoHideTimer?.Dispose();
+            _autoHideTimer = null;
+        } else {
+            ScheduleAutoHide();
+        }
         Changed?.Invoke();
     }
 
@@ -77,7 +75,7 @@ public sealed class FetchOrchestrator : IDisposable {
 
     private void ClearFetchContent() {
         HasFetchContent = false;
-        PopoverDismissed = false;
+        LogExpanded = false;
         TerminalState = null;
         Progress = null;
         Changed?.Invoke();
@@ -88,7 +86,7 @@ public sealed class FetchOrchestrator : IDisposable {
         _autoHideTimer = null;
         TerminalState = null;
         HasFetchContent = false;
-        PopoverDismissed = false;
+        LogExpanded = false;
         FetchingAccountId = accountId;
         _cts?.Cancel();
         _cts?.Dispose();
@@ -146,7 +144,7 @@ public sealed class FetchOrchestrator : IDisposable {
 
         TerminalState = result;
         _appState.PipelineState = TerminalState;
-        if (PopoverDismissed) {
+        if (!LogExpanded) {
             ScheduleAutoHide();
         }
         Changed?.Invoke();

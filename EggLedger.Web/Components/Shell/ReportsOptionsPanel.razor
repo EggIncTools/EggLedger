@@ -6,14 +6,6 @@
 } else {
     <div class="flex flex-col gap-3">
         <div>
-            <span class="font-bold text-gray-400">Reports</span>
-            <div class="flex flex-col gap-1.5 mt-1">
-                <button type="button" class="rb-control text-left" @onclick="State.RequestNewReportAsync">+ New Report</button>
-                <button type="button" class="rb-control text-left" @onclick="State.RequestExportAllAsync">Export All</button>
-                <button type="button" class="rb-control text-left" @onclick="State.RequestImportAsync">Import</button>
-            </div>
-        </div>
-        <div>
             <span class="font-bold text-gray-400">Groups</span>
             <div class="flex flex-col gap-1.5 mt-1">
                 @if (State.ShowNewGroup) {

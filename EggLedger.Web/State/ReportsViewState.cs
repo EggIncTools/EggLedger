@@ -1,3 +1,4 @@
+using EggLedger.Domain.Reports;
 using EggLedger.Web.Data;
 
 namespace EggLedger.Web.State;
@@ -15,10 +16,13 @@ public sealed class ReportsViewState(ActiveAccount active, IndexedDbReportStore 
     private bool _initialized;
     private string _loadedAccount = "";
     private int _loadGeneration;
+    private int _reportsLoadGeneration;
 
     public event Action? Changed;
 
     public IReadOnlyList<ReportGroupRow> Groups { get; private set; } = [];
+
+    public IReadOnlyList<ReportDefinition> Reports { get; private set; } = [];
 
     public string? SelectedGroup { get; private set; }
 
@@ -65,7 +69,26 @@ public sealed class ReportsViewState(ActiveAccount active, IndexedDbReportStore 
             _loadedAccount = id;
             SelectedGroup = null;
             await LoadGroupsAsync();
+            await LoadReportsAsync();
         }
+    }
+
+    public async Task<bool> LoadReportsAsync() {
+        var generation = ++_reportsLoadGeneration;
+        var id = active.ActiveAccountId;
+        if (id is null) {
+            Reports = [];
+            return true;
+        }
+
+        var rows = await store.RetrieveAccountReportsAsync(id);
+        if (generation != _reportsLoadGeneration) {
+            return false;
+        }
+
+        Reports = rows.Select(ReportMapping.ToDefinition).ToList();
+        Changed?.Invoke();
+        return true;
     }
 
     public async Task<bool> LoadGroupsAsync() {

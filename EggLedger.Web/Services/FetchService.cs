@@ -77,7 +77,6 @@ public sealed class FetchService {
         }
 
         var settings = await _settings.GetAllSettingsAsync().ConfigureAwait(false);
-        bool retryFailed = ReadRetryFailedSetting(settings);
         var failures = new List<FailedMission>();
 
         if (total > 0) {
@@ -96,39 +95,15 @@ public sealed class FetchService {
                         failures.Add(fm);
                     }
                 },
+                () => {
+                    Interlocked.Increment(ref retried);
+                    Report(AppState.FetchingMissions);
+                },
                 cancellationToken).ConfigureAwait(false);
 
             if (interrupted) {
                 Report(AppState.Interrupted);
                 return AppState.Interrupted;
-            }
-
-
-            if (Volatile.Read(ref failed) > 0 && retryFailed && failures.Count > 0) {
-                Volatile.Write(ref retried, failures.Count);
-                Interlocked.Add(ref total, failures.Count);
-                var retrySet = failures.Select(f => (f.MissionId, f.StartTimestamp)).ToList();
-                Interlocked.Exchange(ref failed, 0);
-                failures.Clear();
-
-                bool retryInterrupted = await RunWorkersAsync(
-                    playerId, retrySet, workerCount, progress,
-                    () => {
-                        Interlocked.Increment(ref finished);
-                        Report(AppState.FetchingMissions);
-                    },
-                    fm => {
-                        Interlocked.Increment(ref failed);
-                        lock (failures) {
-                            failures.Add(fm);
-                        }
-                    },
-                    cancellationToken).ConfigureAwait(false);
-
-                if (retryInterrupted) {
-                    Report(AppState.Interrupted);
-                    return AppState.Interrupted;
-                }
             }
 
             if (Volatile.Read(ref failed) > 0) {
@@ -188,11 +163,12 @@ public sealed class FetchService {
 
     private async Task<bool> RunWorkersAsync(
         string playerId,
-        IReadOnlyList<(string Id, double Start)> missions,
+        List<(string Id, double Start)> missions,
         int workerCount,
         IProgress<FetchProgress>? progress,
         Action onFinished,
         Action<FailedMission> onError,
+        Action onRetry,
         CancellationToken cancellationToken) {
         using var sem = new SemaphoreSlim(workerCount, workerCount);
         var tasks = new List<Task>(missions.Count);
@@ -208,7 +184,7 @@ public sealed class FetchService {
             }
             tasks.Add(Task.Run(async () => {
                 try {
-                    await FetchOneMissionAsync(playerId, id, start, progress, cancellationToken).ConfigureAwait(false);
+                    await FetchMissionWithRetriesAsync(playerId, id, start, progress, onRetry, cancellationToken).ConfigureAwait(false);
                 } catch (OperationCanceledException) {
 
                     onError(new FailedMission(id, start, "cancelled"));
@@ -228,6 +204,35 @@ public sealed class FetchService {
         }
 
         return cancellationToken.IsCancellationRequested;
+    }
+
+    private const int MaxRetryAttempts = 5;
+    private static readonly TimeSpan RetryBaseDelay = TimeSpan.FromMilliseconds(500);
+    private static readonly TimeSpan MaxRetryDelay = TimeSpan.FromSeconds(4);
+
+    private async Task FetchMissionWithRetriesAsync(
+        string playerId,
+        string missionId,
+        double startTimestamp,
+        IProgress<FetchProgress>? progress,
+        Action onRetry,
+        CancellationToken cancellationToken) {
+        for (int attempt = 0; attempt <= MaxRetryAttempts; attempt++) {
+            if (attempt > 0) {
+                onRetry();
+                double scaledMs = RetryBaseDelay.TotalMilliseconds * Math.Pow(2, attempt - 1);
+                var delay = TimeSpan.FromMilliseconds(Math.Min(scaledMs, MaxRetryDelay.TotalMilliseconds));
+                await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
+            }
+
+            try {
+                await FetchOneMissionAsync(playerId, missionId, startTimestamp, progress, cancellationToken).ConfigureAwait(false);
+                return;
+            } catch (OperationCanceledException) {
+                throw;
+            } catch when (attempt < MaxRetryAttempts && !cancellationToken.IsCancellationRequested) {
+            }
+        }
     }
 
     private async Task FetchOneMissionAsync(
@@ -303,8 +308,4 @@ public sealed class FetchService {
         }
         return Math.Clamp(n, 1, MaxWorkerCount);
     }
-
-    private static bool ReadRetryFailedSetting(Dictionary<string, string> settings) =>
-        settings.TryGetValue(SettingsModel.KeyRetryFailedMissions, out var raw)
-            && bool.TryParse(raw, out var b) && b;
 }

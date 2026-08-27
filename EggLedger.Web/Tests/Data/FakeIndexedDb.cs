@@ -7,9 +7,13 @@ public sealed class FakeIndexedDb : IIndexedDb {
 
     private readonly Lock _gate = new();
     private readonly Dictionary<string, List<object>> _stores = [];
+    private long _nextDropId;
 
     public void Seed(string store, object row) {
         lock (_gate) {
+            if (row is ArtifactDropRow { Id: null } drop) {
+                row = drop with { Id = ++_nextDropId };
+            }
             if (!_stores.TryGetValue(store, out var list)) {
                 list = [];
                 _stores[store] = list;
@@ -24,6 +28,7 @@ public sealed class FakeIndexedDb : IIndexedDb {
         SettingRow s => s.Key,
         BackupRow b => b.PlayerId,
         InFlightMissionRow f => f.PlayerId + ":" + f.MissionId,
+        ArtifactDropRow { Id: { } id } => id.ToString(),
         _ => null,
     };
 
@@ -113,6 +118,9 @@ public sealed class FakeIndexedDb : IIndexedDb {
             _stores[store] = list;
         }
 
+        if (value is ArtifactDropRow { Id: null } drop) {
+            value = drop with { Id = ++_nextDropId };
+        }
 
         var key = KeyOf(value);
         if (key is not null) {
@@ -140,6 +148,7 @@ public sealed class FakeIndexedDb : IIndexedDb {
     private static bool KeyMatches(object row, object key) => (row, key) switch {
         (MissionRow m, object[] { Length: 2 } k) => m.PlayerId.Equals(k[0]) && m.MissionId.Equals(k[1]),
         (InFlightMissionRow f, object[] { Length: 2 } k) => f.PlayerId.Equals(k[0]) && f.MissionId.Equals(k[1]),
+        (ArtifactDropRow d, long id) => d.Id == id,
         _ => KeyOf(row)?.Equals(key) == true,
     };
 

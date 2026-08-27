@@ -416,6 +416,28 @@ public sealed class IndexedDbMissionStore : IMissionStore {
         }
     }
 
+    public async Task DeleteAllForPlayerAsync(string playerId) {
+        var missionRows = await PlayerMetaRowsAsync(playerId).ConfigureAwait(false);
+        foreach (var row in missionRows) {
+            await _db.DeleteAsync(IndexedDbStores.Mission, new object[] { playerId, row.MissionId }).ConfigureAwait(false);
+            DecodeCacheEvict(DecodeKey(playerId, row.MissionId));
+        }
+
+        var dropRows = await _db.GetAllByIndexAsync<ArtifactDropRow>(IndexedDbStores.ArtifactDrops, IndexedDbStores.PlayerIdIndex, playerId).ConfigureAwait(false);
+        foreach (var row in dropRows) {
+            if (row.Id is { } id) {
+                await _db.DeleteAsync(IndexedDbStores.ArtifactDrops, id).ConfigureAwait(false);
+            }
+        }
+
+        var inFlightRows = await _db.GetAllByIndexAsync<InFlightMissionRow>(IndexedDbStores.InFlightMission, IndexedDbStores.PlayerIdIndex, playerId).ConfigureAwait(false);
+        foreach (var row in inFlightRows) {
+            await _db.DeleteAsync(IndexedDbStores.InFlightMission, new object[] { playerId, row.MissionId }).ConfigureAwait(false);
+        }
+
+        await _db.DeleteAsync(IndexedDbStores.Backup, playerId).ConfigureAwait(false);
+    }
+
     private async Task<CompleteMissionResponse> DecodeAsync(MissionRow row) {
         byte[] raw = Gunzip(row.CompletePayload);
         var resp = await _decoder.DecodeCompleteMissionAsync(raw).ConfigureAwait(false);

@@ -7,6 +7,7 @@
 @inject FetchOrchestrator Fetch
 @inject MissionQueryHandlers Queries
 @inject IndexedDbSettings SettingsStore
+@inject SettingsWriteCoordinator Writer
 @inject IJSRuntime Js
 @inject IPlatformCapabilities Platform
 @inject NavigationManager Nav
@@ -77,15 +78,30 @@
                 </button>
             }
 
-            @if (Fetch.HasFetchContent && Fetch.PopoverDismissed) {
-                <button type="button" class="account-progress-chip text-yellow-400" aria-label="Show fetch status" @onclick="Fetch.ReopenPopover">
+            @if (Fetch.HasFetchContent) {
+                <button type="button" class="account-progress-chip text-yellow-400"
+                        aria-label="@(Fetch.LogExpanded ? "Hide fetch log" : "Show fetch log")"
+                        aria-expanded="@(Fetch.LogExpanded ? "true" : "false")" @onclick="Fetch.ToggleLog">
                     <span class="w-8 h-1.5 rounded-sm overflow-hidden bg-dark">
                         <span class="block h-full bg-green-500 transition-all duration-300 rounded-sm" style="width: @(Fetch.Percent)%"></span>
                     </span>
                     <span>@(Fetch.Percent)%</span>
+                    <span class="fetch-log-caret">@(Fetch.LogExpanded ? "▾" : "▸")</span>
                 </button>
             }
         </div>
+
+        @if (Fetch.HasFetchContent && Fetch.LogExpanded) {
+            <div class="fetch-log-inline">
+                @if (!Fetch.IsIdle) {
+                    <div class="fetch-log-workers">
+                        <span class="section-heading text-xs">Parallel Download Workers</span>
+                        <WorkerCountSlider WorkerCount="_workerCount" WorkerCountChanged="SetWorkerCountAsync" ShowWarningBox="false"/>
+                    </div>
+                }
+                <FetchLogPanel/>
+            </div>
+        }
     </div>
 </div>
 
@@ -180,6 +196,7 @@
     private bool _focusPending;
     private bool _rendered;
     private bool? _lastWarnedFetchActive;
+    private int _workerCount = SettingsModel.MinWorkerCount;
 
     private static double NowUnix => DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
@@ -208,7 +225,20 @@
         Shell.AccountPopoverRequested += OnPopoverRequested;
         RefreshActive();
         await RefreshExistingAsync();
+        await LoadWorkerCountAsync();
         await ResumeIncompleteFetchAsync();
+    }
+
+    private async Task LoadWorkerCountAsync() {
+        var all = await SettingsStore.GetAllSettingsAsync();
+        if (all.TryGetValue(SettingsModel.KeyWorkerCount, out var raw) && int.TryParse(raw, out var n)) {
+            _workerCount = SettingsModel.ClampWorkerCount(n);
+        }
+    }
+
+    private async Task SetWorkerCountAsync(int n) {
+        _workerCount = SettingsModel.ClampWorkerCount(n);
+        await Writer.SetAsync(SettingsModel.KeyWorkerCount, SettingsModel.FormatInt(_workerCount));
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender) {
@@ -311,6 +341,7 @@
     }
 
     private async Task StartFetchFor(string id) {
+        await LoadWorkerCountAsync();
         await Fetch.StartFetchAsync(id);
         await RefreshExistingAsync();
         await Loader.RefreshAsync();

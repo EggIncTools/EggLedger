@@ -26,17 +26,30 @@
     box.style.top = y + "px";
   }
 
+  function lineClassOverrides(t) {
+    const map = {};
+    (t.dataset.ttClasses || "").split(",").forEach(function (pair) {
+      const eq = pair.indexOf("=");
+      if (eq < 0) return;
+      const idx = parseInt(pair.slice(0, eq), 10);
+      if (!Number.isNaN(idx)) map[idx] = pair.slice(eq + 1);
+    });
+    return map;
+  }
+
   function show(t, x, y) {
     const box = ensure();
     if (hideTimer) {
       clearTimeout(hideTimer);
       hideTimer = null;
     }
+    box.classList.toggle("tt-invalid", t.classList.contains("filter-incomplete-icon"));
     const lines = (t.dataset.tt || "").split("\n");
+    const overrides = lineClassOverrides(t);
     box.innerHTML = "";
     lines.forEach(function (line, i) {
       const d = document.createElement("div");
-      d.className = i === 0 ? "text-xs text-gray-200 font-medium" : "text-xs text-gray-400";
+      d.className = overrides[i] ? "text-xs " + overrides[i] : (i === 0 ? "text-xs text-gray-200 font-medium" : "text-xs text-gray-400");
       d.textContent = line;
       box.appendChild(d);
     });

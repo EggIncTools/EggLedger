@@ -198,6 +198,33 @@ public sealed class IndexedDbMissionStoreTests {
         Assert.Equal(2, decoder.Calls);
     }
 
+    [Fact]
+    public async Task DeleteAllForPlayerAsync_RemovesOnlyThatPlayersRows() {
+        var db = new FakeIndexedDb();
+        var decoder = new LocalApiPayloadDecoder(new ApiClient());
+        var store = new IndexedDbMissionStore(db, decoder);
+
+        db.Seed("mission", MissionMeta("EI1", "m1", start: 1));
+        db.Seed("mission", MissionMeta("EI2", "keep", start: 2));
+        db.Seed("artifact_drops", new ArtifactDropRow { PlayerId = "EI1", MissionId = "m1", DropIndex = 0 });
+        db.Seed("artifact_drops", new ArtifactDropRow { PlayerId = "EI2", MissionId = "keep", DropIndex = 0 });
+        db.Seed("inflight_mission", new InFlightMissionRow { PlayerId = "EI1", MissionId = "flying" });
+        db.Seed("inflight_mission", new InFlightMissionRow { PlayerId = "EI2", MissionId = "keep" });
+        db.Seed("backup", new BackupRow { PlayerId = "EI1", RecordedAt = 1000, Payload = [1] });
+        db.Seed("backup", new BackupRow { PlayerId = "EI2", RecordedAt = 1000, Payload = [1] });
+
+        await store.DeleteAllForPlayerAsync("EI1");
+
+        Assert.Empty(await store.GetCompleteMissionIdsAsync("EI1") ?? []);
+        Assert.Equal(["keep"], await store.GetCompleteMissionIdsAsync("EI2"));
+        Assert.Empty(await store.GetStoredPlayerDropsAsync("EI1") ?? []);
+        Assert.Single(await store.GetStoredPlayerDropsAsync("EI2") ?? []);
+        Assert.DoesNotContain(await db.GetAllAsync<InFlightMissionRow>("inflight_mission"), r => r.PlayerId == "EI1");
+        Assert.Contains(await db.GetAllAsync<InFlightMissionRow>("inflight_mission"), r => r.PlayerId == "EI2");
+        Assert.DoesNotContain(await db.GetAllAsync<BackupRow>("backup"), r => r.PlayerId == "EI1");
+        Assert.Contains(await db.GetAllAsync<BackupRow>("backup"), r => r.PlayerId == "EI2");
+    }
+
     private sealed class RecordingDb : IIndexedDb {
         private readonly FakeIndexedDb _inner = new();
         public List<string> ProjectedTypes { get; } = [];

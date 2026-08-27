@@ -21,6 +21,8 @@
     @if (State.ViewMode == ShipsViewMode.Calendar) {
         <MissionCalendarView Missions="State.TabFiltered ?? Array.Empty<DatabaseMission>()"
                              InFlightMissions="@State.TabFilteredInFlight"
+                             AllMissions="State.TabFilteredAll ?? Array.Empty<DatabaseMission>()"
+                             HasActiveFilter="State.HasActiveFilter"
                              ShowFlightRatio="@State.Opts.CalendarFlightRatio"
                              OnViewMission="ViewMissionAsync"/>
     } else {

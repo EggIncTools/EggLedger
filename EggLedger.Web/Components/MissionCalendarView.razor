@@ -8,12 +8,14 @@
         <TimelineRangePicker RangeLabel="@RangeLabel"
                              Zoom="_zoom"
                              DateValue="@LocalCenterDate"
+                             PrevDisabled="@(!_canPanPrev)"
+                             NextDisabled="@(!_canPanNext)"
                              ZoomChanged="SetZoomAsync"
                              OnPan="PanAsync"
                              OnToday="JumpToNowAsync"
                              DateChanged="JumpToDateAsync"/>
         @if (ShowFlightRatio) {
-            <span class="airtime-stat" data-tt="Mission airtime this period, against all 3 mission slots flying nonstop. Split by farm when home and virtue missions both flew.">
+            <span class="airtime-stat" data-tt="Share of 3 mission slots in flight this period, by farm.">
                 <span class="airtime-label">Airtime</span>
                 @if (_flightSlices is not { Count: > 0 } slices) {
                     <span class="airtime-chip">n/a</span>
@@ -26,6 +28,11 @@
                             @Pct(slice.Ratio)
                         </span>
                     }
+                }
+                @if (FilteredOutRatio is { } filteredOut) {
+                    <span class="airtime-chip airtime-filtered" data-tt="Airtime from missions excluded by the active filter, for this period.">
+                        -@Pct(filteredOut) filtered
+                    </span>
                 }
             </span>
         }
@@ -99,6 +106,8 @@
 
     [Parameter] public IReadOnlyList<DatabaseMission> Missions { get; set; } = Array.Empty<DatabaseMission>();
     [Parameter] public IReadOnlyList<DatabaseMission> InFlightMissions { get; set; } = Array.Empty<DatabaseMission>();
+    [Parameter] public IReadOnlyList<DatabaseMission> AllMissions { get; set; } = Array.Empty<DatabaseMission>();
+    [Parameter] public bool HasActiveFilter { get; set; }
     [Parameter] public bool ShowFlightRatio { get; set; }
     [Parameter] public EventCallback<string> OnViewMission { get; set; }
 
@@ -110,6 +119,9 @@
     private List<DatabaseMission> _merged = [];
     private HashSet<string> _noDataIds = [];
     private IReadOnlyList<FlightRatioSlice>? _flightSlices;
+    private IReadOnlyList<FlightRatioSlice>? _flightSlicesAll;
+    private bool _canPanPrev = true;
+    private bool _canPanNext = true;
     private bool _showStillFlying;
 
     private ElementReference _viewportRef;
@@ -160,8 +172,11 @@
 
     [JSInvokable]
     public Task CommitScrollPan(int direction) {
-        _center += (_visibleEnd - _visibleStart) * direction;
-        Recompute();
+        if (CanPan(direction)) {
+            _center += (_visibleEnd - _visibleStart) * direction;
+            Recompute();
+        }
+
         _resetScrollPending = true;
         StateHasChanged();
         return Task.CompletedTask;
@@ -179,6 +194,17 @@
 
         var now = DateTimeOffset.UtcNow;
         _flightSlices = TimelineFlightRatio.ComputeByFarm(_merged, _visibleStart, _visibleEnd, now);
+
+        if (HasActiveFilter) {
+            var allDbIds = new HashSet<string>(AllMissions.Select(m => m.MissiondId), StringComparer.Ordinal);
+            var allInFlight = InFlightMissions.Where(m => !allDbIds.Contains(m.MissiondId)).ToList();
+            var mergedAll = AllMissions.Concat(allInFlight).ToList();
+            _flightSlicesAll = TimelineFlightRatio.ComputeByFarm(mergedAll, _visibleStart, _visibleEnd, now);
+        } else {
+            _flightSlicesAll = null;
+        }
+
+        UpdatePanBounds(tz);
 
         var windows = new List<(DateTimeOffset Start, DateTimeOffset End)> { (_visibleStart, _visibleEnd) };
         for (var i = 0; i < CenterSlot; i++) {
@@ -275,10 +301,64 @@
     }
 
     private Task PanAsync(int direction) {
+        if (!CanPan(direction)) {
+            return Task.CompletedTask;
+        }
+
         _center += (_visibleEnd - _visibleStart) * direction;
         Recompute();
         _resetScrollPending = true;
         return Task.CompletedTask;
+    }
+
+    private bool CanPan(int direction) {
+        return direction switch {
+            > 0 => _canPanNext,
+            < 0 => _canPanPrev,
+            _ => true
+        };
+    }
+
+    private void UpdatePanBounds(TimeZoneInfo tz) {
+        var nowWindow = TimelineWindow.Compute(DateTimeOffset.UtcNow, _zoom, tz);
+        _canPanNext = _visibleStart < nowWindow.Start;
+
+        if (EarliestLaunchUnixSeconds() is { } earliest) {
+            var earliestWindow = TimelineWindow.Compute(DateTimeOffset.FromUnixTimeSeconds(earliest), _zoom, tz);
+            _canPanPrev = _visibleStart > earliestWindow.Start;
+        } else {
+            _canPanPrev = true;
+        }
+    }
+
+    private long? EarliestLaunchUnixSeconds() {
+        long? min = null;
+        foreach (var m in AllMissions) {
+            if (min is null || m.LaunchDT < min) {
+                min = m.LaunchDT;
+            }
+        }
+
+        foreach (var m in InFlightMissions) {
+            if (min is null || m.LaunchDT < min) {
+                min = m.LaunchDT;
+            }
+        }
+
+        return min;
+    }
+
+    private double? FilteredOutRatio {
+        get {
+            if (_flightSlicesAll is not { Count: > 0 } allSlices) {
+                return null;
+            }
+
+            var allTotal = allSlices.Sum(s => s.Ratio);
+            var filteredTotal = _flightSlices?.Sum(s => s.Ratio) ?? 0;
+            var delta = allTotal - filteredTotal;
+            return delta > 0.0005 ? delta : null;
+        }
     }
 
     private Task JumpToNowAsync() {

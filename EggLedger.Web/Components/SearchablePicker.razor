@@ -149,11 +149,11 @@
     }
 
     private RenderFragment RenderChip(FilterOption opt, int idx) => __builder => {
-        <button type="button" class="popup-opt-chip relative @(idx == _activeIndex ? "selected-popup-opt" : "")"
-                data-tt="@TooltipText(opt)"
+        <button type="button" class="popup-opt-chip @(idx == _activeIndex ? "selected-popup-opt" : "")"
+                data-tt="@TooltipText(opt)" data-tt-classes="@TooltipClasses(opt)"
                 @onclick="() => Choose(opt)">
             @if (!string.IsNullOrEmpty(opt.ImagePath)) {
-                <img class="w-7 h-7 @RingClass(opt)" loading="lazy" decoding="async"
+                <img class="h-full w-full @RingClass(opt)" loading="lazy" decoding="async"
                      alt="@opt.Text" src="@ImageSrc(opt)"/>
             }
             @if (!string.IsNullOrEmpty(opt.Badge)) {
@@ -164,6 +164,10 @@
 
     private static string TooltipText(FilterOption opt) {
         return opt.Rarity is { } r ? opt.Text + "\n" + FilterOptions.RarityWord(r) : opt.Text;
+    }
+
+    private static string TooltipClasses(FilterOption opt) {
+        return opt.Rarity is { } r && FilterOptions.RarityStyleClass(r) is { } cls ? "1=" + cls : "";
     }
 
     private string ImageSrc(FilterOption o) {

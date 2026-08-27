@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text.Json;
 using EggLedger.Web.Ships;
@@ -9,6 +10,7 @@ namespace EggLedger.Web.Server.Ships;
 public sealed class ShipAssetService {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
     private readonly string _dir;
+    private readonly ConcurrentDictionary<string, byte[]> _cache = new();
 
     public ShipManifest Manifest { get; }
 
@@ -34,9 +36,12 @@ public sealed class ShipAssetService {
     }
 
     public async Task<byte[]?> ReadAsync(string key, CancellationToken ct) {
+        if (_cache.TryGetValue(key, out var cached)) return cached;
         if (!TryGetPath(key, out var path)) return null;
         var bytes = await File.ReadAllBytesAsync(path, ct).ConfigureAwait(false);
         var sha = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
-        return sha == Manifest.Ships[key].Sha256 ? bytes : null;
+        if (sha != Manifest.Ships[key].Sha256) return null;
+        _cache[key] = bytes;
+        return bytes;
     }
 }

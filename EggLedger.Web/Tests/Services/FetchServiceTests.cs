@@ -16,16 +16,12 @@ public sealed class FetchServiceTests {
         FakeIndexedDb db,
         HttpMessageHandler handler,
         int workerCount = 4,
-        bool retry = false,
         IndexedDbSettings? settings = null) {
         var http = new HttpClient(handler) { BaseAddress = new Uri("https://example.test") };
         var api = new ApiClient(http);
         settings ??= new IndexedDbSettings(db);
         if (workerCount != 1) {
             settings.SetSettingAsync("worker_count", workerCount.ToString()).GetAwaiter().GetResult();
-        }
-        if (retry) {
-            settings.SetSettingAsync("retry_failed_missions", "true").GetAwaiter().GetResult();
         }
         var store = new IndexedDbMissionStore(db, new LocalApiPayloadDecoder(new ApiClient()));
         var accounts = new IndexedDbAccountStore(settings);
@@ -350,7 +346,7 @@ public sealed class FetchServiceTests {
         var handler = new RoutingHandler(
             FirstContactBody(new[] { "bad" }),
             id => id == "bad" ? null : CompleteMissionBody(id));
-        var service = Make(db, handler, retry: false);
+        var service = Make(db, handler);
 
         var events = new List<FetchProgress>();
         var progress = new SynchronousProgress<FetchProgress>(events.Add);
@@ -359,13 +355,15 @@ public sealed class FetchServiceTests {
 
         Assert.Equal(AppState.Failed, final);
         var failedReport = events.Last(e => e.State == AppState.Failed);
+        Assert.Equal(5, failedReport.Retried);
         var failure = Assert.Single(failedReport.FailedMissions);
         Assert.Equal("bad", failure.MissionId);
         Assert.NotEmpty(failure.Reason);
+        Assert.False(failure.IsTimeout);
     }
 
     [Fact]
-    public async Task FetchPlayerData_RetryOn_RecoversTransientFailure() {
+    public async Task FetchPlayerData_TransientFailure_RecoversViaAutomaticRetry() {
         var db = new FakeIndexedDb();
         int attempts = 0;
         var handler = new RoutingHandler(
@@ -376,13 +374,21 @@ public sealed class FetchServiceTests {
                 }
                 return CompleteMissionBody(id);
             });
-        var service = Make(db, handler, retry: true);
+        var service = Make(db, handler);
 
         var final = await service.FetchPlayerDataAsync(Eid, null, CancellationToken.None);
 
         Assert.Equal(AppState.Success, final);
         var store = new IndexedDbMissionStore(db, new LocalApiPayloadDecoder(new ApiClient()));
         Assert.NotNull(await store.GetCompleteMissionAsync(Eid, "flaky"));
+    }
+
+    [Theory]
+    [InlineData("POST https://x: timeout after 00:00:05", true)]
+    [InlineData("POST https://x: HTTP 500: ", false)]
+    public void FailedMission_IsTimeout_DetectsTimeoutReason(string reason, bool expected) {
+        var failure = new FailedMission("m1", 0, reason);
+        Assert.Equal(expected, failure.IsTimeout);
     }
 
     [Fact]

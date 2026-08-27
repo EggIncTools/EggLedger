@@ -3,8 +3,7 @@
 
 @if (ScreenshotSafety.Enabled && IsEid(Value)) {
     <span class="masked-eid @(_revealed ? "masked-eid-revealed" : "")"
-          @onclick="Toggle" @onclick:stopPropagation="true"
-          data-tt="@(_revealed ? "Click to hide" : "Hover or click to reveal")">
+          @onclick="Toggle" @onclick:stopPropagation="true">
         @Value
     </span>
 } else {

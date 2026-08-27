@@ -7,12 +7,9 @@ public sealed class SettingsModel {
 
     public const string KeyAutoRefreshMenno = "auto_refresh_menno_pref";
     public const string KeyLastMennoRefresh = "last_menno_data_refresh_at";
-    public const string KeyRetryFailedMissions = "retry_failed_missions";
-    public const string KeyHideTimeoutErrors = "hide_timeout_errors";
     public const string KeyWorkerCount = "worker_count";
     public const string KeyScreenshotSafety = "screenshot_safety";
     public const string KeyShowMissionProgress = "show_mission_progress";
-    public const string KeyCollapseOlderSections = "collapse_older_sections";
     public const string KeyAdvancedDropFilter = "advanced_drop_filter";
     public const string KeyAutoExportCsv = "auto_export_csv";
     public const string KeyAutoExportXlsx = "auto_export_xlsx";
@@ -37,17 +34,11 @@ public sealed class SettingsModel {
 
     public DateTimeOffset? LastMennoRefreshAt { get; set; }
 
-    public bool AutoRetry { get; set; } = true;
-
-    public bool HideTimeoutErrors { get; set; }
-
     public int WorkerCount { get; set; } = MinWorkerCount;
 
     public bool ScreenshotSafety { get; set; }
 
     public bool ShowMissionProgress { get; set; } = true;
-
-    public bool CollapseOlderSections { get; set; } = true;
 
     public bool AdvancedDropFilter { get; set; }
 
@@ -81,12 +72,9 @@ public sealed class SettingsModel {
             && DateTimeOffset.TryParse(lmr, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var lmrParsed)) {
             LastMennoRefreshAt = lmrParsed;
         }
-        AutoRetry = SettingsDictionaryParsing.Bool(settings, KeyRetryFailedMissions, AutoRetry);
-        HideTimeoutErrors = SettingsDictionaryParsing.Bool(settings, KeyHideTimeoutErrors, HideTimeoutErrors);
         WorkerCount = ClampWorkerCount(SettingsDictionaryParsing.Int(settings, KeyWorkerCount, WorkerCount));
         ScreenshotSafety = SettingsDictionaryParsing.Bool(settings, KeyScreenshotSafety, ScreenshotSafety);
         ShowMissionProgress = SettingsDictionaryParsing.Bool(settings, KeyShowMissionProgress, ShowMissionProgress);
-        CollapseOlderSections = SettingsDictionaryParsing.Bool(settings, KeyCollapseOlderSections, CollapseOlderSections);
         AdvancedDropFilter = SettingsDictionaryParsing.Bool(settings, KeyAdvancedDropFilter, AdvancedDropFilter);
         AutoExportCsv = SettingsDictionaryParsing.Bool(settings, KeyAutoExportCsv, AutoExportCsv);
         AutoExportXlsx = SettingsDictionaryParsing.Bool(settings, KeyAutoExportXlsx, AutoExportXlsx);

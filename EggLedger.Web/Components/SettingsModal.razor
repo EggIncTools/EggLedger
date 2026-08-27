@@ -70,9 +70,11 @@
 
     private RenderFragment GeneralBody => @<OptionsPanel Model="_model" OnSetting="OnSettingAsync"/>;
 
-    private RenderFragment SyncBody => @<CloudSyncPanel ShowHeading="false"/>;
-
-    private RenderFragment AccountsBody => @<AccountDataPanel Accounts="_existing" Changed="ReloadAccountsAsync" Fetching="FetchingCardInfo"/>;
+    private RenderFragment AccountDataAndSyncBody => __builder => {
+        <AccountDataPanel Accounts="_existing" Changed="ReloadAccountsAsync" Fetching="FetchingCardInfo"/>
+        <hr class="mt-1rem mb-1rem w-full"/>
+        <CloudSyncPanel/>
+    };
 
     protected override async Task OnInitializedAsync() {
         var all = await Settings.GetAllSettingsAsync();
@@ -102,8 +104,7 @@
         }
 
         yield return (GeneralSectionId, "General", GeneralBody);
-        yield return ("sync", "Settings Sync", SyncBody);
-        yield return ("accounts", "Account Data", AccountsBody);
+        yield return ("accounts-and-sync", "Account Data + Sync", AccountDataAndSyncBody);
     }
 
     private void Toggle(string id) {

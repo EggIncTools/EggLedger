@@ -292,6 +292,31 @@
   opacity: 0.85;
 }
 
+.airtime-filtered {
+  border-style: dashed;
+  color: var(--color-gray-500);
+}
+
+.range-picker-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.75rem;
+  border: 1px solid var(--color-gray-600);
+  border-radius: 9999px;
+  background-color: var(--color-darker);
+  color: var(--color-gray-300);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.12s ease, background-color 0.12s ease, color 0.12s ease;
+}
+
+.range-picker-trigger:hover {
+  border-color: var(--color-gray-400);
+  color: var(--color-gray-100);
+}
+
 .timeline-viewport {
   position: relative;
   flex: 1;
@@ -699,6 +724,31 @@
   letter-spacing: 0.08em;
 }
 
+.filter-result-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in srgb, var(--color-green-700) 60%, transparent);
+  background: color-mix(in srgb, var(--color-green-700) 12%, transparent);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.filter-result-counts {
+  color: var(--color-gray-300);
+}
+
+.filter-result-sep {
+  color: var(--color-gray-600);
+}
+
+.filter-result-time {
+  color: var(--color-gray-500);
+  font-weight: 500;
+}
+
 .filter-icon-btn {
   display: inline-flex;
   align-items: center;
@@ -845,7 +895,7 @@
 }
 
 .popup-opt-chip {
-  @apply inline-flex flex-col items-center justify-center gap-0.5 w-12 h-12 rounded-md cursor-pointer select-none py-0.5 [outline:none];
+  @apply relative inline-flex items-center justify-center w-12 h-12 p-1 rounded-md cursor-pointer select-none [outline:none];
 }
 
 .popup-opt-chip:hover {
@@ -853,7 +903,7 @@
 }
 
 .popup-opt-chip-badge {
-  @apply text-xs leading-none whitespace-nowrap text-[0.6rem];
+  @apply absolute bottom-0 -right-1 h-1rem leading-1rem px-1 text-[0.6rem] whitespace-nowrap rounded-full ring-1 ring-white bg-darkerer;
 }
 
 .popup-search-row {
@@ -1003,6 +1053,27 @@
   border-bottom-color: rgba(33, 37, 41, 0.95);
 }
 
+.report-tooltip.tt-invalid {
+  background-color: rgba(250, 128, 114, 0.14);
+  border-color: #fa8072;
+  color: #fa8072;
+  box-shadow: 0 0 8px 1px rgba(250, 128, 114, 0.35);
+}
+
+.report-tooltip.tt-invalid > div {
+  color: #fa8072;
+}
+
+.report-tooltip.tt-invalid::before,
+.report-tooltip.tt-invalid::after {
+  border-top-color: #fa8072;
+}
+
+.report-tooltip.tt-invalid.tt-below::before,
+.report-tooltip.tt-invalid.tt-below::after {
+  border-bottom-color: #fa8072;
+}
+
 .double-cap-span {
   @apply text-center [background-image:radial-gradient(rgb(139,_14,_158),_rgb(128,_13,_126),_rgb(92,_9,_91))] rounded-[10px];
 }
@@ -1108,10 +1179,16 @@
   opacity: 1;
 }
 
-.fetch-status-popover {
-  @apply fixed bottom-4 right-20 z-[900] w-72 max-w-[calc(100vw-2rem)] px-3 py-2 rounded-md
-         border border-gray-600 bg-darkest text-xs text-gray-400 tabular-nums
-         [box-shadow:0_4px_14px_rgba(0,0,0,.35)];
+.fetch-log-inline {
+  @apply px-3 py-2 rounded-md border border-gray-700 bg-darkest text-xs text-gray-400 tabular-nums;
+}
+
+.fetch-log-workers {
+  @apply pb-2 mb-2 border-b border-gray-700;
+}
+
+.fetch-log-caret {
+  @apply text-gray-500 text-[0.65rem];
 }
 
 .gh-markdown-content a {
@@ -1464,6 +1541,24 @@ input[type=number] {
 
 .apply-filter-button {
   @apply mt-0_5rem w-full relative text-center px-3 py-1 border border-gray-600 text-sm font-medium rounded-md text-gray-400;
+}
+
+.apply-filter-button.apply-filter-button-primary {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-bg);
+  font-weight: 600;
+  transition: filter 0.12s ease;
+}
+
+.apply-filter-button.apply-filter-button-primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.apply-filter-button.apply-filter-button-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: none;
 }
 
 .calendar-date-input {
@@ -1936,7 +2031,7 @@ input[type=number] {
 
 .modal-panel-anim {
   opacity: 1;
-  transform: scale(1);
+  transform: none;
   transition: opacity 0.16s ease, transform 0.16s ease;
 }
 

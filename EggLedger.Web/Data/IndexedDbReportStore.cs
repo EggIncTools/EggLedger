@@ -105,6 +105,18 @@ public sealed class IndexedDbReportStore {
         await _db.DeleteAsync(IndexedDbStores.ReportGroups, id);
     }
 
+    public async Task DeleteAllForAccountAsync(string accountId) {
+        var reports = await _db.GetAllByIndexAsync<ReportRow>(IndexedDbStores.Reports, IndexedDbStores.AccountIdIndex, accountId);
+        foreach (var r in reports) {
+            await _db.DeleteAsync(IndexedDbStores.Reports, r.Id);
+        }
+
+        var groups = await _db.GetAllByIndexAsync<ReportGroupRow>(IndexedDbStores.ReportGroups, IndexedDbStores.AccountIdIndex, accountId);
+        foreach (var g in groups) {
+            await _db.DeleteAsync(IndexedDbStores.ReportGroups, g.Id);
+        }
+    }
+
     public async Task<IReadOnlyList<ReportGroupRow>> RetrieveAccountGroupsAsync(string accountId) {
         var rows = await _db.GetAllByIndexAsync<ReportGroupRow>(IndexedDbStores.ReportGroups, IndexedDbStores.AccountIdIndex, accountId);
         return rows.OrderBy(r => r.SortOrder)

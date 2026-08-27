@@ -35,4 +35,6 @@ public sealed record FetchProgress {
     public IReadOnlyList<FailedMission> FailedMissions { get; init; } = [];
 }
 
-public sealed record FailedMission(string MissionId, double StartTimestamp, string Reason = "");
+public sealed record FailedMission(string MissionId, double StartTimestamp, string Reason = "") {
+    public bool IsTimeout => Reason.Contains("timeout after", StringComparison.OrdinalIgnoreCase);
+}

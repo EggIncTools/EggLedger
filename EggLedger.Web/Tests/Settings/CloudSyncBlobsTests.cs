@@ -22,7 +22,6 @@ public sealed class CloudSyncBlobsTests {
         Assert.False(s.AutoRefreshMennoPref);
         Assert.Equal(1, s.WorkerCount);
         Assert.True(s.ShowMissionProgress);
-        Assert.True(s.CollapseOlderSections);
         Assert.True(s.MissionViewTimes);
         Assert.True(s.MissionShowExpectedDrops);
         Assert.Equal("off", s.MissionMultiViewMode);
@@ -62,9 +61,9 @@ public sealed class CloudSyncBlobsTests {
 
         foreach (var key in new[]
         {
-            "auto_refresh_menno_pref", "retry_failed_missions", "hide_timeout_errors",
+            "auto_refresh_menno_pref",
             "worker_count", "screenshot_safety", "show_mission_progress",
-            "collapse_older_sections", "advanced_drop_filter", "mission_view_by_date",
+            "advanced_drop_filter", "mission_view_by_date",
             "mission_view_times", "mission_recolor_dc", "mission_recolor_bc",
             "mission_show_expected_drops", "mission_multi_view_mode", "mission_sort_method",
             "lifetime_sort_method", "lifetime_show_drops_per_ship", "lifetime_show_expected_totals",
@@ -77,7 +76,6 @@ public sealed class CloudSyncBlobsTests {
     public void Pack_Then_Unpack_RoundTrips() {
         var map = new Dictionary<string, string> {
             ["auto_refresh_menno_pref"] = "true",
-            ["retry_failed_missions"] = "true",
             ["worker_count"] = "6",
             ["show_mission_progress"] = "false",
             ["mission_multi_view_mode"] = "free",
@@ -88,7 +86,6 @@ public sealed class CloudSyncBlobsTests {
         var unpacked = CloudSyncBlobs.UnpackSettings(packed);
 
         Assert.Equal("true", unpacked["auto_refresh_menno_pref"]);
-        Assert.Equal("true", unpacked["retry_failed_missions"]);
         Assert.Equal("6", unpacked["worker_count"]);
         Assert.Equal("false", unpacked["show_mission_progress"]);
         Assert.Equal("free", unpacked["mission_multi_view_mode"]);

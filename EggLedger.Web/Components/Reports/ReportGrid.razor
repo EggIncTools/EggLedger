@@ -1,6 +1,7 @@
 @inject IndexedDbReportStore Store
 @inject IDownloadService Downloader
 @inject IJSRuntime Js
+@inject ReportsViewState State
 @using System.Text.Json
 @implements IAsyncDisposable
 
@@ -43,7 +44,6 @@
     [Parameter] public IReadOnlyList<ReportGroupRow> Groups { get; set; } = Array.Empty<ReportGroupRow>();
     [Parameter] public EventCallback<ReportDefinition> OnEdit { get; set; }
     private List<ReportDefinition> _defs = new();
-    private string _loadedKey = "";
     private int? _draggingIndex;
     private string? _actionMessage;
     private ElementReference _gridRef;
@@ -51,14 +51,30 @@
     private DotNetObjectReference<ReportGrid>? _selfRef;
     private int _rowHeightPx = 144;
 
+    protected override void OnInitialized() {
+        State.Changed += OnStateChanged;
+    }
+
     protected override async Task OnParametersSetAsync() {
-        var key = AccountId + "|" + (GroupFilter ?? "");
-        if (key == _loadedKey) {
+        if (string.IsNullOrEmpty(AccountId)) {
+            _defs = new List<ReportDefinition>();
             return;
         }
 
-        _loadedKey = key;
-        await ReloadAsync();
+        await State.EnsureAccountLoadedAsync();
+        RecomputeDefs();
+    }
+
+    private void OnStateChanged() {
+        InvokeAsync(() => {
+            RecomputeDefs();
+            StateHasChanged();
+        });
+    }
+
+    private void RecomputeDefs() {
+        var rows = GroupFilter is null ? State.Reports : State.Reports.Where(r => r.GroupId == GroupFilter);
+        _defs = rows.ToList();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender) {
@@ -84,11 +100,8 @@
             return;
         }
 
-        var rows = await Store.RetrieveAccountReportsAsync(AccountId);
-        var filtered = GroupFilter is null
-            ? rows
-            : rows.Where(r => r.GroupId == GroupFilter).ToList();
-        _defs = filtered.Select(ReportMapping.ToDefinition).ToList();
+        await State.LoadReportsAsync();
+        RecomputeDefs();
         StateHasChanged();
     }
 
@@ -178,6 +191,7 @@
     }
 
     public async ValueTask DisposeAsync() {
+        State.Changed -= OnStateChanged;
         if (_resizeObserver is not null) {
             await _resizeObserver.DisposeAsync();
         }

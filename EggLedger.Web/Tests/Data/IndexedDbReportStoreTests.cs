@@ -240,6 +240,22 @@ public sealed class IndexedDbReportStoreTests {
     }
 
     [Fact]
+    public async Task DeleteAllForAccount_RemovesOnlyThatAccountsReportsAndGroups() {
+        var (store, _) = Make();
+        await store.InsertReportGroupAsync(new ReportGroupRow { Id = "g1", AccountId = "EI1", Name = "G" });
+        await store.InsertReportGroupAsync(new ReportGroupRow { Id = "g2", AccountId = "EI2", Name = "G2" });
+        await store.InsertReportAsync(Report("r1", "EI1") with { GroupId = "g1" });
+        await store.InsertReportAsync(Report("r2", "EI2") with { GroupId = "g2" });
+
+        await store.DeleteAllForAccountAsync("EI1");
+
+        Assert.Null(await store.RetrieveReportAsync("r1"));
+        Assert.Null(await store.RetrieveReportGroupAsync("g1"));
+        Assert.NotNull(await store.RetrieveReportAsync("r2"));
+        Assert.NotNull(await store.RetrieveReportGroupAsync("g2"));
+    }
+
+    [Fact]
     public async Task SetReportGroup_AndRetrieveReportsByGroup() {
         var (store, _) = Make();
         await store.InsertReportGroupAsync(new ReportGroupRow { Id = "g1", AccountId = "EI1", Name = "G" });

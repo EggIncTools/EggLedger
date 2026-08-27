@@ -53,6 +53,13 @@ internal sealed class FakeMissionStore : IMissionStore {
     public Task<IReadOnlyList<StoredDrop>?> GetStoredPlayerDropsAsync(string playerId) =>
         Task.FromResult(StoredDrops.TryGetValue(playerId, out var d) ? d : null);
 
+    public List<string> DeletedPlayers { get; } = [];
+
+    public Task DeleteAllForPlayerAsync(string playerId) {
+        DeletedPlayers.Add(playerId);
+        return Task.CompletedTask;
+    }
+
     public void QueueFilterColBackfill(string eid) => BackfillsQueued.Add(eid);
 
     public void QueueArtifactDropsBackfill(string playerId) => DropsBackfillsQueued.Add(playerId);

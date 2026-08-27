@@ -62,6 +62,11 @@
                     <span class="sidebar-accordion-caret">&#9656;</span>
                 }
             </button>
+            @if (_collapsed) {
+                <button type="button" class="sidebar-collapse-btn" aria-label="Expand sidebar" @onclick="ToggleRail">&#8250;</button>
+            } else {
+                <button type="button" class="sidebar-collapse-btn" aria-label="Collapse sidebar" @onclick="ToggleRail">&#8249;</button>
+            }
         </div>
         <div class="sidebar-panel-body sidebar-scroll-body text-sm">
             <OptionsHost/>

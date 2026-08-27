@@ -5,6 +5,8 @@
 @inject IndexedDbSettings Settings
 @inject AccountLoader Loader
 @inject IUserTimeZoneProvider TzProvider
+@inject DropsViewState DropsState
+@inject ReportsViewState ReportsState
 
 @* No cascading AuthenticationState means no auth gate exists at all (the desktop host's App.razor
    never wraps in CascadingAuthenticationState), so the account controls stay enabled there. *@
@@ -14,8 +16,6 @@
             @Body
         </main>
     </div>
-
-    <FetchStatusPopover/>
 </CascadingValue>
 
 @code {
@@ -34,6 +34,9 @@
         }
 
         await Loader.EnsureLoadedAsync();
+
+        _ = DropsState.EnsureInitializedAsync(InvokeAsync);
+        _ = ReportsState.EnsureInitializedAsync(InvokeAsync);
 
         var settings = await Settings.GetAllSettingsAsync();
         if (settings.TryGetValue(SettingsModel.KeyScreenshotSafety, out var v))

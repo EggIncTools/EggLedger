@@ -1,3 +1,4 @@
+@using System.Text.RegularExpressions
 @using FilterCondition = EggLedger.Web.Missions.FilterCondition
 @inject IndexedDbSettings Settings
 @inject FilterState Filters
@@ -64,15 +65,15 @@
 @if (ShowApply) {
     <hr class="mt-1rem w-full"/>
 
-    <button type="button" class="ledger-btn apply-filter-button" disabled="@Applying" @onclick="ApplyAsync">Apply Filter</button>
+    <button type="button" class="ledger-btn apply-filter-button apply-filter-button-primary" disabled="@Applying" @onclick="ApplyAsync">Apply Filter</button>
     @if (Applying) {
         <span class="text-green-700 mt-0_5rem block">
             <i>Applying filter, please wait...</i>
         </span>
     } else if (LastResultText is { Length: > 0 }) {
-        <span class="text-green-700 mt-0_5rem block">
-            <i>@RenderResultText(LastResultText)</i>
-        </span>
+        <div class="mt-0_5rem">
+            @RenderResultText(LastResultText)
+        </div>
     }
 }
 
@@ -263,20 +264,23 @@
         }
     };
 
+    private static readonly Regex ResultTextPattern = new(
+        @"^Filtered in (?<time>[\d.]+)s \((?<shown>\d+) shown, (?<filtered>\d+) filtered out\)$");
+
     private static RenderFragment RenderResultText(string text) => __builder => {
-        var openParen = text.IndexOf('(');
-        var closeParen = openParen < 0 ? -1 : text.LastIndexOf(')');
-        if (openParen < 0 || closeParen < openParen) {
-            @text
+        var match = ResultTextPattern.Match(text);
+        if (!match.Success) {
+            <span class="text-green-700">@text</span>
             return;
         }
 
-        var prefix = text[..openParen];
-        var inner = text[(openParen + 1)..closeParen];
-
-        @prefix
-        <span class="text-gray-500">
-            (<span class="text-green-700">@inner</span>)
+        <span class="filter-result-badge">
+            <span class="filter-result-counts">
+                <span class="text-green-500">@match.Groups["shown"].Value shown</span>
+                <span class="filter-result-sep">/</span>
+                <span>@match.Groups["filtered"].Value filtered out</span>
+            </span>
+            <span class="filter-result-time">@match.Groups["time"].Value@("s")</span>
         </span>
     };
 

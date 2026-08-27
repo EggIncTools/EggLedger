@@ -1,9 +1,15 @@
 @inject IMissionStore Store
 @inject IndexedDbAccountStore AccountStore
 @inject IDownloadService Downloads
+@inject CloudAutoSyncCoordinator AutoSync
+@inject IndexedDbReportStore ReportStore
 
 @* Browser adaptation of the desktop ExportManagementPanel: manages per-account stored data (count, last fetch, export-to-download, delete) since the browser has no on-disk export files. *@
-<div class="mt-4">
+<div class="px-2 py-2 text-sm text-gray-400 bg-darker rounded-md tabular-nums overflow-auto">
+    @if (ShowHeading) {
+        <span class="mr-0_5rem font-bold text-lg text-gray-400 ledger-underline">Account Data</span>
+        <br/>
+    }
     @if (Accounts.Count == 0 && Fetching is null) {
         <p class="mt-2 text-xs text-gray-500 italic">No accounts with stored missions yet. Add an account above and fetch.</p>
     } else {
@@ -42,19 +48,41 @@
                             <span>latest mission @since</span>
                         }
                     </div>
-                    <div class="flex gap-2 mt-2 flex-wrap">
-                        <button type="button" class="text-xs px-2 py-1 rounded border border-gray-700 bg-darker text-gray-300 hover:bg-darkerthandark disabled:opacity-50 disabled:cursor-default" disabled="@_busy"
+                    <div class="flex items-center gap-2 mt-2 flex-wrap">
+                        <button type="button" class="ledger-btn apply-filter-button !mt-0 !mr-0 !ml-0" disabled="@_busy"
                                 @onclick="() => ExportCsv(acct.Id, acct.Nickname)">
                             Export CSV
                         </button>
-                        <button type="button" class="text-xs px-2 py-1 rounded border border-gray-700 bg-darker text-gray-300 hover:bg-darkerthandark disabled:opacity-50 disabled:cursor-default" disabled="@_busy"
+                        <button type="button" class="ledger-btn apply-filter-button !mt-0 !mr-0 !ml-0" disabled="@_busy"
                                 @onclick="() => ExportXlsx(acct.Id, acct.Nickname)">
                             Export XLSX
                         </button>
-                        <button type="button" class="text-xs px-2 py-1 rounded border border-red-900 bg-darker text-red-300 hover:bg-red-950 disabled:opacity-50 disabled:cursor-default" disabled="@_busy"
-                                @onclick="() => Delete(acct.Id)" data-tt="Removes the account from the list. Stored missions stay cached.">
+                        <button type="button"
+                                class="ledger-btn apply-filter-button !mt-0 !mr-0 !ml-0 !bg-gray-700 !text-gray-200 hover:!bg-gray-600 !border-gray-500"
+                                disabled="@_busy" @onclick="() => Delete(acct.Id)"
+                                data-tt="Removes this account from your account list only. Its cached mission data stays on this device.">
                             Forget account
                         </button>
+                        @if (_confirmingDeleteId == acct.Id) {
+                            <span class="text-xs text-red-400">Delete all data for this account?</span>
+                            <button type="button"
+                                    class="ledger-btn apply-filter-button !mt-0 !mr-0 !ml-0 !text-gray-300 !bg-gray-700 hover:!bg-gray-600 !border-gray-500"
+                                    @onclick="() => _confirmingDeleteId = null">
+                                Cancel
+                            </button>
+                            <button type="button"
+                                    class="ledger-btn apply-filter-button !mt-0 !mr-0 !ml-0 !bg-red-900 !text-red-200 hover:!bg-red-800 !border-red-700"
+                                    disabled="@(_busy || Fetching?.Id == acct.Id)" @onclick="() => DeleteAllDataAsync(acct.Id)">
+                                @(_busy ? "Deleting..." : "Yes, delete")
+                            </button>
+                        } else {
+                            <button type="button"
+                                    class="ledger-btn apply-filter-button !mt-0 !mr-0 !ml-0 !bg-red-900/60 !text-red-300 hover:!bg-red-900 !border-red-800"
+                                    disabled="@(_busy || Fetching?.Id == acct.Id)" @onclick="() => _confirmingDeleteId = acct.Id"
+                                    data-tt="@(Fetching?.Id == acct.Id ? "Can't delete while a fetch is in progress for this account." : "Permanently deletes this account's cached mission data from this device, and from cloud sync on your next sync.")">
+                                Delete my data
+                            </button>
+                        }
                     </div>
                 </li>
             }
@@ -68,10 +96,13 @@
 @code {
     private bool _busy;
     private string _error = "";
+    private string? _confirmingDeleteId;
 
     [Parameter] public IReadOnlyList<DatabaseAccount> Accounts { get; set; } = [];
 
     [Parameter] public EventCallback Changed { get; set; }
+
+    [Parameter] public bool ShowHeading { get; set; } = true;
 
     [Parameter] public FetchingCard? Fetching { get; set; }
 
@@ -122,6 +153,29 @@
         try {
             await AccountStore.RemoveKnownAccountAsync(id);
             await Changed.InvokeAsync();
+        }
+        catch (Exception e) {
+            _error = e.Message;
+        }
+        finally {
+            _busy = false;
+        }
+    }
+
+    private async Task DeleteAllDataAsync(string id) {
+        _busy = true;
+        _error = "";
+        _confirmingDeleteId = null;
+        try {
+            await Store.DeleteAllForPlayerAsync(id);
+            await ReportStore.DeleteAllForAccountAsync(id);
+            await AccountStore.RemoveKnownAccountAsync(id);
+            await Changed.InvokeAsync();
+            try {
+                await AutoSync.NotifySettingsChangedAsync();
+            }
+            catch {
+            }
         }
         catch (Exception e) {
             _error = e.Message;

@@ -1,0 +1,83 @@
+@inject FetchOrchestrator Fetch
+@implements IDisposable
+
+<div class="fetch-log-body">
+    @switch (DisplayState) {
+        case AppState.FetchingSave:
+            <div class="text-yellow-400">Fetching save...</div>
+            break;
+        case AppState.FetchingMissions:
+            <div class="text-yellow-400">
+                Fetching missions...
+                @if (Fetch.Progress?.MissionId is { Length: > 0 } mid) {
+                    <span class="text-gray-400 italic break-all">@mid</span>
+                }
+            </div>
+            <div class="mt-0.5">
+                <span class="text-green-400">@(Fetch.Progress?.Finished ?? 0)</span>
+                <span class="text-gray-400"> / @(Fetch.Progress?.Total ?? 0) (@(Fetch.Percent)%)</span>
+            </div>
+            @if ((Fetch.Progress?.Failed ?? 0) > 0 || (Fetch.Progress?.Retried ?? 0) > 0) {
+                <div class="mt-0.5">
+                    @if ((Fetch.Progress?.Failed ?? 0) > 0) {
+                        <span class="text-red-500">@Fetch.Progress?.Failed failed</span>
+                    }
+                    @if ((Fetch.Progress?.Failed ?? 0) > 0 && (Fetch.Progress?.Retried ?? 0) > 0) {
+                        <span class="text-gray-400"> &middot; </span>
+                    }
+                    @if ((Fetch.Progress?.Retried ?? 0) > 0) {
+                        <span class="text-orange-400">@Fetch.Progress?.Retried retried</span>
+                    }
+                </div>
+            }
+
+            <div class="h-3 mt-1.5 rounded-sm overflow-hidden bg-dark">
+                <div class="h-full bg-green-500 transition-all duration-300 rounded-sm" style="width: @(Fetch.Percent)%"></div>
+            </div>
+            break;
+        case AppState.ExportingData:
+            <div class="text-yellow-400">Exporting data...</div>
+            break;
+        case AppState.Success:
+            <div class="text-green-400">Fetch complete.</div>
+            break;
+        case AppState.Failed:
+            <div class="text-red-500">Data fetching failed. Please try again.</div>
+            @if (Fetch.Progress?.FailedMissions is { Count: > 0 } fails) {
+                <ul class="mt-1 pl-3 max-h-32 overflow-auto">
+                    @foreach (var f in fails) {
+                        <li class="break-all @(f.IsTimeout ? "text-yellow-600" : "text-gray-500")">
+                            <span class="@(f.IsTimeout ? "text-yellow-500" : "text-gray-400") font-mono">@f.MissionId</span>
+                            @if (f.IsTimeout) {
+                                <span class="text-yellow-600/80"> - timed out after multiple attempts</span>
+                            } else {
+                                <span> - @f.Reason</span>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+
+            break;
+        case AppState.Interrupted:
+            <div class="text-yellow-400">Interrupted.</div>
+            break;
+    }
+</div>
+
+@code {
+    private AppState? DisplayState => Fetch.TerminalState ?? Fetch.Progress?.State;
+
+    protected override void OnInitialized() {
+        Fetch.Changed += OnChanged;
+    }
+
+    private void OnChanged() {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() {
+        Fetch.Changed -= OnChanged;
+    }
+
+}

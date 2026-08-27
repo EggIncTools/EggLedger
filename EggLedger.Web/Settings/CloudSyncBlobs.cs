@@ -8,18 +8,12 @@ namespace EggLedger.Web.Settings;
 public sealed record CloudSyncableSettings {
     [JsonPropertyName("auto_refresh_menno_pref")]
     public bool AutoRefreshMennoPref { get; init; }
-    [JsonPropertyName("retry_failed_missions")]
-    public bool RetryFailedMissions { get; init; }
-    [JsonPropertyName("hide_timeout_errors")]
-    public bool HideTimeoutErrors { get; init; }
     [JsonPropertyName("worker_count")]
     public int WorkerCount { get; init; }
     [JsonPropertyName("screenshot_safety")]
     public bool ScreenshotSafety { get; init; }
     [JsonPropertyName("show_mission_progress")]
     public bool ShowMissionProgress { get; init; }
-    [JsonPropertyName("collapse_older_sections")]
-    public bool CollapseOlderSections { get; init; }
     [JsonPropertyName("advanced_drop_filter")]
     public bool AdvancedDropFilter { get; init; }
     [JsonPropertyName("mission_view_by_date")]
@@ -93,12 +87,9 @@ public static class CloudSyncBlobs {
 
     public static CloudSyncableSettings PackSettings(IReadOnlyDictionary<string, string> settings) => new() {
         AutoRefreshMennoPref = SettingsDictionaryParsing.Bool(settings, SettingsModel.KeyAutoRefreshMenno, false),
-        RetryFailedMissions = SettingsDictionaryParsing.Bool(settings, SettingsModel.KeyRetryFailedMissions, true),
-        HideTimeoutErrors = SettingsDictionaryParsing.Bool(settings, SettingsModel.KeyHideTimeoutErrors, false),
         WorkerCount = SettingsModel.ClampWorkerCount(SettingsDictionaryParsing.Int(settings, SettingsModel.KeyWorkerCount, SettingsModel.MinWorkerCount)),
         ScreenshotSafety = SettingsDictionaryParsing.Bool(settings, SettingsModel.KeyScreenshotSafety, false),
         ShowMissionProgress = SettingsDictionaryParsing.Bool(settings, SettingsModel.KeyShowMissionProgress, true),
-        CollapseOlderSections = SettingsDictionaryParsing.Bool(settings, SettingsModel.KeyCollapseOlderSections, true),
         AdvancedDropFilter = SettingsDictionaryParsing.Bool(settings, SettingsModel.KeyAdvancedDropFilter, false),
         MissionViewByDate = SettingsDictionaryParsing.Bool(settings, "mission_view_by_date", false),
         MissionViewTimes = SettingsDictionaryParsing.Bool(settings, "mission_view_times", true),
@@ -114,12 +105,9 @@ public static class CloudSyncBlobs {
 
     public static IReadOnlyDictionary<string, string> UnpackSettings(CloudSyncableSettings s) => new Dictionary<string, string> {
         [SettingsModel.KeyAutoRefreshMenno] = SettingsModel.FormatBool(s.AutoRefreshMennoPref),
-        [SettingsModel.KeyRetryFailedMissions] = SettingsModel.FormatBool(s.RetryFailedMissions),
-        [SettingsModel.KeyHideTimeoutErrors] = SettingsModel.FormatBool(s.HideTimeoutErrors),
         [SettingsModel.KeyWorkerCount] = SettingsModel.FormatInt(SettingsModel.ClampWorkerCount(s.WorkerCount)),
         [SettingsModel.KeyScreenshotSafety] = SettingsModel.FormatBool(s.ScreenshotSafety),
         [SettingsModel.KeyShowMissionProgress] = SettingsModel.FormatBool(s.ShowMissionProgress),
-        [SettingsModel.KeyCollapseOlderSections] = SettingsModel.FormatBool(s.CollapseOlderSections),
         [SettingsModel.KeyAdvancedDropFilter] = SettingsModel.FormatBool(s.AdvancedDropFilter),
         ["mission_view_by_date"] = SettingsModel.FormatBool(s.MissionViewByDate),
         ["mission_view_times"] = SettingsModel.FormatBool(s.MissionViewTimes),

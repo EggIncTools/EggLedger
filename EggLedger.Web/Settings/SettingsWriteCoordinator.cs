@@ -23,12 +23,9 @@ public sealed class SettingsWriteCoordinator(
     public static bool IsCloudSyncableKey(string key) {
         return key is
             SettingsModel.KeyAutoRefreshMenno or
-            SettingsModel.KeyRetryFailedMissions or
-            SettingsModel.KeyHideTimeoutErrors or
             SettingsModel.KeyWorkerCount or
             SettingsModel.KeyScreenshotSafety or
             SettingsModel.KeyShowMissionProgress or
-            SettingsModel.KeyCollapseOlderSections or
             SettingsModel.KeyAdvancedDropFilter;
     }
 }

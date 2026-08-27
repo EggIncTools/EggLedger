@@ -7,14 +7,9 @@ public sealed class SettingsModelTests {
     public void Defaults_MatchGo() {
         var m = new SettingsModel();
         Assert.False(m.AutoRefreshMenno);
-
-
-        Assert.True(m.AutoRetry);
-        Assert.False(m.HideTimeoutErrors);
         Assert.Equal(1, m.WorkerCount);
         Assert.False(m.ScreenshotSafety);
         Assert.True(m.ShowMissionProgress);
-        Assert.True(m.CollapseOlderSections);
         Assert.False(m.AdvancedDropFilter);
         Assert.True(m.AutoExportCsv);
         Assert.True(m.AutoExportXlsx);
@@ -44,7 +39,6 @@ public sealed class SettingsModelTests {
         var m = new SettingsModel();
         m.LoadFrom(new Dictionary<string, string>());
         Assert.True(m.ShowMissionProgress);
-        Assert.True(m.CollapseOlderSections);
         Assert.True(m.AutoExportCsv);
         Assert.True(m.AutoExportXlsx);
         Assert.Equal(1, m.WorkerCount);
@@ -54,12 +48,9 @@ public sealed class SettingsModelTests {
     public void LoadFrom_ReadsAllKeys() {
         var settings = new Dictionary<string, string> {
             [SettingsModel.KeyAutoRefreshMenno] = "true",
-            [SettingsModel.KeyRetryFailedMissions] = "true",
-            [SettingsModel.KeyHideTimeoutErrors] = "true",
             [SettingsModel.KeyWorkerCount] = "7",
             [SettingsModel.KeyScreenshotSafety] = "true",
             [SettingsModel.KeyShowMissionProgress] = "false",
-            [SettingsModel.KeyCollapseOlderSections] = "false",
             [SettingsModel.KeyAdvancedDropFilter] = "true",
             [SettingsModel.KeyAutoExportCsv] = "false",
             [SettingsModel.KeyAutoExportXlsx] = "false",
@@ -76,12 +67,9 @@ public sealed class SettingsModelTests {
         m.LoadFrom(settings);
 
         Assert.True(m.AutoRefreshMenno);
-        Assert.True(m.AutoRetry);
-        Assert.True(m.HideTimeoutErrors);
         Assert.Equal(7, m.WorkerCount);
         Assert.True(m.ScreenshotSafety);
         Assert.False(m.ShowMissionProgress);
-        Assert.False(m.CollapseOlderSections);
         Assert.True(m.AdvancedDropFilter);
         Assert.False(m.AutoExportCsv);
         Assert.False(m.AutoExportXlsx);

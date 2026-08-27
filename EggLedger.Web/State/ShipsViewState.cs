@@ -57,6 +57,10 @@ public sealed class ShipsViewState(
 
     public IReadOnlyList<DatabaseMission>? TabFiltered { get; private set; }
 
+    public IReadOnlyList<DatabaseMission>? TabFilteredAll { get; private set; }
+
+    public bool HasActiveFilter { get; private set; }
+
     public IReadOnlyList<DatabaseMission> InFlight { get; private set; } = [];
 
     public IReadOnlyList<DatabaseMission>? FlatSorted { get; private set; }
@@ -114,6 +118,7 @@ public sealed class ShipsViewState(
         _allDrops = null;
         DropCounts = [];
         FlatSorted = null;
+        HasActiveFilter = false;
 
         var pending = hub.GetMissionsAsync(id);
         var pendingInFlight = hub.GetInFlightAsync(id);
@@ -177,6 +182,7 @@ public sealed class ShipsViewState(
 
             DropCounts = dropCounts;
             Filtered = result;
+            HasActiveFilter = HasConditions(filter);
             PruneSelection();
             var shown = result.Count;
             var filteredOut = missions.Count - shown;
@@ -193,6 +199,10 @@ public sealed class ShipsViewState(
             Applying = false;
             Changed?.Invoke();
         }
+    }
+
+    private static bool HasConditions(MissionFilterBar.LegacyFilter filter) {
+        return filter.And.Count > 0 || filter.Or.Any(g => g is { Count: > 0 });
     }
 
     private static DropMatch? CountableDrop(MissionFilterBar.LegacyFilter filter) {
@@ -326,6 +336,7 @@ public sealed class ShipsViewState(
 
     private void Regroup() {
         TabFiltered = MissionViewOptions.TabFilteredMissions(Filtered, Opts.MissionTypeTab);
+        TabFilteredAll = MissionViewOptions.TabFilteredMissions(AllMissions, Opts.MissionTypeTab);
         Grouping = MissionGrouper.Group(TabFiltered, ts => MissionFilterMatcher.LedgerDate(ts, timeZones.TimeZone), true);
 
         if (Opts.SortByDropCount && DropCounts.Count > 0 && TabFiltered is { Count: > 0 }) {
