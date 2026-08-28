@@ -79,6 +79,8 @@
   --color-selectedmissiondarker: rgb(7, 120, 56);
   --color-buggedcap: rgb(198, 10, 10);
   --color-buggedcapdarker: rgb(138, 7, 7);
+  --color-event-mission-capacity: #d946ef;
+  --color-event-mission-duration: #ec4899;
 
   --color-privacy_blue: #276ec8;
   --color-data_loss_red: #820808;
@@ -435,7 +437,7 @@
 
 .timeline-row-lanes {
   position: absolute;
-  inset: 1.3rem 0 0.2rem 0;
+  inset: 1.9rem 0 0.2rem 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -443,6 +445,43 @@
   overflow-y: auto;
   scrollbar-gutter: stable;
   z-index: 2;
+}
+
+.timeline-event-band {
+  position: absolute;
+  top: 1.3rem;
+  left: 0;
+  right: 0;
+  height: 0.5rem;
+  z-index: 1;
+}
+
+.timeline-event-bar {
+  position: absolute;
+  height: 0.2rem;
+  border-radius: 9999px;
+  left: calc(var(--evt-start) * 1%);
+  width: calc(var(--evt-size) * 1% - 2px);
+}
+
+.timeline-event-mission-capacity {
+  top: 0;
+  background: var(--color-event-mission-capacity);
+}
+
+.timeline-event-mission-duration {
+  top: 0.28rem;
+  background: var(--color-event-mission-duration);
+}
+
+.timeline-event-cut-l {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.timeline-event-cut-r {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
 .timeline-row-lanes::-webkit-scrollbar {
@@ -486,6 +525,14 @@
 
 .timeline-dur-3 {
   --bar-color: var(--color-duration-3);
+}
+
+.timeline-bar-dubcap {
+  --bar-color: var(--color-dubcap);
+}
+
+.timeline-bar-buggedcap {
+  --bar-color: var(--color-buggedcap);
 }
 
 .timeline-dur-text-0 {

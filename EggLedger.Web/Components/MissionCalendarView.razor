@@ -1,5 +1,6 @@
 @inject IUserTimeZoneProvider TzProvider
 @inject IJSRuntime JS
+@inject GameEventsService GameEvents
 @using System.Globalization
 @implements IAsyncDisposable
 
@@ -72,11 +73,16 @@
                                     @if (row.NowPercent is { } nowPct) {
                                         <div class="timeline-now" style="@TickStyle(nowPct)"></div>
                                     }
+                                    <div class="timeline-event-band">
+                                        @foreach (var evt in row.EventBars) {
+                                            <TimelineEventBarView Bar="evt"/>
+                                        }
+                                    </div>
                                     <div class="timeline-row-lanes">
                                         @foreach (var lane in row.Lanes) {
                                             <div class="timeline-lane">
                                                 @foreach (var bar in lane) {
-                                                    <TimelineBarView Bar="bar" OnSelect="OnSelectMission"/>
+                                                    <TimelineBarView Bar="bar" RecolorDC="RecolorDC" RecolorBC="RecolorBC" OnSelect="OnSelectMission"/>
                                                 }
                                             </div>
                                         }
@@ -103,12 +109,15 @@
 
 @code {
     private static readonly string[] WeekdayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    private static readonly string[] OverlayEventTypes = ["mission-capacity", "mission-duration"];
 
     [Parameter] public IReadOnlyList<DatabaseMission> Missions { get; set; } = Array.Empty<DatabaseMission>();
     [Parameter] public IReadOnlyList<DatabaseMission> InFlightMissions { get; set; } = Array.Empty<DatabaseMission>();
     [Parameter] public IReadOnlyList<DatabaseMission> AllMissions { get; set; } = Array.Empty<DatabaseMission>();
     [Parameter] public bool HasActiveFilter { get; set; }
     [Parameter] public bool ShowFlightRatio { get; set; }
+    [Parameter] public bool RecolorDC { get; set; }
+    [Parameter] public bool RecolorBC { get; set; }
     [Parameter] public EventCallback<string> OnViewMission { get; set; }
 
     private TimelineZoom _zoom = TimelineZoom.Month;
@@ -118,6 +127,7 @@
     private List<PeriodVm> _periods = [];
     private List<DatabaseMission> _merged = [];
     private HashSet<string> _noDataIds = [];
+    private IReadOnlyList<GameEvent> _overlayEvents = [];
     private IReadOnlyList<FlightRatioSlice>? _flightSlices;
     private IReadOnlyList<FlightRatioSlice>? _flightSlicesAll;
     private bool _canPanPrev = true;
@@ -134,7 +144,8 @@
         IReadOnlyList<TimelineDayCell> Cells,
         IReadOnlyList<TimelineTick> HourTicks,
         List<List<TimelineBar>> Lanes,
-        double? NowPercent);
+        double? NowPercent,
+        IReadOnlyList<TimelineEventBar> EventBars);
 
     private sealed record PeriodVm(DateTimeOffset Start, DateTimeOffset End, bool IsCenter, List<RowVm> Rows);
 
@@ -154,6 +165,17 @@
         _periods.Count > CenterSlot && _periods[CenterSlot].Rows.Count > 0
             ? _periods[CenterSlot].Rows[0].HourTicks
             : Array.Empty<TimelineTick>();
+
+    protected override void OnInitialized() {
+        if (GameEvents.IsConfigured) {
+            _ = LoadEventsAsync();
+        }
+    }
+
+    private async Task LoadEventsAsync() {
+        await GameEvents.EnsureLoadedAsync();
+        await InvokeAsync(StateHasChanged);
+    }
 
     protected override void OnParametersSet() {
         Recompute();
@@ -191,6 +213,9 @@
         var inFlight = InFlightMissions.Where(m => !dbIds.Contains(m.MissiondId)).ToList();
         _noDataIds = inFlight.Select(m => m.MissiondId).ToHashSet(StringComparer.Ordinal);
         _merged = Missions.Concat(inFlight).ToList();
+        _overlayEvents = GameEvents.Snapshot()
+            .Where(e => OverlayEventTypes.Contains(e.Type, StringComparer.OrdinalIgnoreCase))
+            .ToList();
 
         var now = DateTimeOffset.UtcNow;
         _flightSlices = TimelineFlightRatio.ComputeByFarm(_merged, _visibleStart, _visibleEnd, now);
@@ -240,7 +265,8 @@
         double? nowPercent = now > row.Start && now < row.End
             ? (now - row.Start).TotalSeconds / (row.End - row.Start).TotalSeconds * 100
             : null;
-        return new RowVm(row, cells, hourTicks, GroupLanes(bars), nowPercent);
+        var eventBars = TimelineLayoutEngine.LayoutEvents(_overlayEvents, row.Start, row.End);
+        return new RowVm(row, cells, hourTicks, GroupLanes(bars), nowPercent, eventBars);
     }
 
     private double MinWidthPercent => _zoom == TimelineZoom.Day ? 1.2 : 2.5;

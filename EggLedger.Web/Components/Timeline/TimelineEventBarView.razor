@@ -1,0 +1,37 @@
+@using System.Globalization
+@inject IUserTimeZoneProvider TzProvider
+
+<div class="timeline-event-bar timeline-event-@TypeSlug tooltip-host @(Bar.ContinuesLeft ? "timeline-event-cut-l" : "") @(Bar.ContinuesRight ? "timeline-event-cut-r" : "")" style="@BarStyle" data-tt-mode="cursor-x">
+    <div class="tooltip-floating tooltip-fixed text-sm">
+        <span class="font-bold">@(Bar.Message ?? Bar.Type)</span>
+        @if (Bar.Multiplier > 0) {
+            <br/>
+            <span class="text-gray-400">Multiplier:</span>
+            @MultiplierLabel
+        }
+        <br/>
+        <span class="text-gray-400">Starts:</span> @FormatTime(Bar.StartUnix)<br/>
+        <span class="text-gray-400">Ends:</span> @FormatTime(Bar.EndUnix)
+        @if (Bar.Ultra) {
+            <br/>
+            <span class="text-yellow-400">Ultra</span>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public required TimelineEventBar Bar { get; set; }
+
+    private string TypeSlug => Bar.Type.Replace('_', '-').ToLowerInvariant();
+
+    private string MultiplierLabel => Bar.Multiplier.ToString("0.##", CultureInfo.InvariantCulture) + "x";
+
+    private string BarStyle =>
+        FormattableString.Invariant($"--evt-start:{Bar.LeftPercent};--evt-size:{Bar.WidthPercent};");
+
+    private string FormatTime(long unixSeconds) {
+        return TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(unixSeconds), TzProvider.TimeZone)
+            .ToString("MMM d, h:mm tt", CultureInfo.InvariantCulture);
+    }
+
+}
