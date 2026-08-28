@@ -59,17 +59,24 @@ public static class TimelineLayoutEngine {
         long windowEnd = visibleEnd.ToUnixTimeSeconds();
         double windowSpan = windowEnd - windowStart;
 
-        var result = new List<TimelineEventBar>();
+        var intersecting = new List<GameEvent>();
         foreach (var e in events) {
+            if (e.EndTimestamp > windowStart && e.StartTimestamp < windowEnd) {
+                intersecting.Add(e);
+            }
+        }
+        intersecting.Sort((a, b) => a.StartTimestamp.CompareTo(b.StartTimestamp));
+
+        var laneRights = new List<double>();
+        var result = new List<TimelineEventBar>(intersecting.Count);
+        foreach (var e in intersecting) {
             long start = (long)e.StartTimestamp;
             long end = (long)e.EndTimestamp;
-            if (end <= windowStart || start >= windowEnd) {
-                continue;
-            }
-
-            var (left, width, _) = ClipToWindow(start, end, windowStart, windowSpan, 0);
+            var (left, width, rawRight) = ClipToWindow(start, end, windowStart, windowSpan, 0);
+            int lane = AssignLane(laneRights, left, rawRight);
             result.Add(new TimelineEventBar(
                 Id: e.Id,
+                Lane: lane,
                 Type: e.Type,
                 Message: e.Message,
                 Multiplier: e.Multiplier,
