@@ -560,6 +560,10 @@
   cursor: pointer;
 }
 
+.timeline-bar-active {
+  width: calc(var(--bar-size) * 1%);
+}
+
 .timeline-bar-track {
   position: absolute;
   inset: 0;

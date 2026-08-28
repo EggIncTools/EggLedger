@@ -175,6 +175,9 @@ public sealed class GameEventsService {
             if (_inFlight is { IsCompleted: false } running) {
                 return running;
             }
+            if (_clock.GetUtcNow() < _nextAllowedRefresh) {
+                return Task.CompletedTask;
+            }
             _inFlight = Task.Run(() => RunAsync(fromStore: true, cancellationToken), CancellationToken.None);
             return _inFlight;
         }
@@ -198,18 +201,21 @@ public sealed class GameEventsService {
 
     private async Task RunAsync(bool fromStore, CancellationToken cancellationToken) {
         bool servedFromStore = false;
+        bool reachable = false;
         try {
             servedFromStore = fromStore
                 && await TryLoadStoredAsync(cancellationToken).ConfigureAwait(false);
             if (servedFromStore) {
                 return;
             }
-            await FetchAsync(cancellationToken).ConfigureAwait(false);
+            reachable = await FetchAsync(cancellationToken).ConfigureAwait(false);
         } finally {
             if (!servedFromStore) {
                 Gate(TimeSpan.Zero);
             }
-            _loaded = true;
+            if (servedFromStore || reachable) {
+                _loaded = true;
+            }
         }
     }
 
@@ -243,19 +249,21 @@ public sealed class GameEventsService {
         }
     }
 
-    private async Task FetchAsync(CancellationToken cancellationToken) {
+    private async Task<bool> FetchAsync(CancellationToken cancellationToken) {
         double? after = ComputeAfter();
         var collected = new List<GameEvent>();
         int offset = 0;
+        bool reachedServer = false;
 
         for (int page = 0; page < MaxPages; page++) {
             var response = await GetPageAsync(after, offset, cancellationToken).ConfigureAwait(false);
             if (response is null) {
                 if (collected.Count == 0) {
-                    return;
+                    return reachedServer;
                 }
                 break;
             }
+            reachedServer = true;
             collected.AddRange(response.Events);
             if (response.Events.Count == 0 || collected.Count >= response.Total) {
                 break;
@@ -267,6 +275,8 @@ public sealed class GameEventsService {
         if (changed) {
             await SaveAsync(cancellationToken).ConfigureAwait(false);
         }
+
+        return reachedServer;
     }
 
     private double? ComputeAfter() {

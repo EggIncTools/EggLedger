@@ -210,7 +210,9 @@
         _center = _visibleStart + (_visibleEnd - _visibleStart) / 2;
 
         var dbIds = new HashSet<string>(Missions.Select(m => m.MissiondId), StringComparer.Ordinal);
-        var inFlight = InFlightMissions.Where(m => !dbIds.Contains(m.MissiondId)).ToList();
+        var inFlight = HasActiveFilter
+            ? []
+            : InFlightMissions.Where(m => !dbIds.Contains(m.MissiondId)).ToList();
         _noDataIds = inFlight.Select(m => m.MissiondId).ToHashSet(StringComparer.Ordinal);
         _merged = Missions.Concat(inFlight).ToList();
         _overlayEvents = GameEvents.Snapshot()
