@@ -1,46 +1,50 @@
 <div class="admin-panel">
     <div class="admin-panel-head">
-        <span class="admin-panel-title">Users (@(Users?.Count ?? 0))</span>
+        <span class="admin-panel-title">Users (@(Users is null ? "..." : Users.Count.ToString()))</span>
         @if (Users is { Count: > 0 }) {
             <span class="text-xs text-gray-500 tabular-nums">@Users.Sum(u => u.MissionCount) missions - @LedgerFormatting.FormatBytes(Users.Sum(u => u.StorageBytes)) total</span>
         }
     </div>
-    <div class="overflow-auto max-h-96">
-        <table class="data-table w-auto">
-            <thead>
-            <tr>
-                <th>@SortHeader("User", "username")</th>
-                <th>@SortHeader("Linked Discord", "discord")</th>
-                <th class="text-right">@SortHeader("Missions", "missions")</th>
-                <th class="text-right">@SortHeader("Reports", "reports")</th>
-                <th class="text-right">@SortHeader("Backups", "backups")</th>
-                <th class="text-right">@SortHeader("Storage", "storage")</th>
-                <th class="text-right">@SortHeader("Last Login", "lastLogin")</th>
-                <th></th>
-            </tr>
-            </thead>
-            <tbody>
-            @foreach (var u in SortedUsers()) {
+    @if (Users is null) {
+        <p class="text-xs text-gray-500 italic">Loading...</p>
+    } else {
+        <div class="overflow-auto max-h-96">
+            <table class="data-table w-auto">
+                <thead>
                 <tr>
-                    <td class="font-medium text-gray-300">@u.Username @(u.IsAdmin ? "(admin)" : "")</td>
-                    <td class="font-mono text-gray-600">@(u.DiscordId ?? "—")</td>
-                    <td class="text-right">@u.MissionCount</td>
-                    <td class="text-right">@u.ReportCount</td>
-                    <td class="text-right">@u.BackupCount</td>
-                    <td class="text-right">@LedgerFormatting.FormatBytes(u.StorageBytes)</td>
-                    <td class="text-right text-gray-600" data-tt="@LastLoginTitle(u.LastSession)">@LastLoginLabel(u.LastSession)</td>
-                    <td class="text-right">
-                        @if (!u.IsAdmin) {
-                            <button type="button" class="text-red-400 hover:text-red-300" @onclick="() => OnDelete.InvokeAsync(u.UserId)">
-                                Delete
-                            </button>
-                        }
-                    </td>
+                    <th>@SortHeader("User", "username")</th>
+                    <th>@SortHeader("Linked Discord", "discord")</th>
+                    <th class="text-right">@SortHeader("Missions", "missions")</th>
+                    <th class="text-right">@SortHeader("Reports", "reports")</th>
+                    <th class="text-right">@SortHeader("Backups", "backups")</th>
+                    <th class="text-right">@SortHeader("Storage", "storage")</th>
+                    <th class="text-right" data-tt="Last time the Desktop app paired via Discord. Not tracked for web-only (Authentik) logins.">@SortHeader("Last Pairing", "lastLogin")</th>
+                    <th></th>
                 </tr>
-            }
-            </tbody>
-        </table>
-    </div>
+                </thead>
+                <tbody>
+                @foreach (var u in SortedUsers()) {
+                    <tr>
+                        <td class="font-medium text-gray-300">@u.Username @(u.IsAdmin ? "(admin)" : "")</td>
+                        <td class="font-mono text-gray-600">@(u.DiscordId ?? "none")</td>
+                        <td class="text-right">@u.MissionCount</td>
+                        <td class="text-right">@u.ReportCount</td>
+                        <td class="text-right">@u.BackupCount</td>
+                        <td class="text-right">@LedgerFormatting.FormatBytes(u.StorageBytes)</td>
+                        <td class="text-right text-gray-600" data-tt="@LastLoginTitle(u.LastSession)">@LastLoginLabel(u.LastSession)</td>
+                        <td class="text-right">
+                            @if (!u.IsAdmin) {
+                                <button type="button" class="text-red-400 hover:text-red-300" @onclick="() => OnDelete.InvokeAsync(u.UserId)">
+                                    Delete
+                                </button>
+                            }
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
     @if (!string.IsNullOrEmpty(Error)) {
         <p class="text-red-500 text-xs mt-0_5rem">@Error</p>
     }
@@ -91,11 +95,13 @@
     }
 
     private static string LastLoginLabel(long? lastSession) {
-        return lastSession is { } s ? LedgerFormatting.FormatTimeSince(s, DateTimeOffset.UtcNow.ToUnixTimeSeconds()) : "—";
+        return lastSession is { } s ? LedgerFormatting.FormatTimeSince(s, DateTimeOffset.UtcNow.ToUnixTimeSeconds()) : "no pairing";
     }
 
     private static string LastLoginTitle(long? lastSession) {
-        return lastSession is { } s ? DateTimeOffset.FromUnixTimeSeconds(s).ToLocalTime().ToString("yyyy-MM-dd HH:mm") : "";
+        return lastSession is { } s
+            ? DateTimeOffset.FromUnixTimeSeconds(s).ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+            : "Desktop app has never paired via Discord for this user.";
     }
 
 }

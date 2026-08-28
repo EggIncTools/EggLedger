@@ -6,6 +6,10 @@ using Npgsql;
 namespace EggLedger.Web.Server.Sync.Admin;
 
 public sealed class AdminDataService(NpgsqlDataSource source, IdentityApiClient identity) : IAdminData {
+    private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(2);
+    private readonly Lock _cacheGate = new();
+    private (DateTimeOffset ExpiresAt, IReadOnlyList<AdminUser> Users)? _cache;
+
     private const string UsersSql =
         "WITH mission_agg AS (" +
         "  SELECT user_id, COUNT(*) AS cnt, SUM(pg_column_size(m.*)) AS bytes FROM el_mission m GROUP BY user_id" +
@@ -42,6 +46,20 @@ public sealed class AdminDataService(NpgsqlDataSource source, IdentityApiClient 
         "ORDER BY u.username";
 
     public async Task<IReadOnlyList<AdminUser>> GetUsersAsync(CancellationToken ct = default) {
+        lock (_cacheGate) {
+            if (_cache is { } cached && cached.ExpiresAt > DateTimeOffset.UtcNow) {
+                return cached.Users;
+            }
+        }
+
+        var users = await LoadUsersAsync(ct).ConfigureAwait(false);
+        lock (_cacheGate) {
+            _cache = (DateTimeOffset.UtcNow + CacheTtl, users);
+        }
+        return users;
+    }
+
+    private async Task<IReadOnlyList<AdminUser>> LoadUsersAsync(CancellationToken ct) {
         var roleByUserId = (await identity.ListAdminUsersAsync(ct))
             .ToDictionary(u => u.UserId, u => u.Role);
 
@@ -65,6 +83,13 @@ public sealed class AdminDataService(NpgsqlDataSource source, IdentityApiClient 
         return users;
     }
 
-    public Task<bool> DeleteUserAsync(Guid userId, CancellationToken ct = default) =>
-        UserDataDeletion.DeleteUserAsync(source, userId, ct);
+    public async Task<bool> DeleteUserAsync(Guid userId, CancellationToken ct = default) {
+        var deleted = await UserDataDeletion.DeleteUserAsync(source, userId, ct).ConfigureAwait(false);
+        if (deleted) {
+            lock (_cacheGate) {
+                _cache = null;
+            }
+        }
+        return deleted;
+    }
 }
