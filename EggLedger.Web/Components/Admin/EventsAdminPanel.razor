@@ -1,0 +1,65 @@
+@using System.Globalization
+@inject GameEventsService GameEvents
+
+<div class="admin-panel">
+    <div class="admin-panel-head">
+        <span class="admin-panel-title">EGI Events (@GameEvents.Count)</span>
+        <button type="button" class="text-xs text-gray-400 hover:text-gray-200" @onclick="RefreshAsync" disabled="@_refreshing">
+            @(_refreshing ? "Refreshing..." : "Refresh")
+        </button>
+    </div>
+    @if (!GameEvents.IsConfigured) {
+        <p class="text-xs text-gray-500 italic">EGI_BASE_URL not set - events disabled.</p>
+    } else {
+        <div class="text-xs text-gray-500 mb-2">
+            Next refresh eligible: @GameEvents.NextAllowedRefresh.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)
+        </div>
+        @if (GameEvents.Count == 0) {
+            <p class="text-xs text-gray-500 italic">No events loaded.</p>
+        } else {
+            <div class="overflow-auto max-h-64">
+                <table class="data-table w-auto">
+                    <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Type</th>
+                        <th class="text-right">Multiplier</th>
+                        <th>Starts</th>
+                        <th>Ends</th>
+                        <th>Source</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var e in Snapshot) {
+                        <tr>
+                            <td class="font-mono text-gray-400">@e.Id</td>
+                            <td>@e.Type @(e.Ultra ? "(ultra)" : "")</td>
+                            <td class="text-right">@e.Multiplier.ToString("0.##", CultureInfo.InvariantCulture)x</td>
+                            <td class="text-gray-500">@e.StartsAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)</td>
+                            <td class="text-gray-500">@e.EndsAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)</td>
+                            <td class="text-gray-600">@(e.Source ?? "none")</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private bool _refreshing;
+
+    private IReadOnlyList<GameEvent> Snapshot => GameEvents.Snapshot();
+
+    protected override void OnInitialized() {
+        GameEvents.EnsureLoadedAsync().ContinueWith(_ => InvokeAsync(StateHasChanged), TaskScheduler.Default);
+    }
+
+    private async Task RefreshAsync() {
+        _refreshing = true;
+        await GameEvents.RefreshAsync();
+        _refreshing = false;
+    }
+
+}

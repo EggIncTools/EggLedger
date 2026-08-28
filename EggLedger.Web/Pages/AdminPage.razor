@@ -18,6 +18,7 @@
                 @if (Services.GetService<ITrafficPanelSlot>() is { } trafficSlot) {
                     @trafficSlot.Render()
                 }
+                <EventsAdminPanel/>
             </div>
             <div>
                 <AdminUsersPanel Users="_users" OnDelete="DeleteUser" Error="@_error"/>
