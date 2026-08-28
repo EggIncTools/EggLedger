@@ -194,7 +194,7 @@ public sealed class FetchServiceTests {
     }
 
     [Fact]
-    public async Task FetchPlayerData_PersistsOnlyExploringInFlightMissions() {
+    public async Task FetchPlayerData_PersistsAllInProgressInFlightMissions() {
         var db = new FakeIndexedDb();
         var handler = new RoutingHandler(
             InProgressFirstContactBody(
@@ -208,7 +208,9 @@ public sealed class FetchServiceTests {
         Assert.Equal(AppState.Success, final);
         var store = new IndexedDbMissionStore(db, new LocalApiPayloadDecoder(new ApiClient()));
         var inFlight = await store.GetInFlightMissionsAsync(Eid);
-        Assert.Equal("flying", Assert.Single(inFlight).MissiondId);
+        var ids = inFlight.Select(m => m.MissiondId).ToList();
+        Assert.Contains("flying", ids);
+        Assert.Contains("fueling", ids);
     }
 
     [Fact]

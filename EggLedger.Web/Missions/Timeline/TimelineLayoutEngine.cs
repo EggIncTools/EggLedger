@@ -1,4 +1,5 @@
 using EggLedger.Domain.MissionPacking;
+using EggLedger.Web.Services;
 using EggLedger.Web.State;
 
 namespace EggLedger.Web.Missions.Timeline;
@@ -45,6 +46,40 @@ public static class TimelineLayoutEngine {
                 ShowBubble: progress > windowStart && progress <= windowEnd,
                 ContinuesLeft: m.LaunchDT < windowStart,
                 ContinuesRight: m.ReturnDT > windowEnd));
+        }
+
+        return result;
+    }
+
+    public static IReadOnlyList<TimelineEventBar> LayoutEvents(
+        IReadOnlyList<GameEvent> events,
+        DateTimeOffset visibleStart,
+        DateTimeOffset visibleEnd) {
+        long windowStart = visibleStart.ToUnixTimeSeconds();
+        long windowEnd = visibleEnd.ToUnixTimeSeconds();
+        double windowSpan = windowEnd - windowStart;
+
+        var result = new List<TimelineEventBar>();
+        foreach (var e in events) {
+            long start = (long)e.StartTimestamp;
+            long end = (long)e.EndTimestamp;
+            if (end <= windowStart || start >= windowEnd) {
+                continue;
+            }
+
+            var (left, width, _) = ClipToWindow(start, end, windowStart, windowSpan, 0);
+            result.Add(new TimelineEventBar(
+                Id: e.Id,
+                Type: e.Type,
+                Message: e.Message,
+                Multiplier: e.Multiplier,
+                Ultra: e.Ultra,
+                StartUnix: start,
+                EndUnix: end,
+                LeftPercent: left * 100,
+                WidthPercent: width * 100,
+                ContinuesLeft: start < windowStart,
+                ContinuesRight: end > windowEnd));
         }
 
         return result;

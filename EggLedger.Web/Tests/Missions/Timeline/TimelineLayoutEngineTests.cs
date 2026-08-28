@@ -1,5 +1,6 @@
 using EggLedger.Domain.MissionPacking;
 using EggLedger.Web.Missions.Timeline;
+using EggLedger.Web.Services;
 
 namespace EggLedger.Web.Tests.Missions.Timeline;
 
@@ -169,7 +170,7 @@ public sealed class TimelineLayoutEngineTests {
     }
 
     [Fact]
-    public void Layout_MinWidth_SeparatesVisuallyOverlappingBarsIntoLanes() {
+    public void Layout_MinWidth_StretchedBarsStillShareALaneWhenNotActuallyOverlapping() {
         var missions = new[] {
             M("first", WindowStart, WindowStart.AddMinutes(30)),
             M("second", WindowStart.AddMinutes(40), WindowStart.AddMinutes(70)),
@@ -178,7 +179,7 @@ public sealed class TimelineLayoutEngineTests {
         var bars = TimelineLayoutEngine.Layout(missions, WindowStart, WindowEnd, WindowStart, minWidthPercent: 10);
 
         var byId = bars.ToDictionary(b => b.MissionId);
-        Assert.NotEqual(byId["first"].Lane, byId["second"].Lane);
+        Assert.Equal(byId["first"].Lane, byId["second"].Lane);
         Assert.Equal(10, byId["first"].WidthPercent, precision: 3);
     }
 
@@ -274,6 +275,48 @@ public sealed class TimelineLayoutEngineTests {
     [Fact]
     public void Layout_EmptyInput_ReturnsEmpty() {
         var bars = TimelineLayoutEngine.Layout(Array.Empty<DatabaseMission>(), WindowStart, WindowEnd, WindowStart);
+
+        Assert.Empty(bars);
+    }
+
+    private static GameEvent E(string id, string type, DateTimeOffset start, DateTimeOffset end, double multiplier = 2.0) =>
+        new() {
+            Id = id,
+            Type = type,
+            StartTimestamp = start.ToUnixTimeSeconds(),
+            EndTimestamp = end.ToUnixTimeSeconds(),
+            Multiplier = multiplier,
+        };
+
+    [Fact]
+    public void LayoutEvents_ExcludesEventsOutsideTheWindow() {
+        var events = new[] {
+            E("before", "mission-capacity", WindowStart.AddDays(-2), WindowStart.AddDays(-1)),
+            E("inside", "mission-capacity", WindowStart.AddHours(1), WindowStart.AddHours(2)),
+            E("after", "mission-capacity", WindowEnd.AddDays(1), WindowEnd.AddDays(2)),
+        };
+
+        var bars = TimelineLayoutEngine.LayoutEvents(events, WindowStart, WindowEnd);
+
+        Assert.Single(bars);
+        Assert.Equal("inside", bars[0].Id);
+    }
+
+    [Fact]
+    public void LayoutEvents_ClipsPositionToTheWindow() {
+        var events = new[] { E("straddles", "mission-duration", WindowStart.AddHours(-6), WindowStart.AddHours(6)) };
+
+        var bars = TimelineLayoutEngine.LayoutEvents(events, WindowStart, WindowEnd);
+
+        Assert.Equal(0, bars[0].LeftPercent, precision: 3);
+        Assert.Equal(25, bars[0].WidthPercent, precision: 3);
+        Assert.True(bars[0].ContinuesLeft);
+        Assert.False(bars[0].ContinuesRight);
+    }
+
+    [Fact]
+    public void LayoutEvents_EmptyInput_ReturnsEmpty() {
+        var bars = TimelineLayoutEngine.LayoutEvents(Array.Empty<GameEvent>(), WindowStart, WindowEnd);
 
         Assert.Empty(bars);
     }

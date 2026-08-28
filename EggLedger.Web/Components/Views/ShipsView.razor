@@ -30,6 +30,8 @@
                              AllMissions="State.TabFilteredAll ?? Array.Empty<DatabaseMission>()"
                              HasActiveFilter="State.HasActiveFilter"
                              ShowFlightRatio="@State.Opts.CalendarFlightRatio"
+                             RecolorDC="State.Opts.RecolorDC"
+                             RecolorBC="State.Opts.RecolorBC"
                              OnViewMission="ViewMissionAsync"/>
     } else {
         <MissionResultsTable Grouping="State.Grouping"

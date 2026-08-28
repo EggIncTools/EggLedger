@@ -1,7 +1,7 @@
 @using System.Globalization
 @inject IUserTimeZoneProvider TzProvider
 
-<div class="timeline-bar timeline-dur-@Bar.DurationIndex tooltip-host @(Bar.ContinuesLeft ? "timeline-bar-cut-l" : "") @(Bar.ContinuesRight ? "timeline-bar-cut-r" : "")" style="@BarStyle" data-tt-mode="cursor-x" @onclick="@(() => OnSelect.InvokeAsync(Bar.MissionId))">
+<div class="timeline-bar timeline-dur-@Bar.DurationIndex @CapModifierClass tooltip-host @(Bar.ContinuesLeft ? "timeline-bar-cut-l" : "") @(Bar.ContinuesRight ? "timeline-bar-cut-r" : "")" style="@BarStyle" data-tt-mode="cursor-x" @onclick="@(() => OnSelect.InvokeAsync(Bar.MissionId))">
     <div class="timeline-bar-track">
         <div class="timeline-bar-fill"></div>
     </div>
@@ -33,10 +33,26 @@
 
 @code {
     [Parameter] public required TimelineBar Bar { get; set; }
+    [Parameter] public bool RecolorDC { get; set; }
+    [Parameter] public bool RecolorBC { get; set; }
     [Parameter] public EventCallback<string> OnSelect { get; set; }
 
     private string BarStyle =>
         FormattableString.Invariant($"--bar-start:{Bar.LeftPercent};--bar-size:{Bar.WidthPercent};--bar-fill:{Bar.FillPercent};");
+
+    private string CapModifierClass {
+        get {
+            if (RecolorBC && Bar.Mission.IsBuggedCap) {
+                return "timeline-bar-buggedcap";
+            }
+
+            if (RecolorDC && Bar.Mission.IsDubCap) {
+                return "timeline-bar-dubcap";
+            }
+
+            return "";
+        }
+    }
 
     private string FormatTime(long unixSeconds) {
         return TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(unixSeconds), TzProvider.TimeZone)
