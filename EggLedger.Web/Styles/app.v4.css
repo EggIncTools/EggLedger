@@ -437,7 +437,7 @@
 
 .timeline-row-lanes {
   position: absolute;
-  inset: 2.4rem 0 0.2rem 0;
+  inset: 1.9rem 0 0.2rem 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -447,30 +447,56 @@
   z-index: 2;
 }
 
-.timeline-event-band {
+.timeline-row-lanes-with-events {
+  top: 3.9rem;
+}
+
+.timeline-event-lanes {
   position: absolute;
   top: 1.3rem;
   left: 0;
   right: 0;
-  height: 1rem;
-  z-index: 1;
+  max-height: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  overflow-y: auto;
+  z-index: 3;
+}
+
+.timeline-event-lane {
+  position: relative;
+  flex: 0 0 1.1rem;
 }
 
 .timeline-event-bar {
   position: absolute;
-  height: 0.4rem;
-  border-radius: 9999px;
+  top: 0;
+  height: 100%;
+  border-radius: 0.25rem;
   left: calc(var(--evt-start) * 1%);
-  width: calc(var(--evt-size) * 1% - 2px);
+  width: calc(var(--evt-size) * 1% - 4px);
+  display: flex;
+  align-items: center;
+  padding: 0 0.35rem;
+  overflow: hidden;
+  cursor: default;
+}
+
+.timeline-event-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .timeline-event-mission-capacity {
-  top: 0;
   background: var(--color-event-mission-capacity);
 }
 
 .timeline-event-mission-duration {
-  top: 0.5rem;
   background: var(--color-event-mission-duration);
 }
 

@@ -2,6 +2,7 @@
 @inject IUserTimeZoneProvider TzProvider
 
 <div class="timeline-event-bar timeline-event-@TypeSlug tooltip-host @(Bar.ContinuesLeft ? "timeline-event-cut-l" : "") @(Bar.ContinuesRight ? "timeline-event-cut-r" : "")" style="@BarStyle" data-tt-mode="cursor-x">
+    <span class="timeline-event-label">@(Bar.Message ?? Bar.Type)</span>
     <div class="tooltip-floating tooltip-fixed text-sm">
         <span class="font-bold">@(Bar.Message ?? Bar.Type)</span>
         @if (Bar.Multiplier > 0) {

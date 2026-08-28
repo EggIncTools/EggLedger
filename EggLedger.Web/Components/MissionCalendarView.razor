@@ -73,12 +73,18 @@
                                     @if (row.NowPercent is { } nowPct) {
                                         <div class="timeline-now" style="@TickStyle(nowPct)"></div>
                                     }
-                                    <div class="timeline-event-band">
-                                        @foreach (var evt in row.EventBars) {
-                                            <TimelineEventBarView Bar="evt"/>
-                                        }
-                                    </div>
-                                    <div class="timeline-row-lanes">
+                                    @if (row.EventLanes.Count > 0) {
+                                        <div class="timeline-event-lanes">
+                                            @foreach (var lane in row.EventLanes) {
+                                                <div class="timeline-event-lane">
+                                                    @foreach (var evt in lane) {
+                                                        <TimelineEventBarView Bar="evt"/>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    <div class="timeline-row-lanes @(row.EventLanes.Count > 0 ? "timeline-row-lanes-with-events" : "")">
                                         @foreach (var lane in row.Lanes) {
                                             <div class="timeline-lane">
                                                 @foreach (var bar in lane) {
@@ -145,7 +151,7 @@
         IReadOnlyList<TimelineTick> HourTicks,
         List<List<TimelineBar>> Lanes,
         double? NowPercent,
-        IReadOnlyList<TimelineEventBar> EventBars);
+        List<List<TimelineEventBar>> EventLanes);
 
     private sealed record PeriodVm(DateTimeOffset Start, DateTimeOffset End, bool IsCenter, List<RowVm> Rows);
 
@@ -271,20 +277,21 @@
             ? (now - row.Start).TotalSeconds / (row.End - row.Start).TotalSeconds * 100
             : null;
         var eventBars = TimelineLayoutEngine.LayoutEvents(_overlayEvents, row.Start, row.End);
-        return new RowVm(row, cells, hourTicks, GroupLanes(bars), nowPercent, eventBars);
+        return new RowVm(row, cells, hourTicks, GroupLanes(bars, b => b.Lane), nowPercent, GroupLanes(eventBars, b => b.Lane));
     }
 
     private double MinWidthPercent => _zoom == TimelineZoom.Day ? 1.2 : 2.5;
 
-    private static List<List<TimelineBar>> GroupLanes(IReadOnlyList<TimelineBar> bars) {
-        var byLane = new Dictionary<int, List<TimelineBar>>();
-        foreach (var bar in bars) {
-            if (!byLane.TryGetValue(bar.Lane, out var list)) {
+    private static List<List<T>> GroupLanes<T>(IReadOnlyList<T> items, Func<T, int> laneOf) {
+        var byLane = new Dictionary<int, List<T>>();
+        foreach (var item in items) {
+            var lane = laneOf(item);
+            if (!byLane.TryGetValue(lane, out var list)) {
                 list = [];
-                byLane[bar.Lane] = list;
+                byLane[lane] = list;
             }
 
-            list.Add(bar);
+            list.Add(item);
         }
 
         return byLane.OrderBy(kv => kv.Key).Select(kv => kv.Value).ToList();
