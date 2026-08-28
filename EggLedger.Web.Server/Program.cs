@@ -201,6 +201,7 @@ if (hasDb) {
 
 var selfBase = new Uri(builder.Configuration["SelfBaseAddress"] ?? SelfBaseFromUrls());
 builder.Services.AddEggLedgerWeb(selfBase);
+builder.Services.AddHostedService<EggLedger.Web.Server.Ships.EventIconWarmupHostedService>();
 builder.Services.AddScoped<EggLedger.Web.Platform.IUserTimeZoneProvider, EggLedger.Web.Server.Platform.BrowserTimeZoneProvider>();
 
 builder.Services.AddScoped(sp => {
@@ -316,6 +317,24 @@ app.Map("/egg-api/{**rest}", async (HttpContext ctx, IHttpClientFactory factory,
         ctx.Response.Headers[h.Key] = h.Value.ToArray();
     }
     await upstream.Content.CopyToAsync(ctx.Response.Body, ctx.RequestAborted);
+});
+
+app.MapGet("/api/v1/event-icon", (HttpContext ctx, EventIconCache icons) => {
+    var name = ctx.Request.Query["name"].ToString();
+    if (string.IsNullOrWhiteSpace(name)) {
+        ctx.Response.StatusCode = StatusCodes.Status404NotFound;
+        return Task.CompletedTask;
+    }
+
+    var ultra = ctx.Request.Query["cc"] == "1";
+    if (icons.Get(name, ultra) is not { } icon) {
+        ctx.Response.StatusCode = StatusCodes.Status404NotFound;
+        return Task.CompletedTask;
+    }
+
+    ctx.Response.ContentType = icon.ContentType;
+    ctx.Response.Headers.CacheControl = "public, max-age=86400";
+    return ctx.Response.Body.WriteAsync(icon.Bytes, ctx.RequestAborted).AsTask();
 });
 
 

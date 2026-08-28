@@ -66,6 +66,12 @@ public static class WebServiceRegistration {
             store: null,
             logger: sp.GetService<ILogger<GameEventsService>>()));
 
+        services.AddSingleton(sp => new EventIconCache(
+            new HttpClient { Timeout = GameEventsService.RequestTimeout },
+            Environment.GetEnvironmentVariable(GameEventsService.BaseUrlVariable),
+            Environment.GetEnvironmentVariable(GameEventsService.ApiKeyVariable),
+            logger: sp.GetService<ILogger<EventIconCache>>()));
+
 
         services.AddScoped<EggIdentity.UI.OutsideClickInterop>();
 

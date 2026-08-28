@@ -155,7 +155,7 @@ public sealed class GameEventsService {
         return matches;
     }
 
-    internal IReadOnlyList<GameEvent> Snapshot() {
+    public IReadOnlyList<GameEvent> Snapshot() {
         List<GameEvent> all;
         lock (_gate) {
             all = [.. _events.Values];
