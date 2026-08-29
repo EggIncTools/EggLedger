@@ -389,7 +389,7 @@
 
 .timeline-row {
   position: relative;
-  flex: 1 1 0;
+  flex: var(--row-weight, 1) 1 0;
   min-height: 0;
   overflow: hidden;
   border-bottom: 1px solid color-mix(in srgb, var(--color-gray-700) 60%, transparent);

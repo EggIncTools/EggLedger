@@ -66,7 +66,7 @@ public sealed class TimelineLayoutEngineTests {
     }
 
     [Fact]
-    public void Layout_OverlappingMissionsShareTheSingleLane() {
+    public void Layout_OverlappingMissionsGetSeparateLanes() {
         var missions = new[] {
             M("a", WindowStart.AddHours(1), WindowStart.AddHours(5)),
             M("b", WindowStart.AddHours(2), WindowStart.AddHours(3)),
@@ -75,7 +75,23 @@ public sealed class TimelineLayoutEngineTests {
 
         var bars = TimelineLayoutEngine.Layout(missions, WindowStart, WindowEnd, WindowStart);
 
-        Assert.All(bars, b => Assert.Equal(0, b.Lane));
+        var lanes = bars.Select(b => b.Lane).OrderBy(l => l).ToList();
+        Assert.Equal([0, 1, 2], lanes);
+    }
+
+    [Fact]
+    public void Layout_LaneIsReusedOnceItsOccupantHasEnded() {
+        var missions = new[] {
+            M("a", WindowStart.AddHours(1), WindowStart.AddHours(2)),
+            M("b", WindowStart.AddHours(1), WindowStart.AddHours(2)),
+            M("c", WindowStart.AddHours(6), WindowStart.AddHours(7)),
+        };
+
+        var bars = TimelineLayoutEngine.Layout(missions, WindowStart, WindowEnd, WindowStart);
+
+        var byId = bars.ToDictionary(b => b.MissionId);
+        Assert.Equal(2, bars.Select(b => b.Lane).Distinct().Count());
+        Assert.True(byId["c"].Lane == byId["a"].Lane || byId["c"].Lane == byId["b"].Lane);
     }
 
     [Fact]

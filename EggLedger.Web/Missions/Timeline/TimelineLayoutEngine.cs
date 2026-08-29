@@ -20,18 +20,20 @@ public static class TimelineLayoutEngine {
         double windowSpan = windowEnd - windowStart;
 
         var intersecting = IntersectingMissions(missions, windowStart, windowEnd);
+        var laneRights = new List<double>();
         var result = new List<TimelineBar>(intersecting.Count);
 
         for (int i = 0; i < intersecting.Count; i++) {
             var m = intersecting[i];
-            var (left, width, _) = ClipToWindow(m.LaunchDT, m.ReturnDT, windowStart, windowSpan, minWidthPercent / 100);
+            var (left, width, rawRight) = ClipToWindow(m.LaunchDT, m.ReturnDT, windowStart, windowSpan, minWidthPercent / 100);
+            int lane = AssignLane(laneRights, left, rawRight);
             bool isActive = nowUnix < m.ReturnDT;
             double fill = FillFraction(m.LaunchDT, m.ReturnDT, windowStart, windowEnd, nowUnix, isActive);
             long progress = isActive ? Math.Min(nowUnix, m.ReturnDT) : m.ReturnDT;
 
             result.Add(new TimelineBar(
                 MissionId: m.MissiondId,
-                Lane: 0,
+                Lane: lane,
                 StackOrder: i,
                 LeftPercent: left * 100,
                 WidthPercent: width * 100,

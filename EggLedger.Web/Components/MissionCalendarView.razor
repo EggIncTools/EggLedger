@@ -59,7 +59,7 @@
                     <div class="timeline-period">
                         <div class="timeline-canvas">
                             @foreach (var row in period.Rows) {
-                                <div class="timeline-row @(period.IsCenter && row.Row.IsPrimary ? "" : "timeline-row-context")">
+                                <div class="timeline-row @(period.IsCenter && row.Row.IsPrimary ? "" : "timeline-row-context")" style="@RowStyle(row)">
                                     @foreach (var cell in row.Cells) {
                                         if (cell.LeftPercent > 0) {
                                             <div class="timeline-grid" style="@TickStyle(cell.LeftPercent)"></div>
@@ -321,6 +321,10 @@
 
     private static string TickStyle(double leftPercent) {
         return FormattableString.Invariant($"--tick-pos:{leftPercent};");
+    }
+
+    private static string RowStyle(RowVm row) {
+        return FormattableString.Invariant($"--row-weight:{Math.Max(1, row.Lanes.Count)};");
     }
 
     private static string Pct(double ratio) {
