@@ -1,4 +1,5 @@
 @using System.Text.Json
+@using EggIdentity.UI
 @using FilterCondition = EggLedger.Domain.Reports.FilterCondition
 @using WebCondition = EggLedger.Web.Missions.FilterCondition
 @inject IndexedDbReportStore Store
@@ -11,287 +12,286 @@
    ReportDefinition, auto-classifies weight, saves via IndexedDbReportStore. Field visibility
    mirrors the Vue builder; per-label color overrides remain deferred (need computed labels). *@
 
-<ModalOverlay @ref="_modal" OnClose="Close" ContainerClass="builder-dialog bg-dark rounded-lg relative shadow-xl w-full max-w-2xl max-h-90vh flex flex-col">
-    @if (_form is not null) {
-        <form method="dialog" class="flex flex-col min-h-0 flex-1" @onsubmit="SaveAsync" @onsubmit:preventDefault>
-            <CloseButton OnClick="Close"/>
-            <div class="flex items-center px-5 py-3 border-b border-gray-700 shrink-0 gap-3">
-                <span class="text-sm font-semibold text-gray-200">@(_editingId is null ? "Add Report" : "Edit Report")</span>
-                @if (_editingId is null && _builderMode == "basic") {
-                    <div class="flex rounded-md overflow-hidden border border-gray-700 shrink-0 text-xs">
-                        <button type="button" class="px-3 py-1.5 transition-colors bg-indigo-700 text-white">Basic</button>
-                        <button type="button" class="px-3 py-1.5 transition-colors bg-darker text-gray-400 hover:text-gray-200" @onclick="SwitchToAdvanced">Advanced</button>
-                    </div>
-                }
+<ModalHost Open="_open" OnClose="Close" Title="@(_editingId is null ? "Add Report" : "Edit Report")" CardClass="builder-dialog w-full max-w-2xl max-h-90vh flex flex-col">
+    <HeadTools>
+        @if (_editingId is null && _builderMode == "basic") {
+            <div class="flex rounded-md overflow-hidden border border-gray-700 shrink-0 text-xs">
+                <button type="button" class="px-3 py-1.5 transition-colors bg-indigo-700 text-white">Basic</button>
+                <button type="button" class="px-3 py-1.5 transition-colors bg-darker text-gray-400 hover:text-gray-200" @onclick="SwitchToAdvanced">Advanced</button>
             </div>
+        }
+    </HeadTools>
+    <ChildContent>
+        @if (_form is not null) {
+            <form method="dialog" class="flex flex-col min-h-0 flex-1" @onsubmit="SaveAsync" @onsubmit:preventDefault>
+                <div class="flex-1 overflow-y-auto p-5 flex flex-col gap-4">
+                    @if (_builderMode == "basic") {
+                        <ReportBuilderGuided OnApply="OnGuidedApplyAsync"/>
+                    } else {
+                        @if (_editingId is null) {
+                            <div class="flex items-center gap-2">
+                                <div class="flex rounded-md overflow-hidden border border-gray-700 shrink-0 text-xs">
+                                    <button type="button" class="px-3 py-1.5 transition-colors bg-darker text-gray-400 hover:text-gray-200" @onclick="SwitchToBasic">Basic</button>
+                                    <button type="button" class="px-3 py-1.5 transition-colors bg-indigo-700 text-white">Advanced</button>
+                                </div>
+                            </div>
+                        }
 
-            <div class="flex-1 overflow-y-auto p-5 flex flex-col gap-4">
-                @if (_builderMode == "basic") {
-                    <ReportBuilderGuided OnApply="OnGuidedApplyAsync"/>
-                } else {
-                    @if (_editingId is null) {
+                        <div class="flex flex-col gap-1">
+                            <span class="text-xs text-gray-400 flex items-center gap-1">Name</span>
+                            <input type="text" class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500" placeholder="Report name" @bind="_form.Name" @bind:event="oninput" required/>
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+                            <span class="text-xs text-gray-400 flex items-center gap-1">Description (optional)</span>
+                            <textarea rows="2" class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-xs text-gray-400 focus:outline-none focus:border-blue-500 resize-none" placeholder="What does this report show?" @bind="_form.Description" @bind:event="oninput"></textarea>
+                        </div>
+
                         <div class="flex items-center gap-2">
-                            <div class="flex rounded-md overflow-hidden border border-gray-700 shrink-0 text-xs">
-                                <button type="button" class="px-3 py-1.5 transition-colors bg-darker text-gray-400 hover:text-gray-200" @onclick="SwitchToBasic">Basic</button>
-                                <button type="button" class="px-3 py-1.5 transition-colors bg-indigo-700 text-white">Advanced</button>
-                            </div>
-                        </div>
-                    }
-
-                    <div class="flex flex-col gap-1">
-                        <span class="text-xs text-gray-400 flex items-center gap-1">Name</span>
-                        <input type="text" class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500" placeholder="Report name" @bind="_form.Name" @bind:event="oninput" required/>
-                    </div>
-
-                    <div class="flex flex-col gap-1">
-                        <span class="text-xs text-gray-400 flex items-center gap-1">Description (optional)</span>
-                        <textarea rows="2" class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-xs text-gray-400 focus:outline-none focus:border-blue-500 resize-none" placeholder="What does this report show?" @bind="_form.Description" @bind:event="oninput"></textarea>
-                    </div>
-
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Data</span>
-                        <div class="flex-1 h-px bg-gray-700"></div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="flex flex-col gap-1">
-                            <span class="text-xs text-gray-400 flex items-center gap-1">Subject</span>
-                            <select class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500" @bind="_form.Subject">
-                                <option value="ships">Ships</option>
-                                <option value="artifacts">Artifacts</option>
-                            </select>
+                            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Data</span>
+                            <div class="flex-1 h-px bg-gray-700"></div>
                         </div>
 
-                        <div class="flex flex-col gap-1">
-                            <span class="text-xs text-gray-400 flex items-center gap-1">Mode</span>
-                            <select class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500" @bind="_form.Mode">
-                                <option value="aggregate">Aggregate</option>
-                                <option value="time_series">Time Series</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    @if (_form.Subject == "artifacts") {
-                        <div class="flex flex-col gap-1">
-                            <span class="text-xs text-gray-400 flex items-center gap-1">Family weight (optional)</span>
-                            <select class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500" @bind="_form.FamilyWeight">
-                                <option value="">None (raw count)</option>
-                                @foreach (var fam in EiafxData.Families) {
-                                    <option value="@fam.Id">@fam.Name</option>
-                                }
-                            </select>
-                            @if (!string.IsNullOrEmpty(_form.FamilyWeight)) {
-                                <p class="text-xs text-gray-500 mt-0.5">Drops weighted by T1-equivalent crafting cost</p>
-                            }
-                        </div>
-                    }
-
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="flex flex-col gap-1">
-                            <span class="text-xs text-gray-400 flex items-center gap-1">Group by</span>
-                            <select class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500" @bind="_form.GroupBy">
-                                @foreach (var d in ReportDimensions.All) {
-                                    <option value="@d.Value">@d.Label</option>
-                                }
-                            </select>
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <span class="text-xs text-gray-400 flex items-center gap-1">Secondary Group By</span>
-                            <select class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500" @bind="_form.SecondaryGroupBy">
-                                <option value="">None (1D)</option>
-                                @foreach (var d in ReportDimensions.All) {
-                                    <option value="@d.Value">@d.Label</option>
-                                }
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
-                        @if (!HideDisplay) {
-                            <div class="flex flex-col gap-1">
-                                <span class="text-xs text-gray-400 flex items-center gap-1">Display</span>
-                                <select class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500"
-                                        value="@_form.DisplayMode" @onchange="OnDisplayModeChanged">
-                                    @if (HasSecondary) {
-                                        <option value="heatmap">Heatmap</option>
-                                        <option value="grouped_bar">Grouped Bar</option>
-                                    } else if (TimeSeries) {
-                                        <option value="line">Line chart</option>
-                                    } else {
-                                        <option value="bar">Bar chart</option>
-                                        <option value="line">Line chart</option>
-                                        <option value="pie">Pie chart</option>
-                                        <option value="grid">Table</option>
-                                    }
-                                </select>
-                            </div>
-                        }
-
-                        @if (_form.Mode == "aggregate") {
-                            <div class="flex flex-col gap-1 @(HideDisplay ? "col-span-2" : "")">
-                                <span class="text-xs text-gray-400 flex items-center gap-1">Normalize by (optional)</span>
-                                <select class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500" @bind="_form.NormalizeBy">
-                                    <option value="none">None (raw count)</option>
-                                    @if (HasSecondary) {
-                                        <option value="row_pct">Row % (each row sums to 100)</option>
-                                        <option value="col_pct">Column % (each column sums to 100)</option>
-                                        <option value="global_pct">Global % (all cells sum to 100)</option>
-                                    }
-                                    <option value="launches">Per launch</option>
-                                    <option value="airtime">Per flight hour</option>
-                                </select>
-                            </div>
-                        }
-                    </div>
-
-                    @if (_form.DisplayMode is "line" or "bar") {
-                        <div class="flex flex-col gap-1">
-                            <span class="text-xs text-gray-400 flex items-center gap-1">Style</span>
-                            <select class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500" @bind="_form.ChartType">
-                                @if (_form.DisplayMode == "line") {
-                                    <option value="">Filled area</option>
-                                    <option value="line">Line only</option>
-                                } else {
-                                    <option value="">Default order</option>
-                                    <option value="bar_desc">Sorted descending</option>
-                                    <option value="bar_asc">Sorted ascending</option>
-                                }
-                            </select>
-                        </div>
-                    }
-
-                    @if (TimeSeries) {
                         <div class="grid grid-cols-2 gap-3">
                             <div class="flex flex-col gap-1">
-                                <span class="text-xs text-gray-400 flex items-center gap-1">Time bucket</span>
-                                <select class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500" @bind="_form.TimeBucket">
-                                    <option value="day">Day</option>
-                                    <option value="week">Week</option>
-                                    <option value="month">Month</option>
-                                    <option value="year">Year</option>
-                                    <option value="custom">Custom window</option>
+                                <span class="text-xs text-gray-400 flex items-center gap-1">Subject</span>
+                                <select class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500" @bind="_form.Subject">
+                                    <option value="ships">Ships</option>
+                                    <option value="artifacts">Artifacts</option>
                                 </select>
                             </div>
-                            @if (_form.TimeBucket == "custom") {
-                                <div class="flex flex-col gap-1">
-                                    <span class="text-xs text-gray-400">Last N</span>
-                                    <div class="flex gap-2">
-                                        <input type="number" min="1" class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500 w-16" @bind="_form.CustomBucketN"/>
-                                        <select class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500 flex-1" @bind="_form.CustomBucketUnit">
-                                            <option value="day">Days</option>
-                                            <option value="week">Weeks</option>
-                                            <option value="month">Months</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    }
 
-                    <div class="flex flex-col gap-1">
-                        <span class="text-xs text-gray-400 flex items-center gap-1">Filter results where value</span>
-                        <div class="flex items-center gap-1.5">
-                            <select class="rb-control w-24" @bind="_form.ValueFilterOp">
-                                <option value="">Off</option>
-                                <option value="&gt;">&gt;</option>
-                                <option value="&lt;">&lt;</option>
-                                <option value="&gt;=">&gt;=</option>
-                                <option value="&lt;=">&lt;=</option>
-                                <option value="=">=</option>
-                                <option value="!=">!=</option>
-                            </select>
-                            @if (!string.IsNullOrEmpty(_form.ValueFilterOp)) {
-                                <input type="number" step="any" class="rb-control flex-1 min-w-0" placeholder="0" @bind="_form.ValueFilterThreshold"/>
-                            }
-                        </div>
-                    </div>
-
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Appearance</span>
-                        <div class="flex-1 h-px bg-gray-700"></div>
-                    </div>
-
-                    @if (_form.DisplayMode != "grid") {
-                        <div class="flex flex-row gap-6 flex-wrap">
                             <div class="flex flex-col gap-1">
-                                <span class="text-xs text-gray-400 flex items-center gap-1">@(_form.DisplayMode == "pie" ? "Fallback color" : "Chart color")</span>
-                                <input type="color" class="bg-darker border border-gray-700 rounded p-px h-8 w-full" @bind="_form.Color"/>
+                                <span class="text-xs text-gray-400 flex items-center gap-1">Mode</span>
+                                <select class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500" @bind="_form.Mode">
+                                    <option value="aggregate">Aggregate</option>
+                                    <option value="time_series">Time Series</option>
+                                </select>
                             </div>
-
-                            @if (_form.DisplayMode == "heatmap") {
-                                <div class="flex flex-col gap-1">
-                                    <span class="text-xs text-gray-400 flex items-center gap-1">Zero cell color</span>
-                                    <input type="color" class="bg-darker border border-gray-700 rounded p-px h-8 w-full" @bind="_form.UnfilledColor"/>
-                                </div>
-                            }
                         </div>
-                    }
 
-                    @if (_form.DisplayMode == "heatmap" && !string.IsNullOrEmpty(_form.SecondaryGroupBy)) {
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs text-gray-400 whitespace-nowrap">Min sample size</span>
-                            <input type="number" min="0" class="w-16 bg-transparent border border-white/10 rounded px-1 py-0.5 text-xs text-gray-300 focus:outline-none focus:border-white/30" @bind="_form.MinSampleSize"/>
-                            <span class="text-xs text-gray-500">cells below this count show "-"</span>
-                        </div>
-                    }
-
-                    @if (ChartLabels.Count > 0) {
-                        <div class="flex flex-col gap-2">
-                            <span class="text-xs text-gray-400 flex items-center gap-1">@(_form.DisplayMode == "pie" ? "Slice colors" : "Bar colors")</span>
-                            <div class="grid grid-cols-2 gap-1.5">
-                                @foreach (var label in ChartLabels) {
-                                    <div class="flex items-center gap-2 min-w-0">
-                                        <input type="color" class="bg-darker border border-gray-700 rounded p-px h-6 w-8 shrink-0"
-                                               value="@LabelColor(label)" @onchange="e => SetLabelColor(label, e)"/>
-                                        <span class="text-xs text-gray-400 truncate">@label</span>
-                                    </div>
+                        @if (_form.Subject == "artifacts") {
+                            <div class="flex flex-col gap-1">
+                                <span class="text-xs text-gray-400 flex items-center gap-1">Family weight (optional)</span>
+                                <select class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500" @bind="_form.FamilyWeight">
+                                    <option value="">None (raw count)</option>
+                                    @foreach (var fam in EiafxData.Families) {
+                                        <option value="@fam.Id">@fam.Name</option>
+                                    }
+                                </select>
+                                @if (!string.IsNullOrEmpty(_form.FamilyWeight)) {
+                                    <p class="text-xs text-gray-500 mt-0.5">Drops weighted by T1-equivalent crafting cost</p>
                                 }
                             </div>
+                        }
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="flex flex-col gap-1">
+                                <span class="text-xs text-gray-400 flex items-center gap-1">Group by</span>
+                                <select class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500" @bind="_form.GroupBy">
+                                    @foreach (var d in ReportDimensions.All) {
+                                        <option value="@d.Value">@d.Label</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="flex flex-col gap-1">
+                                <span class="text-xs text-gray-400 flex items-center gap-1">Secondary Group By</span>
+                                <select class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500" @bind="_form.SecondaryGroupBy">
+                                    <option value="">None (1D)</option>
+                                    @foreach (var d in ReportDimensions.All) {
+                                        <option value="@d.Value">@d.Label</option>
+                                    }
+                                </select>
+                            </div>
                         </div>
-                    }
 
-                    <div class="flex flex-col gap-1">
-                        <span class="text-xs text-gray-400 flex items-center gap-1">Grid size</span>
-                        <ReportGridSizePicker @bind-Width="_form.GridW" @bind-Height="_form.GridH"/>
-                    </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            @if (!HideDisplay) {
+                                <div class="flex flex-col gap-1">
+                                    <span class="text-xs text-gray-400 flex items-center gap-1">Display</span>
+                                    <select class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500"
+                                            value="@_form.DisplayMode" @onchange="OnDisplayModeChanged">
+                                        @if (HasSecondary) {
+                                            <option value="heatmap">Heatmap</option>
+                                            <option value="grouped_bar">Grouped Bar</option>
+                                        } else if (TimeSeries) {
+                                            <option value="line">Line chart</option>
+                                        } else {
+                                            <option value="bar">Bar chart</option>
+                                            <option value="line">Line chart</option>
+                                            <option value="pie">Pie chart</option>
+                                            <option value="grid">Table</option>
+                                        }
+                                    </select>
+                                </div>
+                            }
 
-                    <div class="flex flex-col gap-1">
-                        <span class="text-xs text-gray-400">Filters</span>
-                        <MissionFilterBar @ref="_filterBar"
-                                          @key="_filterBarKey"
-                                          Context="_filterContext"
-                                          ShowApply="false"
-                                          InitialAnd="_initialAnd"
-                                          InitialOr="_initialOr"/>
-                    </div>
-
-                    <div class="flex flex-col gap-2">
-                        <div class="flex items-center gap-2">
-                            <input id="mennoEnabledCheck" type="checkbox" class="ext-opt-check" @bind="_form.MennoEnabled"/>
-                            <label for="mennoEnabledCheck" class="text-xs text-gray-400 cursor-pointer select-none flex items-center gap-1">Compare with Menno community data</label>
+                            @if (_form.Mode == "aggregate") {
+                                <div class="flex flex-col gap-1 @(HideDisplay ? "col-span-2" : "")">
+                                    <span class="text-xs text-gray-400 flex items-center gap-1">Normalize by (optional)</span>
+                                    <select class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500" @bind="_form.NormalizeBy">
+                                        <option value="none">None (raw count)</option>
+                                        @if (HasSecondary) {
+                                            <option value="row_pct">Row % (each row sums to 100)</option>
+                                            <option value="col_pct">Column % (each column sums to 100)</option>
+                                            <option value="global_pct">Global % (all cells sum to 100)</option>
+                                        }
+                                        <option value="launches">Per launch</option>
+                                        <option value="airtime">Per flight hour</option>
+                                    </select>
+                                </div>
+                            }
                         </div>
-                        @if (_form.MennoEnabled) {
-                            <div class="flex flex-col gap-1 pl-5">
-                                <span class="text-xs text-gray-400">Comparison display</span>
-                                <select class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500" @bind="_form.MennoCompareMode">
-                                    <option value="side_by_side">Side by side</option>
-                                    <option value="ratio">Ratio (x)</option>
-                                    <option value="dual_value">Dual value</option>
+
+                        @if (_form.DisplayMode is "line" or "bar") {
+                            <div class="flex flex-col gap-1">
+                                <span class="text-xs text-gray-400 flex items-center gap-1">Style</span>
+                                <select class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500" @bind="_form.ChartType">
+                                    @if (_form.DisplayMode == "line") {
+                                        <option value="">Filled area</option>
+                                        <option value="line">Line only</option>
+                                    } else {
+                                        <option value="">Default order</option>
+                                        <option value="bar_desc">Sorted descending</option>
+                                        <option value="bar_asc">Sorted ascending</option>
+                                    }
                                 </select>
                             </div>
                         }
-                    </div>
-                }
-            </div>
 
-            <div class="flex gap-2 px-5 py-3 border-t border-gray-700 shrink-0">
-                <button type="button" class="flex-1 px-3 py-1.5 rounded border text-xs focus:outline-none border-gray-600 text-gray-400 hover:text-gray-200 hover:border-gray-400" @onclick="Close">Cancel</button>
-                <button type="submit" class="flex-1 px-3 py-1.5 rounded border border-indigo-600 bg-indigo-700 text-xs text-white hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none" disabled="@(_builderMode == "basic" || string.IsNullOrWhiteSpace(_form.Name))">Save</button>
-            </div>
-        </form>
-    }
-</ModalOverlay>
+                        @if (TimeSeries) {
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="flex flex-col gap-1">
+                                    <span class="text-xs text-gray-400 flex items-center gap-1">Time bucket</span>
+                                    <select class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500" @bind="_form.TimeBucket">
+                                        <option value="day">Day</option>
+                                        <option value="week">Week</option>
+                                        <option value="month">Month</option>
+                                        <option value="year">Year</option>
+                                        <option value="custom">Custom window</option>
+                                    </select>
+                                </div>
+                                @if (_form.TimeBucket == "custom") {
+                                    <div class="flex flex-col gap-1">
+                                        <span class="text-xs text-gray-400">Last N</span>
+                                        <div class="flex gap-2">
+                                            <input type="number" min="1" class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500 w-16" @bind="_form.CustomBucketN"/>
+                                            <select class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500 flex-1" @bind="_form.CustomBucketUnit">
+                                                <option value="day">Days</option>
+                                                <option value="week">Weeks</option>
+                                                <option value="month">Months</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        <div class="flex flex-col gap-1">
+                            <span class="text-xs text-gray-400 flex items-center gap-1">Filter results where value</span>
+                            <div class="flex items-center gap-1.5">
+                                <select class="rb-control w-24" @bind="_form.ValueFilterOp">
+                                    <option value="">Off</option>
+                                    <option value="&gt;">&gt;</option>
+                                    <option value="&lt;">&lt;</option>
+                                    <option value="&gt;=">&gt;=</option>
+                                    <option value="&lt;=">&lt;=</option>
+                                    <option value="=">=</option>
+                                    <option value="!=">!=</option>
+                                </select>
+                                @if (!string.IsNullOrEmpty(_form.ValueFilterOp)) {
+                                    <input type="number" step="any" class="rb-control flex-1 min-w-0" placeholder="0" @bind="_form.ValueFilterThreshold"/>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Appearance</span>
+                            <div class="flex-1 h-px bg-gray-700"></div>
+                        </div>
+
+                        @if (_form.DisplayMode != "grid") {
+                            <div class="flex flex-row gap-6 flex-wrap">
+                                <div class="flex flex-col gap-1">
+                                    <span class="text-xs text-gray-400 flex items-center gap-1">@(_form.DisplayMode == "pie" ? "Fallback color" : "Chart color")</span>
+                                    <input type="color" class="bg-darker border border-gray-700 rounded p-px h-8 w-full" @bind="_form.Color"/>
+                                </div>
+
+                                @if (_form.DisplayMode == "heatmap") {
+                                    <div class="flex flex-col gap-1">
+                                        <span class="text-xs text-gray-400 flex items-center gap-1">Zero cell color</span>
+                                        <input type="color" class="bg-darker border border-gray-700 rounded p-px h-8 w-full" @bind="_form.UnfilledColor"/>
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        @if (_form.DisplayMode == "heatmap" && !string.IsNullOrEmpty(_form.SecondaryGroupBy)) {
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-gray-400 whitespace-nowrap">Min sample size</span>
+                                <input type="number" min="0" class="w-16 bg-transparent border border-white/10 rounded px-1 py-0.5 text-xs text-gray-300 focus:outline-none focus:border-white/30" @bind="_form.MinSampleSize"/>
+                                <span class="text-xs text-gray-500">cells below this count show "-"</span>
+                            </div>
+                        }
+
+                        @if (ChartLabels.Count > 0) {
+                            <div class="flex flex-col gap-2">
+                                <span class="text-xs text-gray-400 flex items-center gap-1">@(_form.DisplayMode == "pie" ? "Slice colors" : "Bar colors")</span>
+                                <div class="grid grid-cols-2 gap-1.5">
+                                    @foreach (var label in ChartLabels) {
+                                        <div class="flex items-center gap-2 min-w-0">
+                                            <input type="color" class="bg-darker border border-gray-700 rounded p-px h-6 w-8 shrink-0"
+                                                   value="@LabelColor(label)" @onchange="e => SetLabelColor(label, e)"/>
+                                            <span class="text-xs text-gray-400 truncate">@label</span>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <div class="flex flex-col gap-1">
+                            <span class="text-xs text-gray-400 flex items-center gap-1">Grid size</span>
+                            <ReportGridSizePicker @bind-Width="_form.GridW" @bind-Height="_form.GridH"/>
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+                            <span class="text-xs text-gray-400">Filters</span>
+                            <MissionFilterBar @ref="_filterBar"
+                                              @key="_filterBarKey"
+                                              Context="_filterContext"
+                                              ShowApply="false"
+                                              InitialAnd="_initialAnd"
+                                              InitialOr="_initialOr"/>
+                        </div>
+
+                        <div class="flex flex-col gap-2">
+                            <div class="flex items-center gap-2">
+                                <input id="mennoEnabledCheck" type="checkbox" class="ext-opt-check" @bind="_form.MennoEnabled"/>
+                                <label for="mennoEnabledCheck" class="text-xs text-gray-400 cursor-pointer select-none flex items-center gap-1">Compare with Menno community data</label>
+                            </div>
+                            @if (_form.MennoEnabled) {
+                                <div class="flex flex-col gap-1 pl-5">
+                                    <span class="text-xs text-gray-400">Comparison display</span>
+                                    <select class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500" @bind="_form.MennoCompareMode">
+                                        <option value="side_by_side">Side by side</option>
+                                        <option value="ratio">Ratio (x)</option>
+                                        <option value="dual_value">Dual value</option>
+                                    </select>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <div class="flex gap-2 px-5 py-3 border-t border-gray-700 shrink-0">
+                    <button type="button" class="flex-1 px-3 py-1.5 rounded border text-xs focus:outline-none border-gray-600 text-gray-400 hover:text-gray-200 hover:border-gray-400" @onclick="Close">Cancel</button>
+                    <button type="submit" class="flex-1 px-3 py-1.5 rounded border border-indigo-600 bg-indigo-700 text-xs text-white hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none" disabled="@(_builderMode == "basic" || string.IsNullOrWhiteSpace(_form.Name))">Save</button>
+                </div>
+            </form>
+        }
+    </ChildContent>
+</ModalHost>
 
 @code {
     [Parameter] [EditorRequired] public string AccountId { get; set; } = "";
@@ -299,7 +299,7 @@
     [Parameter] public string? GroupId { get; set; }
 
     [Parameter] public EventCallback Saved { get; set; }
-    private ModalOverlay? _modal;
+    private bool _open;
     private FormModel? _form;
     private string _builderMode = "basic";
     private IReadOnlyList<string> _editingResultLabels = Array.Empty<string>();
@@ -354,7 +354,7 @@
         _form = new FormModel();
         _builderMode = "basic";
         _editingResultLabels = Array.Empty<string>();
-        _modal?.Open();
+        _open = true;
         StateHasChanged();
         return Task.CompletedTask;
     }
@@ -395,7 +395,7 @@
             MennoEnabled = def.MennoEnabled,
             LabelColorsMap = new Dictionary<string, string>(SliceColors.ParseLabelColors(def.LabelColors), StringComparer.Ordinal)
         };
-        _modal?.Open();
+        _open = true;
         StateHasChanged();
 
 
@@ -486,7 +486,7 @@
             await Store.UpdateReportAsync(row);
         }
 
-        _modal?.Close();
+        _open = false;
         _form = null;
         await Saved.InvokeAsync();
     }
@@ -557,7 +557,7 @@
     }
 
     private void Close() {
-        _modal?.Close();
+        _open = false;
         _form = null;
     }
 

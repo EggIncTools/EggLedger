@@ -1,10 +1,5 @@
-<ModalOverlay @ref="_modal" OnClose="Close"
-              ContainerClass="w-[92vw] max-w-[24rem] p-4 border border-gray-600 rounded-lg bg-darker text-gray-300 shadow-2xl">
-    <div class="flex items-center justify-between mb-2">
-        <h2 class="text-sm font-bold text-gray-300">Support the project</h2>
-        <CloseButton OnClick="Close" Class="text-gray-500 hover:text-gray-300" IconClass="w-4 h-4"/>
-    </div>
-
+@using EggIdentity.UI
+<ModalHost Open="true" OnClose="Close" Title="Support the project" CardClass="w-[92vw] max-w-[24rem] p-4">
     <p class="text-xs text-gray-400 mb-3">
         Covers server and cert costs and keeps EggLedger free for everyone.
     </p>
@@ -14,18 +9,10 @@
         <a class="support-rail" href="https://patreon.com/DavidArthurCole" target="_blank" rel="noopener">Patreon</a>
         <a class="support-rail" href="https://buymeacoffee.com/davidarthurcole" target="_blank" rel="noopener">Buy Me a Coffee</a>
     </div>
-</ModalOverlay>
+</ModalHost>
 
 @code {
     [Parameter] public EventCallback OnClose { get; set; }
-
-    private ModalOverlay? _modal;
-
-    protected override void OnAfterRender(bool firstRender) {
-        if (firstRender) {
-            _modal?.Open();
-        }
-    }
 
     private Task Close() {
         return OnClose.InvokeAsync();

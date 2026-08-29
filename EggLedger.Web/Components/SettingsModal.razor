@@ -1,3 +1,4 @@
+@using EggIdentity.UI
 @implements IDisposable
 @inject IndexedDbSettings Settings
 @inject IPlatformCapabilities Platform
@@ -7,13 +8,7 @@
 @inject AccountLoader Loader
 @inject IServiceProvider Services
 
-<ModalOverlay @ref="_modal" OnClose="Close"
-              ContainerClass="w-[92vw] max-w-[48rem] max-h-[88vh] flex flex-col border border-gray-600 rounded-lg bg-darker text-gray-300 shadow-2xl">
-    <div class="flex items-center justify-between shrink-0 px-4 py-3 border-b border-gray-700">
-        <h2 class="text-sm font-bold text-gray-300">Settings</h2>
-        <CloseButton OnClick="Close" Class="text-gray-500 hover:text-gray-300" IconClass="w-4 h-4"/>
-    </div>
-
+<ModalHost Open="true" OnClose="Close" Title="Settings" CardClass="w-[92vw] max-w-[48rem] max-h-[88vh] flex flex-col">
     <div class="flex-1 min-h-0 overflow-y-auto px-3 py-3 text-sm text-gray-400">
         @if (!_loaded) {
             <p class="text-gray-500 italic">Loading settings...</p>
@@ -40,7 +35,7 @@
             </div>
         }
     </div>
-</ModalOverlay>
+</ModalHost>
 
 @code {
     private const string GeneralSectionId = "general";
@@ -49,7 +44,6 @@
 
     private readonly SettingsModel _model = new();
     private readonly HashSet<string> _openSections = [];
-    private ModalOverlay? _modal;
     private bool _loaded;
     private IReadOnlyList<DatabaseAccount> _existing = [];
 
@@ -85,12 +79,6 @@
         Fetch.Changed += OnFetchChanged;
         await Loader.EnsureLoadedAsync();
         await ReloadAccountsAsync();
-    }
-
-    protected override void OnAfterRender(bool firstRender) {
-        if (firstRender) {
-            _modal?.Open();
-        }
     }
 
     private IEnumerable<(string Id, string Title, RenderFragment Body)> Sections() {

@@ -1,3 +1,4 @@
+@using EggIdentity.UI
 @using Markdig
 @implements IDisposable
 @inject IUpdateStatusProvider UpdateStatus
@@ -6,9 +7,8 @@
 @* Desktop update prompt: auto-opens once when an update is found, re-openable from the
    footer link. Renders the GitHub release notes as markdown inside the modal. *@
 
-<ModalOverlay @ref="_modal" OnClose="Close"
-              ContainerClass="w-[92vw] md:w-[46rem] max-h-90vh bg-dark rounded-lg relative flex flex-col p-4">
-    <CloseButton OnClick="Close" Class="absolute top-2 right-2 z-10 rounded-md text-gray-400 hover:text-gray-200 focus:outline-none"/>
+<ModalHost Open="_open" OnClose="Close" Title="Update Available"
+           CardClass="w-[92vw] md:w-[46rem] max-h-90vh flex flex-col p-4" Width="ModalWidth.Custom">
     <div class="text-gray-300 flex flex-col gap-2 text-center min-h-0">
         <span class="text-lg text-gray-400">
             New Version of EggLedger Available:
@@ -39,10 +39,10 @@
             }
         </div>
     </div>
-</ModalOverlay>
+</ModalHost>
 
 @code {
-    private ModalOverlay? _modal;
+    private bool _open;
     private bool _autoShown;
 
     private MarkupString RenderedNotes =>
@@ -67,7 +67,7 @@
 
     public void Open() {
         if (!string.IsNullOrEmpty(UpdateStatus.AvailableVersion)) {
-            _modal?.Open();
+            _open = true;
         }
     }
 
@@ -75,7 +75,7 @@
         InvokeAsync(() => {
             if (!_autoShown && UpdateStatus.Phase == UpdatePhase.Available) {
                 _autoShown = true;
-                _modal?.Open();
+                _open = true;
             }
 
             StateHasChanged();
@@ -83,7 +83,7 @@
     }
 
     private void Close() {
-        _modal?.Close();
+        _open = false;
     }
 
     private Task StartUpdateAsync() {

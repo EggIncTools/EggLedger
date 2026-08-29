@@ -1,7 +1,6 @@
-<ModalOverlay @ref="_modal" OnClose="Close" ContainerClass="bg-dark rounded-lg relative flex flex-col w-[70vw] max-h-[85vh]">
-    <CloseButton OnClick="Close" Class="absolute top-2 right-2 z-10 rounded-md text-gray-400 hover:text-gray-200 focus:outline-none"/>
-
-    <div class="flex flex-1 min-h-0 pt-8 px-6 pb-4 gap-4">
+@using EggIdentity.UI
+<ModalHost Open="_open" OnClose="Close" Title="Mission Card Layout" CardClass="w-[70vw] max-h-[85vh] flex flex-col">
+    <div class="flex flex-1 min-h-0 px-6 py-4 gap-4">
         <div class="w-1/2 overflow-auto flex flex-col gap-3 text-sm text-gray-300 pr-1">
             <div class="panel-muted rounded-md p-3">
                 <span class="font-bold text-gray-400">Preset</span>
@@ -108,14 +107,14 @@
             </div>
         </div>
     </div>
-</ModalOverlay>
+</ModalHost>
 
 @code {
     [Parameter] public CardPresetSet PresetSet { get; set; } = CardPresetSet.Default;
     [Parameter] public EventCallback<CardPresetSet> OnSave { get; set; }
     [Parameter] public DatabaseMission? PreviewMission { get; set; }
 
-    private ModalOverlay? _modal;
+    private bool _open;
     private CardConfigForm _form = new();
     private string? _cssError;
     private DatabaseMission? _previewMission => PreviewMission;
@@ -125,13 +124,13 @@
         _editingPresetName = PresetSet.ActivePresetName;
         _form = CardConfigForm.From(PresetSet.ActivePreset());
         _cssError = null;
-        _modal?.Open();
+        _open = true;
         StateHasChanged();
         return Task.CompletedTask;
     }
 
     public void Close() {
-        _modal?.Close();
+        _open = false;
     }
 
     private void SetFieldEnabled(CardFieldSlot slot, ChangeEventArgs e) {

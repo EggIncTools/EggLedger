@@ -1,12 +1,12 @@
+@using EggIdentity.UI
 @inject AddAccountService AddAccount
 
 @* Add-account modal. Blazor-controlled overlay (full-screen fixed backdrop + centered
    card). NOT a native <dialog>.showModal(): top-layer promotion desyncs the Blazor Server
    render tree (insertBefore/parentNode-null crashes). Backdrop click closes. *@
 
-<ModalOverlay @ref="_modal" OnClose="Close" ContainerClass="add-account-dialog p-0 border border-gray-600 rounded-lg bg-darker text-gray-300 shadow-2xl">
+<ModalHost Open="_open" OnClose="Close" Title="Add Account" CardClass="text-gray-300">
     <div class="p-4 min-w-80">
-        <h2 class="mb-3 text-sm font-bold text-gray-300">Add Account</h2>
         <form @onsubmit="Submit" @onsubmit:preventDefault>
             <input
                 class="w-full box-border px-2 py-1 text-sm rounded bg-darkest border border-gray-600 text-gray-300 mb-1 focus:outline-none focus:border-blue-500"
@@ -30,10 +30,10 @@
             </div>
         </form>
     </div>
-</ModalOverlay>
+</ModalHost>
 
 @code {
-    private ModalOverlay? _modal;
+    private bool _open;
     private string _eid = "";
     private bool _loading;
     private string _error = "";
@@ -48,12 +48,12 @@
         _eid = "";
         _error = "";
         _loading = false;
-        _modal?.Open();
+        _open = true;
         StateHasChanged();
     }
 
     private void Close() {
-        _modal?.Close();
+        _open = false;
     }
 
     private async Task Submit() {

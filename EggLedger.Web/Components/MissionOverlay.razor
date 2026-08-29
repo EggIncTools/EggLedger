@@ -1,4 +1,5 @@
 @using System.Globalization
+@using EggIdentity.UI
 @inject MissionQueryHandlers Queries
 @inject MennoService Menno
 @inject IUserTimeZoneProvider TzProvider
@@ -8,10 +9,8 @@
    <dialog>.showModal(): top-layer promotion desyncs the Blazor Server render tree
    (insertBefore/parentNode-null crashes). Backdrop click closes. *@
 
-<ModalOverlay @ref="_modal" OnClose="Close" CaptureKeys="true" OnKeyDown="OnKeyDown" PreventKeyDefault="_preventKey"
-              ContainerClass="@ContainerCssClass">
-    <CloseButton OnClick="Close" Class="absolute top-2 right-2 z-10 rounded-md text-gray-400 hover:text-gray-200 focus:outline-none"/>
-
+<ModalHost Open="_open" OnClose="Close" Title="Mission Details" OnKeyDown="OnKeyDown" PreventKeyDefault="true"
+           CardClass="@ContainerCssClass">
     @if (_multi is null) {
         <button class="disabled:cursor-not-allowed absolute left-2 top-1/2 -translate-y-1/2 z-10 rounded-md text-gray-400 focus:outline-none disabled:text-gray-600 hover:text-gray-200" type="button" aria-label="Previous mission"
                 disabled="@(_data?.PrevMission is null)"
@@ -138,7 +137,7 @@
             </div>
         </div>
     }
-</ModalOverlay>
+</ModalHost>
 
 @code {
     [Parameter] public string? AccountId { get; set; }
@@ -147,8 +146,7 @@
 
     [Parameter] public MissionSortMethod SortMethod { get; set; } = MissionSortMethod.Default;
     [Parameter] public bool ShowExpectedDrops { get; set; }
-    private ModalOverlay? _modal;
-    private bool _preventKey;
+    private bool _open;
     private ViewMissionData? _data;
     private List<ViewMissionData>? _multi;
     private bool _isLoading;
@@ -175,17 +173,13 @@
             return;
         }
 
-        _modal?.Open();
+        _open = true;
         StateHasChanged();
         await PopulateMennoForAsync(missionId);
     }
 
     private async Task OnKeyDown(KeyboardEventArgs e) {
-        _preventKey = e.Key is "ArrowLeft" or "ArrowRight" or "Escape";
         switch (e.Key) {
-            case "Escape":
-                Close();
-                break;
             case "ArrowLeft" when _multi is null:
                 await NavigateAsync(_data?.PrevMission);
                 break;
@@ -196,7 +190,7 @@
     }
 
     public async Task OpenMultiAsync(IReadOnlyList<string> missionIds) {
-        _modal?.Open();
+        _open = true;
         _data = null;
         _multi = new List<ViewMissionData>();
         _isLoading = true;
@@ -251,7 +245,7 @@
     }
 
     public async Task ReSortAsync(MissionSortMethod method) {
-        if (_modal?.IsOpen != true) {
+        if (!_open) {
             return;
         }
 
@@ -349,7 +343,7 @@
     }
 
     private void Close() {
-        _modal?.Close();
+        _open = false;
         _data = null;
         _multi = null;
         _isLoading = false;
