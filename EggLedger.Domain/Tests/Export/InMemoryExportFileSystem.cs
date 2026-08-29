@@ -6,14 +6,14 @@ internal sealed class InMemoryExportFileSystem : IExportFileSystem {
     private readonly Dictionary<string, long> _files = new(StringComparer.Ordinal);
 
     public void AddFile(string dir, string name, long size) {
-        _files[System.IO.Path.Combine(dir, name)] = size;
+        _files[Path.Combine(dir, name)] = size;
     }
 
     public bool Exists(string path) => _files.ContainsKey(path);
 
     public IReadOnlyList<ExportFileEntry>? ListFiles(string dir) {
 
-        var prefix = dir.TrimEnd(System.IO.Path.DirectorySeparatorChar) + System.IO.Path.DirectorySeparatorChar;
+        var prefix = dir.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
         var entries = new List<ExportFileEntry>();
         bool dirSeen = false;
         foreach (var (path, size) in _files) {
@@ -21,7 +21,7 @@ internal sealed class InMemoryExportFileSystem : IExportFileSystem {
                 continue;
             }
             var rest = path[prefix.Length..];
-            if (rest.Contains(System.IO.Path.DirectorySeparatorChar)) {
+            if (rest.Contains(Path.DirectorySeparatorChar)) {
                 continue;
             }
             dirSeen = true;

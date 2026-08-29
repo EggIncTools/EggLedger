@@ -141,11 +141,11 @@ public sealed class AuthEndpointsTests {
             }
 
             var claims = new List<Claim> {
-                new(EggLedger.Web.Server.Auth.AuthScheme.UserIdClaim, userId.ToString()),
+                new(Server.Auth.AuthScheme.UserIdClaim, userId.ToString()),
                 new(ClaimTypes.Name, "authentik-user"),
             };
             var ctx = new DefaultHttpContext {
-                User = new ClaimsPrincipal(new ClaimsIdentity(claims, EggLedger.Web.Server.Auth.AuthScheme.Cookie)),
+                User = new ClaimsPrincipal(new ClaimsIdentity(claims, Server.Auth.AuthScheme.Cookie)),
             };
             ctx.Response.Body = new MemoryStream();
 
@@ -196,12 +196,12 @@ public sealed class AuthEndpointsTests {
             }
 
             var claims = new List<Claim> {
-                new(EggLedger.Web.Server.Auth.AuthScheme.UserIdClaim, userId.ToString()),
-                new(EggLedger.Web.Server.Auth.AuthScheme.DiscordIdClaim, "54321"),
+                new(Server.Auth.AuthScheme.UserIdClaim, userId.ToString()),
+                new(Server.Auth.AuthScheme.DiscordIdClaim, "54321"),
                 new(ClaimTypes.Name, "discord-user"),
             };
             var ctx = new DefaultHttpContext {
-                User = new ClaimsPrincipal(new ClaimsIdentity(claims, EggLedger.Web.Server.Auth.AuthScheme.Cookie)),
+                User = new ClaimsPrincipal(new ClaimsIdentity(claims, Server.Auth.AuthScheme.Cookie)),
             };
             ctx.Response.Body = new MemoryStream();
 

@@ -46,7 +46,7 @@ public sealed class GithubReleaseClient(HttpClient httpClient) {
                     continue;
                 }
                 var tag = rel.TryGetProperty("tag_name", out var t) ? t.GetString() : null;
-                if (string.IsNullOrEmpty(tag) || !EggLedger.Domain.Util.SemVersion.TryParse(tag, out var v) || v is null) {
+                if (string.IsNullOrEmpty(tag) || !Domain.Util.SemVersion.TryParse(tag, out var v) || v is null) {
                     continue;
                 }
                 if (highest is null || v.GreaterThan(highest)) {

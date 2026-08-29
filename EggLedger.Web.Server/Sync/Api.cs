@@ -79,7 +79,7 @@ public static class Api {
 
         var ships = app.Services.GetRequiredService<Ships.ShipAssetService>();
         MapAuthed(app, ["GET"], "/api/ships/manifest", store, async ctx => {
-            if (!await currentUser.IsAtLeastAsync(ctx, EggIdentity.Contract.UserRole.Admin, ctx.RequestAborted)) {
+            if (!await currentUser.IsAtLeastAsync(ctx, UserRole.Admin, ctx.RequestAborted)) {
                 ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
                 return;
             }
@@ -89,7 +89,7 @@ public static class Api {
                 ctx.RequestAborted);
         });
         MapAuthed(app, ["GET"], "/api/ships/{key}.glb", store, async ctx => {
-            bool isAdmin = await currentUser.IsAtLeastAsync(ctx, EggIdentity.Contract.UserRole.Admin, ctx.RequestAborted);
+            bool isAdmin = await currentUser.IsAtLeastAsync(ctx, UserRole.Admin, ctx.RequestAborted);
             var key = (string)ctx.Request.RouteValues["key"]!;
             var r = await Ships.ShipEndpoints.HandleGlb(ships, isAdmin, key, ctx.RequestAborted);
             ctx.Response.StatusCode = r.Status;

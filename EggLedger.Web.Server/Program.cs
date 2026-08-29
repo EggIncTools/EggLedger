@@ -17,7 +17,6 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Logging;
 using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,7 +25,7 @@ SubProdFence.ForceSessionIsolation(Environment.SetEnvironmentVariable, builder.E
 var fencedGetter = SubProdFence.WrapGetter(Environment.GetEnvironmentVariable, builder.Environment.EnvironmentName, out var subProdFenceReport);
 foreach (var entry in subProdFenceReport) {
     if (entry.Forced) {
-        Console.Error.WriteLine($"eggledger: sub-prod fence forced {entry.Key} empty");
+        await Console.Error.WriteLineAsync($"eggledger: sub-prod fence forced {entry.Key} empty");
     }
 }
 
@@ -35,7 +34,7 @@ var hasDb = !string.IsNullOrEmpty(cfg.DatabaseUrl);
 if (hasDb && builder.Environment.IsStaging()) {
     SubProdBootGuard.EnsureSubProdDatabase(cfg.DatabaseUrl);
 }
-var build = new VerifyInfo { Name = "EggLedger", Sha256 = cfg.BuildSha, Version = EggLedger.Web.AppVersionInfo.Current, Date = cfg.BuildDate };
+var build = new VerifyInfo { Name = "EggLedger", Sha256 = cfg.BuildSha, Version = AppVersionInfo.Current, Date = cfg.BuildDate };
 var startedAt = DateTimeOffset.UtcNow;
 
 
@@ -97,7 +96,7 @@ var authBuilder = authentication
             }
             var identity = ctx.HttpContext.RequestServices.GetService<EggIdentity.Client.IdentityApiClient>();
             if (identity is not null) {
-                await EggIdentity.Auth.AuthentikAspNetAuth.OnValidatePrincipalCheckRevoked(ctx, identity, EggLedger.Web.Server.Auth.AuthScheme.UserIdClaim, EggLedger.Web.Server.Auth.AuthScheme.RoleClaim);
+                await AuthentikAspNetAuth.OnValidatePrincipalCheckRevoked(ctx, identity, EggLedger.Web.Server.Auth.AuthScheme.UserIdClaim, EggLedger.Web.Server.Auth.AuthScheme.RoleClaim);
             }
             MirrorEggIdentityRoleClaim(ctx);
         };
@@ -139,27 +138,21 @@ if (hasDb) {
                 cfg.DataProtectionCertPath, cfg.DataProtectionCertPassword);
             dp.ProtectKeysWithCertificate(cert);
         } catch (Exception ex) {
-            Console.Error.WriteLine($"eggledger: WARNING - failed to load DataProtection cert from {cfg.DataProtectionCertPath}: {ex.Message}. DataProtection keyring is stored unencrypted in Postgres.");
+            await Console.Error.WriteLineAsync($"eggledger: WARNING - failed to load DataProtection cert from {cfg.DataProtectionCertPath}: {ex.Message}. DataProtection keyring is stored unencrypted in Postgres.");
         }
     } else {
-        Console.Error.WriteLine("eggledger: WARNING - DATA_PROTECTION_CERT_PATH not set. DataProtection keyring is stored unencrypted in Postgres.");
+        await Console.Error.WriteLineAsync("eggledger: WARNING - DATA_PROTECTION_CERT_PATH not set. DataProtection keyring is stored unencrypted in Postgres.");
     }
-
-
-
-
 
     var identityHttp = new HttpClient { BaseAddress = new Uri(cfg.IdentityApiUrl) };
     identityHttp.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", cfg.IdentityApiSecret);
+
     var identityClient = new EggIdentity.Client.IdentityApiClient(identityHttp);
     builder.Services.AddSingleton(identityClient);
     builder.Services.AddSingleton<EggLedger.Web.Server.Sync.Auth.ICurrentUser, EggLedger.Web.Server.Sync.Auth.CurrentUser>();
-
-
     builder.Services.AddSingleton<EggLedger.Web.Server.Sync.Auth.AuthEndpoints>();
     builder.Services.AddScoped<EggLedger.Web.Components.Auth.IPairCompletion, EggLedger.Web.Server.Auth.PairCompletion>();
     builder.Services.AddScoped<EggLedger.Web.Components.Admin.IAdminAccess, EggLedger.Web.Server.Auth.AdminAccess>();
-
     builder.Services.AddEggIdentityRequestMetrics(o => o.PathPrefix = "/api/v1");
     builder.Services.AddSingleton<EggLedger.Web.Server.Sync.Admin.SpamLog>();
     builder.Services.AddSingleton<IRequestAuditSink>(sp => sp.GetRequiredService<EggLedger.Web.Server.Sync.Admin.SpamLog>());
@@ -224,7 +217,7 @@ static void MirrorEggIdentityRoleClaim(Microsoft.AspNetCore.Authentication.Cooki
         return;
     }
     var role = id.FindFirst(EggLedger.Web.Server.Auth.AuthScheme.RoleClaim)?.Value;
-    var mirror = id.FindFirst(EggIdentity.Auth.SessionClaims.Role);
+    var mirror = id.FindFirst(SessionClaims.Role);
     if (mirror?.Value == role) {
         return;
     }
@@ -232,7 +225,7 @@ static void MirrorEggIdentityRoleClaim(Microsoft.AspNetCore.Authentication.Cooki
         id.RemoveClaim(mirror);
     }
     if (role is not null) {
-        id.AddClaim(new System.Security.Claims.Claim(EggIdentity.Auth.SessionClaims.Role, role));
+        id.AddClaim(new System.Security.Claims.Claim(SessionClaims.Role, role));
     }
     ctx.ShouldRenew = true;
 }
@@ -374,4 +367,4 @@ app.MapRazorComponents<AppHost>()
     .AddInteractiveServerRenderMode()
     .AddAdditionalAssemblies(typeof(App).Assembly);
 
-app.Run();
+await app.RunAsync();

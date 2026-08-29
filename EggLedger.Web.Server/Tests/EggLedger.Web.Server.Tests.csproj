@@ -7,7 +7,7 @@
   <Import Project="$(MSBuildThisFileDirectory)../../Tests.Common.props" />
 
   <ItemGroup>
-    <PackageReference Include="Xunit.SkippableFact" Version="1.5.23" />
+    <PackageReference Include="Xunit.SkippableFact" />
   </ItemGroup>
 
   <ItemGroup>

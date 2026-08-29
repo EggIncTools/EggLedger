@@ -1,13 +1,17 @@
 @page "/"
 @page "/missions"
+@page "/missions/{*Path}"
 @page "/lifetime"
+@page "/lifetime/{*Path}"
 @page "/reports"
+@page "/reports/{*Path}"
 @page "/settings"
 @page "/about"
+@using EggIdentity.UI
 @implements IDisposable
 @inject LedgerShellState Shell
+@inject ShipsViewState Ships
 @inject NavigationManager Nav
-@inject IJSRuntime Js
 
 <PageTitle>EggLedger - @ViewLabel(Shell.View)</PageTitle>
 
@@ -48,27 +52,19 @@
 }
 
 @code {
-    private bool _routePinned;
-    private LedgerView? _writtenView;
+    [Parameter]
+    public string? Path { get; set; }
+
+    private PathRouteSync? _routeSync;
+    private bool _applyingRoute;
 
     protected override void OnInitialized() {
         Shell.Changed += OnShellChanged;
-        Nav.LocationChanged += OnLocationChanged;
+        Shell.Changed += OnShellRouteChanged;
+        Ships.Changed += OnShipsRouteChanged;
+        _routeSync = new PathRouteSync(Nav);
+        _routeSync.Changed += OnRouteChanged;
         ApplyRoute();
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender) {
-        if (firstRender && !_routePinned) {
-            var slug = await Js.InvokeAsync<string>("eggLedgerShellNav.readView");
-            if (ViewFromSlug(slug) is { } fromHash) {
-                Shell.SetView(fromHash);
-            }
-        }
-
-        if (_writtenView != Shell.View) {
-            _writtenView = Shell.View;
-            await Js.InvokeVoidAsync("eggLedgerShellNav.writeView", ViewSlug(Shell.View));
-        }
     }
 
     private void SelectView(LedgerView view) {
@@ -77,15 +73,30 @@
 
     private void ApplyRoute() {
         var path = "/" + Nav.ToBaseRelativePath(Nav.Uri).Split('?', '#')[0].Trim('/').ToLowerInvariant();
+        if (path == "/") {
+            _routeSync?.Replace("/missions/list/all");
+            return;
+        }
+
         if (RouteTarget(path) is not { } target) {
             return;
         }
 
-        _routePinned = true;
-        Shell.SetView(target.View);
-        Shell.CloseModals();
-        Shell.SettingsOpen = target.Settings;
-        Shell.AboutOpen = target.About;
+        _applyingRoute = true;
+        try {
+            Shell.SetView(target.View);
+            Shell.CloseModals();
+            Shell.SettingsOpen = target.Settings;
+            Shell.AboutOpen = target.About;
+            Shell.Legal = target.Legal;
+            Shell.SupportOpen = target.Support;
+            if (target.Mode is { } mode) {
+                Ships.SetViewMode(mode);
+                Ships.SelectTab(target.Scope);
+            }
+        } finally {
+            _applyingRoute = false;
+        }
     }
 
     private void CloseSettings() {
@@ -108,30 +119,99 @@
         Shell.SupportOpen = false;
     }
 
-    private static (LedgerView View, bool Settings, bool About)? RouteTarget(string path) {
-        return path switch {
-            "/missions" => (LedgerView.Ships, false, false),
-            "/lifetime" => (LedgerView.Drops, false, false),
-            "/reports" => (LedgerView.Reports, false, false),
-            "/settings" => (LedgerView.Ships, true, false),
-            "/about" => (LedgerView.Ships, false, true),
-            _ => null
-        };
+    internal readonly record struct RouteMatch(
+        LedgerView View,
+        ShipsViewMode? Mode,
+        int? Scope,
+        bool Settings,
+        bool About,
+        LegalDocument? Legal,
+        bool Support);
+
+    private enum ModalKind {
+        Settings,
+        About,
+        Terms,
+        Privacy,
+        Support
     }
 
-    private static string ViewSlug(LedgerView view) {
-        return view switch {
-            LedgerView.Drops => "drops",
-            LedgerView.Reports => "reports",
-            _ => "ships"
-        };
+    internal static RouteMatch? RouteTarget(string path) {
+        var segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length == 0) {
+            return null;
+        }
+
+        switch (segments[0]) {
+            case "settings":
+                return new RouteMatch(LedgerView.Ships, null, null, true, false, null, false);
+            case "about":
+                return new RouteMatch(LedgerView.Ships, null, null, false, true, null, false);
+        }
+
+        var isMissions = segments[0] == "missions";
+        LedgerView view;
+        switch (segments[0]) {
+            case "missions":
+                view = LedgerView.Ships;
+                break;
+            case "lifetime":
+                view = LedgerView.Drops;
+                break;
+            case "reports":
+                view = LedgerView.Reports;
+                break;
+            default:
+                return null;
+        }
+
+        var rest = segments.Skip(1).ToArray();
+        var settings = false;
+        var about = false;
+        LegalDocument? legal = null;
+        var support = false;
+
+        if (rest.Length > 0 && ParseModal(rest[^1]) is { } modal) {
+            switch (modal) {
+                case ModalKind.Settings:
+                    settings = true;
+                    break;
+                case ModalKind.About:
+                    about = true;
+                    break;
+                case ModalKind.Terms:
+                    legal = LegalDocument.Terms;
+                    break;
+                case ModalKind.Privacy:
+                    legal = LegalDocument.Privacy;
+                    break;
+                case ModalKind.Support:
+                    support = true;
+                    break;
+            }
+
+            rest = rest[..^1];
+        }
+
+        ShipsViewMode? mode = null;
+        int? scope = null;
+        if (isMissions) {
+            mode = rest.Length > 0 && rest[0] == "calendar" ? ShipsViewMode.Calendar : ShipsViewMode.List;
+            scope = rest.Length > 1
+                ? rest[1] switch { "home" => 0, "virtue" => 1, _ => (int?)null }
+                : null;
+        }
+
+        return new RouteMatch(view, mode, scope, settings, about, legal, support);
     }
 
-    private static LedgerView? ViewFromSlug(string? slug) {
-        return slug switch {
-            "ships" => LedgerView.Ships,
-            "drops" => LedgerView.Drops,
-            "reports" => LedgerView.Reports,
+    private static ModalKind? ParseModal(string segment) {
+        return segment switch {
+            "settings" => ModalKind.Settings,
+            "about" => ModalKind.About,
+            "terms" => ModalKind.Terms,
+            "privacy" => ModalKind.Privacy,
+            "support" => ModalKind.Support,
             _ => null
         };
     }
@@ -144,19 +224,79 @@
         };
     }
 
+    private string CurrentPath() {
+        var basePath = Shell.View switch {
+            LedgerView.Drops => "/lifetime",
+            LedgerView.Reports => "/reports",
+            _ => $"/missions/{ModeSlug(Ships.ViewMode)}/{ScopeSlug(Ships.Opts.MissionTypeTab)}"
+        };
+
+        var modalSlug = ModalSlug();
+        return modalSlug is null ? basePath : $"{basePath}/{modalSlug}";
+    }
+
+    private static string ModeSlug(ShipsViewMode mode) {
+        return mode == ShipsViewMode.Calendar ? "calendar" : "list";
+    }
+
+    private static string ScopeSlug(int? tab) {
+        return tab switch { 0 => "home", 1 => "virtue", _ => "all" };
+    }
+
+    private string? ModalSlug() {
+        if (Shell.SettingsOpen) {
+            return "settings";
+        }
+
+        if (Shell.AboutOpen) {
+            return "about";
+        }
+
+        if (Shell.Legal == LegalDocument.Terms) {
+            return "terms";
+        }
+
+        if (Shell.Legal == LegalDocument.Privacy) {
+            return "privacy";
+        }
+
+        if (Shell.SupportOpen) {
+            return "support";
+        }
+
+        return null;
+    }
+
     private void OnShellChanged() {
         InvokeAsync(StateHasChanged);
     }
 
-    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) {
-        _writtenView = null;
+    private void OnShellRouteChanged() {
+        if (_applyingRoute) {
+            return;
+        }
+
+        _routeSync?.Push(CurrentPath());
+    }
+
+    private void OnShipsRouteChanged() {
+        if (_applyingRoute) {
+            return;
+        }
+
+        _routeSync?.Replace(CurrentPath());
+    }
+
+    private void OnRouteChanged() {
         ApplyRoute();
         InvokeAsync(StateHasChanged);
     }
 
     public void Dispose() {
         Shell.Changed -= OnShellChanged;
-        Nav.LocationChanged -= OnLocationChanged;
+        Shell.Changed -= OnShellRouteChanged;
+        Ships.Changed -= OnShipsRouteChanged;
+        _routeSync?.Dispose();
     }
 
 }

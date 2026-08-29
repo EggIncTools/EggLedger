@@ -25,7 +25,7 @@ public sealed class ArchiveExtractionTests {
     }
 
     private static void WriteTarGz(string path, params (string Name, byte[] Data)[] entries) {
-        using var file = System.IO.File.Create(path);
+        using var file = File.Create(path);
         using var gz = new GZipStream(file, CompressionLevel.Fastest);
         using var tar = new TarWriter(gz, TarEntryFormat.Pax);
         foreach (var (name, data) in entries) {
@@ -37,7 +37,7 @@ public sealed class ArchiveExtractionTests {
     }
 
     private static void WriteZip(string path, params (string Name, byte[] Data)[] entries) {
-        using var file = System.IO.File.Create(path);
+        using var file = File.Create(path);
         using var zip = new ZipArchive(file, ZipArchiveMode.Create);
         foreach (var (name, data) in entries) {
             var e = zip.CreateEntry(name);
@@ -50,7 +50,7 @@ public sealed class ArchiveExtractionTests {
         if (OperatingSystem.IsWindows()) {
             return;
         }
-        var mode = System.IO.File.GetUnixFileMode(path);
+        var mode = File.GetUnixFileMode(path);
         Assert.True(mode.HasFlag(UnixFileMode.UserExecute), "extracted binary should have the user-execute bit");
     }
 
@@ -63,7 +63,7 @@ public sealed class ArchiveExtractionTests {
 
         ArchiveExtraction.Extract(archive, dest);
 
-        Assert.Equal(Payload, System.IO.File.ReadAllBytes(dest));
+        Assert.Equal(Payload, File.ReadAllBytes(dest));
         AssertExecutableOnUnix(dest);
     }
 
@@ -76,7 +76,7 @@ public sealed class ArchiveExtractionTests {
 
         ArchiveExtraction.Extract(archive, dest);
 
-        Assert.Equal(Payload, System.IO.File.ReadAllBytes(dest));
+        Assert.Equal(Payload, File.ReadAllBytes(dest));
     }
 
     [Fact]
@@ -101,7 +101,7 @@ public sealed class ArchiveExtractionTests {
 
         ArchiveExtraction.Extract(archive, dest);
 
-        Assert.Equal(Payload, System.IO.File.ReadAllBytes(dest));
+        Assert.Equal(Payload, File.ReadAllBytes(dest));
         AssertExecutableOnUnix(dest);
     }
 
@@ -117,7 +117,7 @@ public sealed class ArchiveExtractionTests {
 
         ArchiveExtraction.Extract(archive, dest);
 
-        Assert.Equal(Payload, System.IO.File.ReadAllBytes(dest));
+        Assert.Equal(Payload, File.ReadAllBytes(dest));
     }
 
     [Fact]
@@ -134,7 +134,7 @@ public sealed class ArchiveExtractionTests {
     public void Extract_UnsupportedSuffix_Throws() {
         using var dir = new TempDir();
         var archive = dir.File("EggLedger.rar");
-        System.IO.File.WriteAllBytes(archive, [0, 1, 2]);
+        File.WriteAllBytes(archive, [0, 1, 2]);
 
         Assert.Throws<InvalidOperationException>(() => ArchiveExtraction.Extract(archive, dir.File("out")));
     }

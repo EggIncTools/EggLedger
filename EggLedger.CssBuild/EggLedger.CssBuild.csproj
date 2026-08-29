@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MonorailCss" Version="0.1.3" />
-    <PackageReference Include="EggIdentity.Styles" Version="2.1.7" />
+    <PackageReference Include="MonorailCss" />
+    <PackageReference Include="EggIdentity.Styles" />
   </ItemGroup>
 
 </Project>

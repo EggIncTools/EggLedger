@@ -13,8 +13,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MinVer" Version="7.0.0" PrivateAssets="All" />
-    <PackageReference Include="EggIdentity.CodeStyle" Version="2.1.7" PrivateAssets="all" />
+    <PackageReference Include="MinVer" PrivateAssets="All" />
+    <PackageReference Include="EggIdentity.CodeStyle" PrivateAssets="all" />
   </ItemGroup>
   <PropertyGroup>
     <MinVerTagPrefix>v</MinVerTagPrefix>

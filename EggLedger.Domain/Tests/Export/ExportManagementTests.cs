@@ -3,7 +3,7 @@ using EggLedger.Domain.Export;
 namespace EggLedger.Domain.Tests.Export;
 
 public class ExportManagementTests {
-    private static string MissionsDir(string root) => System.IO.Path.Combine(root, "missions");
+    private static string MissionsDir(string root) => Path.Combine(root, "missions");
 
     [Fact]
     public void ListGroups_MissingDir() {
@@ -62,8 +62,8 @@ public class ExportManagementTests {
         var (deleted, freed) = ExportManagement.PruneForPlayer(root, "EI123", 2, fs);
         Assert.Equal(2, deleted);
         Assert.Equal(8, freed);
-        Assert.False(fs.Exists(System.IO.Path.Combine(md, "EI123.20240310_000000.csv")));
-        Assert.True(fs.Exists(System.IO.Path.Combine(md, "EI123.20240312_000000.csv")));
+        Assert.False(fs.Exists(Path.Combine(md, "EI123.20240310_000000.csv")));
+        Assert.True(fs.Exists(Path.Combine(md, "EI123.20240312_000000.csv")));
     }
 
     [Fact]

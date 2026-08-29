@@ -68,16 +68,16 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
         if (eggIdentitySession is null) {
             var claims = new List<Claim> {
                 new(ClaimTypes.Name, result.Username),
-                new(EggLedger.Web.Server.Auth.AuthScheme.UserIdClaim, result.UserId.ToString()),
-                new(EggLedger.Web.Server.Auth.AuthScheme.RoleClaim, result.Role),
+                new(Server.Auth.AuthScheme.UserIdClaim, result.UserId.ToString()),
+                new(Server.Auth.AuthScheme.RoleClaim, result.Role),
                 new(SessionClaims.Role, result.Role),
             };
             if (!string.IsNullOrEmpty(result.DiscordId)) {
-                claims.Add(new Claim(EggLedger.Web.Server.Auth.AuthScheme.DiscordIdClaim, result.DiscordId));
+                claims.Add(new Claim(Server.Auth.AuthScheme.DiscordIdClaim, result.DiscordId));
             }
-            var claimsIdentity = new ClaimsIdentity(claims, EggLedger.Web.Server.Auth.AuthScheme.Cookie);
+            var claimsIdentity = new ClaimsIdentity(claims, Server.Auth.AuthScheme.Cookie);
             await ctx.SignInAsync(
-                EggLedger.Web.Server.Auth.AuthScheme.Cookie,
+                Server.Auth.AuthScheme.Cookie,
                 new ClaimsPrincipal(claimsIdentity),
                 new AuthenticationProperties { IsPersistent = true });
         }
@@ -86,7 +86,7 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
     }
 
     public async Task Logout(HttpContext ctx) {
-        await ctx.SignOutAsync(EggLedger.Web.Server.Auth.AuthScheme.Cookie);
+        await ctx.SignOutAsync(Server.Auth.AuthScheme.Cookie);
 
         if (eggIdentitySession is null) {
             ctx.Response.Redirect("/");
@@ -257,13 +257,13 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
             return false;
         }
 
-        var userIdClaim = user.FindFirst(EggLedger.Web.Server.Auth.AuthScheme.UserIdClaim)?.Value;
+        var userIdClaim = user.FindFirst(Server.Auth.AuthScheme.UserIdClaim)?.Value;
         if (!Guid.TryParse(userIdClaim, out var userId)) {
             return false;
         }
 
         var username = user.Identity?.Name ?? "";
-        var discordIdClaim = user.FindFirst(EggLedger.Web.Server.Auth.AuthScheme.DiscordIdClaim)?.Value;
+        var discordIdClaim = user.FindFirst(Server.Auth.AuthScheme.DiscordIdClaim)?.Value;
         var poll = await MintSessionAsync(userId, username, discordIdClaim, ct);
 
         await using var pend = source.CreateCommand(
