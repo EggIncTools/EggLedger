@@ -5,6 +5,7 @@ namespace EggLedger.Web.Missions.Timeline;
 public sealed record TimelineBar(
     string MissionId,
     int Lane,
+    int StackOrder,
     double LeftPercent,
     double WidthPercent,
     double FillPercent,

@@ -389,8 +389,8 @@
 
 .timeline-row {
   position: relative;
-  flex: var(--row-weight, 1) 1 0;
-  min-height: 3.25rem;
+  flex: 1 1 0;
+  min-height: 0;
   overflow: hidden;
   border-bottom: 1px solid color-mix(in srgb, var(--color-gray-700) 60%, transparent);
   transition: opacity 0.18s ease-out;
@@ -440,8 +440,7 @@
   flex-direction: column;
   justify-content: center;
   gap: 0.15rem;
-  overflow-y: auto;
-  scrollbar-gutter: stable;
+  overflow: hidden;
   z-index: 2;
 }
 
@@ -458,7 +457,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
-  overflow-y: auto;
+  overflow: hidden;
   z-index: 3;
 }
 
@@ -516,24 +515,22 @@
 .timeline-view-day {
   --bar-h: 2.5rem;
   --bubble-h: 3.1rem;
-  --lane-min: 3.4rem;
 }
 
 .timeline-view-week {
   --bar-h: 1.75rem;
   --bubble-h: 2.6rem;
-  --lane-min: 2.75rem;
 }
 
 .timeline-view-month {
   --bar-h: 1.35rem;
   --bubble-h: 2.1rem;
-  --lane-min: 2.2rem;
 }
 
 .timeline-lane {
   position: relative;
-  flex: 0 0 var(--lane-min, 3.25rem);
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .timeline-dur-0 {
@@ -581,12 +578,9 @@
   top: calc(50% - var(--bar-h, 2.25rem) / 2);
   height: var(--bar-h, 2.25rem);
   left: calc(var(--bar-start) * 1%);
-  width: calc(var(--bar-size) * 1% - 4px);
-  cursor: pointer;
-}
-
-.timeline-bar-active {
   width: calc(var(--bar-size) * 1%);
+  z-index: calc(9999 - var(--bar-z, 0));
+  cursor: pointer;
 }
 
 .timeline-bar-track {
@@ -612,6 +606,42 @@
 
 .timeline-bar-cut-l.timeline-bar-cut-r .timeline-bar-track {
   clip-path: polygon(0.55rem 0, calc(100% - 0.55rem) 0, 100% 50%, calc(100% - 0.55rem) 100%, 0.55rem 100%, 0 50%);
+}
+
+.timeline-bar-edge {
+  position: absolute;
+  top: -500vh;
+  height: 1000vh;
+  width: 0;
+  border-left: 1px dashed rgba(255, 255, 255, 0.55);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.timeline-bar:hover .timeline-bar-edge {
+  opacity: 1;
+}
+
+.timeline-bar-edge-start {
+  left: 0;
+}
+
+.timeline-bar-edge-end {
+  right: 0;
+}
+
+.timeline-bar-edge-label {
+  position: absolute;
+  top: 500vh;
+  left: 0;
+  transform: translate(-50%, -1.5rem);
+  white-space: nowrap;
+  font-size: 0.62rem;
+  color: #fff;
+  background: rgba(17, 17, 20, 0.9);
+  padding: 0.05rem 0.3rem;
+  border-radius: 0.2rem;
 }
 
 .timeline-bar-fill {

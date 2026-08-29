@@ -66,7 +66,7 @@ public sealed class TimelineLayoutEngineTests {
     }
 
     [Fact]
-    public void Layout_OverlappingMissionsGetSeparateLanes() {
+    public void Layout_OverlappingMissionsShareTheSingleLane() {
         var missions = new[] {
             M("a", WindowStart.AddHours(1), WindowStart.AddHours(5)),
             M("b", WindowStart.AddHours(2), WindowStart.AddHours(3)),
@@ -75,23 +75,20 @@ public sealed class TimelineLayoutEngineTests {
 
         var bars = TimelineLayoutEngine.Layout(missions, WindowStart, WindowEnd, WindowStart);
 
-        var lanes = bars.Select(b => b.Lane).OrderBy(l => l).ToList();
-        Assert.Equal([0, 1, 2], lanes);
+        Assert.All(bars, b => Assert.Equal(0, b.Lane));
     }
 
     [Fact]
-    public void Layout_LaneIsReusedOnceItsOccupantHasEnded() {
+    public void Layout_StackOrderMatchesLaunchOrderSoEarlierBarsStayOnTop() {
         var missions = new[] {
-            M("a", WindowStart.AddHours(1), WindowStart.AddHours(2)),
-            M("b", WindowStart.AddHours(1), WindowStart.AddHours(2)),
-            M("c", WindowStart.AddHours(6), WindowStart.AddHours(7)),
+            M("late", WindowStart.AddHours(3), WindowStart.AddHours(4)),
+            M("early", WindowStart.AddHours(1), WindowStart.AddHours(2)),
         };
 
         var bars = TimelineLayoutEngine.Layout(missions, WindowStart, WindowEnd, WindowStart);
 
         var byId = bars.ToDictionary(b => b.MissionId);
-        Assert.Equal(2, bars.Select(b => b.Lane).Distinct().Count());
-        Assert.True(byId["c"].Lane == byId["a"].Lane || byId["c"].Lane == byId["b"].Lane);
+        Assert.True(byId["early"].StackOrder < byId["late"].StackOrder);
     }
 
     [Fact]
@@ -209,7 +206,7 @@ public sealed class TimelineLayoutEngineTests {
     }
 
     [Fact]
-    public void Layout_MinWidth_RightEdgeShiftedBarsNeverOverlapWithinALane() {
+    public void Layout_MinWidth_StretchedBarsShareTheLaneAndEarlierStaysOnTop() {
         var missions = new[] {
             M("earlier", WindowEnd.AddHours(-4), WindowEnd.AddHours(-2)),
             M("late", WindowEnd.AddMinutes(-10), WindowEnd),
@@ -218,13 +215,8 @@ public sealed class TimelineLayoutEngineTests {
         var bars = TimelineLayoutEngine.Layout(missions, WindowStart, WindowEnd, WindowStart, minWidthPercent: 20);
 
         var byId = bars.ToDictionary(b => b.MissionId);
-        Assert.NotEqual(byId["earlier"].Lane, byId["late"].Lane);
-        foreach (var lane in bars.GroupBy(b => b.Lane)) {
-            var ordered = lane.OrderBy(b => b.LeftPercent).ToList();
-            for (int i = 1; i < ordered.Count; i++) {
-                Assert.True(ordered[i - 1].LeftPercent + ordered[i - 1].WidthPercent <= ordered[i].LeftPercent + 0.001);
-            }
-        }
+        Assert.Equal(byId["earlier"].Lane, byId["late"].Lane);
+        Assert.True(byId["earlier"].StackOrder < byId["late"].StackOrder);
     }
 
     [Fact]
