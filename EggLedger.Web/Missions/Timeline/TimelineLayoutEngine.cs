@@ -5,7 +5,7 @@ using EggLedger.Web.State;
 namespace EggLedger.Web.Missions.Timeline;
 
 public static class TimelineLayoutEngine {
-    private const double LaneGapFraction = 0.0001;
+    private const double EventLaneGapFraction = 0.0001;
 
     public static IReadOnlyList<TimelineBar> Layout(
         IReadOnlyList<DatabaseMission> missions,
@@ -22,11 +22,12 @@ public static class TimelineLayoutEngine {
         var intersecting = IntersectingMissions(missions, windowStart, windowEnd);
         var laneRights = new List<double>();
         var result = new List<TimelineBar>(intersecting.Count);
+        double iconGapFraction = minWidthPercent / 100;
 
         for (int i = 0; i < intersecting.Count; i++) {
             var m = intersecting[i];
             var (left, width, rawRight) = ClipToWindow(m.LaunchDT, m.ReturnDT, windowStart, windowSpan, minWidthPercent / 100);
-            int lane = AssignLane(laneRights, left, rawRight);
+            int lane = AssignLane(laneRights, left, rawRight, iconGapFraction);
             bool isActive = nowUnix < m.ReturnDT;
             double fill = FillFraction(m.LaunchDT, m.ReturnDT, windowStart, windowEnd, nowUnix, isActive);
             long progress = isActive ? Math.Min(nowUnix, m.ReturnDT) : m.ReturnDT;
@@ -75,7 +76,7 @@ public static class TimelineLayoutEngine {
             long start = (long)e.StartTimestamp;
             long end = (long)e.EndTimestamp;
             var (left, width, rawRight) = ClipToWindow(start, end, windowStart, windowSpan, 0);
-            int lane = AssignLane(laneRights, left, rawRight);
+            int lane = AssignLane(laneRights, left, rawRight, EventLaneGapFraction);
             result.Add(new TimelineEventBar(
                 Id: e.Id,
                 Lane: lane,
@@ -106,9 +107,9 @@ public static class TimelineLayoutEngine {
         return intersecting;
     }
 
-    private static int AssignLane(List<double> laneRights, double left, double right) {
+    private static int AssignLane(List<double> laneRights, double left, double right, double gapFraction) {
         for (int i = 0; i < laneRights.Count; i++) {
-            if (laneRights[i] + LaneGapFraction <= left) {
+            if (laneRights[i] - gapFraction <= left) {
                 laneRights[i] = right;
                 return i;
             }

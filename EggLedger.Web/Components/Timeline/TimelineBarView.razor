@@ -5,12 +5,16 @@
     <div class="timeline-bar-track">
         <div class="timeline-bar-fill"></div>
     </div>
-    <div class="timeline-bar-edge timeline-bar-edge-start">
-        <span class="timeline-bar-edge-label">@FormatEdgeTime(Bar.Mission.LaunchDT)</span>
-    </div>
-    <div class="timeline-bar-edge timeline-bar-edge-end">
-        <span class="timeline-bar-edge-label">@FormatEdgeTime(Bar.Mission.ReturnDT)</span>
-    </div>
+    @if (!Bar.ContinuesLeft) {
+        <div class="timeline-bar-edge timeline-bar-edge-start">
+            <span class="timeline-bar-edge-label">@FormatEdgeTime(Bar.Mission.LaunchDT)</span>
+        </div>
+    }
+    @if (!Bar.ContinuesRight) {
+        <div class="timeline-bar-edge timeline-bar-edge-end">
+            <span class="timeline-bar-edge-label">@FormatEdgeTime(Bar.Mission.ReturnDT)</span>
+        </div>
+    }
     @if (Bar.ShowBubble) {
         <span class="timeline-bar-bubble tt-anchor">
             <img class="timeline-bar-ship" src="@Bar.ShipIconPath" alt="@Bar.ShipName"/>

@@ -8,8 +8,7 @@
         <span class="font-bold">@(Bar.Message ?? Bar.Type)</span>
         @if (Bar.Multiplier > 0) {
             <br/>
-            <span class="text-gray-400">Multiplier:</span>
-            @MultiplierLabel
+            <span class="text-gray-400">Multiplier:</span> @MultiplierLabel
         }
         <br/>
         <span class="text-gray-400">Starts:</span> @FormatTime(Bar.StartUnix)<br/>
@@ -25,8 +24,8 @@
 
     private static readonly Dictionary<string, string> ColorByType = new(StringComparer.OrdinalIgnoreCase) {
         ["mission-fuel"] = "#8b5cf6",
-        ["mission-capacity"] = "#d946ef",
-        ["mission-duration"] = "#ec4899"
+        ["mission-capacity"] = "#a21caf",
+        ["mission-duration"] = "#be185d"
     };
 
     [Parameter] public required TimelineEventBar Bar { get; set; }

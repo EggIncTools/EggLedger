@@ -15,28 +15,29 @@
                              OnPan="PanAsync"
                              OnToday="JumpToNowAsync"
                              DateChanged="JumpToDateAsync"/>
-        @if (ShowFlightRatio) {
-            <span class="airtime-stat" data-tt="Share of 3 mission slots in flight this period, by farm.">
-                <span class="airtime-label">Airtime</span>
-                @if (_flightSlices is not { Count: > 0 } slices) {
-                    <span class="airtime-chip">n/a</span>
-                } else if (slices.Count == 1) {
-                    <span class="airtime-chip">@Pct(slices[0].Ratio)</span>
-                } else {
-                    @foreach (var slice in slices) {
-                        <span class="airtime-chip @(slice.IsVirtue ? "airtime-virtue" : "airtime-home")">
-                            <span class="airtime-farm">@(slice.IsVirtue ? "Virtue" : "Home")</span>
-                            @Pct(slice.Ratio)
-                        </span>
-                    }
-                }
-                @if (FilteredOutRatio is { } filteredOut) {
-                    <span class="airtime-chip airtime-filtered" data-tt="Airtime from missions excluded by the active filter, for this period.">
-                        -@Pct(filteredOut) filtered
+    </div>
+
+    <div class="airtime-row">
+        <span class="airtime-stat" data-tt="Share of 3 mission slots in flight this period, by farm.">
+            <span class="airtime-label">Airtime</span>
+            @if (_flightSlices is not { Count: > 0 } slices) {
+                <span class="airtime-chip">n/a</span>
+            } else if (slices.Count == 1) {
+                <span class="airtime-chip" style="@AirtimeChipStyle(slices[0].Ratio)">@Pct(slices[0].Ratio)</span>
+            } else {
+                @foreach (var slice in slices) {
+                    <span class="airtime-chip" style="@AirtimeChipStyle(slice.Ratio)">
+                        <span class="airtime-farm">@(slice.IsVirtue ? "Virtue" : "Home")</span>
+                        @Pct(slice.Ratio)
                     </span>
                 }
-            </span>
-        }
+            }
+            @if (FilteredOutRatio is { } filteredOut) {
+                <span class="airtime-chip airtime-filtered" data-tt="Airtime from missions excluded by the active filter, for this period.">
+                    -@Pct(filteredOut) filtered
+                </span>
+            }
+        </span>
     </div>
 
     <div class="flex-1 min-h-0 shadow-sm bg-darkest rounded-md p-2 timeline-shell timeline-view-@ZoomClass">
@@ -121,7 +122,6 @@
     [Parameter] public IReadOnlyList<DatabaseMission> InFlightMissions { get; set; } = Array.Empty<DatabaseMission>();
     [Parameter] public IReadOnlyList<DatabaseMission> AllMissions { get; set; } = Array.Empty<DatabaseMission>();
     [Parameter] public bool HasActiveFilter { get; set; }
-    [Parameter] public bool ShowFlightRatio { get; set; }
     [Parameter] public bool RecolorDC { get; set; }
     [Parameter] public bool RecolorBC { get; set; }
     [Parameter] public EventCallback<string> OnViewMission { get; set; }
@@ -329,6 +329,15 @@
 
     private static string Pct(double ratio) {
         return ratio.ToString("P1", CultureInfo.InvariantCulture);
+    }
+
+    private static string AirtimeChipStyle(double ratio) {
+        double t = Math.Clamp(ratio, 0, 1);
+        int r = (int)Math.Round(239 + (34 - 239) * t);
+        int g = (int)Math.Round(68 + (197 - 68) * t);
+        int b = (int)Math.Round(68 + (94 - 68) * t);
+        return FormattableString.Invariant(
+            $"color:rgb({r},{g},{b});border-color:color-mix(in srgb, rgb({r},{g},{b}) 55%, transparent);background-color:color-mix(in srgb, rgb({r},{g},{b}) 10%, var(--color-darker));");
     }
 
     private Task SetZoomAsync(TimelineZoom zoom) {

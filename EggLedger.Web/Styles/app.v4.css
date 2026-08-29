@@ -284,6 +284,11 @@
   white-space: nowrap;
 }
 
+.airtime-row {
+  display: flex;
+  justify-content: center;
+}
+
 .airtime-stat {
   display: inline-flex;
   align-items: center;
@@ -305,18 +310,6 @@
   background-color: var(--color-darker);
   color: var(--color-gray-300);
   font-variant-numeric: tabular-nums;
-}
-
-.airtime-home {
-  border-color: color-mix(in srgb, var(--color-farm-home) 55%, transparent);
-  background-color: color-mix(in srgb, var(--color-farm-home) 10%, var(--color-darker));
-  color: var(--color-farm-home);
-}
-
-.airtime-virtue {
-  border-color: color-mix(in srgb, var(--color-farm-virtue) 55%, transparent);
-  background-color: color-mix(in srgb, var(--color-farm-virtue) 10%, var(--color-darker));
-  color: var(--color-farm-virtue);
 }
 
 .airtime-farm {
@@ -441,11 +434,11 @@
   justify-content: center;
   gap: 0.15rem;
   overflow: hidden;
-  z-index: 2;
+  z-index: 4;
 }
 
 .timeline-row-lanes-with-events {
-  top: 3.9rem;
+  top: 4.8rem;
 }
 
 .timeline-event-lanes {
@@ -453,7 +446,7 @@
   top: 1.3rem;
   left: 0;
   right: 0;
-  max-height: 2.5rem;
+  max-height: 4.3rem;
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
@@ -463,7 +456,7 @@
 
 .timeline-event-lane {
   position: relative;
-  flex: 0 0 1.1rem;
+  flex: 0 0 2rem;
 }
 
 .timeline-event-bar {
@@ -476,6 +469,7 @@
   background-color: var(--evt-bg, var(--color-gray-600));
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.3rem;
   padding: 0 0.35rem;
   overflow: hidden;
@@ -483,8 +477,8 @@
 }
 
 .timeline-event-icon {
-  width: 0.85rem;
-  height: 0.85rem;
+  width: 1.1rem;
+  height: 1.1rem;
   flex-shrink: 0;
   object-fit: contain;
 }
@@ -581,6 +575,10 @@
   width: calc(var(--bar-size) * 1%);
   z-index: calc(9999 - var(--bar-z, 0));
   cursor: pointer;
+}
+
+.timeline-bar:hover {
+  z-index: 10000;
 }
 
 .timeline-bar-track {
