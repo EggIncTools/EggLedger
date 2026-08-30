@@ -39,11 +39,11 @@ public sealed class MigrationTests {
     }
 
     [Fact]
-    public void MissionDb_FreshMigratesToV10() {
+    public void MissionDb_FreshMigratesToV11() {
         using var conn = FreshConnection();
         SqliteMigrationRunner.MigrateMissionDb(conn);
 
-        Assert.Equal(10, UserVersion(conn));
+        Assert.Equal(11, UserVersion(conn));
         Assert.True(TableExists(conn, "mission"));
         Assert.True(TableExists(conn, "backup"));
         Assert.True(TableExists(conn, "settings"));
@@ -92,13 +92,11 @@ public sealed class MigrationTests {
     public void MissionDb_RerunIsNoOp() {
         using var conn = FreshConnection();
         SqliteMigrationRunner.MigrateMissionDb(conn);
-        Assert.Equal(10, UserVersion(conn));
-
-
+        Assert.Equal(11, UserVersion(conn));
 
         SqliteMigrationRunner.MigrateMissionDb(conn);
         SqliteMigrationRunner.MigrateMissionDb(conn);
-        Assert.Equal(10, UserVersion(conn));
+        Assert.Equal(11, UserVersion(conn));
     }
 
     [Fact]
@@ -117,7 +115,7 @@ public sealed class MigrationTests {
         var dir = Path.GetDirectoryName(path)!;
         try {
             using var db = SqliteDatabase.OpenMissionDb(path);
-            Assert.Equal(10, UserVersion(db.Connection));
+            Assert.Equal(11, UserVersion(db.Connection));
 
             using var cmd = db.Connection.CreateCommand();
             cmd.CommandText = "PRAGMA foreign_keys;";
