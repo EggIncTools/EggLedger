@@ -28,21 +28,33 @@ public sealed class TimelineTicksTests {
 
     [Fact]
     public void DayCells_SplitsWeekRowIntoSevenEqualCells() {
-        var start = new DateTimeOffset(2026, 8, 23, 0, 0, 0, TimeSpan.Zero);
+        var start = TimelineGridAnchor.GridWeekStart(new DateTimeOffset(2026, 8, 23, 0, 0, 0, TimeSpan.Zero));
 
-        var cells = TimelineTicks.DayCells(start, start.AddDays(7), Utc, null);
+        var cells = TimelineTicks.DayCells(start, start.AddDays(7), null);
 
         Assert.Equal(7, cells.Count);
         Assert.Equal(0, cells[0].LeftPercent, precision: 3);
-        Assert.Equal(new DateTime(2026, 8, 23, 0, 0, 0, DateTimeKind.Unspecified), cells[0].LocalDate);
+        Assert.Equal(TimelineGridAnchor.EasternDate(start), cells[0].LocalDate);
         Assert.All(cells, c => Assert.Equal(100.0 / 7, c.WidthPercent, precision: 3));
     }
 
     [Fact]
-    public void DayCells_MutesDaysOutsideThePrimaryMonth() {
-        var start = new DateTimeOffset(2026, 7, 26, 0, 0, 0, TimeSpan.Zero);
+    public void DayCells_HasNoGapOrOverlapBetweenConsecutiveCells() {
+        var start = TimelineGridAnchor.GridWeekStart(new DateTimeOffset(2026, 8, 23, 0, 0, 0, TimeSpan.Zero));
 
-        var cells = TimelineTicks.DayCells(start, start.AddDays(7), Utc, 8);
+        var cells = TimelineTicks.DayCells(start, start.AddDays(7), null);
+
+        Assert.Equal(7, cells.Count);
+        for (var i = 1; i < cells.Count; i++) {
+            Assert.Equal(cells[i - 1].LeftPercent + cells[i - 1].WidthPercent, cells[i].LeftPercent, precision: 6);
+        }
+    }
+
+    [Fact]
+    public void DayCells_MutesDaysOutsideThePrimaryMonth() {
+        var start = TimelineGridAnchor.GridDayStartForDate(new DateOnly(2026, 7, 26));
+
+        var cells = TimelineTicks.DayCells(start, start.AddDays(7), 8);
 
         Assert.Equal(6, cells.Count(c => c.Muted));
         Assert.False(cells[6].Muted);
@@ -51,9 +63,9 @@ public sealed class TimelineTicksTests {
 
     [Fact]
     public void DayCells_NoMutingWithoutAPrimaryMonth() {
-        var start = new DateTimeOffset(2026, 7, 26, 0, 0, 0, TimeSpan.Zero);
+        var start = TimelineGridAnchor.GridDayStartForDate(new DateOnly(2026, 7, 26));
 
-        var cells = TimelineTicks.DayCells(start, start.AddDays(7), Utc, null);
+        var cells = TimelineTicks.DayCells(start, start.AddDays(7), null);
 
         Assert.All(cells, c => Assert.False(c.Muted));
     }

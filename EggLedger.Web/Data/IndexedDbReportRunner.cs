@@ -9,6 +9,6 @@ public sealed class IndexedDbReportRunner(IReportSourceCache sources, IWeightDat
     public async Task<ReportResult> RunReportAsync(ReportDefinition def, string accountId) {
         var source = await _sources.GetAsync(accountId).ConfigureAwait(false);
         var runner = new InMemoryReportRunner(_weights);
-        return runner.Run(def, source.Missions, source.Drops);
+        return runner.Run(def, source.Missions, source.Drops, source.Fuel);
     }
 }

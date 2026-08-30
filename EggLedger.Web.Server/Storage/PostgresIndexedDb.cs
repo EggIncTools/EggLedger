@@ -234,11 +234,15 @@ public sealed class PostgresIndexedDb : IIndexedDb {
             blobColumns: ["payload"]),
         [IndexedDbStores.ArtifactDrops] = new StoreMeta("el_artifact_drops", ["id"], autoIncrementColumn: "id",
             blobColumns: []),
+        [IndexedDbStores.MissionFuel] = new StoreMeta("el_mission_fuel", ["id"], autoIncrementColumn: "id",
+            blobColumns: []),
         [IndexedDbStores.Settings] = new StoreMeta("el_settings", ["key"], autoIncrementColumn: null,
             blobColumns: []),
         [IndexedDbStores.Reports] = new StoreMeta("el_reports", ["id"], autoIncrementColumn: null,
             blobColumns: []),
         [IndexedDbStores.ReportGroups] = new StoreMeta("el_report_groups", ["id"], autoIncrementColumn: null,
+            blobColumns: []),
+        [IndexedDbStores.PinnedReports] = new StoreMeta("el_pinned_reports", ["id"], autoIncrementColumn: null,
             blobColumns: []),
     };
 

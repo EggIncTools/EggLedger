@@ -3,8 +3,8 @@ using EggLedger.Web.State;
 
 namespace EggLedger.Web.Data;
 
-public sealed record ReportSource(IReadOnlyList<MissionRowData> Missions, IReadOnlyList<ArtifactDropRowData> Drops) {
-    public static ReportSource Empty { get; } = new([], []);
+public sealed record ReportSource(IReadOnlyList<MissionRowData> Missions, IReadOnlyList<ArtifactDropRowData> Drops, IReadOnlyList<FuelRowData> Fuel) {
+    public static ReportSource Empty { get; } = new([], [], []);
 }
 
 public interface IReportSourceCache {
@@ -149,10 +149,14 @@ public static class IndexedDbReportSource {
         var dropRows = await db
             .GetAllByIndexAsync<ArtifactDropRow>(IndexedDbStores.ArtifactDrops, IndexedDbStores.PlayerIdIndex, accountId)
             .ConfigureAwait(false);
+        var fuelRows = await db
+            .GetAllByIndexAsync<FuelRow>(IndexedDbStores.MissionFuel, IndexedDbStores.PlayerIdIndex, accountId)
+            .ConfigureAwait(false);
 
         return new ReportSource(
             [.. missionRows.Select(ToMissionData)],
-            [.. dropRows.Select(ToDropData)]);
+            [.. dropRows.Select(ToDropData)],
+            [.. fuelRows.Select(ToFuelData)]);
     }
 
     private static MissionRowData ToMissionData(MissionRow r) => new() {
@@ -180,5 +184,12 @@ public static class IndexedDbReportSource {
         Level = r.Level,
         Rarity = r.Rarity,
         Quality = r.Quality,
+    };
+
+    private static FuelRowData ToFuelData(FuelRow r) => new() {
+        PlayerId = r.PlayerId,
+        MissionId = r.MissionId,
+        EggId = r.EggId,
+        Amount = r.Amount,
     };
 }

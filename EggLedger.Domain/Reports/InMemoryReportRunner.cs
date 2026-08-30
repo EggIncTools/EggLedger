@@ -29,14 +29,22 @@ public sealed record ArtifactDropRowData {
     public double Quality { get; init; }
 }
 
+public sealed record FuelRowData {
+    public string PlayerId { get; init; } = "";
+    public string MissionId { get; init; } = "";
+    public long EggId { get; init; }
+    public double Amount { get; init; }
+}
+
 public sealed class InMemoryReportRunner(IWeightData weights) {
     private readonly IWeightData _weights = weights ?? throw new ArgumentNullException(nameof(weights));
 
     public ReportResult Run(
         ReportDefinition def,
         IReadOnlyList<MissionRowData> missions,
-        IReadOnlyList<ArtifactDropRowData> drops) {
-        var db = new InMemoryMissionDb(def, missions, drops, _weights);
+        IReadOnlyList<ArtifactDropRowData> drops,
+        IReadOnlyList<FuelRowData> fuel) {
+        var db = new InMemoryMissionDb(def, missions, drops, fuel, _weights);
         var executor = new ReportExecutor(db, _weights);
         return executor.ExecuteReport(def);
     }

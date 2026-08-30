@@ -28,21 +28,24 @@ public static class TimelineTicks {
         return result;
     }
 
-    public static IReadOnlyList<TimelineDayCell> DayCells(DateTimeOffset start, DateTimeOffset end, TimeZoneInfo tz, int? primaryMonth) {
+    public static IReadOnlyList<TimelineDayCell> DayCells(DateTimeOffset start, DateTimeOffset end, int? primaryMonth) {
         double spanSeconds = (end - start).TotalSeconds;
         if (spanSeconds <= 0) {
             return [];
         }
-        var localStart = TimeZoneInfo.ConvertTime(start, tz).DateTime.Date;
         var cells = new List<TimelineDayCell>();
-        for (var day = localStart; TimelineWindow.ToOffset(day, tz) < end; day = day.AddDays(1)) {
-            double left = Math.Max(0, Percent(day, start, spanSeconds, tz));
-            double right = Math.Min(100, Percent(day.AddDays(1), start, spanSeconds, tz));
-            bool muted = primaryMonth is { } month && day.Month != month;
-            cells.Add(new TimelineDayCell(left, right - left, day, muted));
+        for (var day = start; day < end; day = day.AddDays(1)) {
+            double left = Math.Max(0, Percent(day, start, spanSeconds));
+            double right = Math.Min(100, Percent(day.AddDays(1), start, spanSeconds));
+            var easternDate = TimelineGridAnchor.EasternDate(day);
+            bool muted = primaryMonth is { } month && easternDate.Month != month;
+            cells.Add(new TimelineDayCell(left, right - left, easternDate, muted));
         }
         return cells;
     }
+
+    private static double Percent(DateTimeOffset instant, DateTimeOffset start, double spanSeconds) =>
+        (instant - start).TotalSeconds / spanSeconds * 100;
 
     private static double Percent(DateTime local, DateTimeOffset start, double spanSeconds, TimeZoneInfo tz) =>
         (TimelineWindow.ToOffset(local, tz) - start).TotalSeconds / spanSeconds * 100;

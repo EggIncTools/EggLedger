@@ -143,7 +143,7 @@ public sealed class ReportParityTests {
         var sqlResult = new ReportExecutor(sqlDb, weights).ExecuteReport(def);
 
         var source = SqliteReportSource.Load(sqlDb, Eid);
-        var memResult = new InMemoryReportRunner(weights).Run(def, source.Missions, source.Drops);
+        var memResult = new InMemoryReportRunner(weights).Run(def, source.Missions, source.Drops, source.Fuel);
 
         Assert.Equal(memResult, sqlResult);
     }

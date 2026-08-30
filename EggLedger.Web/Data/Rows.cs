@@ -99,6 +99,22 @@ public sealed record ArtifactDropRow {
     public double Quality { get; init; }
 }
 
+public sealed record FuelRow {
+    [JsonPropertyName("id")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? Id { get; init; }
+    [JsonPropertyName("mission_id")]
+    public string MissionId { get; init; } = "";
+    [JsonPropertyName("player_id")]
+    public string PlayerId { get; init; } = "";
+    [JsonPropertyName("fuel_index")]
+    public int FuelIndex { get; init; }
+    [JsonPropertyName("egg_id")]
+    public int EggId { get; init; }
+    [JsonPropertyName("amount")]
+    public double Amount { get; init; }
+}
+
 public sealed record SettingRow {
     [JsonPropertyName("key")]
     public string Key { get; init; } = "";
@@ -186,4 +202,35 @@ public sealed record ReportGroupRow {
     public int SortOrder { get; init; }
     [JsonPropertyName("created_at")]
     public long CreatedAt { get; init; }
+}
+
+public sealed record PinnedReportRow {
+    [JsonPropertyName("id")]
+    public string Id { get; init; } = "";
+    [JsonPropertyName("account_id")]
+    public string AccountId { get; init; } = "";
+    [JsonPropertyName("view")]
+    public string View { get; init; } = "";
+    [JsonPropertyName("kind")]
+    public string Kind { get; init; } = "";
+    [JsonPropertyName("ref_id")]
+    public string RefId { get; init; } = "";
+    [JsonPropertyName("sort_order")]
+    public int SortOrder { get; init; }
+    [JsonPropertyName("created_at")]
+    public long CreatedAt { get; init; }
+}
+
+public static class PinnedReportViews {
+    public const string Missions = "missions";
+    public const string Lifetime = "lifetime";
+}
+
+public static class PinnedReportKinds {
+    public const string User = "user";
+    public const string Template = "template";
+}
+
+public static class PinnedReportSentinels {
+    public const string LifetimeSeedMarker = "__lifetime_seed_marker__";
 }

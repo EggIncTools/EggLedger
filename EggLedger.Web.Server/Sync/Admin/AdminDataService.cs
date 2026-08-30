@@ -23,6 +23,10 @@ public sealed class AdminDataService(NpgsqlDataSource source, IdentityApiClient 
         "  SELECT user_id, COUNT(*) AS cnt, SUM(pg_column_size(r.*)) AS bytes FROM el_reports r GROUP BY user_id" +
         "), groups_agg AS (" +
         "  SELECT user_id, SUM(pg_column_size(g.*)) AS bytes FROM el_report_groups g GROUP BY user_id" +
+        "), fuel_agg AS (" +
+        "  SELECT user_id, SUM(pg_column_size(f.*)) AS bytes FROM el_mission_fuel f GROUP BY user_id" +
+        "), pinned_agg AS (" +
+        "  SELECT user_id, SUM(pg_column_size(p.*)) AS bytes FROM el_pinned_reports p GROUP BY user_id" +
         "), blobs_agg AS (" +
         "  SELECT user_id, SUM(pg_column_size(b.*)) AS bytes FROM blobs b GROUP BY user_id" +
         "), session_agg AS (" +
@@ -32,6 +36,7 @@ public sealed class AdminDataService(NpgsqlDataSource source, IdentityApiClient 
         "COALESCE(mission_agg.cnt, 0), COALESCE(backup_agg.cnt, 0), COALESCE(reports_agg.cnt, 0), " +
         "COALESCE(mission_agg.bytes, 0) + COALESCE(backup_agg.bytes, 0) + COALESCE(drops_agg.bytes, 0) + " +
         "COALESCE(settings_agg.bytes, 0) + COALESCE(reports_agg.bytes, 0) + COALESCE(groups_agg.bytes, 0) + " +
+        "COALESCE(fuel_agg.bytes, 0) + COALESCE(pinned_agg.bytes, 0) + " +
         "COALESCE(blobs_agg.bytes, 0), " +
         "session_agg.last_session " +
         "FROM users u " +
@@ -41,6 +46,8 @@ public sealed class AdminDataService(NpgsqlDataSource source, IdentityApiClient 
         "LEFT JOIN settings_agg ON settings_agg.user_id = u.user_id " +
         "LEFT JOIN reports_agg ON reports_agg.user_id = u.user_id " +
         "LEFT JOIN groups_agg ON groups_agg.user_id = u.user_id " +
+        "LEFT JOIN fuel_agg ON fuel_agg.user_id = u.user_id " +
+        "LEFT JOIN pinned_agg ON pinned_agg.user_id = u.user_id " +
         "LEFT JOIN blobs_agg ON blobs_agg.user_id = u.user_id " +
         "LEFT JOIN session_agg ON session_agg.user_id = u.user_id " +
         "ORDER BY u.username";

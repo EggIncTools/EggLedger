@@ -221,6 +221,7 @@ public static class QueryBuilder {
         public string Indent;
         public string SelectCols;
         public bool ArtifactSrc;
+        public bool FuelSrc;
         public string Where;
         public List<string>? ExtraWhere;
         public string GroupBy;
@@ -232,6 +233,8 @@ public static class QueryBuilder {
             var from = "mission m";
             if (ArtifactSrc) {
                 from = "artifact_drops d\n" + in_ + "JOIN mission m ON d.mission_id = m.mission_id AND d.player_id = m.player_id";
+            } else if (FuelSrc) {
+                from = "mission_fuel f\n" + in_ + "JOIN mission m ON f.mission_id = m.mission_id AND f.player_id = m.player_id";
             }
 
             var where = Where;
@@ -261,10 +264,14 @@ public static class QueryBuilder {
         ReportDefinition def, string baseWhere, IReadOnlyList<object?> baseArgs) {
         var args = new List<object?>(baseArgs);
         var groupCol = GroupByColumn(def.GroupBy);
+        var isFuel = def.Subject == "fuel_eggs";
         var query = new QueryBuilderSpec {
             Indent = "            ",
-            SelectCols = $"CAST({groupCol} AS TEXT), COUNT(*) AS count",
+            SelectCols = isFuel
+                ? $"CAST({groupCol} AS TEXT), SUM(f.amount) AS count"
+                : $"CAST({groupCol} AS TEXT), COUNT(*) AS count",
             ArtifactSrc = def.Subject == "artifacts",
+            FuelSrc = isFuel,
             Where = baseWhere,
             GroupBy = groupCol,
             OrderBy = "count DESC",

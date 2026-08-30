@@ -56,10 +56,28 @@
                     FilteredMissions="State.FlatSorted ?? State.TabFiltered ?? Array.Empty<DatabaseMission>()"
                     SortMethod="State.Opts.SortMethod"
                     ShowExpectedDrops="State.CardPresets.ActivePreset().ShowExpectedDropsPerShip"/>
+
+    <div class="settings-section drops-widgets-section @(_widgetsOpen ? "is-open" : "")">
+        <button type="button" class="settings-section-head" aria-expanded="@(_widgetsOpen ? "true" : "false")"
+                @onclick="ToggleWidgets">
+            <span class="settings-section-title">Reports</span>
+            @if (_widgetsOpen) {
+                <span class="settings-section-caret">&#9662;</span>
+            } else {
+                <span class="settings-section-caret">&#9656;</span>
+            }
+        </button>
+        @if (_widgetsOpen && State.AccountId is { } accountId) {
+            <div class="settings-section-body">
+                <PinnedReportsStrip AccountId="accountId" View="PinnedReportViews.Missions"/>
+            </div>
+        }
+    </div>
 }
 
 @code {
     private MissionOverlay? _overlay;
+    private bool _widgetsOpen = true;
 
     protected override async Task OnInitializedAsync() {
         State.Changed += OnStateChanged;
@@ -69,6 +87,10 @@
 
     private void OnStateChanged() {
         InvokeAsync(StateHasChanged);
+    }
+
+    private void ToggleWidgets() {
+        _widgetsOpen = !_widgetsOpen;
     }
 
     private RenderFragment RenderTileSelector() => __builder => {

@@ -208,6 +208,8 @@ public sealed class IndexedDbMissionStoreTests {
         db.Seed("mission", MissionMeta("EI2", "keep", start: 2));
         db.Seed("artifact_drops", new ArtifactDropRow { PlayerId = "EI1", MissionId = "m1", DropIndex = 0 });
         db.Seed("artifact_drops", new ArtifactDropRow { PlayerId = "EI2", MissionId = "keep", DropIndex = 0 });
+        db.Seed("mission_fuel", new FuelRow { PlayerId = "EI1", MissionId = "m1", FuelIndex = 0, EggId = 1, Amount = 100 });
+        db.Seed("mission_fuel", new FuelRow { PlayerId = "EI2", MissionId = "keep", FuelIndex = 0, EggId = 1, Amount = 100 });
         db.Seed("inflight_mission", new InFlightMissionRow { PlayerId = "EI1", MissionId = "flying" });
         db.Seed("inflight_mission", new InFlightMissionRow { PlayerId = "EI2", MissionId = "keep" });
         db.Seed("backup", new BackupRow { PlayerId = "EI1", RecordedAt = 1000, Payload = [1] });
@@ -219,6 +221,8 @@ public sealed class IndexedDbMissionStoreTests {
         Assert.Equal(["keep"], await store.GetCompleteMissionIdsAsync("EI2"));
         Assert.Empty(await store.GetStoredPlayerDropsAsync("EI1") ?? []);
         Assert.Single(await store.GetStoredPlayerDropsAsync("EI2") ?? []);
+        Assert.DoesNotContain(await db.GetAllAsync<FuelRow>("mission_fuel"), r => r.PlayerId == "EI1");
+        Assert.Contains(await db.GetAllAsync<FuelRow>("mission_fuel"), r => r.PlayerId == "EI2");
         Assert.DoesNotContain(await db.GetAllAsync<InFlightMissionRow>("inflight_mission"), r => r.PlayerId == "EI1");
         Assert.Contains(await db.GetAllAsync<InFlightMissionRow>("inflight_mission"), r => r.PlayerId == "EI2");
         Assert.DoesNotContain(await db.GetAllAsync<BackupRow>("backup"), r => r.PlayerId == "EI1");

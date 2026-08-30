@@ -2,12 +2,15 @@
 @inject IJSRuntime JS
 @inject GameEventsService GameEvents
 @using System.Globalization
-@implements IAsyncDisposable
+@using EggIdentity.UI
 
 <div class="flex flex-col gap-2 min-h-0 flex-1">
     <div class="flex items-center gap-2 flex-wrap">
-        <TimelineRangePicker RangeLabel="@RangeLabel"
+        <CalendarRangePicker TZoom="TimelineZoom"
+                             AvailableZooms="Zooms"
                              Zoom="_zoom"
+                             ZoomLabel="TimelineZoomExtensions.Label"
+                             RangeLabel="@RangeLabel"
                              DateValue="@LocalCenterDate"
                              PrevDisabled="@(!_canPanPrev)"
                              NextDisabled="@(!_canPanNext)"
@@ -54,53 +57,12 @@
                 }
             }
         </div>
-        <div class="timeline-viewport" @ref="_viewportRef">
-            <div class="timeline-strip" style="@StripStyle">
-                @foreach (var period in _periods) {
-                    <div class="timeline-period">
-                        <div class="timeline-canvas">
-                            @foreach (var row in period.Rows) {
-                                <div class="timeline-row @(period.IsCenter && row.Row.IsPrimary ? "" : "timeline-row-context")" style="@RowStyle(row)">
-                                    @foreach (var cell in row.Cells) {
-                                        if (cell.LeftPercent > 0) {
-                                            <div class="timeline-grid" style="@TickStyle(cell.LeftPercent)"></div>
-                                        }
-
-                                        <span class="timeline-cell-label @(cell.Muted ? "timeline-cell-muted" : "")" style="@TickStyle(cell.LeftPercent)">@CellLabel(cell)</span>
-                                    }
-                                    @foreach (var tick in row.HourTicks) {
-                                        <div class="timeline-grid" style="@TickStyle(tick.LeftPercent)"></div>
-                                    }
-                                    @if (row.NowPercent is { } nowPct) {
-                                        <div class="timeline-now" style="@TickStyle(nowPct)"></div>
-                                    }
-                                    @if (row.EventLanes.Count > 0) {
-                                        <div class="timeline-event-lanes">
-                                            @foreach (var lane in row.EventLanes) {
-                                                <div class="timeline-event-lane">
-                                                    @foreach (var evt in lane) {
-                                                        <TimelineEventBarView Bar="evt"/>
-                                                    }
-                                                </div>
-                                            }
-                                        </div>
-                                    }
-                                    <div class="timeline-row-lanes @(row.EventLanes.Count > 0 ? "timeline-row-lanes-with-events" : "")">
-                                        @foreach (var lane in row.Lanes) {
-                                            <div class="timeline-lane">
-                                                @foreach (var bar in lane) {
-                                                    <TimelineBarView Bar="bar" RecolorDC="RecolorDC" RecolorBC="RecolorBC" OnSelect="OnSelectMission"/>
-                                                }
-                                            </div>
-                                        }
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    </div>
-                }
-            </div>
-        </div>
+        <CalendarGrid TItem="object"
+                      @ref="_grid"
+                      Periods="_periods"
+                      LaneGroups="_laneGroups"
+                      ShowHourTicks="@(_zoom == TimelineZoom.Day)"
+                      OnCommitScrollPan="OnCommitScrollPan"/>
     </div>
 </div>
 
@@ -117,6 +79,7 @@
 @code {
     private static readonly string[] WeekdayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     private static readonly string[] OverlayEventTypes = ["mission-capacity", "mission-duration"];
+    private static readonly TimelineZoom[] Zooms = [TimelineZoom.Day, TimelineZoom.Week, TimelineZoom.Month];
 
     [Parameter] public IReadOnlyList<DatabaseMission> Missions { get; set; } = Array.Empty<DatabaseMission>();
     [Parameter] public IReadOnlyList<DatabaseMission> InFlightMissions { get; set; } = Array.Empty<DatabaseMission>();
@@ -130,7 +93,9 @@
     private DateTimeOffset _center = DateTimeOffset.UtcNow;
     private DateTimeOffset _visibleStart;
     private DateTimeOffset _visibleEnd;
-    private List<PeriodVm> _periods = [];
+    private List<PeriodSlot<object>> _periods = [];
+    private LaneGroupDef<object>[] _laneGroups = [];
+    private IReadOnlyList<TimelineTick> _centerHourTicks = [];
     private List<DatabaseMission> _merged = [];
     private HashSet<string> _noDataIds = [];
     private IReadOnlyList<GameEvent> _overlayEvents = [];
@@ -140,20 +105,13 @@
     private bool _canPanNext = true;
     private bool _showStillFlying;
 
-    private ElementReference _viewportRef;
-    private IJSObjectReference? _scrollModule;
-    private DotNetObjectReference<MissionCalendarView>? _selfRef;
+    private CalendarGrid<object>? _grid;
     private bool _resetScrollPending;
 
-    private sealed record RowVm(
-        TimelineRow Row,
-        IReadOnlyList<TimelineDayCell> Cells,
-        IReadOnlyList<TimelineTick> HourTicks,
-        List<List<TimelineBar>> Lanes,
-        double? NowPercent,
-        List<List<TimelineEventBar>> EventLanes);
+    private RenderFragment<object> EventItemTemplate => item => @<TimelineEventBarView Bar="((TimelineEventBar)item)"/>;
 
-    private sealed record PeriodVm(DateTimeOffset Start, DateTimeOffset End, bool IsCenter, List<RowVm> Rows);
+    private RenderFragment<object> MissionItemTemplate => item =>
+        @<TimelineBarView Bar="((TimelineBar)item)" RecolorDC="RecolorDC" RecolorBC="RecolorBC" OnSelect="OnSelectMission"/>;
 
     private string ZoomClass => _zoom.ToString().ToLowerInvariant();
 
@@ -163,16 +121,14 @@
 
     private int CenterSlot => StripSlots / 2;
 
-    private string StripStyle =>
-        FormattableString.Invariant(
-            $"--strip-top:calc(-100% * {StripSlots - VisibleSlots} / {2 * VisibleSlots});--strip-h:calc(100% * {StripSlots} / {VisibleSlots});--strip-slot-h:calc(100% / {StripSlots});");
-
-    private IReadOnlyList<TimelineTick> CurrentHourTicks =>
-        _periods.Count > CenterSlot && _periods[CenterSlot].Rows.Count > 0
-            ? _periods[CenterSlot].Rows[0].HourTicks
-            : Array.Empty<TimelineTick>();
+    private IReadOnlyList<TimelineTick> CurrentHourTicks => _centerHourTicks;
 
     protected override void OnInitialized() {
+        _laneGroups = [
+            new LaneGroupDef<object>(EventItemTemplate, LaneMinRem: 2.0, LaneGapRem: 0.15, HeaderRem: 1.9),
+            new LaneGroupDef<object>(MissionItemTemplate, LaneMinRem: 1.35, LaneGapRem: 0.15, HeaderRem: 0),
+        ];
+
         if (GameEvents.IsConfigured) {
             _ = LoadEventsAsync();
         }
@@ -191,18 +147,13 @@
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender) {
-        if (firstRender) {
-            _selfRef = DotNetObjectReference.Create(this);
-            _scrollModule = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/EggLedger.Web/js/calendarScroll.js");
-            await _scrollModule.InvokeVoidAsync("init", _viewportRef, _selfRef);
-        } else if (_resetScrollPending && _scrollModule is not null) {
+        if (!firstRender && _resetScrollPending && _grid is not null) {
             _resetScrollPending = false;
-            await _scrollModule.InvokeVoidAsync("reset", _viewportRef);
+            await _grid.ResetScrollAsync();
         }
     }
 
-    [JSInvokable]
-    public Task CommitScrollPan(int direction) {
+    private Task OnCommitScrollPan(int direction) {
         if (CanPan(direction)) {
             _center += (_visibleEnd - _visibleStart) * direction;
             Recompute();
@@ -252,24 +203,28 @@
         }
 
         var center = CenterSlot;
+        _centerHourTicks = [];
         _periods = windows
             .Select((w, index) => BuildPeriod(w.Start, w.End, index == center, tz, now))
             .ToList();
     }
 
-    private PeriodVm BuildPeriod(DateTimeOffset start, DateTimeOffset end, bool isCenter, TimeZoneInfo tz, DateTimeOffset now) {
+    private PeriodSlot<object> BuildPeriod(DateTimeOffset start, DateTimeOffset end, bool isCenter, TimeZoneInfo tz, DateTimeOffset now) {
         int? primaryMonth = _zoom == TimelineZoom.Month ? TimeZoneInfo.ConvertTime(start, tz).Month : null;
-        var rows = TimelineRows.Build(_zoom, start, end, tz)
-            .Select(row => BuildRow(row, tz, now, primaryMonth))
-            .ToList();
-        return new PeriodVm(start, end, isCenter, rows);
+        var timelineRows = TimelineRows.Build(_zoom, start, end);
+        if (isCenter && _zoom == TimelineZoom.Day && timelineRows.Count > 0) {
+            _centerHourTicks = TimelineTicks.HourTicks(timelineRows[0].Start, timelineRows[0].End, tz);
+        }
+
+        var rows = timelineRows.Select(row => BuildRow(row, tz, now, primaryMonth)).ToList();
+        return new PeriodSlot<object>(rows);
     }
 
-    private RowVm BuildRow(TimelineRow row, TimeZoneInfo tz, DateTimeOffset now, int? primaryMonth) {
+    private CalendarRow<object> BuildRow(TimelineRow row, TimeZoneInfo tz, DateTimeOffset now, int? primaryMonth) {
         var bars = TimelineLayoutEngine.Layout(_merged, row.Start, row.End, now, MinWidthPercent, _noDataIds);
         var cells = _zoom == TimelineZoom.Day
             ? Array.Empty<TimelineDayCell>()
-            : TimelineTicks.DayCells(row.Start, row.End, tz, primaryMonth);
+            : TimelineTicks.DayCells(row.Start, row.End, primaryMonth);
         var hourTicks = _zoom == TimelineZoom.Day
             ? TimelineTicks.HourTicks(row.Start, row.End, tz)
             : Array.Empty<TimelineTick>();
@@ -277,7 +232,28 @@
             ? (now - row.Start).TotalSeconds / (row.End - row.Start).TotalSeconds * 100
             : null;
         var eventBars = TimelineLayoutEngine.LayoutEvents(_overlayEvents, row.Start, row.End);
-        return new RowVm(row, cells, hourTicks, GroupLanes(bars, b => b.Lane), nowPercent, GroupLanes(eventBars, b => b.Lane));
+
+        var cellLabels = cells.Select(c => new CalendarCellLabel(c.LeftPercent, CellLabel(c), c.Muted)).ToList();
+        var gridLines = _zoom == TimelineZoom.Day
+            ? Array.Empty<double>()
+            : cells.Where(c => c.LeftPercent > 0).Select(c => c.LeftPercent).ToArray();
+        var hourTickPositions = hourTicks.Select(t => t.LeftPercent).ToList();
+
+        var eventLanes = ToObjectLanes(GroupLanes(eventBars, b => b.Lane));
+        var missionLanes = ToObjectLanes(GroupLanes(bars, b => b.Lane));
+        if (missionLanes.Count == 0) {
+            missionLanes = [Array.Empty<object>()];
+        }
+
+        return new CalendarRow<object>(
+            cellLabels,
+            gridLines,
+            hourTickPositions,
+            nowPercent,
+            [
+                new CalendarLaneGroupRow<object>(eventLanes),
+                new CalendarLaneGroupRow<object>(missionLanes),
+            ]);
     }
 
     private double MinWidthPercent => _zoom == TimelineZoom.Day ? 1.2 : 2.5;
@@ -295,6 +271,10 @@
         }
 
         return byLane.OrderBy(kv => kv.Key).Select(kv => kv.Value).ToList();
+    }
+
+    private static List<IReadOnlyList<object>> ToObjectLanes<T>(List<List<T>> lanes) where T : notnull {
+        return lanes.Select(lane => (IReadOnlyList<object>)lane.Cast<object>().ToList()).ToList();
     }
 
     private string CellLabel(TimelineDayCell cell) {
@@ -321,10 +301,6 @@
 
     private static string TickStyle(double leftPercent) {
         return FormattableString.Invariant($"--tick-pos:{leftPercent};");
-    }
-
-    private static string RowStyle(RowVm row) {
-        return FormattableString.Invariant($"--row-weight:{Math.Max(1, row.Lanes.Count)};");
     }
 
     private static string Pct(double ratio) {
@@ -437,19 +413,6 @@
 
     private void CloseStillFlying() {
         _showStillFlying = false;
-    }
-
-    public async ValueTask DisposeAsync() {
-        try {
-            if (_scrollModule is not null) {
-                await _scrollModule.InvokeVoidAsync("destroy", _viewportRef);
-                await _scrollModule.DisposeAsync();
-            }
-        }
-        catch (JSDisconnectedException) {
-        }
-
-        _selfRef?.Dispose();
     }
 
 }

@@ -1,3 +1,4 @@
+using EggIdentity.UI;
 using EggLedger.Domain.MissionPacking;
 using EggLedger.Web.Services;
 using EggLedger.Web.State;
@@ -27,7 +28,7 @@ public static class TimelineLayoutEngine {
         for (int i = 0; i < intersecting.Count; i++) {
             var m = intersecting[i];
             var (left, width, rawRight) = ClipToWindow(m.LaunchDT, m.ReturnDT, windowStart, windowSpan, minWidthPercent / 100);
-            int lane = AssignLane(laneRights, left, rawRight, iconGapFraction);
+            int lane = CalendarLanePacker.AssignLane(laneRights, left, rawRight, iconGapFraction);
             bool isActive = nowUnix < m.ReturnDT;
             double fill = FillFraction(m.LaunchDT, m.ReturnDT, windowStart, windowEnd, nowUnix, isActive);
             long progress = isActive ? Math.Min(nowUnix, m.ReturnDT) : m.ReturnDT;
@@ -76,7 +77,7 @@ public static class TimelineLayoutEngine {
             long start = (long)e.StartTimestamp;
             long end = (long)e.EndTimestamp;
             var (left, width, rawRight) = ClipToWindow(start, end, windowStart, windowSpan, 0);
-            int lane = AssignLane(laneRights, left, rawRight, EventLaneGapFraction);
+            int lane = CalendarLanePacker.AssignLane(laneRights, left, rawRight, EventLaneGapFraction);
             result.Add(new TimelineEventBar(
                 Id: e.Id,
                 Lane: lane,
@@ -105,17 +106,6 @@ public static class TimelineLayoutEngine {
         }
         intersecting.Sort((a, b) => a.LaunchDT.CompareTo(b.LaunchDT));
         return intersecting;
-    }
-
-    private static int AssignLane(List<double> laneRights, double left, double right, double gapFraction) {
-        for (int i = 0; i < laneRights.Count; i++) {
-            if (laneRights[i] - gapFraction <= left) {
-                laneRights[i] = right;
-                return i;
-            }
-        }
-        laneRights.Add(right);
-        return laneRights.Count - 1;
     }
 
     private static (double Left, double Width, double RawRight) ClipToWindow(

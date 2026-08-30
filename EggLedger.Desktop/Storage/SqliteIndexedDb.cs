@@ -252,6 +252,11 @@ public sealed class SqliteIndexedDb : IIndexedDb {
             keyColumns: ["id"],
             autoIncrementColumn: "id",
             boolColumns: []),
+        [IndexedDbStores.MissionFuel] = new StoreMeta(
+            "mission_fuel", useReportDb: false,
+            keyColumns: ["id"],
+            autoIncrementColumn: "id",
+            boolColumns: []),
         [IndexedDbStores.Settings] = new StoreMeta(
             "settings", useReportDb: false,
             keyColumns: ["key"],
@@ -264,6 +269,11 @@ public sealed class SqliteIndexedDb : IIndexedDb {
             boolColumns: ["menno_enabled"]),
         [IndexedDbStores.ReportGroups] = new StoreMeta(
             "report_groups", useReportDb: true,
+            keyColumns: ["id"],
+            autoIncrementColumn: null,
+            boolColumns: []),
+        [IndexedDbStores.PinnedReports] = new StoreMeta(
+            "pinned_reports", useReportDb: true,
             keyColumns: ["id"],
             autoIncrementColumn: null,
             boolColumns: []),

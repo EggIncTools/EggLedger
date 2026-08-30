@@ -123,7 +123,7 @@ public class InMemoryReportRunnerTests {
 
         var sqlDb = new FakeDb().On("GROUP BY m.ship", Group1D(missions, Ship));
         var sqlResult = new ReportExecutor(sqlDb, new NoWeights()).ExecuteReport(def);
-        var memResult = new InMemoryReportRunner(new NoWeights()).Run(def, missions, Array.Empty<ArtifactDropRowData>());
+        var memResult = new InMemoryReportRunner(new NoWeights()).Run(def, missions, Array.Empty<ArtifactDropRowData>(), Array.Empty<FuelRowData>());
 
         Assert.Equal(sqlResult, memResult);
         Assert.Equal([2, 1], memResult.Values);
@@ -152,7 +152,7 @@ public class InMemoryReportRunnerTests {
         var kept = missions.Where(m => m.DurationType == 0);
         var sqlDb = new FakeDb().On("GROUP BY m.ship", Group1D(kept, Ship));
         var sqlResult = new ReportExecutor(sqlDb, new NoWeights()).ExecuteReport(def);
-        var memResult = new InMemoryReportRunner(new NoWeights()).Run(def, missions, Array.Empty<ArtifactDropRowData>());
+        var memResult = new InMemoryReportRunner(new NoWeights()).Run(def, missions, Array.Empty<ArtifactDropRowData>(), Array.Empty<FuelRowData>());
 
         Assert.Equal(sqlResult, memResult);
 
@@ -178,7 +178,7 @@ public class InMemoryReportRunnerTests {
 
         var sqlDb = new FakeDb().On("GROUP BY m.ship, m.duration_type", Group2D(missions, Ship, Dur));
         var sqlResult = new ReportExecutor(sqlDb, new NoWeights()).ExecuteReport(def);
-        var memResult = new InMemoryReportRunner(new NoWeights()).Run(def, missions, Array.Empty<ArtifactDropRowData>());
+        var memResult = new InMemoryReportRunner(new NoWeights()).Run(def, missions, Array.Empty<ArtifactDropRowData>(), Array.Empty<FuelRowData>());
 
         Assert.Equal(sqlResult, memResult);
         Assert.True(memResult.Is2D);
@@ -211,7 +211,7 @@ public class InMemoryReportRunnerTests {
         var rarityRows = Group1DRaw(keptDrops.Select(d => d.Rarity.ToString(CultureInfo.InvariantCulture)));
         var sqlDb = new FakeDb().On("GROUP BY d.rarity", rarityRows);
         var sqlResult = new ReportExecutor(sqlDb, new NoWeights()).ExecuteReport(def);
-        var memResult = new InMemoryReportRunner(new NoWeights()).Run(def, missions, drops);
+        var memResult = new InMemoryReportRunner(new NoWeights()).Run(def, missions, drops, Array.Empty<FuelRowData>());
 
         Assert.Equal(sqlResult, memResult);
 
@@ -244,7 +244,7 @@ public class InMemoryReportRunnerTests {
 
         var sqlDb = new FakeDb().On("GROUP BY m.ship", Group1D(missions.Where(m => m.MissionId == "a"), Ship));
         var sqlResult = new ReportExecutor(sqlDb, new NoWeights()).ExecuteReport(def);
-        var memResult = new InMemoryReportRunner(new NoWeights()).Run(def, missions, drops);
+        var memResult = new InMemoryReportRunner(new NoWeights()).Run(def, missions, drops, Array.Empty<FuelRowData>());
 
         Assert.Equal(sqlResult, memResult);
         Assert.Single(memResult.Values);
@@ -276,7 +276,7 @@ public class InMemoryReportRunnerTests {
         var ordered = bucketRows.OrderBy(r => (string)r[0]!, StringComparer.Ordinal).ToArray();
         var sqlDb = new FakeDb().On("GROUP BY bucket", ordered);
         var sqlResult = new ReportExecutor(sqlDb, new NoWeights()).ExecuteReport(def);
-        var memResult = new InMemoryReportRunner(new NoWeights()).Run(def, missions, Array.Empty<ArtifactDropRowData>());
+        var memResult = new InMemoryReportRunner(new NoWeights()).Run(def, missions, Array.Empty<ArtifactDropRowData>(), Array.Empty<FuelRowData>());
 
         Assert.Equal(sqlResult, memResult);
 
@@ -308,7 +308,7 @@ public class InMemoryReportRunnerTests {
             .On("GROUP BY m.ship\n", grouped)
             .On("GROUP BY m.ship", grouped);
         var sqlResult = new ReportExecutor(sqlDb, new NoWeights()).ExecuteReport(def);
-        var memResult = new InMemoryReportRunner(new NoWeights()).Run(def, missions, Array.Empty<ArtifactDropRowData>());
+        var memResult = new InMemoryReportRunner(new NoWeights()).Run(def, missions, Array.Empty<ArtifactDropRowData>(), Array.Empty<FuelRowData>());
 
         Assert.Equal(sqlResult, memResult);
         Assert.True(memResult.IsFloat);
@@ -346,7 +346,7 @@ public class InMemoryReportRunnerTests {
             ["3", 13L, 0L, 1.0],
         });
         var sqlResult = new ReportExecutor(sqlDb, weights).ExecuteReport(def);
-        var memResult = new InMemoryReportRunner(weights).Run(def, missions, drops);
+        var memResult = new InMemoryReportRunner(weights).Run(def, missions, drops, Array.Empty<FuelRowData>());
 
         Assert.Equal(sqlResult, memResult);
         Assert.True(memResult.IsFloat);
@@ -396,13 +396,39 @@ public class InMemoryReportRunnerTests {
             .On("cap_weight", capRows)
             .On("FROM mission m", missionCountRows);
         var sqlResult = new ReportExecutor(sqlDb, weights).ExecuteReport(def);
-        var memResult = new InMemoryReportRunner(weights).Run(def, missions, drops);
+        var memResult = new InMemoryReportRunner(weights).Run(def, missions, drops, Array.Empty<FuelRowData>());
 
         Assert.Equal(sqlResult, memResult);
         Assert.True(memResult.Is2D);
 
         Assert.NotNull(memResult.MissionCountMatrix);
         Assert.Equal(2L, memResult.MissionCountMatrix!.Sum());
+    }
+
+    [Fact]
+    public void Run_FuelSubject_SumsAmountByGroupBy() {
+        var def = new ReportDefinition {
+            AccountId = Eid,
+            Subject = "fuel_eggs",
+            Mode = "aggregate",
+            GroupBy = "ship_type",
+        };
+        var missions = new List<MissionRowData> {
+            M("m1", ship: 0, duration: 0, start: 1, ret: 2),
+            M("m2", ship: 1, duration: 0, start: 1, ret: 2),
+        };
+        var fuel = new List<FuelRowData> {
+            new() { PlayerId = Eid, MissionId = "m1", EggId = 0, Amount = 100 },
+            new() { PlayerId = Eid, MissionId = "m1", EggId = 1, Amount = 50 },
+            new() { PlayerId = Eid, MissionId = "m2", EggId = 0, Amount = 25 },
+        };
+
+        var runner = new InMemoryReportRunner(new NoWeights());
+        var result = runner.Run(def, missions, [], fuel);
+
+        Assert.True(result.IsFloat);
+        Assert.Contains(150.0, result.FloatValues);
+        Assert.Contains(25.0, result.FloatValues);
     }
 
 

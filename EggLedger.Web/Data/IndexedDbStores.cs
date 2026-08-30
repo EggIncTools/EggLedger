@@ -5,9 +5,11 @@ public static class IndexedDbStores {
     public const string InFlightMission = "inflight_mission";
     public const string Backup = "backup";
     public const string ArtifactDrops = "artifact_drops";
+    public const string MissionFuel = "mission_fuel";
     public const string Settings = "settings";
     public const string Reports = "reports";
     public const string ReportGroups = "report_groups";
+    public const string PinnedReports = "pinned_reports";
     public const string PlayerIdIndex = "player_id";
     public const string AccountIdIndex = "account_id";
 

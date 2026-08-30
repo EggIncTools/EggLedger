@@ -1,3 +1,7 @@
+export function setCookie(tz) {
+  document.cookie = 'tz=' + encodeURIComponent(tz) + ';path=/;max-age=31536000;samesite=lax';
+}
+
 export function ensureCookie() {
   var hasCookie = document.cookie.split('; ').some(function (row) { return row.startsWith('tz='); });
   if (hasCookie) {

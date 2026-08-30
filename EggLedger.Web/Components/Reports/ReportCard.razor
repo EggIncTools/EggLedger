@@ -158,7 +158,11 @@
         _ => "Light: fully indexed"
     };
 
-    private string SubjectLabel => Def.Subject == "artifacts" ? "Artifacts" : "Ships";
+    private string SubjectLabel => Def.Subject switch {
+        "artifacts" => "Artifacts",
+        "fuel_eggs" => "Fuel",
+        _ => "Ships"
+    };
     private string ModeLabel => Def.Mode == "time_series" ? "Time series" : "Aggregate";
 
     private string GroupByLabel =>

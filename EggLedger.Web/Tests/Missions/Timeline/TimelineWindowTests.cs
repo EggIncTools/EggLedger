@@ -27,14 +27,37 @@ public sealed class TimelineWindowTests {
     }
 
     [Fact]
-    public void Week_StartsOnSundayAndSpansSevenDays() {
+    public void Week_StartsOnGridSundayAndSpansSevenDays() {
         var center = new DateTimeOffset(2026, 8, 25, 12, 0, 0, TimeSpan.Zero);
 
         var (start, end) = TimelineWindow.Compute(center, TimelineZoom.Week, Utc);
 
         Assert.Equal(DayOfWeek.Sunday, start.DayOfWeek);
-        Assert.Equal(new DateTimeOffset(2026, 8, 23, 0, 0, 0, TimeSpan.Zero), start);
-        Assert.Equal(new DateTimeOffset(2026, 8, 30, 0, 0, 0, TimeSpan.Zero), end);
+        Assert.Equal(TimelineGridAnchor.GridWeekStart(center), start);
+        Assert.Equal(new DateTimeOffset(2026, 8, 23, 12, 0, 0, TimeSpan.FromHours(-4)), start);
+        Assert.Equal(new DateTimeOffset(2026, 8, 30, 12, 0, 0, TimeSpan.FromHours(-4)), end);
+    }
+
+    [Fact]
+    public void Week_AnchorsToEasternNoonNotViewerLocalMidnight() {
+        var center = new DateTimeOffset(2026, 8, 25, 3, 0, 0, TimeSpan.Zero);
+
+        var (start, _) = TimelineWindow.Compute(center, TimelineZoom.Week, Utc);
+
+        Assert.NotEqual(new DateTimeOffset(2026, 8, 23, 0, 0, 0, TimeSpan.Zero), start);
+        Assert.Equal(TimelineGridAnchor.GridDayStart(start), start);
+        Assert.Equal(DayOfWeek.Sunday, TimeZoneInfo.ConvertTime(start, TimeZoneInfo.FindSystemTimeZoneById("America/New_York")).DayOfWeek);
+    }
+
+    [Fact]
+    public void Week_IsUnaffectedByViewerTimeZoneChoice() {
+        var center = new DateTimeOffset(2026, 8, 25, 3, 0, 0, TimeSpan.Zero);
+
+        var (utcStart, utcEnd) = TimelineWindow.Compute(center, TimelineZoom.Week, Utc);
+        var (plusFiveStart, plusFiveEnd) = TimelineWindow.Compute(center, TimelineZoom.Week, PlusFive);
+
+        Assert.Equal(utcStart, plusFiveStart);
+        Assert.Equal(utcEnd, plusFiveEnd);
     }
 
     [Fact]

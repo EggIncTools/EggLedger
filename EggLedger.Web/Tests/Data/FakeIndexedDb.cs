@@ -7,12 +7,15 @@ public sealed class FakeIndexedDb : IIndexedDb {
 
     private readonly Lock _gate = new();
     private readonly Dictionary<string, List<object>> _stores = [];
-    private long _nextDropId;
+    private long _nextId;
 
     public void Seed(string store, object row) {
         lock (_gate) {
             if (row is ArtifactDropRow { Id: null } drop) {
-                row = drop with { Id = ++_nextDropId };
+                row = drop with { Id = ++_nextId };
+            }
+            if (row is FuelRow { Id: null } fuel) {
+                row = fuel with { Id = ++_nextId };
             }
             if (!_stores.TryGetValue(store, out var list)) {
                 list = [];
@@ -25,10 +28,12 @@ public sealed class FakeIndexedDb : IIndexedDb {
     private static string? KeyOf(object row) => row switch {
         ReportRow r => r.Id,
         ReportGroupRow g => g.Id,
+        PinnedReportRow p => p.Id,
         SettingRow s => s.Key,
         BackupRow b => b.PlayerId,
         InFlightMissionRow f => f.PlayerId + ":" + f.MissionId,
         ArtifactDropRow { Id: { } id } => id.ToString(),
+        FuelRow { Id: { } id } => id.ToString(),
         _ => null,
     };
 
@@ -88,8 +93,10 @@ public sealed class FakeIndexedDb : IIndexedDb {
         (MissionRow m, "player_id") => m.PlayerId,
         (InFlightMissionRow f, "player_id") => f.PlayerId,
         (ArtifactDropRow d, "player_id") => d.PlayerId,
+        (FuelRow d, "player_id") => d.PlayerId,
         (ReportRow r, "account_id") => r.AccountId,
         (ReportGroupRow g, "account_id") => g.AccountId,
+        (PinnedReportRow p, "account_id") => p.AccountId,
         _ => throw new NotSupportedException($"FakeIndexedDb has no index '{index}' for {typeof(T).Name}"),
     };
 
@@ -119,7 +126,10 @@ public sealed class FakeIndexedDb : IIndexedDb {
         }
 
         if (value is ArtifactDropRow { Id: null } drop) {
-            value = drop with { Id = ++_nextDropId };
+            value = drop with { Id = ++_nextId };
+        }
+        if (value is FuelRow { Id: null } fuel) {
+            value = fuel with { Id = ++_nextId };
         }
 
         var key = KeyOf(value);
@@ -149,6 +159,7 @@ public sealed class FakeIndexedDb : IIndexedDb {
         (MissionRow m, object[] { Length: 2 } k) => m.PlayerId.Equals(k[0]) && m.MissionId.Equals(k[1]),
         (InFlightMissionRow f, object[] { Length: 2 } k) => f.PlayerId.Equals(k[0]) && f.MissionId.Equals(k[1]),
         (ArtifactDropRow d, long id) => d.Id == id,
+        (FuelRow d, long id) => d.Id == id,
         _ => KeyOf(row)?.Equals(key) == true,
     };
 

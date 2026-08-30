@@ -319,6 +319,18 @@ public sealed class IndexedDbMissionStore : IMissionStore {
             });
             await _db.PutManyAsync(IndexedDbStores.ArtifactDrops, rows);
         }
+
+        var fuel = MissionFuels.Build(decoded);
+        if (fuel.Count > 0) {
+            var fuelRows = fuel.Select(f => (object)new FuelRow {
+                MissionId = missionId,
+                PlayerId = playerId,
+                FuelIndex = f.FuelIndex,
+                EggId = f.EggId,
+                Amount = f.Amount,
+            });
+            await _db.PutManyAsync(IndexedDbStores.MissionFuel, fuelRows);
+        }
     }
 
     public async Task<bool> ReplaceInFlightMissionsAsync(string playerId, IReadOnlyList<DatabaseMission> missions) {
@@ -427,6 +439,13 @@ public sealed class IndexedDbMissionStore : IMissionStore {
         foreach (var row in dropRows) {
             if (row.Id is { } id) {
                 await _db.DeleteAsync(IndexedDbStores.ArtifactDrops, id).ConfigureAwait(false);
+            }
+        }
+
+        var fuelRows = await _db.GetAllByIndexAsync<FuelRow>(IndexedDbStores.MissionFuel, IndexedDbStores.PlayerIdIndex, playerId).ConfigureAwait(false);
+        foreach (var row in fuelRows) {
+            if (row.Id is { } id) {
+                await _db.DeleteAsync(IndexedDbStores.MissionFuel, id).ConfigureAwait(false);
             }
         }
 

@@ -53,6 +53,16 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
         };
         var rows = _db.Query(query, args);
 
+        if (def.Subject == "fuel_eggs" && def.Mode == "aggregate") {
+            var fuelLabels = new List<string>();
+            var fuelValues = new List<double>();
+            foreach (var row in rows) {
+                fuelLabels.Add(Labels.FormatLabel(def.GroupBy, AsString(row[0])));
+                fuelValues.Add(AsDouble(row[1]));
+            }
+            return new ReportResult { Labels = fuelLabels, FloatValues = fuelValues, IsFloat = true, Weight = def.Weight };
+        }
+
         var rawLabels = new List<string>();
         var labels = new List<string>();
         var values = new List<long>();

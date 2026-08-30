@@ -16,7 +16,8 @@ public sealed class ReportSourceCacheTests {
 
     private static ReportSource SourceFor(string accountId) => new(
         [new MissionRowData { PlayerId = accountId, MissionId = accountId + "-m1" }],
-        [new ArtifactDropRowData { PlayerId = accountId, MissionId = accountId + "-m1" }]);
+        [new ArtifactDropRowData { PlayerId = accountId, MissionId = accountId + "-m1" }],
+        [new FuelRowData { PlayerId = accountId, MissionId = accountId + "-m1" }]);
 
     private static Task<ReportSource> SourceOf(string accountId) => Task.FromResult(SourceFor(accountId));
 

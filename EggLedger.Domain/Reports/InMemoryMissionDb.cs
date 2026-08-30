@@ -8,6 +8,7 @@ internal sealed class InMemoryMissionDb : IMissionDb {
     private const string BucketMarker = "AS bucket";
     private const string GrpMarker = "AS grp";
     private const string AirtimeSumMarker = "SUM(CAST(m.return_timestamp - m.start_timestamp AS REAL) / 3600.0)";
+    private const string FuelSumMarker = "SUM(f.amount)";
 
 
     private const string ArtifactJoinMarker = "JOIN mission m ON d.mission_id = m.mission_id";
@@ -17,10 +18,12 @@ internal sealed class InMemoryMissionDb : IMissionDb {
     private readonly ReportDefinition _def;
     private readonly List<MissionRowData> _missions;
     private readonly List<ArtifactDropRowData> _drops;
+    private readonly List<FuelRowData> _fuel;
     private readonly IWeightData _weights;
 
 
     private readonly ILookup<(string Player, string Mission), ArtifactDropRowData> _dropsByMission;
+    private readonly ILookup<(string Player, string Mission), FuelRowData> _fuelByMission;
 
     private readonly MissionRowPredicate _predicate;
 
@@ -28,16 +31,23 @@ internal sealed class InMemoryMissionDb : IMissionDb {
         ReportDefinition def,
         IReadOnlyList<MissionRowData> missions,
         IReadOnlyList<ArtifactDropRowData> drops,
+        IReadOnlyList<FuelRowData> fuel,
         IWeightData weights) {
         _def = def;
         _missions = [.. missions];
         _drops = [.. drops];
+        _fuel = [.. fuel];
         _weights = weights;
         _dropsByMission = _drops.ToLookup(d => (d.PlayerId, d.MissionId));
+        _fuelByMission = _fuel.ToLookup(f => (f.PlayerId, f.MissionId));
         _predicate = new MissionRowPredicate(_def, _dropsByMission);
     }
 
     public IReadOnlyList<object?[]> Query(string sql, IReadOnlyList<object?> args) {
+        if (sql.Contains(FuelSumMarker, StringComparison.Ordinal)) {
+            return FuelAggregate();
+        }
+
         var weighted = sql.Contains(CapWeightMarker, StringComparison.Ordinal);
         var hasBucket = sql.Contains(BucketMarker, StringComparison.Ordinal);
         var hasGrp = sql.Contains(GrpMarker, StringComparison.Ordinal);
@@ -137,6 +147,27 @@ internal sealed class InMemoryMissionDb : IMissionDb {
             .Select(x => new object?[] { x.k, x.c })
             .ToList();
         return rows;
+    }
+
+    private List<object?[]> FuelAggregate() {
+        var col = QueryBuilder.GroupByColumn(_def.GroupBy);
+        var sums = new Dictionary<string, double>(StringComparer.Ordinal);
+        var order = new List<string>();
+        foreach (var m in FilteredMissions()) {
+            foreach (var f in _fuelByMission[(m.PlayerId, m.MissionId)]) {
+                var key = ColValue(m, col);
+                if (!sums.ContainsKey(key)) {
+                    order.Add(key);
+                }
+                sums.TryGetValue(key, out var cur);
+                sums[key] = cur + f.Amount;
+            }
+        }
+        return [.. order
+            .Select((k, i) => (k, i, s: sums[k]))
+            .OrderByDescending(x => x.s)
+            .ThenBy(x => x.i)
+            .Select(x => new object?[] { x.k, x.s })];
     }
 
     private List<object?[]> Count2D(bool joinDrops) {

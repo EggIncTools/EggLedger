@@ -21,16 +21,16 @@
         <div class="settings-section drops-widgets-section @(_widgetsOpen ? "is-open" : "")">
             <button type="button" class="settings-section-head" aria-expanded="@(_widgetsOpen ? "true" : "false")"
                     @onclick="ToggleWidgets">
-                <span class="settings-section-title">Stats</span>
+                <span class="settings-section-title">Reports</span>
                 @if (_widgetsOpen) {
                     <span class="settings-section-caret">&#9662;</span>
                 } else {
                     <span class="settings-section-caret">&#9656;</span>
                 }
             </button>
-            @if (_widgetsOpen) {
+            @if (_widgetsOpen && State.AccountId is { } accountId) {
                 <div class="settings-section-body">
-                    <DropsWidgets Stats="State.WidgetStats"/>
+                    <PinnedReportsStrip AccountId="accountId" View="PinnedReportViews.Lifetime"/>
                 </div>
             }
         </div>

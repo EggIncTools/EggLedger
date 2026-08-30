@@ -15,7 +15,7 @@ public sealed class SqliteReportRunner(IReportSourceCache sources, IWeightData w
 
         var source = await _sources.GetAsync(accountId).ConfigureAwait(false);
         var runner = new InMemoryReportRunner(_weights);
-        return runner.Run(def, source.Missions, source.Drops);
+        return runner.Run(def, source.Missions, source.Drops, source.Fuel);
     }
 }
 
@@ -28,6 +28,9 @@ public static class SqliteReportSource {
     private const string DropsSql =
         "SELECT player_id, mission_id, drop_index, artifact_id, spec_type, level, rarity, quality "
         + "FROM artifact_drops WHERE player_id = ? ORDER BY id";
+
+    private const string FuelSql =
+        "SELECT player_id, mission_id, egg_id, amount FROM mission_fuel WHERE player_id = ? ORDER BY id";
 
     public static Func<string, Task<ReportSource>> Loader(SqliteMissionDb db) {
         ArgumentNullException.ThrowIfNull(db);
@@ -73,7 +76,18 @@ public static class SqliteReportSource {
             });
         }
 
-        return new ReportSource(missions, drops);
+        var fuelRows = db.Query(FuelSql, args);
+        var fuel = new List<FuelRowData>(fuelRows.Count);
+        foreach (var r in fuelRows) {
+            fuel.Add(new FuelRowData {
+                PlayerId = AsString(r[0]),
+                MissionId = AsString(r[1]),
+                EggId = AsLong(r[2]),
+                Amount = AsDouble(r[3]),
+            });
+        }
+
+        return new ReportSource(missions, drops, fuel);
     }
 
     private static string AsString(object? v) => v switch {

@@ -1,4 +1,5 @@
 @using System.Globalization
+@using EggIdentity.UI
 @using Microsoft.AspNetCore.Components.Forms
 @inject IHttpContextAccessor HttpContextAccessor
 @inject NavigationManager Nav
@@ -87,13 +88,11 @@
         <div class="mt-0_5rem flex items-end gap-2 flex-wrap">
             <label class="flex flex-col gap-1 text-xs text-gray-500">
                 Timezone
-                <input type="text" class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500 w-44"
-                       placeholder="e.g. America/New_York" @bind="_timezone" @bind:event="oninput"/>
+                <TimeZonePicker @bind-Value="_timezone" Placeholder="Search timezone..."/>
             </label>
             <label class="flex flex-col gap-1 text-xs text-gray-500">
                 Language
-                <input type="text" class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500 w-24"
-                       placeholder="e.g. en" @bind="_language" @bind:event="oninput"/>
+                <LanguagePicker @bind-Value="_language" Placeholder="Search language..."/>
             </label>
             <button type="button" class="ledger-btn apply-filter-button !w-auto !mt-0 !mr-0 !ml-0" disabled="@_prefsSaving" @onclick="SavePreferencesAsync">
                 @(_prefsSaving ? "Saving..." : "Save")
@@ -105,6 +104,7 @@
                 <span class="text-xs text-red-400">@_prefsError</span>
             }
         </div>
+        <span class="text-gray-500 text-xs">Will also take effect in other EggIdentity apps (e.g., EggIncognito).</span>
     </div>
 }
 

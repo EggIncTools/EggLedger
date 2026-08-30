@@ -10,7 +10,9 @@ public static class UserDataDeletion {
         "el_artifact_drops",
         "el_settings",
         "el_reports",
-        "el_report_groups"
+        "el_report_groups",
+        "el_mission_fuel",
+        "el_pinned_reports"
     ];
 
     public static async Task<bool> DeleteUserAsync(

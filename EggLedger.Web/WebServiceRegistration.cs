@@ -19,6 +19,7 @@ public static class WebServiceRegistration {
         services.AddScoped<IndexedDbSettings>();
         services.AddScoped<IndexedDbAccountStore>();
         services.AddScoped<IndexedDbReportStore>();
+        services.AddScoped<IndexedDbPinnedReportStore>();
         services.AddScoped<IndexedDbMissionStore>(sp => new IndexedDbMissionStore(
             sp.GetRequiredService<IIndexedDb>(),
             sp.GetRequiredService<IApiPayloadDecoder>(),
