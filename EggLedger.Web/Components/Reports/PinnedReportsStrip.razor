@@ -110,10 +110,12 @@
         _defs = defs;
         _positions = ReportGridLayout.BuildOccupancyFromLayout(_defs).CardPositions;
 
+        var pinnedUserIds = _pins.Where(p => p.Kind == PinnedReportKinds.User).Select(p => p.RefId).ToHashSet();
+        var pinnedTemplateIds = _pins.Where(p => p.Kind == PinnedReportKinds.Template).Select(p => p.RefId).ToHashSet();
         var userReports = await ReportStore.RetrieveAccountReportsAsync(AccountId);
         _pickerOptions = [
-            .. userReports.Select(r => new FilterOption { Value = "user:" + r.Id, Text = r.Name }),
-            .. ReportTemplates.All.Select(t => new FilterOption { Value = "template:" + t.Id, Text = t.Name + " (template)" }),
+            .. userReports.Where(r => !pinnedUserIds.Contains(r.Id)).Select(r => new FilterOption { Value = "user:" + r.Id, Text = r.Name }),
+            .. ReportTemplates.All.Where(t => !pinnedTemplateIds.Contains(t.Id)).Select(t => new FilterOption { Value = "template:" + t.Id, Text = t.Name + " (template)" }),
         ];
     }
 

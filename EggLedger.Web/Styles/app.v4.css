@@ -330,6 +330,16 @@
   transition: opacity 0.18s ease-out;
 }
 
+.cal-row {
+  display: flex;
+  flex-direction: column;
+}
+
+.cal-lane-group:last-child {
+  flex: 1;
+  min-height: 0;
+}
+
 .timeline-event-bar {
   position: absolute;
   top: 0;

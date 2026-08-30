@@ -1,4 +1,5 @@
 using System.Globalization;
+using EggLedger.Domain.MissionPacking;
 
 namespace EggLedger.Domain.Reports;
 
@@ -154,20 +155,30 @@ internal sealed class InMemoryMissionDb : IMissionDb {
         var sums = new Dictionary<string, double>(StringComparer.Ordinal);
         var order = new List<string>();
         foreach (var m in FilteredMissions()) {
-            foreach (var f in _fuelByMission[(m.PlayerId, m.MissionId)]) {
-                var key = ColValue(m, col);
-                if (!sums.ContainsKey(key)) {
-                    order.Add(key);
-                }
-                sums.TryGetValue(key, out var cur);
-                sums[key] = cur + f.Amount;
+            if (MissionFuelTotal(m) is not double amount) {
+                continue;
             }
+            var key = ColValue(m, col);
+            if (!sums.ContainsKey(key)) {
+                order.Add(key);
+            }
+            sums.TryGetValue(key, out var cur);
+            sums[key] = cur + amount;
         }
         return [.. order
             .Select((k, i) => (k, i, s: sums[k]))
             .OrderByDescending(x => x.s)
             .ThenBy(x => x.i)
             .Select(x => new object?[] { x.k, x.s })];
+    }
+
+    private double? MissionFuelTotal(MissionRowData m) {
+        var recorded = _fuelByMission[(m.PlayerId, m.MissionId)];
+        if (recorded.Any()) {
+            return recorded.Sum(f => f.Amount);
+        }
+        var synthesized = ShipFuelCosts.For(m.Ship, m.DurationType);
+        return synthesized.Count > 0 ? synthesized.Sum(f => f.Amount) : null;
     }
 
     private List<object?[]> Count2D(bool joinDrops) {

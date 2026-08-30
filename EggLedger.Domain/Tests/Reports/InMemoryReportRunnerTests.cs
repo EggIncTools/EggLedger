@@ -1,5 +1,6 @@
 using System.Globalization;
 using EggLedger.Domain.Reports;
+using Ei;
 
 namespace EggLedger.Domain.Tests.Reports;
 
@@ -429,6 +430,51 @@ public class InMemoryReportRunnerTests {
         Assert.True(result.IsFloat);
         Assert.Contains(150.0, result.FloatValues);
         Assert.Contains(25.0, result.FloatValues);
+    }
+
+    [Fact]
+    public void Run_FuelSubject_MissionWithoutRecordedFuel_UsesShipFuelCostTable() {
+        var def = new ReportDefinition {
+            AccountId = Eid,
+            Subject = "fuel_eggs",
+            Mode = "aggregate",
+            GroupBy = "ship_type",
+        };
+        var missions = new List<MissionRowData> {
+            M("m1", ship: (int)MissionInfo.Spaceship.ChickenHeavy, duration: (int)MissionInfo.DurationType.Long, start: 1, ret: 2),
+            M("m2", ship: (int)MissionInfo.Spaceship.ChickenOne, duration: (int)MissionInfo.DurationType.Short, start: 1, ret: 2),
+            M("m3", ship: (int)MissionInfo.Spaceship.Voyegger, duration: (int)MissionInfo.DurationType.Tutorial, start: 1, ret: 2),
+        };
+
+        var result = new InMemoryReportRunner(new NoWeights()).Run(def, missions, [], []);
+
+        Assert.True(result.IsFloat);
+        Assert.Equal([55_000_000.0, 2_000_000.0], result.FloatValues);
+        Assert.Equal(["Chicken Heavy", "Chicken One"], result.Labels);
+    }
+
+    [Fact]
+    public void Run_FuelSubject_RecordedFuelWins_OverShipFuelCostTable() {
+        var def = new ReportDefinition {
+            AccountId = Eid,
+            Subject = "fuel_eggs",
+            Mode = "aggregate",
+            GroupBy = "ship_type",
+        };
+        var missions = new List<MissionRowData> {
+            M("m1", ship: (int)MissionInfo.Spaceship.ChickenOne, duration: (int)MissionInfo.DurationType.Short, start: 1, ret: 2),
+            M("m2", ship: (int)MissionInfo.Spaceship.ChickenNine, duration: (int)MissionInfo.DurationType.Short, start: 1, ret: 2),
+        };
+        var fuel = new List<FuelRowData> {
+            new() { PlayerId = Eid, MissionId = "m1", EggId = (long)Egg.RocketFuel, Amount = 7 },
+        };
+
+        var result = new InMemoryReportRunner(new NoWeights()).Run(def, missions, [], fuel);
+
+        Assert.True(result.IsFloat);
+        Assert.Equal([10_000_000.0, 7.0], result.FloatValues);
+        Assert.Equal(["Chicken Nine", "Chicken One"], result.Labels);
+        Assert.DoesNotContain(2_000_000.0, result.FloatValues);
     }
 
 
