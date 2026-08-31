@@ -67,24 +67,31 @@ public sealed class MigrationTests {
     }
 
     [Fact]
-    public void ReportDb_FreshMigratesToV12() {
+    public void ReportDb_FreshMigratesToV13() {
         using var conn = FreshConnection();
         SqliteMigrationRunner.MigrateReportDb(conn);
 
-        Assert.Equal(12, UserVersion(conn));
+        Assert.Equal(13, UserVersion(conn));
         Assert.True(TableExists(conn, "reports"));
         Assert.True(TableExists(conn, "report_groups"));
+        Assert.True(TableExists(conn, "pinned_reports"));
 
         var reportCols = Columns(conn, "reports");
-        foreach (var expected in new[]
-        {
+        var expectedReportCols = new[] {
             "id", "account_id", "name", "subject", "mode", "display_mode", "group_by",
             "filters", "color", "description", "chart_type", "value_filter_op",
             "group_id", "normalize_by", "label_colors", "secondary_group_by",
             "unfilled_color", "family_weight", "menno_enabled", "menno_compare_mode",
             "min_sample_size",
-        }) {
+        };
+        foreach (var expected in expectedReportCols) {
             Assert.Contains(expected, reportCols);
+        }
+
+        var pinnedCols = Columns(conn, "pinned_reports");
+        var expectedPinnedCols = new[] { "id", "account_id", "view", "kind", "ref_id", "sort_order", "created_at" };
+        foreach (var expected in expectedPinnedCols) {
+            Assert.Contains(expected, pinnedCols);
         }
     }
 
@@ -103,10 +110,16 @@ public sealed class MigrationTests {
     public void ReportDb_RerunIsNoOp() {
         using var conn = FreshConnection();
         SqliteMigrationRunner.MigrateReportDb(conn);
-        Assert.Equal(12, UserVersion(conn));
+        Assert.Equal(13, UserVersion(conn));
 
         SqliteMigrationRunner.MigrateReportDb(conn);
-        Assert.Equal(12, UserVersion(conn));
+        Assert.Equal(13, UserVersion(conn));
+    }
+
+    [Fact]
+    public void Migrate_TargetVersionBehindHighestEmbeddedMigration_Throws() {
+        using var conn = FreshConnection();
+        Assert.Throws<InvalidOperationException>(() => SqliteMigrationRunner.Migrate(conn, "Report", 12));
     }
 
     [Fact]

@@ -340,6 +340,12 @@
   min-height: 0;
 }
 
+.cal-row.cal-row-fixed {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+
 .timeline-event-bar {
   position: absolute;
   top: 0;

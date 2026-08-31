@@ -11,6 +11,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="bunit" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\EggLedger.Web.csproj" />
   </ItemGroup>
 

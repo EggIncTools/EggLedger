@@ -206,11 +206,57 @@ internal static class Program {
         var stamp = Path.Combine(wwwrootDir, ".pack-stamp");
         var mvid = assembly.ManifestModule.ModuleVersionId.ToString();
         if (File.Exists(stamp) && File.ReadAllText(stamp) == mvid) return;
-        if (Directory.Exists(wwwrootDir)) Directory.Delete(wwwrootDir, recursive: true);
-        Directory.CreateDirectory(wwwrootDir);
+
+        CleanupLeftoverSwapDirs(wwwrootDir);
+
+        var stagingDir = wwwrootDir + ".new-" + Guid.NewGuid().ToString("N");
+        Directory.CreateDirectory(stagingDir);
         using (var archive = new System.IO.Compression.ZipArchive(zipStream, System.IO.Compression.ZipArchiveMode.Read)) {
-            System.IO.Compression.ZipFileExtensions.ExtractToDirectory(archive, wwwrootDir, overwriteFiles: true);
+            System.IO.Compression.ZipFileExtensions.ExtractToDirectory(archive, stagingDir, overwriteFiles: true);
         }
-        File.WriteAllText(stamp, mvid);
+        File.WriteAllText(Path.Combine(stagingDir, ".pack-stamp"), mvid);
+
+        var staleDir = wwwrootDir + ".stale-" + Guid.NewGuid().ToString("N");
+        if (Directory.Exists(wwwrootDir) && !MoveDirectoryWithRetry(wwwrootDir, staleDir)) {
+            MoveDirectoryWithRetry(stagingDir, wwwrootDir + "." + Guid.NewGuid().ToString("N"));
+            return;
+        }
+        Directory.Move(stagingDir, wwwrootDir);
+        if (Directory.Exists(staleDir)) {
+            try {
+                Directory.Delete(staleDir, recursive: true);
+            } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) {
+            }
+        }
+    }
+
+    private static bool MoveDirectoryWithRetry(string src, string dst) {
+        for (var i = 0; i < 10; i++) {
+            try {
+                Directory.Move(src, dst);
+                return true;
+            } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) {
+                Thread.Sleep(300);
+            }
+        }
+        return false;
+    }
+
+    private static void CleanupLeftoverSwapDirs(string wwwrootDir) {
+        var exeDir = Path.GetDirectoryName(wwwrootDir);
+        if (string.IsNullOrEmpty(exeDir)) return;
+        var wwwrootName = Path.GetFileName(wwwrootDir);
+        string[] matches;
+        try {
+            matches = Directory.GetDirectories(exeDir, wwwrootName + ".*");
+        } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or DirectoryNotFoundException) {
+            return;
+        }
+        foreach (var match in matches) {
+            try {
+                Directory.Delete(match, recursive: true);
+            } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) {
+            }
+        }
     }
 }

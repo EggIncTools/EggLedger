@@ -8,7 +8,7 @@ namespace EggLedger.Desktop.Storage;
 public static class SqliteMigrationRunner {
     public const int MissionTargetVersion = 11;
 
-    public const int ReportTargetVersion = 12;
+    public const int ReportTargetVersion = 13;
 
     private static readonly Regex FileNamePattern =
         new(@"\.Migrations\.(?<set>[^.]+)\.(?<num>\d+)_", RegexOptions.Compiled);
@@ -21,6 +21,12 @@ public static class SqliteMigrationRunner {
 
     public static void Migrate(SqliteConnection connection, string set, int targetVersion) {
         var migrations = LoadMigrations(set);
+        var highestAvailable = migrations.Count == 0 ? 0 : migrations[^1].Version;
+        if (targetVersion < highestAvailable) {
+            throw new InvalidOperationException(
+                $"{set} migration target version {targetVersion} is behind the highest embedded migration {highestAvailable}; bump the target version constant.");
+        }
+
         int current = GetUserVersion(connection);
 
         foreach (var (version, sql) in migrations) {

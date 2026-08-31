@@ -1,0 +1,27 @@
+<ErrorBoundary @ref="_boundary">
+    <ChildContent>
+        @ChildContent
+    </ChildContent>
+    <ErrorContent>
+        <div class="h-full flex flex-col items-center justify-center gap-3 text-gray-300 p-6 text-center">
+            <span class="text-lg text-red-400">Something went wrong.</span>
+            <span class="text-sm text-gray-400">This view hit an unexpected error and could not load.</span>
+            <button type="button"
+                    class="px-6 py-2 rounded-md text-white text-sm font-semibold bg-blue-500 border border-blue-600 hover:bg-blue-600 hover:border-blue-700 transition-colors"
+                    @onclick="Recover">
+                Try Again
+            </button>
+        </div>
+    </ErrorContent>
+</ErrorBoundary>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private ErrorBoundary? _boundary;
+
+    private void Recover() {
+        _boundary?.Recover();
+    }
+
+}

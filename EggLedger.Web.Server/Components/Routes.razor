@@ -6,12 +6,16 @@
     <Router AppAssembly="@typeof(App).Assembly">
         <Found Context="routeData">
             @if (routeData.PageType == typeof(PrivacyPage) || routeData.PageType == typeof(TermsPage)) {
-                <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)"/>
+                <AppErrorBoundary>
+                    <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)"/>
+                </AppErrorBoundary>
             } else {
                 <AuthorizeView>
                     <Authorized>
                         <BackfillTrigger/>
-                        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)"/>
+                        <AppErrorBoundary>
+                            <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)"/>
+                        </AppErrorBoundary>
                     </Authorized>
                     <NotAuthorized>
                         <LayoutView Layout="@typeof(MainLayout)">

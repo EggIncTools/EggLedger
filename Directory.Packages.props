@@ -4,6 +4,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageVersion Include="bunit" Version="2.9.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="EggIdentity.AdminUi" Version="2.2.6" />
     <PackageVersion Include="EggIdentity.Auth" Version="2.2.6" />
