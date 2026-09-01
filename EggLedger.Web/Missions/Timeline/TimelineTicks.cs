@@ -33,11 +33,21 @@ public static class TimelineTicks {
         if (spanSeconds <= 0) {
             return [];
         }
+        var boundaries = new List<DateTimeOffset> { start };
+        var next = TimelineGridAnchor.NextEasternMidnight(start);
+        while (next < end) {
+            boundaries.Add(next);
+            next = TimelineGridAnchor.NextEasternMidnight(next);
+        }
+        boundaries.Add(end);
+
         var cells = new List<TimelineDayCell>();
-        for (var day = start; day < end; day = day.AddDays(1)) {
-            double left = Math.Max(0, Percent(day, start, spanSeconds));
-            double right = Math.Min(100, Percent(day.AddDays(1), start, spanSeconds));
-            var easternDate = TimelineGridAnchor.EasternDate(day);
+        for (int i = 0; i < boundaries.Count - 1; i++) {
+            var cellStart = boundaries[i];
+            var cellEnd = boundaries[i + 1];
+            double left = Math.Max(0, Percent(cellStart, start, spanSeconds));
+            double right = Math.Min(100, Percent(cellEnd, start, spanSeconds));
+            var easternDate = TimelineGridAnchor.EasternDate(cellStart);
             bool muted = primaryMonth is { } month && easternDate.Month != month;
             cells.Add(new TimelineDayCell(left, right - left, easternDate, muted));
         }

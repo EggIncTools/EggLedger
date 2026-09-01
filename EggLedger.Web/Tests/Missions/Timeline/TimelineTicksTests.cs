@@ -27,15 +27,20 @@ public sealed class TimelineTicksTests {
     }
 
     [Fact]
-    public void DayCells_SplitsWeekRowIntoSevenEqualCells() {
+    public void DayCells_SplitsWeekRowIntoEightCellsWithHalfWidthSundayEdges() {
         var start = TimelineGridAnchor.GridWeekStart(new DateTimeOffset(2026, 8, 23, 0, 0, 0, TimeSpan.Zero));
 
         var cells = TimelineTicks.DayCells(start, start.AddDays(7), null);
 
-        Assert.Equal(7, cells.Count);
+        Assert.Equal(8, cells.Count);
         Assert.Equal(0, cells[0].LeftPercent, precision: 3);
         Assert.Equal(TimelineGridAnchor.EasternDate(start), cells[0].LocalDate);
-        Assert.All(cells, c => Assert.Equal(100.0 / 7, c.WidthPercent, precision: 3));
+        Assert.Equal(TimelineGridAnchor.EasternDate(start.AddDays(7)), cells[7].LocalDate);
+        Assert.Equal(100.0 * 12 / 168, cells[0].WidthPercent, precision: 3);
+        Assert.Equal(100.0 * 12 / 168, cells[7].WidthPercent, precision: 3);
+        for (var i = 1; i < 7; i++) {
+            Assert.Equal(100.0 * 24 / 168, cells[i].WidthPercent, precision: 3);
+        }
     }
 
     [Fact]
@@ -44,7 +49,7 @@ public sealed class TimelineTicksTests {
 
         var cells = TimelineTicks.DayCells(start, start.AddDays(7), null);
 
-        Assert.Equal(7, cells.Count);
+        Assert.Equal(8, cells.Count);
         for (var i = 1; i < cells.Count; i++) {
             Assert.Equal(cells[i - 1].LeftPercent + cells[i - 1].WidthPercent, cells[i].LeftPercent, precision: 6);
         }

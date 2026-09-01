@@ -8,6 +8,11 @@ public static class TimelineGridAnchor {
 
     public static DateTimeOffset GridDayStart(DateTimeOffset instant) => CalendarGridAnchor.DayStart(instant, Eastern, Noon);
 
+    public static DateTimeOffset NextEasternMidnight(DateTimeOffset after) {
+        var nextDate = TimeZoneInfo.ConvertTime(after, Eastern).Date.AddDays(1);
+        return new DateTimeOffset(nextDate, Eastern.GetUtcOffset(nextDate));
+    }
+
     public static DateTimeOffset GridWeekStart(DateTimeOffset instant) => CalendarGridAnchor.WeekStart(instant, Eastern, Noon);
 
     public static DateTime EasternDate(DateTimeOffset instant) => TimeZoneInfo.ConvertTime(instant, Eastern).Date;

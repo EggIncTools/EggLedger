@@ -12,18 +12,6 @@
 } else if (State.AllMissions is null || State.AllMissions.Count == 0) {
     <NoDataFallback/>
 } else {
-    <div class="flex items-center gap-2 flex-wrap mt-0_75rem mb-0_5rem">
-        <div class="tile-group">
-            <button type="button" class="tile-group-item @(State.ViewMode == ShipsViewMode.List ? "active" : "")" @onclick="@(() => State.SetViewMode(ShipsViewMode.List))">List</button>
-            <button type="button" class="tile-group-item @(State.ViewMode == ShipsViewMode.Calendar ? "active" : "")" @onclick="@(() => State.SetViewMode(ShipsViewMode.Calendar))">Calendar</button>
-        </div>
-        @if (State.HasBothTypes) {
-            @RenderTileSelector()
-        }
-        @if (State.ViewMode == ShipsViewMode.List) {
-            @RenderListControlSet()
-        }
-    </div>
     @if (State.ViewMode == ShipsViewMode.Calendar) {
         <MissionCalendarView Missions="State.TabFiltered ?? Array.Empty<DatabaseMission>()"
                              InFlightMissions="@State.TabFilteredInFlight"
@@ -31,8 +19,16 @@
                              HasActiveFilter="State.HasActiveFilter"
                              RecolorDC="State.Opts.RecolorDC"
                              RecolorBC="State.Opts.RecolorBC"
-                             OnViewMission="ViewMissionAsync"/>
+                             OnViewMission="ViewMissionAsync"
+                             LeadingControls="CalendarLeadingControls"/>
     } else {
+        <div class="flex items-center gap-2 flex-wrap mt-0_75rem mb-0_5rem">
+            @RenderModeTiles()
+            @if (State.HasBothTypes) {
+                @RenderTileSelector()
+            }
+            @RenderListControlSet()
+        </div>
         <MissionResultsTable Grouping="State.Grouping"
                              ViewByDate="State.Opts.ViewByDate"
                              ViewMissionTimes="State.Opts.ViewMissionTimes"
@@ -92,6 +88,20 @@
     private void ToggleWidgets() {
         _widgetsOpen = !_widgetsOpen;
     }
+
+    private RenderFragment RenderModeTiles() => __builder => {
+        <div class="tile-group">
+            <button type="button" class="tile-group-item @(State.ViewMode == ShipsViewMode.List ? "active" : "")" @onclick="@(() => State.SetViewMode(ShipsViewMode.List))">List</button>
+            <button type="button" class="tile-group-item @(State.ViewMode == ShipsViewMode.Calendar ? "active" : "")" @onclick="@(() => State.SetViewMode(ShipsViewMode.Calendar))">Calendar</button>
+        </div>
+    };
+
+    private RenderFragment CalendarLeadingControls => __builder => {
+        @RenderModeTiles()
+        @if (State.HasBothTypes) {
+            @RenderTileSelector()
+        }
+    };
 
     private RenderFragment RenderTileSelector() => __builder => {
         <div class="tile-group">

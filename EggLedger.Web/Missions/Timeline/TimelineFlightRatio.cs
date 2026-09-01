@@ -57,4 +57,41 @@ public static class TimelineFlightRatio {
         }
         return slices;
     }
+
+    public static IReadOnlyList<double>? OccupancyHours(
+        IReadOnlyList<DatabaseMission> missions,
+        DateTimeOffset visibleStart,
+        DateTimeOffset visibleEnd,
+        DateTimeOffset now) {
+        long winStart = visibleStart.ToUnixTimeSeconds();
+        long winEnd = Math.Min(visibleEnd.ToUnixTimeSeconds(), now.ToUnixTimeSeconds());
+        if (winEnd <= winStart) {
+            return null;
+        }
+
+        var edges = new List<(long Time, int Delta)>();
+        foreach (var m in missions) {
+            long start = Math.Max(m.LaunchDT, winStart);
+            long end = Math.Min(m.ReturnDT, winEnd);
+            if (end <= start) {
+                continue;
+            }
+            edges.Add((start, 1));
+            edges.Add((end, -1));
+        }
+
+        edges.Sort(static (a, b) => a.Time != b.Time ? a.Time.CompareTo(b.Time) : a.Delta.CompareTo(b.Delta));
+
+        var seconds = new long[AssumedConcurrency + 1];
+        long prev = winStart;
+        int count = 0;
+        foreach (var (time, delta) in edges) {
+            seconds[Math.Min(count, AssumedConcurrency)] += time - prev;
+            prev = time;
+            count += delta;
+        }
+        seconds[Math.Min(count, AssumedConcurrency)] += winEnd - prev;
+
+        return seconds.Select(s => s / 3600.0).ToArray();
+    }
 }

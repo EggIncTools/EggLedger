@@ -264,6 +264,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+  isolation: isolate;
 }
 
 .timeline-scale {
@@ -282,11 +283,6 @@
   line-height: 1.25rem;
   color: var(--color-gray-400);
   white-space: nowrap;
-}
-
-.airtime-row {
-  display: flex;
-  justify-content: center;
 }
 
 .airtime-stat {
@@ -353,26 +349,27 @@
   border-radius: 0.25rem;
   left: calc(var(--evt-start) * 1%);
   width: calc(var(--evt-size) * 1% - 4px);
-  background-color: var(--evt-bg, var(--color-gray-600));
+  background-color: color-mix(in srgb, var(--evt-bg, var(--color-gray-600)) 55%, transparent);
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.3rem;
-  padding: 0 0.35rem;
+  justify-content: flex-start;
+  gap: 0.25rem;
+  padding: 0 0.35rem 0 1.1rem;
   overflow: hidden;
   cursor: default;
 }
 
 .timeline-event-icon {
-  width: 1.1rem;
-  height: 1.1rem;
+  width: 0.7rem;
+  height: 0.7rem;
   flex-shrink: 0;
   object-fit: contain;
 }
 
 .timeline-event-label {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 600;
+  line-height: 1;
   color: #fff;
   white-space: nowrap;
   overflow: hidden;
@@ -495,6 +492,10 @@
 }
 
 .timeline-bar:hover .timeline-bar-edge {
+  opacity: 1;
+}
+
+.timeline-bar.timeline-bar-linked-hover .timeline-bar-edge {
   opacity: 1;
 }
 

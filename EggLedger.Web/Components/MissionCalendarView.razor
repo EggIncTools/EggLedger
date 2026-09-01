@@ -5,7 +5,8 @@
 @using EggIdentity.UI
 
 <div class="flex flex-col gap-2 min-h-0 flex-1">
-    <div class="flex items-center gap-2 flex-wrap">
+    <div class="flex items-center gap-2 flex-wrap mt-0_75rem">
+        @LeadingControls
         <CalendarRangePicker TZoom="TimelineZoom"
                              AvailableZooms="Zooms"
                              Zoom="_zoom"
@@ -14,14 +15,11 @@
                              DateValue="@LocalCenterDate"
                              PrevDisabled="@(!_canPanPrev)"
                              NextDisabled="@(!_canPanNext)"
-                             ZoomChanged="SetZoomAsync"
-                             OnPan="PanAsync"
-                             OnToday="JumpToNowAsync"
-                             DateChanged="JumpToDateAsync"/>
-    </div>
-
-    <div class="airtime-row">
-        <span class="airtime-stat" data-tt="Share of 3 mission slots in flight this period, by farm.">
+                             ZoomChanged="SetZoom"
+                             OnPan="Pan"
+                             OnToday="JumpToNow"
+                             DateChanged="JumpToDate"/>
+        <span class="airtime-stat" data-tt="@AirtimeTooltip">
             <span class="airtime-label">Airtime</span>
             @if (_flightSlices is not { Count: > 0 } slices) {
                 <span class="airtime-chip">n/a</span>
@@ -52,8 +50,8 @@
                     }
                 }
             } else {
-                @for (var i = 0; i < WeekdayNames.Length; i++) {
-                    <span class="timeline-scale-label" style="@TickStyle((i + 0.5) / 7 * 100)">@WeekdayNames[i]</span>
+                @for (var i = 0; i < WeekHeaderLabels.Length; i++) {
+                    <span class="timeline-scale-label" style="@TickStyle(WeekHeaderPositions[i])">@WeekHeaderLabels[i]</span>
                 }
             }
         </div>
@@ -77,7 +75,8 @@
 }
 
 @code {
-    private static readonly string[] WeekdayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    private static readonly string[] WeekHeaderLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    private static readonly double[] WeekHeaderPositions = [100.0 * 6 / 168, 100.0 * 24 / 168, 100.0 * 48 / 168, 100.0 * 72 / 168, 100.0 * 96 / 168, 100.0 * 120 / 168, 100.0 * 144 / 168, 100.0 * 162 / 168];
     private static readonly string[] OverlayEventTypes = ["mission-capacity", "mission-duration"];
     private static readonly TimelineZoom[] Zooms = [TimelineZoom.Day, TimelineZoom.Week, TimelineZoom.Month];
 
@@ -88,6 +87,7 @@
     [Parameter] public bool RecolorDC { get; set; }
     [Parameter] public bool RecolorBC { get; set; }
     [Parameter] public EventCallback<string> OnViewMission { get; set; }
+    [Parameter] public RenderFragment? LeadingControls { get; set; }
 
     private TimelineZoom _zoom = TimelineZoom.Month;
     private DateTimeOffset _center = DateTimeOffset.UtcNow;
@@ -101,9 +101,11 @@
     private IReadOnlyList<GameEvent> _overlayEvents = [];
     private IReadOnlyList<FlightRatioSlice>? _flightSlices;
     private IReadOnlyList<FlightRatioSlice>? _flightSlicesAll;
+    private IReadOnlyList<double>? _occupancyHours;
     private bool _canPanPrev = true;
     private bool _canPanNext = true;
     private bool _showStillFlying;
+    private string? _hoveredMissionId;
 
     private CalendarGrid<object>? _grid;
     private bool _resetScrollPending;
@@ -111,7 +113,12 @@
     private RenderFragment<object> EventItemTemplate => item => @<TimelineEventBarView Bar="((TimelineEventBar)item)"/>;
 
     private RenderFragment<object> MissionItemTemplate => item =>
-        @<TimelineBarView Bar="((TimelineBar)item)" RecolorDC="RecolorDC" RecolorBC="RecolorBC" OnSelect="OnSelectMission"/>;
+        @<TimelineBarView Bar="((TimelineBar)item)"
+                          RecolorDC="RecolorDC"
+                          RecolorBC="RecolorBC"
+                          OnSelect="OnSelectMission"
+                          IsLinkedHover="@(((TimelineBar)item).MissionId == _hoveredMissionId)"
+                          OnHoverMissionId="SetHoveredMissionId"/>;
 
     private string ZoomClass => _zoom.ToString().ToLowerInvariant();
 
@@ -125,8 +132,8 @@
 
     protected override void OnInitialized() {
         _laneGroups = [
-            new LaneGroupDef<object>(EventItemTemplate, LaneMinRem: 2.0, LaneGapRem: 0.15, HeaderRem: 1.9),
-            new LaneGroupDef<object>(MissionItemTemplate, LaneMinRem: 1.35, LaneGapRem: 0.15, HeaderRem: 0),
+            new LaneGroupDef<object>(EventItemTemplate, LaneMinRem: 0.75, LaneGapRem: 0.15, HeaderRem: 0),
+            new LaneGroupDef<object>(MissionItemTemplate, LaneMinRem: 1.65, LaneGapRem: 0.15, HeaderRem: 0),
         ];
 
         if (GameEvents.IsConfigured) {
@@ -181,6 +188,7 @@
 
         var now = DateTimeOffset.UtcNow;
         _flightSlices = TimelineFlightRatio.ComputeByFarm(_merged, _visibleStart, _visibleEnd, now);
+        _occupancyHours = TimelineFlightRatio.OccupancyHours(_merged, _visibleStart, _visibleEnd, now);
 
         if (HasActiveFilter) {
             var allDbIds = new HashSet<string>(AllMissions.Select(m => m.MissiondId), StringComparer.Ordinal);
@@ -307,6 +315,21 @@
         return ratio.ToString("P1", CultureInfo.InvariantCulture);
     }
 
+    private string AirtimeTooltip {
+        get {
+            if (_occupancyHours is not { Count: > 0 } hours) {
+                return "";
+            }
+
+            var lines = new List<string>(hours.Count);
+            for (var ships = hours.Count - 1; ships >= 0; ships--) {
+                lines.Add(FormattableString.Invariant($"{ships} in flight: {hours[ships]:0.#}h"));
+            }
+
+            return string.Join("\n", lines);
+        }
+    }
+
     private static string AirtimeChipStyle(double ratio) {
         double t = Math.Clamp(ratio, 0, 1);
         int r = (int)Math.Round(239 + (34 - 239) * t);
@@ -316,22 +339,20 @@
             $"color:rgb({r},{g},{b});border-color:color-mix(in srgb, rgb({r},{g},{b}) 55%, transparent);background-color:color-mix(in srgb, rgb({r},{g},{b}) 10%, var(--color-darker));");
     }
 
-    private Task SetZoomAsync(TimelineZoom zoom) {
+    private void SetZoom(TimelineZoom zoom) {
         _zoom = zoom;
         Recompute();
         _resetScrollPending = true;
-        return Task.CompletedTask;
     }
 
-    private Task PanAsync(int direction) {
+    private void Pan(int direction) {
         if (!CanPan(direction)) {
-            return Task.CompletedTask;
+            return;
         }
 
         _center += (_visibleEnd - _visibleStart) * direction;
         Recompute();
         _resetScrollPending = true;
-        return Task.CompletedTask;
     }
 
     private bool CanPan(int direction) {
@@ -384,22 +405,19 @@
         }
     }
 
-    private Task JumpToNowAsync() {
+    private void JumpToNow() {
         _center = DateTimeOffset.UtcNow;
         Recompute();
         _resetScrollPending = true;
-        return Task.CompletedTask;
     }
 
-    private Task JumpToDateAsync(ChangeEventArgs e) {
+    private void JumpToDate(ChangeEventArgs e) {
         if (DateOnly.TryParseExact(e.Value?.ToString(), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed)) {
             var localNoon = parsed.ToDateTime(new TimeOnly(12, 0));
             _center = TimelineWindow.ToOffset(localNoon, TzProvider.TimeZone);
             Recompute();
             _resetScrollPending = true;
         }
-
-        return Task.CompletedTask;
     }
 
     private async Task OnSelectMission(string missionId) {
@@ -409,6 +427,15 @@
         }
 
         await OnViewMission.InvokeAsync(missionId);
+    }
+
+    private void SetHoveredMissionId(string? missionId) {
+        if (_hoveredMissionId == missionId) {
+            return;
+        }
+
+        _hoveredMissionId = missionId;
+        StateHasChanged();
     }
 
     private void CloseStillFlying() {

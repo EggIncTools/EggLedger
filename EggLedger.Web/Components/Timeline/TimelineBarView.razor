@@ -1,7 +1,7 @@
 @using System.Globalization
 @inject IUserTimeZoneProvider TzProvider
 
-<div class="timeline-bar timeline-dur-@Bar.DurationIndex @CapModifierClass tooltip-host @(Bar.ContinuesLeft ? "timeline-bar-cut-l" : "") @(Bar.ContinuesRight ? "timeline-bar-cut-r" : "")" style="@BarStyle" data-tt-mode="cursor-x" @onclick="@(() => OnSelect.InvokeAsync(Bar.MissionId))">
+<div class="timeline-bar timeline-dur-@Bar.DurationIndex @CapModifierClass tooltip-host @(Bar.ContinuesLeft ? "timeline-bar-cut-l" : "") @(Bar.ContinuesRight ? "timeline-bar-cut-r" : "") @(IsLinkedHover ? "timeline-bar-linked-hover" : "")" style="@BarStyle" data-tt-mode="cursor-x" @onclick="@(() => OnSelect.InvokeAsync(Bar.MissionId))" @onmouseenter="@(() => OnHoverMissionId.InvokeAsync(Bar.MissionId))" @onmouseleave="@(() => OnHoverMissionId.InvokeAsync(null))">
     <div class="timeline-bar-track">
         <div class="timeline-bar-fill"></div>
     </div>
@@ -46,6 +46,31 @@
     [Parameter] public bool RecolorDC { get; set; }
     [Parameter] public bool RecolorBC { get; set; }
     [Parameter] public EventCallback<string> OnSelect { get; set; }
+    [Parameter] public bool IsLinkedHover { get; set; }
+    [Parameter] public EventCallback<string?> OnHoverMissionId { get; set; }
+
+    private TimelineBar? _renderedBar;
+    private bool _renderedRecolorDC;
+    private bool _renderedRecolorBC;
+    private bool _renderedLinkedHover;
+    private bool _hasRendered;
+
+    protected override bool ShouldRender() {
+        if (_hasRendered
+            && ReferenceEquals(_renderedBar, Bar)
+            && _renderedRecolorDC == RecolorDC
+            && _renderedRecolorBC == RecolorBC
+            && _renderedLinkedHover == IsLinkedHover) {
+            return false;
+        }
+
+        _hasRendered = true;
+        _renderedBar = Bar;
+        _renderedRecolorDC = RecolorDC;
+        _renderedRecolorBC = RecolorBC;
+        _renderedLinkedHover = IsLinkedHover;
+        return true;
+    }
 
     private string BarStyle =>
         FormattableString.Invariant($"--bar-start:{Bar.LeftPercent};--bar-size:{Bar.WidthPercent};--bar-fill:{Bar.FillPercent};--bar-z:{Bar.StackOrder};");
