@@ -3,10 +3,14 @@
    native <dialog>.showModal(): top-layer promotion desyncs the Blazor Server render tree
    (insertBefore/parentNode-null crashes). Backdrop click closes. Drops show a rarity ring. *@
 
-<input type="text" readonly placeholder="@Placeholder"
-       class="filter-select border-gray-600 @(Selected?.StyleClass ?? "text-gray-400") cursor-pointer @(Incomplete ? "field-incomplete" : "")"
-       value="@(Selected?.Text ?? "")"
-       @onclick="Open"/>
+@if (TriggerContent is not null) {
+    <button type="button" class="@TriggerClass" aria-label="@Placeholder" data-tt="@Placeholder" @onclick="Open">@TriggerContent</button>
+} else {
+    <input type="text" readonly placeholder="@Placeholder"
+           class="filter-select border-gray-600 @(Selected?.StyleClass ?? "text-gray-400") cursor-pointer @(Incomplete ? "field-incomplete" : "")"
+           value="@(Selected?.Text ?? "")"
+           @onclick="Open"/>
+}
 
 @if (_open) {
     <dialog open class="popup-selector-main overlay-@OverlayKind" @onclick="Close">
@@ -90,6 +94,8 @@
     [Parameter] public EventCallback<FilterOption> OnSelect { get; set; }
     [Parameter] public RenderFragment? Footer { get; set; }
     [Parameter] public bool Incomplete { get; set; }
+    [Parameter] public RenderFragment? TriggerContent { get; set; }
+    [Parameter] public string TriggerClass { get; set; } = "";
     private bool _open;
     private bool _focusPending;
     private bool _preventKey;

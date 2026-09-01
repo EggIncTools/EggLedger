@@ -5,40 +5,42 @@
 @using EggIdentity.UI
 
 <div class="flex flex-col gap-2 min-h-0 flex-1">
-    <div class="flex items-center gap-2 flex-wrap mt-0_75rem">
+    <div class="relative flex items-center gap-2 flex-wrap mt-0_75rem">
         @LeadingControls
-        <CalendarRangePicker TZoom="TimelineZoom"
-                             AvailableZooms="Zooms"
-                             Zoom="_zoom"
-                             ZoomLabel="TimelineZoomExtensions.Label"
-                             RangeLabel="@RangeLabel"
-                             DateValue="@LocalCenterDate"
-                             PrevDisabled="@(!_canPanPrev)"
-                             NextDisabled="@(!_canPanNext)"
-                             ZoomChanged="SetZoom"
-                             OnPan="Pan"
-                             OnToday="JumpToNow"
-                             DateChanged="JumpToDate"/>
-        <span class="airtime-stat" data-tt="@AirtimeTooltip">
-            <span class="airtime-label">Airtime</span>
-            @if (_flightSlices is not { Count: > 0 } slices) {
-                <span class="airtime-chip">n/a</span>
-            } else if (slices.Count == 1) {
-                <span class="airtime-chip" style="@AirtimeChipStyle(slices[0].Ratio)">@Pct(slices[0].Ratio)</span>
-            } else {
-                @foreach (var slice in slices) {
-                    <span class="airtime-chip" style="@AirtimeChipStyle(slice.Ratio)">
-                        <span class="airtime-farm">@(slice.IsVirtue ? "Virtue" : "Home")</span>
-                        @Pct(slice.Ratio)
+        <div class="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
+            <CalendarRangePicker TZoom="TimelineZoom"
+                                 AvailableZooms="Zooms"
+                                 Zoom="_zoom"
+                                 ZoomLabel="TimelineZoomExtensions.Label"
+                                 RangeLabel="@RangeLabel"
+                                 DateValue="@LocalCenterDate"
+                                 PrevDisabled="@(!_canPanPrev)"
+                                 NextDisabled="@(!_canPanNext)"
+                                 ZoomChanged="SetZoom"
+                                 OnPan="Pan"
+                                 OnToday="JumpToNow"
+                                 DateChanged="JumpToDate"/>
+            <span class="airtime-stat" data-tt="@AirtimeTooltip">
+                <span class="airtime-label">Airtime</span>
+                @if (_flightSlices is not { Count: > 0 } slices) {
+                    <span class="airtime-chip">n/a</span>
+                } else if (slices.Count == 1) {
+                    <span class="airtime-chip" style="@AirtimeChipStyle(slices[0].Ratio)">@Pct(slices[0].Ratio)</span>
+                } else {
+                    @foreach (var slice in slices) {
+                        <span class="airtime-chip" style="@AirtimeChipStyle(slice.Ratio)">
+                            <span class="airtime-farm">@(slice.IsVirtue ? "Virtue" : "Home")</span>
+                            @Pct(slice.Ratio)
+                        </span>
+                    }
+                }
+                @if (FilteredOutRatio is { } filteredOut) {
+                    <span class="airtime-chip airtime-filtered" data-tt="Airtime from missions excluded by the active filter, for this period.">
+                        -@Pct(filteredOut) filtered
                     </span>
                 }
-            }
-            @if (FilteredOutRatio is { } filteredOut) {
-                <span class="airtime-chip airtime-filtered" data-tt="Airtime from missions excluded by the active filter, for this period.">
-                    -@Pct(filteredOut) filtered
-                </span>
-            }
-        </span>
+            </span>
+        </div>
     </div>
 
     <div class="flex-1 min-h-0 shadow-sm bg-darkest rounded-md p-2 timeline-shell timeline-view-@ZoomClass">
@@ -132,7 +134,7 @@
 
     protected override void OnInitialized() {
         _laneGroups = [
-            new LaneGroupDef<object>(EventItemTemplate, LaneMinRem: 0.75, LaneGapRem: 0.15, HeaderRem: 0),
+            new LaneGroupDef<object>(EventItemTemplate, LaneMinRem: 1.15, LaneGapRem: 0.15, HeaderRem: 0),
             new LaneGroupDef<object>(MissionItemTemplate, LaneMinRem: 1.65, LaneGapRem: 0.15, HeaderRem: 0),
         ];
 
@@ -248,6 +250,10 @@
         var hourTickPositions = hourTicks.Select(t => t.LeftPercent).ToList();
 
         var eventLanes = ToObjectLanes(GroupLanes(eventBars, b => b.Lane));
+        if (eventLanes.Count == 0) {
+            eventLanes = [Array.Empty<object>()];
+        }
+
         var missionLanes = ToObjectLanes(GroupLanes(bars, b => b.Lane));
         if (missionLanes.Count == 0) {
             missionLanes = [Array.Empty<object>()];

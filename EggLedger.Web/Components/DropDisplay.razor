@@ -18,7 +18,7 @@
                     }
                 </a>
                 @if (ReferenceEquals(_hovered, item)) {
-                    <div class="tooltip-floating tooltip-fixed text-sm">
+                    <div class="tooltip-floating tooltip-fixed tooltip-toggle text-sm">
                         @item.GameName (T@(item.Level + SpecPathOffset(item)))
                         @if (item.SpecType == "Artifact") {
                             <span class="text-rarity-@item.Rarity">@FilterOptions.RarityWord(item.Rarity) </span>

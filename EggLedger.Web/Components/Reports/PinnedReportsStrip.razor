@@ -2,14 +2,14 @@
 @inject IndexedDbReportStore ReportStore
 
 <div class="pinned-reports-strip">
-    <div class="pinned-reports-header flex items-center justify-between gap-2 mb-2">
-        <span class="text-xs text-gray-500">Pinned Reports</span>
-        <div style="width: 200px;">
-            <SearchablePicker Options="_pickerOptions" OverlayKind="drop" Placeholder="Add a report" OnSelect="OnPickAsync"/>
-        </div>
+    <div class="pinned-reports-header flex items-center justify-end mb-2">
+        <SearchablePicker Options="_pickerOptions" OverlayKind="drop" Placeholder="Add a report" OnSelect="OnPickAsync"
+                          TriggerClass="text-xs text-gray-400 hover:text-gray-200 bg-darker border border-gray-700 rounded px-2 py-1 leading-none">
+            <TriggerContent>+</TriggerContent>
+        </SearchablePicker>
     </div>
     @if (_defs.Count == 0) {
-        <p class="text-xs text-gray-500 italic">No pinned reports yet. Add one from your library or the built-in templates above.</p>
+        <p class="text-xs text-gray-500 italic">No pinned reports yet. Add one with the + button.</p>
     } else {
         <div class="report-grid grid gap-3 relative" style="grid-template-columns: repeat(8, 1fr); grid-auto-rows: 144px;">
             @for (var i = 0; i < _defs.Count; i++) {
@@ -17,7 +17,7 @@
                 var pos = _positions[i];
                 var pinId = _resolvedPins[i].Id;
                 <div @key="pinId" class="pinned-report-card relative" style="grid-column: @pos.Col / span @pos.W; grid-row: @pos.Row / span @pos.H;">
-                    <ReportCard Def="def" Pos="pos" AccountId="AccountId" ShowUnpin="true" OnUnpin="() => UnpinAsync(pinId)"/>
+                    <ReportCard Def="def" Pos="pos" AccountId="@AccountId" ShowUnpin="true" OnUnpin="() => UnpinAsync(pinId)"/>
                 </div>
             }
         </div>

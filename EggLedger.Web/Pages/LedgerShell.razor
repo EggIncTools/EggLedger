@@ -8,10 +8,12 @@
 @page "/settings"
 @page "/about"
 @using EggIdentity.UI
-@implements IDisposable
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
 @inject LedgerShellState Shell
 @inject ShipsViewState Ships
 @inject NavigationManager Nav
+@inject IJSRuntime JS
 
 <PageTitle>EggLedger - @ViewLabel(Shell.View)</PageTitle>
 
@@ -57,14 +59,29 @@
 
     private PathRouteSync? _routeSync;
     private bool _applyingRoute;
+    private string _routePath = "/";
 
     protected override void OnInitialized() {
         Shell.Changed += OnShellChanged;
         Shell.Changed += OnShellRouteChanged;
         Ships.Changed += OnShipsRouteChanged;
-        _routeSync = new PathRouteSync(Nav);
+        _routeSync = new PathRouteSync(JS, Nav, "/");
         _routeSync.Changed += OnRouteChanged;
+        _routePath = "/" + Nav.ToBaseRelativePath(Nav.Uri).Split('?', '#')[0].Trim('/').ToLowerInvariant();
         ApplyRoute();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (!firstRender || _routeSync is null) {
+            return;
+        }
+
+        await _routeSync.StartAsync();
+        if (_routePath == "/") {
+            await _routeSync.Replace("/missions/list/all");
+            _routePath = "/missions/list/all";
+            ApplyRoute();
+        }
     }
 
     private void SelectView(LedgerView view) {
@@ -72,13 +89,12 @@
     }
 
     private void ApplyRoute() {
-        var path = "/" + Nav.ToBaseRelativePath(Nav.Uri).Split('?', '#')[0].Trim('/').ToLowerInvariant();
-        if (path == "/") {
-            _routeSync?.Replace("/missions/list/all");
+        if (_routePath == "/") {
             return;
         }
 
-        if (RouteTarget(path) is not { } target) {
+        if (RouteTarget(_routePath) is not { } target) {
+            Nav.NavigateTo(_routePath, replace: true);
             return;
         }
 
@@ -272,31 +288,40 @@
     }
 
     private void OnShellRouteChanged() {
-        if (_applyingRoute) {
+        if (_applyingRoute || _routeSync is null) {
             return;
         }
 
-        _routeSync?.Push(CurrentPath());
+        _routePath = CurrentPath();
+        _ = _routeSync.Push(_routePath);
     }
 
     private void OnShipsRouteChanged() {
-        if (_applyingRoute) {
+        if (_applyingRoute || _routeSync is null) {
             return;
         }
 
-        _routeSync?.Replace(CurrentPath());
+        _routePath = CurrentPath();
+        _ = _routeSync.Replace(_routePath);
     }
 
     private void OnRouteChanged() {
+        if (_routeSync is not null) {
+            _routePath = "/" + string.Join('/', _routeSync.Segments).ToLowerInvariant();
+        }
+
         ApplyRoute();
         InvokeAsync(StateHasChanged);
     }
 
-    public void Dispose() {
+    public async ValueTask DisposeAsync() {
         Shell.Changed -= OnShellChanged;
         Shell.Changed -= OnShellRouteChanged;
         Ships.Changed -= OnShipsRouteChanged;
-        _routeSync?.Dispose();
+        if (_routeSync is not null) {
+            _routeSync.Changed -= OnRouteChanged;
+            await _routeSync.DisposeAsync();
+        }
     }
 
 }

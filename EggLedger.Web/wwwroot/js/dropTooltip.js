@@ -31,7 +31,7 @@
     if (!tip) return;
     const r = tip.getBoundingClientRect();
     if (r.width === 0) return;
-    tip.classList.toggle("tt-below", anchorY - r.height - 14 < 4);
+    tip.classList.toggle("tooltip-below", anchorY - r.height - 14 < 4);
     const rr = tip.getBoundingClientRect();
     let delta = 0;
     if (rr.left < 4) delta = 4 - rr.left;

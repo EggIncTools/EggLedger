@@ -5,14 +5,40 @@
     <IsPackable>true</IsPackable>
     <PackageId>EggLedger.Domain</PackageId>
     <Version>0.1.0-local.1</Version>
+    <EggIncProtoGenDir>$(BaseIntermediateOutputPath)protogen/</EggIncProtoGenDir>
+    <EggIncProtoGenPath>$(EggIncProtoGenDir)ei.cs</EggIncProtoGenPath>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="protobuf-net" />
+    <PackageReference Include="EggIncognito.Protos" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(EggIncProtoPath)' != ''">
+    <Compile Remove="Generated/ei.cs" />
+    <Compile Include="$(EggIncProtoGenPath)" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Resources\**\*" />
   </ItemGroup>
+
+  <UsingTask TaskName="QualifyEiTypeRefs" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <FilePath Required="true" ParameterType="System.String" />
+    </ParameterGroup>
+    <Task>
+      <Code Type="Fragment" Language="cs">
+        var text = System.IO.File.ReadAllText(FilePath);
+        System.IO.File.WriteAllText(FilePath, text.Replace("(MissionInfo.Spaceship", "(global::Ei.MissionInfo.Spaceship").Replace(" MissionInfo.Spaceship", " global::Ei.MissionInfo.Spaceship"));
+      </Code>
+    </Task>
+  </UsingTask>
+
+  <Target Name="GenerateEiProto" BeforeTargets="CoreCompile" Condition="'$(EggIncProtoPath)' != ''" Inputs="$(EggIncProtoPath)" Outputs="$(EggIncProtoGenPath)">
+    <MakeDir Directories="$(EggIncProtoGenDir)" />
+    <Exec Command="dotnet tool run protogen --proto_path=&quot;$([System.IO.Path]::GetDirectoryName('$(EggIncProtoPath)'))&quot; ei.proto --csharp_out=&quot;$(EggIncProtoGenDir)&quot;" WorkingDirectory="$(MSBuildProjectDirectory)" />
+    <QualifyEiTypeRefs FilePath="$(EggIncProtoGenPath)" />
+  </Target>
 
 </Project>

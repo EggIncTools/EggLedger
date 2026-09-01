@@ -65,7 +65,7 @@
         </button>
         @if (_widgetsOpen && State.AccountId is { } accountId) {
             <div class="settings-section-body">
-                <PinnedReportsStrip AccountId="accountId" View="PinnedReportViews.Missions"/>
+                <PinnedReportsStrip AccountId="@accountId" View="@PinnedReportViews.Missions"/>
             </div>
         }
     </div>

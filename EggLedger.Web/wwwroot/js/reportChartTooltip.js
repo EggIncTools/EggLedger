@@ -8,7 +8,7 @@
   function ensure() {
     if (el) return el;
     el = document.createElement("div");
-    el.className = "tooltip-floating report-tooltip";
+    el.className = "tooltip-floating tooltip-toggle report-tooltip";
     el.style.display = "none";
     document.body.appendChild(el);
     return el;
@@ -21,7 +21,7 @@
   function place(box, x, y) {
     const half = box.offsetWidth / 2 + 6;
     x = Math.min(Math.max(x, half), window.innerWidth - half);
-    box.classList.toggle("tt-below", y - box.offsetHeight - 14 < 4);
+    box.classList.toggle("tooltip-below", y - box.offsetHeight - 14 < 4);
     box.style.left = x + "px";
     box.style.top = y + "px";
   }
@@ -43,7 +43,7 @@
       clearTimeout(hideTimer);
       hideTimer = null;
     }
-    box.classList.toggle("tt-invalid", t.classList.contains("filter-incomplete-icon"));
+    box.classList.toggle("tooltip-err", t.classList.contains("filter-incomplete-icon"));
     const lines = (t.dataset.tt || "").split("\n");
     const overrides = lineClassOverrides(t);
     box.innerHTML = "";
@@ -55,12 +55,12 @@
     });
     box.style.display = "block";
     place(box, x, y);
-    requestAnimationFrame(function () { box.classList.add("tt-on"); });
+    requestAnimationFrame(function () { box.classList.add("show"); });
   }
 
   function hide() {
     if (!el) return;
-    el.classList.remove("tt-on");
+    el.classList.remove("show");
     if (hideTimer) clearTimeout(hideTimer);
     hideTimer = setTimeout(function () {
       if (el) el.style.display = "none";
