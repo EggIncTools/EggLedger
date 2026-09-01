@@ -2,6 +2,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using EggIdentity.Styles;
+using EggIdentity.Styles.Theming;
 using EggLedger.CssBuild;
 using MonorailCss;
 using MonorailCss.Parser.SourceCss;
@@ -45,19 +46,67 @@ if (applyGuardViolation is { } violation) {
     return 1;
 }
 
+var registry = LedgerPalette.BuildRegistry();
+foreach (var (tokenName, _) in LedgerPalette.ComponentColors.Concat(LedgerPalette.AppColors)) {
+    if (!registry.IsKnown(tokenName) || registry.Canonicalize(tokenName) != tokenName) {
+        Console.Error.WriteLine($"Palette token '{tokenName}' failed the theme token registry round-trip.");
+        return 1;
+    }
+}
+
+var themeHeaderIndex = rawSourceText.IndexOf("@theme {", StringComparison.Ordinal);
+if (themeHeaderIndex < 0) {
+    Console.Error.WriteLine($"CSS source has no @theme block: {cssSourcePath}");
+    return 1;
+}
+var themeBraceIndex = rawSourceText.IndexOf('{', themeHeaderIndex);
+var themeCloseIndex = FindMatchingBrace(rawSourceText, themeBraceIndex);
+var themeBody = rawSourceText.Substring(themeBraceIndex + 1, themeCloseIndex - themeBraceIndex - 1);
+if (themeBody.Contains("--color-", StringComparison.Ordinal)) {
+    Console.Error.WriteLine($"CSS build drift guard failed: {cssSourcePath} still defines --color- tokens in its @theme block.");
+    Console.Error.WriteLine("Color tokens live in EggLedger.CssBuild/LedgerPalette.cs; remove them from the CSS file.");
+    return 1;
+}
+
+var contrastColors = new Dictionary<string, ThemeColor>();
+foreach (var contrastName in LedgerPalette.ContrastBaseTokens.Concat(LedgerPalette.StatusTokens)) {
+    var contrastValue = LedgerPalette.ComponentColors.First(c => c.Name == contrastName).Value;
+    if (ThemeColor.FromHex(contrastValue) is not { } themeColor) {
+        Console.Error.WriteLine($"Palette token '{contrastName}' value '{contrastValue}' is not parseable hex for contrast validation.");
+        return 1;
+    }
+    contrastColors[contrastName] = themeColor;
+}
+var contrastResult = ThemeContrast.Validate(contrastColors, ThemeChroma.None, LedgerPalette.StatusTokens);
+if (!contrastResult.Passes) {
+    foreach (var contrastFailure in contrastResult.Failures) {
+        Console.WriteLine($"[contrast warning] {contrastFailure.Check}: {contrastFailure.A} vs {contrastFailure.B}, measured {contrastFailure.Measured:0.###}, required {contrastFailure.Required:0.###}");
+    }
+}
+
+var newline = rawSourceText.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
+var colorDeclarations = new StringBuilder();
+foreach (var (colorName, colorValue) in LedgerPalette.ComponentColors.Concat(LedgerPalette.AppColors)) {
+    colorDeclarations.Append("  --color-").Append(colorName).Append(": ").Append(colorValue).Append(';').Append(newline);
+}
+var splicedText = rawSourceText
+    .Remove(themeHeaderIndex, "@theme {".Length)
+    .Insert(themeHeaderIndex, "@theme {" + newline + colorDeclarations);
+
 Console.WriteLine($"Scanning {contentFiles.Count} content files for utility/component class tokens...");
 var candidates = ContentScanner.Scan(contentFiles);
 candidates.UnionWith(ContentSafelist.Tokens);
 Console.WriteLine($"Found {candidates.Count} distinct candidate tokens.");
 
 var processor = new CssSourceProcessor(message => Console.WriteLine($"[monorail] {message}"));
-var sourceResult = processor.ProcessFile(cssSourcePath, null);
+var sourceResult = processor.ProcessSource(splicedText, cssSourcePath, null);
 
 var mergedApplies = ComponentClasses.All.SetItems(sourceResult.Settings.Applies);
 var settings = sourceResult.Settings with { Applies = mergedApplies };
 
 var framework = new CssFramework(settings);
 var compiledCss = framework.Process(candidates);
+File.WriteAllText(Path.Combine(Path.GetTempPath(), "monorail-dump-ledger.css"), compiledCss);
 
 var strippedRawCss = StripApplyDirectives(sourceResult.RawCss);
 

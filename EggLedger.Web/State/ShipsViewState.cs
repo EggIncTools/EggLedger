@@ -208,7 +208,7 @@ public sealed class ShipsViewState(
     private static DropMatch? CountableDrop(MissionFilterBar.LegacyFilter filter) {
         foreach (var fc in filter.And) {
             var typed = FilterCodec.FromLegacyCondition(fc);
-            if (typed is { Field: FilterField.Drops, Operator: FilterOperator.Contains, Value: FilterValue.Drop d }) {
+            if (typed is { Field: FilterField.Drops, Operator: FilterOperator.Contains, Value: DropFilterValue d }) {
                 return d.Match;
             }
         }

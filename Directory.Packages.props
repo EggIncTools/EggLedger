@@ -15,6 +15,7 @@
     <PackageVersion Include="EggIdentity.Contract" Version="2.2.8" />
     <PackageVersion Include="EggIdentity.Db" Version="2.2.8" />
     <PackageVersion Include="EggIdentity.Fallback" Version="2.2.8" />
+    <PackageVersion Include="EggIdentity.Filtering" Version="2.2.8" />
     <PackageVersion Include="EggIdentity.Metrics" Version="2.2.8" />
     <PackageVersion Include="EggIdentity.Metrics.AdminUi" Version="2.2.8" />
     <PackageVersion Include="EggIdentity.Styles" Version="2.2.8" />

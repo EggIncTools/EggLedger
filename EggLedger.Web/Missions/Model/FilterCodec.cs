@@ -54,7 +54,7 @@ public static class FilterCodec {
 
     private static Condition DropCond(WebCondition c) {
         var op = c.Op == "dnc" ? FilterOperator.NotContains : FilterOperator.Contains;
-        return new Condition(FilterField.Drops, op, new FilterValue.Drop(DecodeDropGlob(c.Val)));
+        return new Condition(FilterField.Drops, op, new DropFilterValue(DecodeDropGlob(c.Val)));
     }
 
     private static FilterOperator BoolOp(string val) => val == "false" ? FilterOperator.IsFalse : FilterOperator.IsTrue;

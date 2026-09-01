@@ -15,6 +15,7 @@ public sealed class MissionFilterMatcher {
 
     private readonly Dictionary<int, PossibleMission> _shipConfigs;
     private readonly Dictionary<int, Dictionary<int, DurationConfig>> _durByShip;
+    private readonly FilterEvaluator<DatabaseMission, FilterField> _evaluator;
 
     public MissionFilterMatcher(
         IReadOnlyList<PossibleMission> durationConfigs,
@@ -36,122 +37,36 @@ public sealed class MissionFilterMatcher {
             }
             _durByShip[ship] = durs;
         }
+
+        _evaluator = new FilterEvaluator<DatabaseMission, FilterField>()
+            .RegisterEnum(FilterField.Ship, m => EnumCode(m.Ship))
+            .RegisterEnum(FilterField.DurationType, m => EnumCode(m.DurationType))
+            .RegisterEnum(FilterField.MissionType, m => m.MissionType)
+            .RegisterEnum(FilterField.Target, m => m.TargetInt)
+            .RegisterNumber(FilterField.Level, m => m.Level)
+            .RegisterNumber(FilterField.Capacity, m => m.Capacity)
+            .RegisterDay(FilterField.LaunchDate, m => DateOnly.FromDateTime(LedgerDate(m.LaunchDT, _timeZone)))
+            .RegisterDay(FilterField.ReturnDate, m => DateOnly.FromDateTime(LedgerDate(m.ReturnDT, _timeZone)))
+            .RegisterFlag(FilterField.DubCap, m => m.IsDubCap)
+            .RegisterFlag(FilterField.BuggedCap, m => m.IsBuggedCap)
+            .RegisterAsync(FilterField.Drops, (m, c) => MatchesDropAsync(m, c.Operator, DropOf(c.Value)));
     }
 
     public static DateTime LedgerDate(long timestampSeconds, TimeZoneInfo timeZone) =>
         TimeZoneInfo.ConvertTimeFromUtc(DateTimeOffset.FromUnixTimeSeconds(timestampSeconds).UtcDateTime, timeZone);
 
 
-    public async Task<bool> MatchesAsync(DatabaseMission mission, MissionFilter filter) {
-        if (filter.IsEmpty) {
-            return true;
-        }
-        foreach (var group in filter.Groups) {
-            if (await GroupMatchesAsync(mission, group).ConfigureAwait(false)) {
-                return true;
-            }
-        }
-        return false;
-    }
+    public Task<bool> MatchesAsync(DatabaseMission mission, MissionFilter filter) =>
+        _evaluator.MatchesAsync(mission, filter);
 
-    private async Task<bool> GroupMatchesAsync(DatabaseMission mission, FilterGroup group) {
-        if (group.Conditions.Count == 0) {
-            return true;
-        }
-
-        foreach (var c in group.Conditions) {
-            if (c.Field != FilterField.Drops && !MatchesScalar(mission, c)) {
-                return false;
-            }
-        }
-        foreach (var c in group.Conditions) {
-            if (c.Field == FilterField.Drops && !await MatchesDropAsync(mission, c.Operator, DropOf(c.Value)).ConfigureAwait(false)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public async Task<bool> MatchesAsync(DatabaseMission mission, Condition condition) {
-        if (condition.Field == FilterField.Drops) {
-            return await MatchesDropAsync(mission, condition.Operator, DropOf(condition.Value)).ConfigureAwait(false);
-        }
-        return MatchesScalar(mission, condition);
-    }
+    public Task<bool> MatchesAsync(DatabaseMission mission, Condition condition) =>
+        _evaluator.MatchesAsync(mission, new MissionFilter([new FilterGroup([condition])]));
 
     private static DropMatch DropOf(FilterValue v) =>
-        v is FilterValue.Drop d ? d.Match : DropMatch.Any;
-
-    private bool MatchesScalar(DatabaseMission mission, Condition c) {
-        return c.Field switch {
-            FilterField.Ship => EnumMatch(EnumCode(mission.Ship), c),
-            FilterField.DurationType => EnumMatch(EnumCode(mission.DurationType), c),
-            FilterField.MissionType => EnumMatch(mission.MissionType, c),
-            FilterField.Target => EnumMatch(mission.TargetInt, c),
-            FilterField.Level => NumberMatch(mission.Level, c),
-            FilterField.Capacity => NumberMatch(mission.Capacity, c),
-            FilterField.LaunchDate => DateMatch(DateOnly.FromDateTime(LedgerDate(mission.LaunchDT, _timeZone)), c),
-            FilterField.ReturnDate => DateMatch(DateOnly.FromDateTime(LedgerDate(mission.ReturnDT, _timeZone)), c),
-            FilterField.DubCap => BoolMatch(mission.IsDubCap, c.Operator),
-            FilterField.BuggedCap => BoolMatch(mission.IsBuggedCap, c.Operator),
-            _ => true,
-        };
-    }
+        v is DropFilterValue d ? d.Match : DropMatch.Any;
 
     private static int? EnumCode<T>(T? e) where T : struct, Enum =>
         e is null ? null : Convert.ToInt32(e.Value, CultureInfo.InvariantCulture);
-
-
-    private static bool EnumMatch(int? missionValue, Condition c) {
-        if (c.Value is not FilterValue.EnumValue e) {
-            return false;
-        }
-        return c.Operator switch {
-            FilterOperator.Equals => missionValue == e.Code,
-            FilterOperator.NotEquals => missionValue != e.Code,
-            FilterOperator.Greater => missionValue is { } mv && mv > e.Code,
-            FilterOperator.Less => missionValue is { } mv && mv < e.Code,
-            FilterOperator.GreaterOrEqual => missionValue is { } mv && mv >= e.Code,
-            FilterOperator.LessOrEqual => missionValue is { } mv && mv <= e.Code,
-            _ => false,
-        };
-    }
-
-    private static bool NumberMatch(double missionValue, Condition c) {
-        if (c.Value is not FilterValue.Number n) {
-            return false;
-        }
-        return c.Operator switch {
-            FilterOperator.Equals => missionValue == n.N,
-            FilterOperator.NotEquals => missionValue != n.N,
-            FilterOperator.Greater => missionValue > n.N,
-            FilterOperator.Less => missionValue < n.N,
-            FilterOperator.GreaterOrEqual => missionValue >= n.N,
-            FilterOperator.LessOrEqual => missionValue <= n.N,
-            _ => false,
-        };
-    }
-
-    private static bool DateMatch(DateOnly missionDay, Condition c) {
-        if (c.Value is not FilterValue.Day d) {
-            return false;
-        }
-        return c.Operator switch {
-            FilterOperator.Equals => missionDay == d.Date,
-            FilterOperator.NotEquals => missionDay != d.Date,
-            FilterOperator.Greater => missionDay > d.Date,
-            FilterOperator.Less => missionDay < d.Date,
-            FilterOperator.GreaterOrEqual => missionDay >= d.Date,
-            FilterOperator.LessOrEqual => missionDay <= d.Date,
-            _ => false,
-        };
-    }
-
-    private static bool BoolMatch(bool missionValue, FilterOperator op) => op switch {
-        FilterOperator.IsTrue => missionValue,
-        FilterOperator.IsFalse => !missionValue,
-        _ => false,
-    };
 
     private static bool DropSatisfies(DropMatch m, MissionDrop drop) {
         if (m.Name is { } name && name != drop.Id) {

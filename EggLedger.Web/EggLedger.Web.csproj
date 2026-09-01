@@ -7,6 +7,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
     <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" />
+    <PackageReference Include="EggIdentity.Filtering" />
     <PackageReference Include="EggIdentity.Styles" />
     <PackageReference Include="EggIdentity.UI" />
     <PackageReference Include="Markdig" />
