@@ -244,21 +244,21 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 0.25rem;
-  padding: 0 0.35rem 0 1.1rem;
+  gap: 0.35rem;
+  padding: 0 0.35rem 0 1.6rem;
   overflow: hidden;
   cursor: default;
 }
 
 .timeline-event-icon {
-  width: 0.7rem;
-  height: 0.7rem;
+  width: 1.2rem;
+  height: 1.2rem;
   flex-shrink: 0;
   object-fit: contain;
 }
 
 .timeline-event-label {
-  font-size: 0.6rem;
+  font-size: 0.8rem;
   font-weight: 600;
   line-height: 1;
   color: #fff;
@@ -290,6 +290,16 @@
 .timeline-view-month {
   --bar-h: 1.35rem;
   --bubble-h: 2.1rem;
+}
+
+.timeline-view-month .cal-strip {
+  --strip-top: -20%;
+  --strip-h: 140%;
+  --strip-slot-h: calc(100% / 7);
+}
+
+.timeline-view-month .cal-period-context {
+  opacity: 1;
 }
 
 .timeline-dur-0 {

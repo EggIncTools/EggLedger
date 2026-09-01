@@ -124,17 +124,17 @@
 
     private string ZoomClass => _zoom.ToString().ToLowerInvariant();
 
-    private int VisibleSlots => 1;
+    private int VisibleSlots => _zoom == TimelineZoom.Month ? 5 : 1;
 
     private int StripSlots => VisibleSlots + 2;
 
-    private int CenterSlot => StripSlots / 2;
+    private int CenterSlot => _zoom == TimelineZoom.Month ? StripSlots - 2 : StripSlots / 2;
 
     private IReadOnlyList<TimelineTick> CurrentHourTicks => _centerHourTicks;
 
     protected override void OnInitialized() {
         _laneGroups = [
-            new LaneGroupDef<object>(EventItemTemplate, LaneMinRem: 1.15, LaneGapRem: 0.15, HeaderRem: 0),
+            new LaneGroupDef<object>(EventItemTemplate, LaneMinRem: 2.3, LaneGapRem: 0.15, HeaderRem: 0),
             new LaneGroupDef<object>(MissionItemTemplate, LaneMinRem: 1.65, LaneGapRem: 0.15, HeaderRem: 0),
         ];
 
@@ -189,14 +189,15 @@
             .ToList();
 
         var now = DateTimeOffset.UtcNow;
-        _flightSlices = TimelineFlightRatio.ComputeByFarm(_merged, _visibleStart, _visibleEnd, now);
-        _occupancyHours = TimelineFlightRatio.OccupancyHours(_merged, _visibleStart, _visibleEnd, now);
+        var statsStart = _zoom == TimelineZoom.Month ? _visibleStart.AddDays(-7 * (VisibleSlots - 1)) : _visibleStart;
+        _flightSlices = TimelineFlightRatio.ComputeByFarm(_merged, statsStart, _visibleEnd, now);
+        _occupancyHours = TimelineFlightRatio.OccupancyHours(_merged, statsStart, _visibleEnd, now);
 
         if (HasActiveFilter) {
             var allDbIds = new HashSet<string>(AllMissions.Select(m => m.MissiondId), StringComparer.Ordinal);
             var allInFlight = InFlightMissions.Where(m => !allDbIds.Contains(m.MissiondId)).ToList();
             var mergedAll = AllMissions.Concat(allInFlight).ToList();
-            _flightSlicesAll = TimelineFlightRatio.ComputeByFarm(mergedAll, _visibleStart, _visibleEnd, now);
+            _flightSlicesAll = TimelineFlightRatio.ComputeByFarm(mergedAll, statsStart, _visibleEnd, now);
         } else {
             _flightSlicesAll = null;
         }
@@ -208,7 +209,7 @@
             windows.Insert(0, TimelineWindow.Compute(windows[0].Start.AddHours(-1), _zoom, tz));
         }
 
-        for (var i = 0; i < CenterSlot; i++) {
+        for (var i = 0; i < StripSlots - 1 - CenterSlot; i++) {
             windows.Add(TimelineWindow.Compute(windows[^1].End.AddHours(1), _zoom, tz));
         }
 
@@ -220,7 +221,7 @@
     }
 
     private PeriodSlot<object> BuildPeriod(DateTimeOffset start, DateTimeOffset end, bool isCenter, TimeZoneInfo tz, DateTimeOffset now) {
-        int? primaryMonth = _zoom == TimelineZoom.Month ? TimeZoneInfo.ConvertTime(start, tz).Month : null;
+        int? primaryMonth = _zoom == TimelineZoom.Month ? TimeZoneInfo.ConvertTime(_center, tz).Month : null;
         var timelineRows = TimelineRows.Build(_zoom, start, end);
         if (isCenter && _zoom == TimelineZoom.Day && timelineRows.Count > 0) {
             _centerHourTicks = TimelineTicks.HourTicks(timelineRows[0].Start, timelineRows[0].End, tz);
@@ -306,7 +307,7 @@
             var start = TimeZoneInfo.ConvertTime(_visibleStart, tz);
             var end = TimeZoneInfo.ConvertTime(_visibleEnd, tz).AddSeconds(-1);
             return _zoom switch {
-                TimelineZoom.Month => start.ToString("MMMM yyyy", CultureInfo.InvariantCulture),
+                TimelineZoom.Month => TimeZoneInfo.ConvertTime(_center, tz).ToString("MMMM yyyy", CultureInfo.InvariantCulture),
                 TimelineZoom.Week => $"{start.ToString("MMM d", CultureInfo.InvariantCulture)} - {end.ToString("MMM d, yyyy", CultureInfo.InvariantCulture)}",
                 _ => start.ToString("MMM d, yyyy", CultureInfo.InvariantCulture)
             };

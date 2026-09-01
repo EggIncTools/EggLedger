@@ -61,13 +61,15 @@ public sealed class TimelineWindowTests {
     }
 
     [Fact]
-    public void Month_SpansTheCalendarMonth() {
+    public void Month_UsesWeekWindowForRollingWeekStrip() {
         var center = new DateTimeOffset(2026, 8, 25, 12, 0, 0, TimeSpan.Zero);
 
         var (start, end) = TimelineWindow.Compute(center, TimelineZoom.Month, Utc);
+        var (weekStart, weekEnd) = TimelineWindow.Compute(center, TimelineZoom.Week, Utc);
 
-        Assert.Equal(new DateTimeOffset(2026, 8, 1, 0, 0, 0, TimeSpan.Zero), start);
-        Assert.Equal(new DateTimeOffset(2026, 9, 1, 0, 0, 0, TimeSpan.Zero), end);
+        Assert.Equal(weekStart, start);
+        Assert.Equal(weekEnd, end);
+        Assert.Equal(TimeSpan.FromDays(7), end - start);
     }
 
 }
