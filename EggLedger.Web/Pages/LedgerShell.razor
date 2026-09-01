@@ -58,6 +58,7 @@
     public string? Path { get; set; }
 
     private PathRouteSync? _routeSync;
+    private bool _routeSyncStarted;
     private bool _applyingRoute;
     private string _routePath = "/";
 
@@ -77,6 +78,7 @@
         }
 
         await _routeSync.StartAsync();
+        _routeSyncStarted = true;
         if (_routePath == "/") {
             await _routeSync.Replace("/missions/list/all");
             _routePath = "/missions/list/all";
@@ -320,7 +322,13 @@
         Ships.Changed -= OnShipsRouteChanged;
         if (_routeSync is not null) {
             _routeSync.Changed -= OnRouteChanged;
-            await _routeSync.DisposeAsync();
+            if (_routeSyncStarted) {
+                try {
+                    await _routeSync.DisposeAsync();
+                } catch (Microsoft.JSInterop.JSDisconnectedException) {
+                } catch (InvalidOperationException) {
+                }
+            }
         }
     }
 
