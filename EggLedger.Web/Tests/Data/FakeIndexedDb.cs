@@ -31,6 +31,7 @@ public sealed class FakeIndexedDb : IIndexedDb {
         PinnedReportRow p => p.Id,
         SettingRow s => s.Key,
         BackupRow b => b.PlayerId,
+        MissionRow m => m.PlayerId + ":" + m.MissionId,
         InFlightMissionRow f => f.PlayerId + ":" + f.MissionId,
         ArtifactDropRow { Id: { } id } => id.ToString(),
         FuelRow { Id: { } id } => id.ToString(),

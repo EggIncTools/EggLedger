@@ -27,7 +27,8 @@ public static class WebServiceRegistration {
             logger: sp.GetService<ILogger<IndexedDbMissionStore>>()));
         services.AddScoped<IMissionStore>(sp => sp.GetRequiredService<IndexedDbMissionStore>());
         services.AddScoped<IReportSourceCache>(sp => {
-            var cache = new ReportSourceCache(IndexedDbReportSource.Loader(sp.GetRequiredService<IIndexedDb>()));
+            var cache = new ReportSourceCache(IndexedDbReportSource.Loader(
+                sp.GetRequiredService<IIndexedDb>(), sp.GetRequiredService<IMissionStore>()));
             cache.AttachHub(sp.GetRequiredService<LedgerDataHub>());
             return cache;
         });

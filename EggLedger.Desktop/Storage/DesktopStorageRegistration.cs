@@ -78,7 +78,8 @@ public static class DesktopStorageRegistration {
         services.RemoveAll<IReportRunner>();
         services.RemoveAll<IReportSourceCache>();
         services.AddScoped<IReportSourceCache>(sp => {
-            var cache = new ReportSourceCache(SqliteReportSource.Loader(sp.GetRequiredService<SqliteMissionDb>()));
+            var cache = new ReportSourceCache(SqliteReportSource.Loader(
+                sp.GetRequiredService<SqliteMissionDb>(), sp.GetRequiredService<IMissionStore>()));
             cache.AttachHub(sp.GetRequiredService<LedgerDataHub>());
             return cache;
         });

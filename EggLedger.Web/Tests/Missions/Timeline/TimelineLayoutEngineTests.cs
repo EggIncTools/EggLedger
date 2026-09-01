@@ -80,6 +80,20 @@ public sealed class TimelineLayoutEngineTests {
     }
 
     [Fact]
+    public void Layout_ConcurrentContinuationsBelowMinWidthFloorGetSeparateLanes() {
+        var missions = new[] {
+            M("a", WindowStart.AddHours(-10), WindowStart.AddMinutes(10)),
+            M("b", WindowStart.AddHours(-10), WindowStart.AddMinutes(20)),
+            M("c", WindowStart.AddHours(-10), WindowStart.AddMinutes(40)),
+        };
+
+        var bars = TimelineLayoutEngine.Layout(missions, WindowStart, WindowEnd, WindowStart, minWidthPercent: 5);
+
+        var lanes = bars.Select(b => b.Lane).OrderBy(l => l).ToList();
+        Assert.Equal([0, 1, 2], lanes);
+    }
+
+    [Fact]
     public void Layout_LaneIsReusedOnceItsOccupantHasEnded() {
         var missions = new[] {
             M("a", WindowStart.AddHours(1), WindowStart.AddHours(2)),

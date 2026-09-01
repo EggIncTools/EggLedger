@@ -1,3 +1,4 @@
+using EggLedger.Domain.MissionQuery;
 using EggLedger.Domain.Reports;
 using EggLedger.Web.State;
 
@@ -136,9 +137,16 @@ public sealed class ReportSourceCache : IReportSourceCache, IDisposable {
 }
 
 public static class IndexedDbReportSource {
-    public static Func<string, Task<ReportSource>> Loader(IIndexedDb db) {
+    public static Func<string, Task<ReportSource>> Loader(IIndexedDb db, IMissionStore missionStore) {
         ArgumentNullException.ThrowIfNull(db);
-        return accountId => LoadAsync(db, accountId);
+        ArgumentNullException.ThrowIfNull(missionStore);
+        return accountId => LoadAsync(db, missionStore, accountId);
+    }
+
+    public static async Task<ReportSource> LoadAsync(IIndexedDb db, IMissionStore missionStore, string accountId) {
+        ArgumentNullException.ThrowIfNull(missionStore);
+        await missionStore.EnsureFilterColsBackfilledAsync(accountId).ConfigureAwait(false);
+        return await LoadAsync(db, accountId).ConfigureAwait(false);
     }
 
     public static async Task<ReportSource> LoadAsync(IIndexedDb db, string accountId) {

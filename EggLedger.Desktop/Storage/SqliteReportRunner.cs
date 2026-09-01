@@ -1,4 +1,5 @@
 using System.Globalization;
+using EggLedger.Domain.MissionQuery;
 using EggLedger.Domain.Reports;
 using EggLedger.Web.Data;
 
@@ -32,9 +33,17 @@ public static class SqliteReportSource {
     private const string FuelSql =
         "SELECT player_id, mission_id, egg_id, amount FROM mission_fuel WHERE player_id = ? ORDER BY id";
 
-    public static Func<string, Task<ReportSource>> Loader(SqliteMissionDb db) {
+    public static Func<string, Task<ReportSource>> Loader(SqliteMissionDb db, IMissionStore missionStore) {
         ArgumentNullException.ThrowIfNull(db);
-        return accountId => Task.Run(() => Load(db, accountId));
+        ArgumentNullException.ThrowIfNull(missionStore);
+        return accountId => LoadAsync(db, missionStore, accountId);
+    }
+
+    public static async Task<ReportSource> LoadAsync(SqliteMissionDb db, IMissionStore missionStore, string accountId) {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(missionStore);
+        await missionStore.EnsureFilterColsBackfilledAsync(accountId).ConfigureAwait(false);
+        return await Task.Run(() => Load(db, accountId)).ConfigureAwait(false);
     }
 
     public static ReportSource Load(SqliteMissionDb db, string accountId) {

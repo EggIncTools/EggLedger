@@ -12,7 +12,7 @@ public sealed class IndexedDbReportRunnerTests {
     }
 
     private static IndexedDbReportRunner Runner(IIndexedDb db) =>
-        new(new ReportSourceCache(IndexedDbReportSource.Loader(db)), new NoWeights());
+        new(new ReportSourceCache(IndexedDbReportSource.Loader(db, new FakeMissionStore())), new NoWeights());
 
     private static MissionRow Mission(string id, int ship, double start) => new() {
         PlayerId = Eid,

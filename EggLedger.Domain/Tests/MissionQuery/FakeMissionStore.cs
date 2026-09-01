@@ -15,6 +15,7 @@ internal sealed class FakeMissionStore : IMissionStore {
     public Dictionary<string, IReadOnlyList<CompleteMissionResponse>?> PlayerCompleteMissions { get; } = [];
     public Dictionary<string, IReadOnlyList<StoredDrop>?> StoredDrops { get; } = [];
     public List<string> BackfillsQueued { get; } = [];
+    public List<string> BackfillsEnsured { get; } = [];
     public List<string> DropsBackfillsQueued { get; } = [];
 
     public Task<IReadOnlyList<string>?> GetCompleteMissionIdsAsync(string playerId) =>
@@ -61,6 +62,11 @@ internal sealed class FakeMissionStore : IMissionStore {
     }
 
     public void QueueFilterColBackfill(string eid) => BackfillsQueued.Add(eid);
+
+    public Task EnsureFilterColsBackfilledAsync(string eid) {
+        BackfillsEnsured.Add(eid);
+        return Task.CompletedTask;
+    }
 
     public void QueueArtifactDropsBackfill(string playerId) => DropsBackfillsQueued.Add(playerId);
 }

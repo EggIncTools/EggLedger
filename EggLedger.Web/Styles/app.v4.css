@@ -341,9 +341,9 @@
 }
 
 .cal-row.cal-row-fixed {
-  flex: 1;
+  flex: 1 0 var(--row-h, 3.05rem);
   height: auto;
-  min-height: 0;
+  min-height: var(--row-h, 3.05rem);
 }
 
 .timeline-event-bar {

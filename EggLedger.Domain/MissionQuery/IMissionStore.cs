@@ -25,6 +25,8 @@ public interface IMissionStore {
 
     void QueueFilterColBackfill(string eid);
 
+    Task EnsureFilterColsBackfilledAsync(string eid);
+
     void QueueArtifactDropsBackfill(string playerId);
 }
 

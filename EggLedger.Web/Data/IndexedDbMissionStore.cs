@@ -161,14 +161,25 @@ public sealed class IndexedDbMissionStore : IMissionStore {
         }
     }
 
-    private readonly HashSet<string> _backfilling = [];
-
-
-
+    private readonly Lock _backfillGate = new();
+    private readonly Dictionary<string, Task> _backfillTasks = new(StringComparer.Ordinal);
 
     public void QueueFilterColBackfill(string eid) {
-        if (_backfilling.Add(eid))
-            _ = BackfillFilterColsAsync(eid);
+        _ = GetOrStartFilterColBackfillAsync(eid);
+    }
+
+    public Task EnsureFilterColsBackfilledAsync(string eid) =>
+        GetOrStartFilterColBackfillAsync(eid);
+
+    private Task GetOrStartFilterColBackfillAsync(string eid) {
+        lock (_backfillGate) {
+            if (_backfillTasks.TryGetValue(eid, out var existing))
+                return existing;
+
+            var task = BackfillFilterColsAsync(eid);
+            _backfillTasks[eid] = task;
+            return task;
+        }
     }
 
     private async Task BackfillFilterColsAsync(string eid) {
@@ -186,7 +197,9 @@ public sealed class IndexedDbMissionStore : IMissionStore {
                 }
             }
         } finally {
-            _backfilling.Remove(eid);
+            lock (_backfillGate) {
+                _backfillTasks.Remove(eid);
+            }
         }
     }
 

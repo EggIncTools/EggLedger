@@ -91,6 +91,57 @@ public sealed class IndexedDbMissionStoreTests {
     }
 
     [Fact]
+    public async Task EnsureFilterColsBackfilledAsync_ResolvesShipMinusOneRowsFromDecodedPayload() {
+        var (store, db) = Make();
+        var resp = new CompleteMissionResponse {
+            Success = true,
+            Info = new MissionInfo {
+                Identifier = "m1",
+                Ship = MissionInfo.Spaceship.Henerprise,
+                duration_type = MissionInfo.DurationType.Long,
+            },
+        };
+        db.Seed("mission", new MissionRow {
+            PlayerId = "EI1",
+            MissionId = "m1",
+            StartTimestamp = 100,
+            Ship = -1,
+            DurationType = -1,
+            CompletePayload = PackPayload(resp),
+        });
+
+        await store.EnsureFilterColsBackfilledAsync("EI1");
+
+        var rows = await db.GetAllByIndexAsync<MissionRow>("mission", "player_id", "EI1");
+        var row = Assert.Single(rows);
+        Assert.Equal((int)MissionInfo.Spaceship.Henerprise, row.Ship);
+        Assert.Equal((int)MissionInfo.DurationType.Long, row.DurationType);
+    }
+
+    [Fact]
+    public async Task EnsureFilterColsBackfilledAsync_ConcurrentCalls_ShareOneRun() {
+        var (store, db) = Make();
+        db.Seed("mission", new MissionRow {
+            PlayerId = "EI1",
+            MissionId = "m1",
+            StartTimestamp = 100,
+            Ship = -1,
+            DurationType = -1,
+            CompletePayload = PackPayload(new CompleteMissionResponse {
+                Success = true,
+                Info = new MissionInfo { Identifier = "m1", Ship = MissionInfo.Spaceship.ChickenOne },
+            }),
+        });
+
+        var first = store.EnsureFilterColsBackfilledAsync("EI1");
+        var second = store.EnsureFilterColsBackfilledAsync("EI1");
+        await Task.WhenAll(first, second);
+
+        var rows = await db.GetAllByIndexAsync<MissionRow>("mission", "player_id", "EI1");
+        Assert.Single(rows);
+    }
+
+    [Fact]
     public async Task GetCompleteMissionAsync_DecodesGzippedAuthenticatedPayload() {
         var (store, db) = Make();
         var resp = new CompleteMissionResponse {

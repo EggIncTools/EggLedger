@@ -309,4 +309,16 @@ public sealed class ReportSourceCacheTests {
         Assert.Equal([1], first.Values);
         Assert.Equal([1], second.Values);
     }
+
+    [Fact]
+    public async Task IndexedDbLoader_WithMissionStore_BackfillsFilterColsBeforeReadingRows() {
+        var db = new FakeIndexedDb();
+        db.Seed(IndexedDbStores.Mission, new MissionRow { PlayerId = "EI1", MissionId = "m1", Ship = -1 });
+        var missionStore = new FakeMissionStore();
+
+        var source = await IndexedDbReportSource.LoadAsync(db, missionStore, "EI1");
+
+        Assert.Equal(["EI1"], missionStore.BackfillsEnsured);
+        Assert.Single(source.Missions);
+    }
 }
