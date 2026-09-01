@@ -2,6 +2,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY global.json nuget.config Directory.Build.props Directory.Packages.props .editorconfig EggLedger.slnx ./
+COPY .config/ .config/
 COPY --parents EggLedger.Domain/*.csproj EggLedger.Web/*.csproj EggLedger.Web.Server/*.csproj EggLedger.Desktop/*.csproj EggLedger.CssBuild/*.csproj ./
 COPY EggLedger.Web/Styles/ EggLedger.Web/Styles/
 RUN --mount=type=secret,id=github_token \
