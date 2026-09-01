@@ -37,6 +37,7 @@
 
   <Target Name="GenerateEiProto" BeforeTargets="CoreCompile" Condition="'$(EggIncProtoPath)' != ''" Inputs="$(EggIncProtoPath)" Outputs="$(EggIncProtoGenPath)">
     <MakeDir Directories="$(EggIncProtoGenDir)" />
+    <Exec Command="dotnet tool restore" WorkingDirectory="$(MSBuildProjectDirectory)" />
     <Exec Command="dotnet tool run protogen --proto_path=&quot;$([System.IO.Path]::GetDirectoryName('$(EggIncProtoPath)'))&quot; ei.proto --csharp_out=&quot;$(EggIncProtoGenDir)&quot;" WorkingDirectory="$(MSBuildProjectDirectory)" />
     <QualifyEiTypeRefs FilePath="$(EggIncProtoGenPath)" />
   </Target>
