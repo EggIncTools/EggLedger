@@ -1,6 +1,5 @@
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using EggIdentity.Styles;
 using EggIdentity.Styles.Theming;
 using EggLedger.CssBuild;
@@ -38,7 +37,7 @@ if (Directory.Exists(serverProjectDir)) {
 }
 
 var rawSourceText = File.ReadAllText(cssSourcePath);
-var applyGuardViolation = FindSemicolonInsideApplyBracket(rawSourceText);
+var applyGuardViolation = CssBuildText.FindSemicolonInsideApplyBracket(rawSourceText);
 if (applyGuardViolation is { } violation) {
     Console.Error.WriteLine($"CSS build guard failed: {cssSourcePath}:{violation.Line} has a ';' inside a bracket value within an @apply body, near: {violation.Snippet}");
     Console.Error.WriteLine("Move that ';' outside the bracket value and rebuild.");
@@ -94,7 +93,7 @@ var splicedText = rawSourceText
     .Insert(themeHeaderIndex, "@theme {" + newline + colorDeclarations);
 
 Console.WriteLine($"Scanning {contentFiles.Count} content files for utility/component class tokens...");
-var candidates = ContentScanner.Scan(contentFiles);
+var candidates = CssBuildText.Scan(contentFiles);
 candidates.UnionWith(ContentSafelist.Tokens);
 Console.WriteLine($"Found {candidates.Count} distinct candidate tokens.");
 
@@ -106,90 +105,16 @@ var settings = sourceResult.Settings with { Applies = mergedApplies };
 
 var framework = new CssFramework(settings);
 var compiledCss = framework.Process(candidates);
-File.WriteAllText(Path.Combine(Path.GetTempPath(), "monorail-dump-ledger.css"), compiledCss);
 
-var strippedRawCss = StripApplyDirectives(sourceResult.RawCss);
+var strippedRawCss = CssBuildText.StripApplyDirectives(sourceResult.RawCss);
 
-var finalCss = UnwrapLayersAndSpliceRaw(compiledCss, strippedRawCss);
+var finalCss = CssBuildText.UnwrapLayersAndSpliceRaw(compiledCss, UnwrapLayerWrappers(strippedRawCss));
 
 Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
 File.WriteAllText(outputPath, finalCss);
 
 Console.WriteLine($"Wrote {finalCss.Length} chars to {outputPath}");
 return 0;
-
-static (int Line, string Snippet)? FindSemicolonInsideApplyBracket(string text) {
-    var searchStart = 0;
-    while (true) {
-        var applyIndex = text.IndexOf("@apply", searchStart, StringComparison.Ordinal);
-        if (applyIndex < 0) {
-            return null;
-        }
-        var depth = 0;
-        var pos = applyIndex + "@apply".Length;
-        while (pos < text.Length) {
-            var c = text[pos];
-            if (c == '[') {
-                depth++;
-            } else if (c == ']') {
-                depth = Math.Max(0, depth - 1);
-            } else if (c == ';') {
-                if (depth > 0) {
-                    var line = 1;
-                    for (var j = 0; j < pos; j++) {
-                        if (text[j] == '\n') {
-                            line++;
-                        }
-                    }
-                    var snippetStart = Math.Max(applyIndex, pos - 40);
-                    var snippet = text.Substring(snippetStart, pos - snippetStart + 1);
-                    return (line, snippet);
-                }
-                break;
-            }
-            pos++;
-        }
-        searchStart = applyIndex + "@apply".Length;
-    }
-}
-
-static string UnwrapLayersAndSpliceRaw(string compiledCss, string rawCss) {
-    var withoutLayerStatement = Regex.Replace(compiledCss, @"^@layer\s+[^;{]+;\s*\n?", "", RegexOptions.Multiline);
-
-    var layers = new List<(string Name, string Content)>();
-    var remainder = new StringBuilder();
-    var i = 0;
-    while (true) {
-        var atIndex = withoutLayerStatement.IndexOf("@layer", i, StringComparison.Ordinal);
-        if (atIndex < 0) {
-            remainder.Append(withoutLayerStatement, i, withoutLayerStatement.Length - i);
-            break;
-        }
-        remainder.Append(withoutLayerStatement, i, atIndex - i);
-        var braceIndex = withoutLayerStatement.IndexOf('{', atIndex);
-        var name = withoutLayerStatement.Substring(atIndex + "@layer".Length, braceIndex - atIndex - "@layer".Length).Trim();
-        var closeIndex = FindMatchingBrace(withoutLayerStatement, braceIndex);
-        layers.Add((name, withoutLayerStatement.Substring(braceIndex + 1, closeIndex - braceIndex - 1)));
-        i = closeIndex + 1;
-    }
-
-    var unwrappedRaw = UnwrapLayerWrappers(rawCss);
-
-    var insertIndex = layers.FindIndex(l => l.Name == "components");
-    insertIndex = insertIndex >= 0 ? insertIndex + 1 : layers.FindIndex(l => l.Name == "utilities");
-    if (insertIndex < 0) {
-        insertIndex = layers.Count;
-    }
-
-    var orderedContents = layers.Select(l => l.Content).ToList();
-    orderedContents.Insert(insertIndex, unwrappedRaw);
-
-    var result = new StringBuilder(remainder.ToString());
-    foreach (var content in orderedContents) {
-        result.Append(content).Append('\n');
-    }
-    return result.ToString();
-}
 
 static string UnwrapLayerWrappers(string css) {
     var result = new StringBuilder();
@@ -225,38 +150,4 @@ static int FindMatchingBrace(string text, int openBraceIndex) {
         }
     }
     throw new InvalidOperationException("Unbalanced braces in CSS while unwrapping @layer.");
-}
-
-static string StripApplyDirectives(string css) {
-    var result = new StringBuilder(css.Length);
-    var i = 0;
-    while (true) {
-        var applyIndex = css.IndexOf("@apply", i, StringComparison.Ordinal);
-        if (applyIndex < 0) {
-            result.Append(css, i, css.Length - i);
-            return result.ToString();
-        }
-        result.Append(css, i, applyIndex - i);
-        var depth = 0;
-        var pos = applyIndex + "@apply".Length;
-        var terminatorFound = false;
-        while (pos < css.Length) {
-            var c = css[pos];
-            if (c == '[') {
-                depth++;
-            } else if (c == ']') {
-                depth = Math.Max(0, depth - 1);
-            } else if (c == ';' && depth == 0) {
-                pos++;
-                terminatorFound = true;
-                break;
-            }
-            pos++;
-        }
-        if (!terminatorFound) {
-            result.Append(css, applyIndex, css.Length - applyIndex);
-            return result.ToString();
-        }
-        i = pos;
-    }
 }
