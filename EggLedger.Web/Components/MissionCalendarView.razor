@@ -251,10 +251,6 @@
         var hourTickPositions = hourTicks.Select(t => t.LeftPercent).ToList();
 
         var eventLanes = ToObjectLanes(GroupLanes(eventBars, b => b.Lane));
-        if (eventLanes.Count == 0) {
-            eventLanes = [Array.Empty<object>()];
-        }
-
         var missionLanes = ToObjectLanes(GroupLanes(bars, b => b.Lane));
         if (missionLanes.Count == 0) {
             missionLanes = [Array.Empty<object>()];
