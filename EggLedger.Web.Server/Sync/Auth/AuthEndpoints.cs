@@ -6,6 +6,8 @@ using System.Text.Json.Serialization;
 using EggIdentity.Auth;
 using EggIdentity.Client;
 using EggIdentity.Contract;
+using EggIdentity.Settings.Store;
+using EggLedger.Web.Server.Settings;
 using EggLedger.Web.Server.Sync;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -29,7 +31,7 @@ public sealed record PollResponse(
     [property: JsonPropertyName("avatarUrl")] string AvatarUrl,
     [property: JsonPropertyName("encryptionKey")] string EncryptionKey);
 
-public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvider dataProtection, IdentityApiClient identity, ILogger<AuthEndpoints> logger, AppConfig cfg, SessionCookieOptions? eggIdentitySession = null) {
+public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvider dataProtection, IdentityApiClient identity, ILogger<AuthEndpoints> logger, AppConfig cfg, SessionCookieOptions? eggIdentitySession = null, SettingsCache? settings = null) {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
     private static readonly string[] ElUserTables = [
@@ -37,6 +39,27 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
     ];
     private readonly IDataProtector _keyProtector = dataProtection.CreateProtector("EggLedger.EncryptionKey");
     private static long Now() => DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+    private async Task<string> PublicBaseUrlAsync(CancellationToken ct) =>
+        await LiveAsync(LedgerSettings.PublicBaseUrl, ct) ?? cfg.PublicBaseUrl;
+
+    private async Task<string> IdentityWidgetUrlAsync(CancellationToken ct) =>
+        await LiveAsync(LedgerSettings.IdentityWidgetUrl, ct)
+        ?? await LiveAsync(LedgerSettings.IdentityApiUrl, ct)
+        ?? cfg.IdentityWidgetUrl;
+
+    private async Task<string?> LiveAsync(string key, CancellationToken ct) {
+        if (settings is null) {
+            return null;
+        }
+        try {
+            var snapshot = await settings.GetAsync(ct);
+            return snapshot.Value(key).Value is { Length: > 0 } value ? value : null;
+        } catch (NpgsqlException ex) {
+            logger.LogWarning(ex, "auth: live settings read failed for {Key}, falling back to startup config", key);
+            return null;
+        }
+    }
 
 
 
@@ -94,8 +117,11 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
         }
 
         var referer = ctx.Request.Headers.Referer.ToString();
-        var returnUrl = string.IsNullOrEmpty(referer) ? cfg.PublicBaseUrl : referer;
-        ctx.Response.Redirect($"{cfg.IdentityWidgetUrl.TrimEnd('/')}/auth/logout?returnUrl={Uri.EscapeDataString(returnUrl)}");
+        var returnUrl = string.IsNullOrEmpty(referer)
+            ? await PublicBaseUrlAsync(ctx.RequestAborted)
+            : referer;
+        var widgetUrl = await IdentityWidgetUrlAsync(ctx.RequestAborted);
+        ctx.Response.Redirect($"{widgetUrl.TrimEnd('/')}/auth/logout?returnUrl={Uri.EscapeDataString(returnUrl)}");
     }
 
 
@@ -248,7 +274,8 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
         cmd.Parameters.AddWithValue(Now() + 600);
         try { await cmd.ExecuteNonQueryAsync(ctx.RequestAborted); } catch (Exception ex) { logger.LogWarning(ex, "auth: failed to seed pending_auth row"); }
 
-        var url = new Uri(new Uri(cfg.PublicBaseUrl), $"/pair?state={state}").ToString();
+        var baseUrl = await PublicBaseUrlAsync(ctx.RequestAborted);
+        var url = new Uri(new Uri(baseUrl), $"/pair?state={state}").ToString();
         await WriteJsonAsync(ctx, new PairInitResponse(url, state));
     }
 

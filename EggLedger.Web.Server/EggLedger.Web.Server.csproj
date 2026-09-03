@@ -20,6 +20,9 @@
     <PackageReference Include="EggIdentity.Client" />
     <PackageReference Include="EggIdentity.Metrics" />
     <PackageReference Include="EggIdentity.Metrics.AdminUi" />
+    <PackageReference Include="EggIdentity.Settings" />
+    <PackageReference Include="EggIdentity.Settings.Store" />
+    <PackageReference Include="EggIdentity.Settings.AdminUi" />
     <PackageReference Include="Npgsql" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" />
   </ItemGroup>

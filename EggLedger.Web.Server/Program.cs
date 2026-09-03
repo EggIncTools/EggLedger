@@ -5,6 +5,8 @@ using EggIdentity.Db;
 using EggIdentity.Fallback;
 using EggIdentity.Metrics;
 using EggIdentity.Metrics.AdminUi;
+using EggIdentity.Settings;
+using EggIdentity.Settings.Store;
 using EggIdentity.Styles;
 using EggLedger.Web;
 using EggLedger.Web.Data;
@@ -22,6 +24,8 @@ using Npgsql;
 var builder = WebApplication.CreateBuilder(args);
 
 SubProdFence.ForceSessionIsolation(Environment.SetEnvironmentVariable, builder.Environment.EnvironmentName);
+SubProdFence.ForceGateIsolation(
+    Environment.GetEnvironmentVariable, Environment.SetEnvironmentVariable, builder.Environment.EnvironmentName);
 var fencedGetter = SubProdFence.WrapGetter(Environment.GetEnvironmentVariable, builder.Environment.EnvironmentName, out var subProdFenceReport);
 foreach (var entry in subProdFenceReport) {
     if (entry.Forced) {
@@ -29,7 +33,10 @@ foreach (var entry in subProdFenceReport) {
     }
 }
 
-var cfg = AppConfig.FromEnv(fencedGetter);
+var settingsRegistry = AppConfig.Registry;
+var bootstrapSettings = new SettingsSnapshot(
+    settingsRegistry, new Dictionary<string, string?>(StringComparer.Ordinal), null, fencedGetter);
+var cfg = AppConfig.From(bootstrapSettings);
 var hasDb = !string.IsNullOrEmpty(cfg.DatabaseUrl);
 if (hasDb && builder.Environment.IsStaging()) {
     SubProdBootGuard.EnsureSubProdDatabase(cfg.DatabaseUrl);
@@ -39,7 +46,6 @@ var startedAt = DateTimeOffset.UtcNow;
 
 
 
-builder.Services.AddSingleton(cfg);
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddRazorComponents()
@@ -118,11 +124,29 @@ builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<EggLedger.Web.Components.Admin.IBotConfigSlot, EggLedger.Web.Server.Bot.BotConfigSlot>();
 
+SettingsCache? settingsCache = null;
+NpgsqlDataSource? settingsDataSource = null;
+
 if (hasDb) {
     var dataSource = NpgsqlDataSource.Create(cfg.DatabaseUrl);
     builder.Services.AddSingleton(dataSource);
 
+    settingsDataSource = dataSource;
+    var settingsStore = new SettingsStore(dataSource, SecretProtector.FromEnvironment());
+    await settingsStore.MigrateAsync();
+    settingsCache = new SettingsCache(settingsRegistry, settingsStore);
+    cfg = AppConfig.From(await settingsCache.GetAsync());
 
+    if (!settingsStore.CanStoreSecrets) {
+        await Console.Error.WriteLineAsync(
+            "eggledger: WARNING - EGGIDENTITY_SETTINGS_KEY not set. Secret settings cannot be stored in the database.");
+    }
+
+    builder.Services.AddSingleton(settingsRegistry);
+    builder.Services.AddSingleton(settingsStore);
+    builder.Services.AddSingleton(settingsCache);
+    builder.Services.AddSingleton(new SettingsAdminService(settingsRegistry, settingsStore, settingsCache));
+    builder.Services.AddScoped<EggLedger.Web.Components.Admin.ISettingsPanelSlot, EggLedger.Web.Server.Settings.SettingsPanelSlot>();
 
     var dp = builder.Services.AddDataProtection()
         .SetApplicationName("EggLedger")
@@ -189,6 +213,8 @@ if (hasDb) {
         builder.Services.AddScoped(sp => sp.GetRequiredService<EggLedger.Web.Server.Bot.EggLedgerBotHostedService>().Bot?.ConfigService!);
     }
 }
+
+builder.Services.AddSingleton(cfg);
 
 
 
@@ -338,6 +364,10 @@ if (hasDb) {
     var conn = await Database.InitAsync(cfg.DatabaseUrl);
     await Migrator.MigrateAsync(conn, Path.Combine(AppContext.BaseDirectory, "Migrations"));
     app.Logger.LogInformation("eggledger: migrations complete, /api/v1 + Postgres storage active");
+
+    if (settingsCache is not null && settingsDataSource is not null) {
+        _ = new SettingsChangeListener(settingsDataSource, settingsCache).RunAsync(app.Lifetime.ApplicationStopping);
+    }
 
     Api.Map(app, cfg, build);
 

@@ -11,7 +11,7 @@ namespace EggLedger.Web.Server.Tests.Auth;
 
 public class AuthentikAuthTests {
     private static AppConfig ConfigWith(string authority, string clientId = "", string clientSecret = "") => new(
-        ListenAddr: "", DatabaseUrl: "", DiscordClientId: "", PublicBaseUrl: "",
+        DatabaseUrl: "", DiscordClientId: "", PublicBaseUrl: "",
         BotToken: "", GuildId: "", SharedRoleId: "", DeployAgentUrl: "", DeployAgentSecret: "",
         DashboardChannelId: "", MennoFunctionKey: "",
         AuthentikAuthority: authority, AuthentikClientId: clientId, AuthentikClientSecret: clientSecret,

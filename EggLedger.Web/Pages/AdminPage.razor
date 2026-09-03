@@ -24,6 +24,9 @@
                 <AdminUsersPanel Users="_users" OnDelete="DeleteUser" Error="@_error"/>
             </div>
         </div>
+        @if (Services.GetService<ISettingsPanelSlot>() is { } settingsSlot) {
+            @settingsSlot.Render(_currentUserId?.ToString())
+        }
     }
 </section>
 

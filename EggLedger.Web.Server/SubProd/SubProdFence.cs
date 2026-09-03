@@ -58,4 +58,26 @@ public static class SubProdFence {
         setEnvironmentVariable("EGGIDENTITY_SESSION_SECRET_PREVIOUS", SessionSecretPlaceholder);
         setEnvironmentVariable("EGGIDENTITY_SESSION_COOKIE_DOMAIN", null);
     }
+
+    public static void ForceGateIsolation(
+        Func<string, string?> getEnvironmentVariable,
+        Action<string, string?> setEnvironmentVariable,
+        string environmentName) {
+        if (!IsStaging(environmentName)) {
+            return;
+        }
+
+        foreach (var (allowName, keys) in Gates) {
+            if (Allows(allowName, getEnvironmentVariable)) {
+                continue;
+            }
+            foreach (var key in keys) {
+                setEnvironmentVariable(key, "");
+            }
+        }
+
+        if (!Allows("AUTH", getEnvironmentVariable)) {
+            setEnvironmentVariable("IDENTITY_API_URL", IdentityLoopbackPlaceholder);
+        }
+    }
 }
