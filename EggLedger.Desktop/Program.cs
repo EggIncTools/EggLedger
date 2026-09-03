@@ -10,17 +10,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Photino.Blazor;
 
-
-
-//
-
-
-
 internal static class Program {
     [STAThread]
     private static void Main(string[] args) {
-
-
         var debugMode = args.Contains("--debug")
             || string.Equals(Environment.GetEnvironmentVariable("EGGLEDGER_DEBUG"), "1", StringComparison.Ordinal);
 

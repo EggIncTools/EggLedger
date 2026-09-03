@@ -8,50 +8,21 @@
   <a href="https://discord.davidarthurcole.me"><img src="https://img.shields.io/badge/discord-join%20server-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
 </p>
 
-**EggLedger** exports your Egg, Inc. spaceship mission history, including every loot drop, to `.xlsx` and `.csv` so you can slice it however you like. It extends the [rockets tracker](https://wasmegg-carpet.netlify.app/rockets-tracker/), answering the questions that tool can't: "which mission dropped this legendary?" and "how many of this item have I ever pulled?"
+**EggLedger** exports your Egg, Inc. spaceship mission history, including every loot drop, to `.xlsx` and `.csv`. It extends the [rockets tracker](https://wasmegg-carpet.netlify.app/rockets-tracker/), answering questions that tool can't: "which mission dropped this legendary?" and "how many of this item have I ever pulled?"
 
 ## Use it
 
-**EggLedger as a Web app: [eggledger.davidarthurcole.me](https://eggledger.davidarthurcole.me/)**
-- Nothing to install.
-- Connect with Discord to start.
-  - ONLY used for login/identification
-  - Optionally can be used to store/sync settings
-- Enter your EID, and pull your data.
+**Web app: [eggledger.davidarthurcole.me](https://eggledger.davidarthurcole.me/)** - nothing to install. Discord login is used only for identification, and optionally to sync settings.
 
-This is the recommended way to run EggLedger.<br><br>
+**[Desktop build](https://github.com/EggIncTools/EggLedger/releases)** - same features, runs offline, keeps data on your machine.
 
-Prefer a local app?
-**[Download the desktop build](https://github.com/EggIncTools/EggLedger/releases)** instead.
-- Same features as the web app
-- (Optionally) Connect to Discord to sync Settings.
-- Runs offline, keeps everything on your machine.
+## Privacy
 
-## What's "new"
-
-EggLedger was rewritten from Go + Vue to C#. The domain logic, decode, and reports math are validated against the original Go output with golden fixtures, so the numbers match what you had before. The rewrite brought:
-
-- A hosted web app, so you no longer need to download anything to use it.
-- A shared UI between web and desktop. Both run on the same Blazor code.
-- Native AES-GCM and protobuf decode on every host. No browser engine shipped with the app.
-
-## Security and privacy
-
-**Is my data shared with anyone?**
-
-No. EggLedger talks to the Egg, Inc. API and nothing else, save for an occasional update check against github.com. No analytics, no telemetry, no account info leaves your control. The developer has no way of knowing you even use the tool unless you say so.
-
-**Is there any risk to my account?**
-
-Nothing I'm aware of. The [rockets tracker](https://wasmegg-carpet.netlify.app/rockets-tracker/) has used the same techniques safely for years. That said, none of these tools are sanctioned by the Egg, Inc. developer. Use them at your own risk; I'm not responsible for any fallout.
+EggLedger talks only to the Egg, Inc. API and an occasional update check against github.com. No analytics, no telemetry, no account data leaves your machine. Uses the same techniques the rockets tracker has used for years; not sanctioned by the Egg, Inc. developer, use at your own risk.
 
 ## License
 
 The MIT License. See COPYING.
-
-## Contributing
-
-Contributions welcome. Fork the repo, make your change, open a pull request.
 
 ## Development
 

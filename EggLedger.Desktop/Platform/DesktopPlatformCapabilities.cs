@@ -4,8 +4,6 @@ using EggLedger.Web.Platform;
 
 namespace EggLedger.Desktop.Platform;
 
-/// <remarks>Open + reveal shell out via <see cref="IProcessRunner"/> with per-OS commands from
-/// <see cref="DesktopCommandBuilder"/>; save dialog and window size come from the Photino window.</remarks>
 public sealed class DesktopPlatformCapabilities(IProcessRunner processRunner, IDesktopWindow window) : IPlatformCapabilities {
     private readonly IProcessRunner _processRunner = processRunner;
     private readonly IDesktopWindow _window = window;
