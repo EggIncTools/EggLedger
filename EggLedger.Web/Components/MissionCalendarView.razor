@@ -162,15 +162,18 @@
         }
     }
 
-    private Task OnCommitScrollPan(int direction) {
+    private async Task OnCommitScrollPan(int direction) {
         if (CanPan(direction)) {
             _center += (_visibleEnd - _visibleStart) * direction;
             Recompute();
+            StateHasChanged();
+            return;
         }
 
-        _resetScrollPending = true;
         StateHasChanged();
-        return Task.CompletedTask;
+        if (_grid is not null) {
+            await _grid.ResetScrollAsync();
+        }
     }
 
     private void Recompute() {
@@ -228,7 +231,7 @@
         }
 
         var rows = timelineRows.Select(row => BuildRow(row, tz, now, primaryMonth)).ToList();
-        return new PeriodSlot<object>(rows);
+        return new PeriodSlot<object>(rows, start.UtcTicks);
     }
 
     private CalendarRow<object> BuildRow(TimelineRow row, TimeZoneInfo tz, DateTimeOffset now, int? primaryMonth) {

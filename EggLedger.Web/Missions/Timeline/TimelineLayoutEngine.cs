@@ -27,8 +27,8 @@ public static class TimelineLayoutEngine {
 
         for (int i = 0; i < intersecting.Count; i++) {
             var m = intersecting[i];
-            var (left, width, rawLeft, rawRight) = ClipToWindow(m.LaunchDT, m.ReturnDT, windowStart, windowSpan, minWidthPercent / 100);
-            int lane = CalendarLanePacker.AssignLane(laneRights, rawLeft, rawRight, iconGapFraction);
+            var (left, width, packLeft, packRight) = ClipToWindow(m.LaunchDT, m.ReturnDT, windowStart, windowSpan, minWidthPercent / 100);
+            int lane = CalendarLanePacker.AssignLane(laneRights, packLeft, packRight, iconGapFraction);
             bool isActive = nowUnix < m.ReturnDT;
             double fill = FillFraction(m.LaunchDT, m.ReturnDT, windowStart, windowEnd, nowUnix, isActive);
             long progress = isActive ? Math.Min(nowUnix, m.ReturnDT) : m.ReturnDT;
@@ -76,8 +76,8 @@ public static class TimelineLayoutEngine {
         foreach (var e in intersecting) {
             long start = (long)e.StartTimestamp;
             long end = (long)e.EndTimestamp;
-            var (left, width, rawLeft, rawRight) = ClipToWindow(start, end, windowStart, windowSpan, 0);
-            int lane = CalendarLanePacker.AssignLane(laneRights, rawLeft, rawRight, EventLaneGapFraction);
+            var (left, width, packLeft, packRight) = ClipToWindow(start, end, windowStart, windowSpan, 0);
+            int lane = CalendarLanePacker.AssignLane(laneRights, packLeft, packRight, EventLaneGapFraction);
             result.Add(new TimelineEventBar(
                 Id: e.Id,
                 Lane: lane,
@@ -108,23 +108,23 @@ public static class TimelineLayoutEngine {
         return intersecting;
     }
 
-    private static (double Left, double Width, double RawLeft, double RawRight) ClipToWindow(
+    private static (double Left, double Width, double PackLeft, double PackRight) ClipToWindow(
         long launchDt, long returnDt, long windowStart, double windowSpan, double minWidthFraction) {
         if (windowSpan <= 0) {
             return (0, 1, 0, 1);
         }
-        double rawLeft = (launchDt - windowStart) / windowSpan;
-        double left = Math.Max(0, rawLeft);
-        double right = Math.Min(1, (returnDt - windowStart) / windowSpan);
+        double packLeft = (launchDt - windowStart) / windowSpan;
+        double packRight = (returnDt - windowStart) / windowSpan;
+        double left = Math.Max(0, packLeft);
+        double right = Math.Min(1, packRight);
         double width = Math.Max(0, right - left);
-        double rawRight = left + width;
         if (minWidthFraction > 0 && width < minWidthFraction) {
             width = Math.Min(minWidthFraction, 1);
             if (left + width > 1) {
                 left = 1 - width;
             }
         }
-        return (left, width, rawLeft, rawRight);
+        return (left, width, packLeft, packRight);
     }
 
     private static double FillFraction(long launchDt, long returnDt, long windowStart, long windowEnd, long nowUnix, bool isActive) {

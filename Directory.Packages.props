@@ -6,23 +6,23 @@
   <ItemGroup>
     <PackageVersion Include="bunit" Version="2.9.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
-    <PackageVersion Include="EggIdentity.AdminUi" Version="2.2.15" />
-    <PackageVersion Include="EggIdentity.Auth" Version="2.2.15" />
-    <PackageVersion Include="EggIdentity.Bot" Version="2.2.15" />
-    <PackageVersion Include="EggIdentity.Bot.AdminUi" Version="2.2.15" />
-    <PackageVersion Include="EggIdentity.Client" Version="2.2.15" />
-    <PackageVersion Include="EggIdentity.CodeStyle" Version="2.2.15" />
-    <PackageVersion Include="EggIdentity.Contract" Version="2.2.15" />
-    <PackageVersion Include="EggIdentity.Db" Version="2.2.15" />
-    <PackageVersion Include="EggIdentity.Fallback" Version="2.2.15" />
-    <PackageVersion Include="EggIdentity.Filtering" Version="2.2.15" />
-    <PackageVersion Include="EggIdentity.Metrics" Version="2.2.15" />
-    <PackageVersion Include="EggIdentity.Metrics.AdminUi" Version="2.2.15" />
-    <PackageVersion Include="EggIdentity.Settings" Version="2.2.15" />
-    <PackageVersion Include="EggIdentity.Settings.Store" Version="2.2.15" />
-    <PackageVersion Include="EggIdentity.Settings.AdminUi" Version="2.2.15" />
-    <PackageVersion Include="EggIdentity.Styles" Version="2.2.15" />
-    <PackageVersion Include="EggIdentity.UI" Version="2.2.15" />
+    <PackageVersion Include="EggIdentity.AdminUi" Version="2.2.17" />
+    <PackageVersion Include="EggIdentity.Auth" Version="2.2.17" />
+    <PackageVersion Include="EggIdentity.Bot" Version="2.2.17" />
+    <PackageVersion Include="EggIdentity.Bot.AdminUi" Version="2.2.17" />
+    <PackageVersion Include="EggIdentity.Client" Version="2.2.17" />
+    <PackageVersion Include="EggIdentity.CodeStyle" Version="2.2.17" />
+    <PackageVersion Include="EggIdentity.Contract" Version="2.2.17" />
+    <PackageVersion Include="EggIdentity.Db" Version="2.2.17" />
+    <PackageVersion Include="EggIdentity.Fallback" Version="2.2.17" />
+    <PackageVersion Include="EggIdentity.Filtering" Version="2.2.17" />
+    <PackageVersion Include="EggIdentity.Metrics" Version="2.2.17" />
+    <PackageVersion Include="EggIdentity.Metrics.AdminUi" Version="2.2.17" />
+    <PackageVersion Include="EggIdentity.Settings" Version="2.2.17" />
+    <PackageVersion Include="EggIdentity.Settings.Store" Version="2.2.17" />
+    <PackageVersion Include="EggIdentity.Settings.AdminUi" Version="2.2.17" />
+    <PackageVersion Include="EggIdentity.Styles" Version="2.2.17" />
+    <PackageVersion Include="EggIdentity.UI" Version="2.2.17" />
     <PackageVersion Include="EggIncognito.Protos" Version="2.10.0" />
     <PackageVersion Include="Markdig" Version="0.41.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.0" />
