@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 using EggIdentity.Auth;
 using EggIdentity.Client;
 using EggIdentity.Contract;
+using EggIdentity.Resilience;
 using EggIdentity.Settings.Store;
 using EggLedger.Web.Server.Settings;
 using EggLedger.Web.Server.Sync;
@@ -33,6 +34,12 @@ public sealed record PollResponse(
 
 public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvider dataProtection, IdentityApiClient identity, ILogger<AuthEndpoints> logger, AppConfig cfg, SessionCookieOptions? eggIdentitySession = null, SettingsCache? settings = null) {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
+
+    private static readonly RetryOptions DbRetry = new() {
+        MaxAttempts = 3,
+        BaseDelay = TimeSpan.FromMilliseconds(100),
+        ShouldRetry = ex => ex is NpgsqlException { IsTransient: true },
+    };
 
     private static readonly string[] ElUserTables = [
         "el_mission", "el_backup", "el_artifact_drops", "el_settings", "el_reports", "el_report_groups",
@@ -127,9 +134,10 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
 
 
     private async Task UpsertLocalUserAsync(Guid userId, string? discordId, string? username, string? avatar, CancellationToken ct) {
-        await using (var u = source.CreateCommand(
-            "INSERT INTO users (user_id, discord_id, created_at, username, avatar_url) VALUES ($1,$2,$3,$4,$5) " +
-            "ON CONFLICT (user_id) DO UPDATE SET username = EXCLUDED.username, avatar_url = EXCLUDED.avatar_url")) {
+        await Retry.RunAsync(async rct => {
+            await using var u = source.CreateCommand(
+                "INSERT INTO users (user_id, discord_id, created_at, username, avatar_url) VALUES ($1,$2,$3,$4,$5) " +
+                "ON CONFLICT (user_id) DO UPDATE SET username = EXCLUDED.username, avatar_url = EXCLUDED.avatar_url");
             u.Parameters.AddWithValue(userId);
             if (string.IsNullOrEmpty(discordId)) {
                 u.Parameters.AddWithValue(DBNull.Value);
@@ -139,8 +147,8 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
             u.Parameters.AddWithValue(Now());
             u.Parameters.AddWithValue(username ?? "");
             u.Parameters.AddWithValue(avatar ?? "");
-            await u.ExecuteNonQueryAsync(ct);
-        }
+            await u.ExecuteNonQueryAsync(rct);
+        }, DbRetry, ct: ct);
 
         await EnsureEncryptionKeyAsync(userId);
     }
@@ -239,9 +247,15 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
         }
 
         var discordId = profile.Identities.FirstOrDefault(i => i.Provider == "discord")?.Subject;
-        await UpsertLocalUserAsync(profile.UserId, discordId, profile.Username, profile.Avatar, ctx.RequestAborted);
-
-        var poll = await MintSessionAsync(profile.UserId, profile.Username, discordId, ctx.RequestAborted);
+        PollResponse poll;
+        try {
+            await UpsertLocalUserAsync(profile.UserId, discordId, profile.Username, profile.Avatar, ctx.RequestAborted);
+            poll = await MintSessionAsync(profile.UserId, profile.Username, discordId, ctx.RequestAborted);
+        } catch (NpgsqlException ex) {
+            logger.LogError(ex, "auth: session-from-login database failure for {UserId}", profile.UserId);
+            await WriteTextAsync(ctx, StatusCodes.Status503ServiceUnavailable, "database unavailable\n");
+            return;
+        }
         await WriteJsonAsync(ctx, poll);
     }
 
@@ -249,8 +263,9 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
         var encKey = await EnsureEncryptionKeyAsync(userId);
         var token = Guid.NewGuid().ToString("N");
 
-        await using (var ins = source.CreateCommand(
-            "INSERT INTO sessions (token, discord_id, user_id, expires_at) VALUES ($1, $2, $3, $4)")) {
+        await Retry.RunAsync(async rct => {
+            await using var ins = source.CreateCommand(
+                "INSERT INTO sessions (token, discord_id, user_id, expires_at) VALUES ($1, $2, $3, $4)");
             ins.Parameters.AddWithValue(token);
             if (string.IsNullOrEmpty(discordId)) {
                 ins.Parameters.AddWithValue(DBNull.Value);
@@ -259,8 +274,8 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
             }
             ins.Parameters.AddWithValue(userId);
             ins.Parameters.AddWithValue(Now() + 30L * 24 * 3600);
-            await ins.ExecuteNonQueryAsync(ct);
-        }
+            await ins.ExecuteNonQueryAsync(rct);
+        }, DbRetry, ct: ct);
 
         var avatarUrl = await UserAvatarUrlAsync(userId, ct);
         return new PollResponse(token, username, avatarUrl, encKey);

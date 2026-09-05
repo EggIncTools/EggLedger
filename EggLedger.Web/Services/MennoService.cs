@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using EggIdentity.Resilience;
 using EggLedger.Domain.Eiafx;
 using EggLedger.Domain.Reports;
 using EggLedger.Domain.Util;
@@ -64,7 +65,14 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null)
     public const string DataUrl =
         "https://eggincdatacollectionsa.blob.core.windows.net/mission-data/all-data.json.gz";
 
+    private static readonly TimeSpan RefreshTimeout = TimeSpan.FromSeconds(20);
+    private static readonly RetryOptions RefreshRetryOptions = new() {
+        MaxAttempts = 3,
+        BaseDelay = TimeSpan.FromSeconds(1),
+        ShouldRetry = IsTransient,
+    };
 
+    private static bool IsTransient(Exception ex) => ex is HttpRequestException or IOException or TaskCanceledException;
 
     private readonly Lock _gate = new();
     private List<ConfigurationItem>? _cache;
@@ -127,17 +135,26 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null)
     }
 
     public async Task<IReadOnlyList<ConfigurationItem>> RefreshAsync(CancellationToken cancellationToken = default) {
+        var bytes = await Deadline.RunAsync(
+            "menno-refresh",
+            ct => Retry.RunAsync(FetchDecompressedAsync, RefreshRetryOptions, ct: ct),
+            RefreshTimeout,
+            ct: cancellationToken).ConfigureAwait(false);
+
+        var items = MennoDecode.Decode(bytes);
+        _cache = items;
+        if (store is not null) {
+            await store.SaveAsync(bytes, cancellationToken).ConfigureAwait(false);
+        }
+        return items;
+    }
+
+    private async Task<byte[]> FetchDecompressedAsync(CancellationToken cancellationToken) {
         await using var compressed = await http.GetStreamAsync(DataUrl, cancellationToken).ConfigureAwait(false);
         await using var gz = new GZipStream(compressed, CompressionMode.Decompress);
         using var ms = new MemoryStream();
         await gz.CopyToAsync(ms, cancellationToken).ConfigureAwait(false);
-
-        var items = MennoDecode.Decode(ms.GetBuffer().AsSpan(0, (int)ms.Length));
-        _cache = items;
-        if (store is not null) {
-            await store.SaveAsync(ms.ToArray(), cancellationToken).ConfigureAwait(false);
-        }
-        return items;
+        return ms.ToArray();
     }
 
     public IReadOnlyList<ConfigurationItem>? CachedItems => _cache;

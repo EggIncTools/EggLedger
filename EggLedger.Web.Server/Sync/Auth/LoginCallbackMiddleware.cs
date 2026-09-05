@@ -29,6 +29,8 @@ public sealed class LoginCallbackMiddleware(RequestDelegate next, ILogger<LoginC
                 await auth.RedeemAndSignInAsync(ctx, codeValue.ToString(), ctx.RequestAborted);
             } catch (HttpRequestException ex) {
                 logger.LogWarning(ex, "login callback: redeem failed");
+            } catch (Npgsql.NpgsqlException ex) {
+                logger.LogError(ex, "login callback: database failure");
             }
         }
 

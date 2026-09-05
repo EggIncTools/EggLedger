@@ -508,6 +508,9 @@
         }
 
         await SyncNowAsync();
+        if (!string.IsNullOrEmpty(_syncError)) {
+            throw new CloudSyncException(_syncError);
+        }
     }
 
     public ValueTask DisposeAsync() {

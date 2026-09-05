@@ -1,4 +1,5 @@
 @inject IServiceProvider Services
+@inject ILogger<BackfillTrigger> Logger
 
 @* Runs the first-login backfill once per authenticated circuit, renders nothing. Resolved
    optionally: in dev / no-DB there is no backfill service, so this is a no-op. *@
@@ -9,8 +10,8 @@
         if (Services.GetService(typeof(FirstLoginBackfill)) is FirstLoginBackfill backfill) {
             try {
                 await backfill.RunIfNeededAsync();
-            }
-            catch {
+            } catch (Exception ex) {
+                Logger.LogWarning(ex, "first-login backfill failed");
             }
         }
     }

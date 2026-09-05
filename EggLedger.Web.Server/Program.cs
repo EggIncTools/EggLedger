@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -265,9 +266,12 @@ if (hasDb) {
             sp.GetRequiredService<NpgsqlDataSource>(),
             sp.GetRequiredService<EggIdentity.Client.IdentityApiClient>()));
     builder.Services.RemoveAll<IIndexedDb>();
-    builder.Services.AddScoped<IIndexedDb>(sp => new EggLedger.Web.Server.Storage.PostgresIndexedDb(
-        sp.GetRequiredService<NpgsqlDataSource>(),
-        sp.GetRequiredService<EggLedger.Web.Server.Storage.CurrentUser>()));
+    builder.Services.AddScoped<IIndexedDb>(sp => new EggLedger.Web.Data.ResilientIndexedDb(
+        new EggLedger.Web.Server.Storage.PostgresIndexedDb(
+            sp.GetRequiredService<NpgsqlDataSource>(),
+            sp.GetRequiredService<EggLedger.Web.Server.Storage.CurrentUser>()),
+        sp.GetRequiredService<ILogger<EggLedger.Web.Data.ResilientIndexedDb>>(),
+        ex => ex is NpgsqlException { IsTransient: true }));
     builder.Services.AddScoped<EggLedger.Web.Server.Storage.FirstLoginBackfill>();
 }
 
@@ -294,8 +298,11 @@ builder.Services.AddEggIdentityFallback(new FallbackBranding("EggLedger", new Di
     [ComponentTokens.Border] = "#364153",
 }));
 
+builder.Services.AddProblemDetails();
+
 var app = builder.Build();
 
+app.UseExceptionHandler();
 app.UseForwardedHeaders();
 
 

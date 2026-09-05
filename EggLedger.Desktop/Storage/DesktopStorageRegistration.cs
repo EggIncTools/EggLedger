@@ -5,9 +5,11 @@ using EggLedger.Web.Data;
 using EggLedger.Web.Platform;
 using EggLedger.Web.Services;
 using EggLedger.Web.State;
+using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EggLedger.Desktop.Storage;
 
@@ -67,7 +69,10 @@ public static class DesktopStorageRegistration {
 
 
         services.RemoveAll<IIndexedDb>();
-        services.AddSingleton<IIndexedDb>(indexedDb);
+        services.AddSingleton<IIndexedDb>(sp => new ResilientIndexedDb(
+            indexedDb,
+            sp.GetService<ILogger<ResilientIndexedDb>>() ?? NullLogger<ResilientIndexedDb>.Instance,
+            ex => ex is SqliteException { SqliteErrorCode: 5 or 6 }));
 
         services.AddSingleton(new SqliteMissionDb(missionDb));
 

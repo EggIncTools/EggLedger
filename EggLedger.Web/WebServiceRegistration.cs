@@ -1,3 +1,5 @@
+using EggIdentity.Resilience;
+using EggIdentity.UI;
 using EggLedger.Domain.Api;
 using EggLedger.Domain.MissionPacking;
 using EggLedger.Domain.MissionQuery;
@@ -76,9 +78,11 @@ public static class WebServiceRegistration {
 
 
         services.AddScoped<EggIdentity.UI.OutsideClickInterop>();
+        services.AddEggIdentityToasts();
 
         services.AddScoped<INavigation, BlazorNavigation>();
         services.AddScoped<IBlobCipher, LocalBlobCipher>();
+        services.AddSingleton(_ => new CircuitBreaker(failureThreshold: 3, openDuration: TimeSpan.FromSeconds(30)));
         services.AddScoped<CloudSyncService>();
         services.AddScoped<CloudAutoSyncCoordinator>();
         services.AddScoped<AdminState>();

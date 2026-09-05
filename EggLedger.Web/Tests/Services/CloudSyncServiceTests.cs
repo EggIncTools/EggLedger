@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using EggIdentity.Resilience;
 using EggLedger.Domain.Crypto;
 using EggLedger.Web.Platform;
 using EggLedger.Web.Services;
@@ -137,7 +138,9 @@ public sealed class CloudSyncServiceTests {
 
     private static CloudSyncService Make(HttpMessageHandler server, INavigation? nav = null, IPlatformCapabilities? platform = null) {
         var http = new HttpClient(server) { BaseAddress = Origin };
-        return new CloudSyncService(http, nav ?? new FakeNavigation(), new LocalBlobCipher(), platform ?? new FakePlatformCapabilities());
+        var breaker = new CircuitBreaker(failureThreshold: 3, openDuration: TimeSpan.FromSeconds(30));
+        return new CloudSyncService(
+            http, nav ?? new FakeNavigation(), new LocalBlobCipher(), platform ?? new FakePlatformCapabilities(), breaker);
     }
 
     [Fact]
