@@ -32,6 +32,7 @@ public static class AccountFactory {
             SeString = seString,
             PeCount = peCount,
             TeCount = totalTE,
+            LastBackupTime = backup.settings?.LastBackupTime ?? 0,
         };
     }
 }

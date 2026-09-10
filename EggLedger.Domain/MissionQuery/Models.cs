@@ -49,6 +49,7 @@ public sealed class AccountInfo {
     public string SeString { get; set; } = "";
     public int PeCount { get; set; }
     public int TeCount { get; set; }
+    public double LastBackupTime { get; set; }
 
     public KnownAccount ToKnownAccount() => new() {
         Id = Id,

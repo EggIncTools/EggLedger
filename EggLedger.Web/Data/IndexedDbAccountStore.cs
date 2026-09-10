@@ -86,6 +86,8 @@ public sealed record AccountInfoRow {
     public int PeCount { get; init; }
     [JsonPropertyName("te_count")]
     public int TeCount { get; init; }
+    [JsonPropertyName("last_backup_time")]
+    public double LastBackupTime { get; init; }
 
     public static AccountInfoRow FromAccount(AccountInfo a) => new() {
         Id = a.Id,
@@ -95,6 +97,7 @@ public sealed record AccountInfoRow {
         SeString = a.SeString,
         PeCount = a.PeCount,
         TeCount = a.TeCount,
+        LastBackupTime = a.LastBackupTime,
     };
 
     public static AccountInfo ToAccount(AccountInfoRow r) => new() {
@@ -105,5 +108,6 @@ public sealed record AccountInfoRow {
         SeString = r.SeString,
         PeCount = r.PeCount,
         TeCount = r.TeCount,
+        LastBackupTime = r.LastBackupTime,
     };
 }

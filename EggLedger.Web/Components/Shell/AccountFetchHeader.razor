@@ -40,12 +40,9 @@
                                 <MaskedEid Value="@_active.Id"/>
                                 @{ var activeStats = StatsFor(_active.Id); }
                                 @if (activeStats is not null) {
-                                    var since = LedgerFormatting.FormatTimeSince(activeStats.LastMissionReturnDT, NowUnix);
                                     <span>@activeStats.MissionCount missions</span>
-                                    @if (since != "") {
-                                        <span class="text-gray-600">(latest @since)</span>
-                                    }
                                 }
+                                @RenderStamps(activeStats, activeInfo)
                             </span>
                         } else if (!IsLoggedIn) {
                             <span class="text-gray-500 italic text-xs">Login to add an account</span>
@@ -103,6 +100,22 @@
 
 @code {
 
+    private RenderFragment RenderStamps(DatabaseAccount? stats, AccountInfo? info) => __builder => {
+        var ship = stats is null ? "" : LedgerFormatting.FormatTimeSince(stats.LastMissionReturnDT, NowUnix);
+        var backup = info is null ? "" : LedgerFormatting.FormatTimeSince(info.LastBackupTime, NowUnix);
+        if (ship != "") {
+            <span class="text-gray-600">last ship <span class="text-gray-400">@ship</span></span>
+        }
+        if (backup != "") {
+            <span class="text-gray-600">last backup <span class="@(IsStaleBackup(info) ? "text-yellow-400" : "text-gray-400")">@backup</span></span>
+        }
+    };
+
+    private static bool IsStaleBackup(AccountInfo? info) =>
+        info is not null && info.LastBackupTime > 0 && NowUnix - info.LastBackupTime > StaleBackupSeconds;
+
+    private const double StaleBackupSeconds = 60 * 60 * 24;
+
     private RenderFragment RenderAccountList() => __builder => {
         <div class="account-pop-head">
             <span class="text-xs font-bold text-gray-300">Accounts</span>
@@ -136,12 +149,9 @@
                             </span>
                             @{ var stats = StatsFor(acct.Id); }
                             @if (stats is not null) {
-                                var since = LedgerFormatting.FormatTimeSince(stats.LastMissionReturnDT, NowUnix);
                                 <span>@stats.MissionCount missions</span>
-                                @if (since != "") {
-                                    <span class="text-gray-600">(latest @since)</span>
-                                }
                             }
+                            @RenderStamps(stats, info)
                         </span>
                     </span>
                 </li>
