@@ -21,7 +21,6 @@
                     <button type="button"
                             class="flex flex-col items-center gap-1.5 p-3 rounded-lg border text-xs transition-colors focus:outline-none @(_intent == opt.Value ? "border-indigo-500 bg-indigo-900/20 text-indigo-300" : "border-gray-700 bg-darker text-gray-400 hover:border-gray-500")"
                             @onclick="() => SelectIntent(opt.Value)">
-                        <span class="text-lg">@opt.Icon</span>
                         <span class="font-medium">@opt.Label</span>
                         <span class="text-gray-500 text-center leading-tight">@opt.Hint</span>
                     </button>
@@ -89,14 +88,14 @@
 
     [Parameter] public EventCallback<GuidedResult> OnApply { get; set; }
 
-    private sealed record IntentOption(string Value, string Icon, string Label, string Hint);
+    private sealed record IntentOption(string Value, string Label, string Hint);
 
     private sealed record QuickFilterOption(string Key, string Label, WebCondition Condition);
 
     private static readonly IReadOnlyList<IntentOption> IntentOptions = [
-        new("missions", "\U0001F680", "Mission counts", "Count missions by ship, level, or duration"),
-        new("artifacts", "\U0001FAA8", "Artifact drops", "Count drops by artifact, rarity, or type"),
-        new("time", "\U0001F4C8", "Activity over time", "Track mission activity across weeks or months")
+        new("missions", "Mission counts", "Count missions by ship, level, or duration"),
+        new("artifacts", "Artifact drops", "Count drops by artifact, rarity, or type"),
+        new("time", "Activity over time", "Track mission activity across weeks or months")
     ];
 
     private int _step = 1;

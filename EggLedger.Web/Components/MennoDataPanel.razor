@@ -17,7 +17,7 @@
         @(_refreshing ? "Refreshing..." : "Refresh Data Now")
     </button><br/>
     @if (OnCooldown) {
-        <span class="italic text-sm text-gray-500">To reduce the load on Menno's API, manual refreshes can be performed once every day</span>
+        <span class="italic text-sm text-gray-500">Manual refresh runs once a day, to keep load off Menno's API</span>
     }
     @if (_error.Length > 0) {
         <span class="text-red-400 text-sm">@_error</span>
