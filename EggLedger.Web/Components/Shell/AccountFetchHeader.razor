@@ -38,11 +38,14 @@
                             </span>
                             <span class="account-option-meta flex items-center flex-wrap gap-1.5 text-xs text-gray-500 max-w-full">
                                 <MaskedEid Value="@_active.Id"/>
+                                @RenderBackupStamp(activeInfo)
+                            </span>
+                            <span class="account-option-meta flex items-center flex-wrap gap-1.5 text-xs text-gray-500 max-w-full">
                                 @{ var activeStats = StatsFor(_active.Id); }
                                 @if (activeStats is not null) {
                                     <span>@activeStats.MissionCount missions</span>
                                 }
-                                @RenderStamps(activeStats, activeInfo)
+                                @RenderShipStamp(activeStats)
                             </span>
                         } else if (!IsLoggedIn) {
                             <span class="text-gray-500 italic text-xs">Login to add an account</span>
@@ -100,14 +103,17 @@
 
 @code {
 
-    private RenderFragment RenderStamps(DatabaseAccount? stats, AccountInfo? info) => __builder => {
-        var ship = stats is null ? "" : LedgerFormatting.FormatTimeSince(stats.LastMissionReturnDT, NowUnix);
+    private RenderFragment RenderBackupStamp(AccountInfo? info) => __builder => {
         var backup = info is null ? "" : LedgerFormatting.FormatTimeSince(info.LastBackupTime, NowUnix);
-        if (ship != "") {
-            <span class="text-gray-600">last ship <span class="text-gray-400">@ship</span></span>
-        }
         if (backup != "") {
             <span class="text-gray-600">last backup <span class="@(IsStaleBackup(info) ? "text-yellow-400" : "text-gray-400")">@backup</span></span>
+        }
+    };
+
+    private RenderFragment RenderShipStamp(DatabaseAccount? stats) => __builder => {
+        var ship = stats is null ? "" : LedgerFormatting.FormatTimeSince(stats.LastMissionReturnDT, NowUnix);
+        if (ship != "") {
+            <span class="text-gray-600">last ship <span class="text-gray-400">@ship</span></span>
         }
     };
 
@@ -147,11 +153,14 @@
                             <span class="text-gray-400">
                                 <MaskedEid Value="@acct.Id"/>
                             </span>
+                            @RenderBackupStamp(info)
+                        </span>
+                        <span class="flex items-center flex-wrap gap-1.5 text-gray-500">
                             @{ var stats = StatsFor(acct.Id); }
                             @if (stats is not null) {
                                 <span>@stats.MissionCount missions</span>
                             }
-                            @RenderStamps(stats, info)
+                            @RenderShipStamp(stats)
                         </span>
                     </span>
                 </li>
