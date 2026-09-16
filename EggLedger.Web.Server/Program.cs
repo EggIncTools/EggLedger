@@ -2,10 +2,12 @@ using EggIdentity.Auth;
 using EggIdentity.Bot;
 using EggIdentity.Contract;
 using EggIdentity.Db;
+using EggIdentity.Deploy;
+using EggIdentity.Deploy.AdminUi;
 using EggIdentity.Fallback;
 using EggIdentity.Metrics;
-using EggIdentity.Metrics.AdminUi;
 using EggIdentity.Settings;
+using EggIdentity.Settings.Api;
 using EggIdentity.Settings.Store;
 using EggIdentity.Styles;
 using EggLedger.Web;
@@ -185,8 +187,6 @@ if (hasDb) {
     builder.Services.AddScoped<EggLedger.Web.Components.Admin.ITrafficPanelSlot, EggLedger.Web.Server.Sync.Admin.TrafficPanelSlot>();
     builder.Services.AddSingleton<EggLedger.Web.Components.Admin.IAdminData, EggLedger.Web.Server.Sync.Admin.AdminDataService>();
 
-    EggLedger.Web.Server.Auth.AuthentikAuth.AddIfConfigured(authBuilder, cfg, identityClient, dataSource);
-
     if (!string.IsNullOrEmpty(cfg.BotToken)) {
         builder.Services.AddSingleton(new BotConfig {
             Name = "EggLedger",
@@ -216,6 +216,14 @@ if (hasDb) {
 }
 
 builder.Services.AddSingleton(cfg);
+
+if (eggIdentitySession is not null && !string.IsNullOrEmpty(cfg.DeployAgentUrl)) {
+    builder.Services.AddEggIdentityDeploy(
+        new DeployOptions(cfg.DeployAgentUrl, "eggledger") { CallerName = "eggledger" }, eggIdentitySession);
+    builder.Services.AddScoped<EggLedger.Web.Components.Admin.IDeployPanelSlot, EggLedger.Web.Server.Deploy.DeployPanelSlot>();
+    builder.Services.AddEggIdentityDeployToasts();
+    builder.Services.AddScoped<EggLedger.Web.Components.IDeployToastSlot, EggLedger.Web.Server.Deploy.DeployToastSlot>();
+}
 
 
 
@@ -261,10 +269,15 @@ static void MirrorEggIdentityRoleClaim(Microsoft.AspNetCore.Authentication.Cooki
 
 builder.Services.AddScoped<EggLedger.Web.Server.Storage.CurrentUser>();
 if (hasDb) {
+    builder.Services.TryAddSingleton(TimeProvider.System);
+    builder.Services.TryAddSingleton(sp =>
+        new SessionRevocationCache(sp.GetRequiredService<TimeProvider>(), TimeSpan.FromSeconds(30)));
     builder.Services.AddScoped<ISessionStore>(sp =>
         new EggLedger.Web.Server.Sync.Db.SessionStore(
             sp.GetRequiredService<NpgsqlDataSource>(),
-            sp.GetRequiredService<EggIdentity.Client.IdentityApiClient>()));
+            sp.GetRequiredService<EggIdentity.Client.IdentityApiClient>(),
+            sp.GetRequiredService<SessionRevocationCache>(),
+            sp.GetRequiredService<TimeProvider>()));
     builder.Services.RemoveAll<IIndexedDb>();
     builder.Services.AddScoped<IIndexedDb>(sp => new EggLedger.Web.Data.ResilientIndexedDb(
         new EggLedger.Web.Server.Storage.PostgresIndexedDb(
@@ -369,8 +382,23 @@ if (hasDb) {
 
     app.Logger.LogInformation("eggledger: DB configured, running migrations. selfBase={SelfBase}", selfBase);
     var conn = await Database.InitAsync(cfg.DatabaseUrl);
-    await Migrator.MigrateAsync(conn, Path.Combine(AppContext.BaseDirectory, "Migrations"));
+    await EggLedger.Web.Server.Storage.MigrationLedger.AdoptLegacyAsync(conn);
+    await Migrator.MigrateAsync(
+        conn,
+        Path.Combine(AppContext.BaseDirectory, "Migrations"),
+        EggLedger.Web.Server.Storage.MigrationLedger.Table);
     app.Logger.LogInformation("eggledger: migrations complete, /api/v1 + Postgres storage active");
+
+    _ = new EggLedger.Web.Server.Sync.Db.ExpiredSessionSweeper(
+            app.Services.GetRequiredService<NpgsqlDataSource>(),
+            TimeSpan.FromMinutes(cfg.SessionSweepIntervalMinutes))
+        .RunAsync(app.Lifetime.ApplicationStopping);
+
+    var constraintValidator = new EggLedger.Web.Server.Storage.ConstraintValidator(
+        app.Services.GetRequiredService<NpgsqlDataSource>(),
+        app.Services.GetRequiredService<ILogger<EggLedger.Web.Server.Storage.ConstraintValidator>>());
+    app.Lifetime.ApplicationStarted.Register(() =>
+        _ = Task.Run(() => constraintValidator.RunAsync(app.Lifetime.ApplicationStopping)));
 
     if (settingsCache is not null && settingsDataSource is not null) {
         _ = new SettingsChangeListener(settingsDataSource, settingsCache).RunAsync(app.Lifetime.ApplicationStopping);
@@ -398,6 +426,10 @@ if (hasDb) {
     }
 } else {
     app.Logger.LogWarning("eggledger: WARNING - DATABASE_URL not set. /api/v1 + Postgres storage DISABLED; auth/sync will not work. UI boots only.");
+}
+
+if (!string.IsNullOrEmpty(cfg.AdminApiSecret)) {
+    app.MapAdminApi(new AdminApiOptions("eggledger", cfg.AdminApiSecret));
 }
 
 app.MapRazorComponents<AppHost>()

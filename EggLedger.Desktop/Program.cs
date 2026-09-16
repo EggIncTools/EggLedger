@@ -173,7 +173,7 @@ internal static class Program {
     }
 
 
-    private static Uri CloudSyncBaseAddress() => new("https://eggledger.davidarthurcole.me/");
+    private static Uri CloudSyncBaseAddress() => new("https://eggledger.egginc.tools/");
 
 
 

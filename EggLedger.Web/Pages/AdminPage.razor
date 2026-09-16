@@ -18,6 +18,9 @@
                 @if (Services.GetService<ITrafficPanelSlot>() is { } trafficSlot) {
                     @trafficSlot.Render()
                 }
+                @if (Services.GetService<IDeployPanelSlot>() is { } deploySlot) {
+                    @deploySlot.Render()
+                }
                 <EventsAdminPanel/>
             </div>
             <div>

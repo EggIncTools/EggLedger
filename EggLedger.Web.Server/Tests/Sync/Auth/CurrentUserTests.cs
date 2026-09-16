@@ -1,4 +1,5 @@
 using System.Net;
+using EggIdentity.Auth;
 using EggIdentity.Client;
 using EggIdentity.Contract;
 using EggLedger.Web.Server.Sync.Auth;
@@ -10,7 +11,7 @@ namespace EggLedger.Web.Server.Tests.Sync.Auth;
 public class CurrentUserTests {
     private static HttpContext ContextWithUserId(string? userId) {
         var ctx = new DefaultHttpContext();
-        if (userId is not null) ctx.Request.Headers["X-Discord-ID"] = userId;
+        if (userId is not null) ctx.Request.Headers[RequireAuth.UserIdHeader] = userId;
         return ctx;
     }
 

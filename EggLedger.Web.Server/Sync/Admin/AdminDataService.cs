@@ -32,7 +32,8 @@ public sealed class AdminDataService(NpgsqlDataSource source, IdentityApiClient 
         "), session_agg AS (" +
         "  SELECT user_id, MAX(expires_at) AS last_session FROM sessions GROUP BY user_id" +
         ") " +
-        "SELECT u.discord_id, u.username, u.avatar_url, u.user_id, " +
+        "SELECT (SELECT i.subject FROM identities i WHERE i.user_id = u.user_id AND i.provider = 'discord'), " +
+        "u.username, COALESCE(u.avatar, ''), u.user_id, " +
         "COALESCE(mission_agg.cnt, 0), COALESCE(backup_agg.cnt, 0), COALESCE(reports_agg.cnt, 0), " +
         "COALESCE(mission_agg.bytes, 0) + COALESCE(backup_agg.bytes, 0) + COALESCE(drops_agg.bytes, 0) + " +
         "COALESCE(settings_agg.bytes, 0) + COALESCE(reports_agg.bytes, 0) + COALESCE(groups_agg.bytes, 0) + " +
@@ -84,7 +85,7 @@ public sealed class AdminDataService(NpgsqlDataSource source, IdentityApiClient 
                 reader.GetInt64(5),
                 reader.GetInt64(6),
                 reader.GetInt64(7),
-                reader.IsDBNull(8) ? (long?)null : reader.GetInt64(8),
+                reader.IsDBNull(8) ? (long?)null : reader.GetFieldValue<DateTimeOffset>(8).ToUnixTimeSeconds(),
                 roleByUserId.GetValueOrDefault(rowUserId) == "admin"));
         }
         return users;

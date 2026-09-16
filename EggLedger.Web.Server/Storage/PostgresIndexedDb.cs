@@ -149,7 +149,8 @@ public sealed class PostgresIndexedDb : IIndexedDb {
             }
             var param = "p" + p.ToString(CultureInfo.InvariantCulture);
             cols.Add(prop.Name);
-            values.Add((param, JsonRowCodec.JsonToDbValue(prop.Value, meta.BlobColumns.Contains(prop.Name), JsonRowCodec.Postgres)));
+            values.Add((param, JsonRowCodec.JsonToDbValue(
+                prop.Value, meta.BlobColumns.Contains(prop.Name), meta.EpochColumns.Contains(prop.Name), JsonRowCodec.Postgres)));
             p++;
         }
 
@@ -229,9 +230,9 @@ public sealed class PostgresIndexedDb : IIndexedDb {
         [IndexedDbStores.Mission] = new StoreMeta("el_mission", ["player_id", "mission_id"], autoIncrementColumn: null,
             blobColumns: ["complete_payload"]),
         [IndexedDbStores.InFlightMission] = new StoreMeta("el_inflight_mission", ["player_id", "mission_id"],
-            autoIncrementColumn: null, blobColumns: []),
+            autoIncrementColumn: null, blobColumns: [], epochColumns: ["captured_at"]),
         [IndexedDbStores.Backup] = new StoreMeta("el_backup", ["player_id"], autoIncrementColumn: null,
-            blobColumns: ["payload"]),
+            blobColumns: ["payload"], epochColumns: ["backed_up_at"]),
         [IndexedDbStores.ArtifactDrops] = new StoreMeta("el_artifact_drops", ["id"], autoIncrementColumn: "id",
             blobColumns: []),
         [IndexedDbStores.MissionFuel] = new StoreMeta("el_mission_fuel", ["id"], autoIncrementColumn: "id",
@@ -239,24 +240,27 @@ public sealed class PostgresIndexedDb : IIndexedDb {
         [IndexedDbStores.Settings] = new StoreMeta("el_settings", ["key"], autoIncrementColumn: null,
             blobColumns: []),
         [IndexedDbStores.Reports] = new StoreMeta("el_reports", ["id"], autoIncrementColumn: null,
-            blobColumns: []),
+            blobColumns: [], epochColumns: ["created_at", "updated_at"]),
         [IndexedDbStores.ReportGroups] = new StoreMeta("el_report_groups", ["id"], autoIncrementColumn: null,
-            blobColumns: []),
+            blobColumns: [], epochColumns: ["created_at"]),
         [IndexedDbStores.PinnedReports] = new StoreMeta("el_pinned_reports", ["id"], autoIncrementColumn: null,
-            blobColumns: []),
+            blobColumns: [], epochColumns: ["created_at"]),
     };
 
     private sealed class StoreMeta {
-        public StoreMeta(string table, string[] keyColumns, string? autoIncrementColumn, string[] blobColumns) {
+        public StoreMeta(string table, string[] keyColumns, string? autoIncrementColumn, string[] blobColumns,
+            string[]? epochColumns = null) {
             Table = table;
             KeyColumns = keyColumns;
             AutoIncrementColumn = autoIncrementColumn;
             BlobColumns = new HashSet<string>(blobColumns, StringComparer.Ordinal);
+            EpochColumns = new HashSet<string>(epochColumns ?? [], StringComparer.Ordinal);
         }
 
         public string Table { get; }
         public string[] KeyColumns { get; }
         public string? AutoIncrementColumn { get; }
         public HashSet<string> BlobColumns { get; }
+        public HashSet<string> EpochColumns { get; }
     }
 }

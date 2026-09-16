@@ -14,17 +14,16 @@ public sealed record AppConfig(
     string DeployAgentSecret,
     string DashboardChannelId,
     string MennoFunctionKey,
-    string AuthentikAuthority,
-    string AuthentikClientId,
-    string AuthentikClientSecret,
     string IdentityApiUrl,
     string IdentityApiSecret,
     string IdentityWidgetUrl,
+    string AdminApiSecret,
     IReadOnlyList<string> TrustedProxyNetworks,
     string BuildSha,
     string BuildDate,
     string DataProtectionCertPath,
-    string DataProtectionCertPassword) {
+    string DataProtectionCertPassword,
+    int SessionSweepIntervalMinutes) {
     public const string MennoUpstreamUrl = "https://eggincdatacollection.azurewebsites.net/api/SubmitEid";
 
     private static readonly string[] DefaultProxyNetworks =
@@ -54,18 +53,17 @@ public sealed record AppConfig(
             DeployAgentSecret: V(LedgerSettings.DeployAgentSecret),
             DashboardChannelId: V(LedgerSettings.DashboardChannelId),
             MennoFunctionKey: V(LedgerSettings.MennoFunctionKey),
-            AuthentikAuthority: V(LedgerSettings.AuthentikAuthority),
-            AuthentikClientId: V(LedgerSettings.AuthentikClientId),
-            AuthentikClientSecret: V(LedgerSettings.AuthentikClientSecret),
             IdentityApiUrl: identityApiUrl,
             IdentityApiSecret: V(LedgerSettings.IdentityApiSecret),
             IdentityWidgetUrl: settings.Value(LedgerSettings.IdentityWidgetUrl).Value is { Length: > 0 } widgetUrl
                 ? widgetUrl
                 : identityApiUrl,
+            AdminApiSecret: V(LedgerSettings.AdminApiSecret),
             TrustedProxyNetworks: proxyNets.Count > 0 ? proxyNets : DefaultProxyNetworks,
             BuildSha: V(LedgerSettings.BuildSha),
             BuildDate: V(LedgerSettings.BuildDate),
             DataProtectionCertPath: V(LedgerSettings.DataProtectionCertPath),
-            DataProtectionCertPassword: V(LedgerSettings.DataProtectionCertPassword));
+            DataProtectionCertPassword: V(LedgerSettings.DataProtectionCertPassword),
+            SessionSweepIntervalMinutes: Math.Max(1, settings.Value(LedgerSettings.SessionSweepIntervalMinutes).AsInt(10)));
     }
 }

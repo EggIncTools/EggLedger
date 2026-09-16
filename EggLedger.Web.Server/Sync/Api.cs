@@ -7,8 +7,6 @@ using EggLedger.Web.Server.Sync.Blobs;
 using EggLedger.Web.Server.Sync.Db;
 using EggLedger.Web.Server.Sync.Menno;
 using EggLedger.Web.Server.Sync.Verify;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -30,19 +28,17 @@ public static class Api {
         var auth = app.Services.GetRequiredService<AuthEndpoints>();
         var blobs = new BlobEndpoints(source, loggerFactory.CreateLogger<BlobEndpoints>());
         var menno = new MennoEndpoint(new HttpClient(), cfg.MennoFunctionKey, AppConfig.MennoUpstreamUrl);
-        var store = new SessionStore(source, identity);
+        var store = new SessionStore(
+            source,
+            identity,
+            app.Services.GetRequiredService<SessionRevocationCache>(),
+            app.Services.GetRequiredService<TimeProvider>());
         var admin = new Admin.AdminEndpoints(app.Services.GetRequiredService<EggLedger.Web.Components.Admin.IAdminData>(), currentUser);
 
         app.UseEggIdentityRequestMetrics();
 
 
         app.MapGet("/api/v1/auth/pair/begin", (HttpContext c) => auth.PairBegin(c));
-        if (!string.IsNullOrEmpty(cfg.AuthentikAuthority)) {
-            app.MapGet("/api/v1/auth/authentik-login", (HttpContext c) =>
-                Results.Challenge(
-                    new AuthenticationProperties { RedirectUri = "/" },
-                    [OpenIdConnectDefaults.AuthenticationScheme]));
-        }
         app.MapGet("/api/v1/auth/poll", (HttpContext c) => auth.Poll(c, c.Request.Query["state"].ToString()));
         app.MapDelete("/api/v1/auth/session", (HttpContext c) => auth.DeleteSession(c));
         app.MapPost("/api/v1/auth/logout", (HttpContext c) => auth.Logout(c));

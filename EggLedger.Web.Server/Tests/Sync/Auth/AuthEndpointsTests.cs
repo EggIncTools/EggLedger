@@ -6,6 +6,7 @@ using EggIdentity.Auth;
 using EggIdentity.Client;
 using EggLedger.Web.Server.Sync;
 using EggLedger.Web.Server.Sync.Auth;
+using EggLedger.Web.Server.Sync.Db;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -36,10 +37,9 @@ public sealed class AuthEndpointsTests {
             var userId = Guid.NewGuid();
             var protectedKey = protector.CreateProtector("EggLedger.EncryptionKey").Protect("existing-key-value");
             await using (var seed = src.CreateCommand(
-                "INSERT INTO users (user_id, discord_id, created_at, encryption_key) VALUES ($1, $2, $3, $4)")) {
+                "INSERT INTO users (user_id, created_at, encryption_key) VALUES ($1, $2, $3)")) {
                 seed.Parameters.AddWithValue(userId);
-                seed.Parameters.AddWithValue("99999");
-                seed.Parameters.AddWithValue(1000L);
+                seed.Parameters.AddWithValue(DateTimeOffset.FromUnixTimeSeconds(1000));
                 seed.Parameters.AddWithValue(protectedKey);
                 await seed.ExecuteNonQueryAsync();
             }
@@ -72,9 +72,9 @@ public sealed class AuthEndpointsTests {
 
             var userId = Guid.NewGuid();
             await using (var seed = src.CreateCommand(
-                "INSERT INTO users (user_id, discord_id, created_at) VALUES ($1, NULL, $2)")) {
+                "INSERT INTO users (user_id, created_at) VALUES ($1, $2)")) {
                 seed.Parameters.AddWithValue(userId);
-                seed.Parameters.AddWithValue(2000L);
+                seed.Parameters.AddWithValue(DateTimeOffset.FromUnixTimeSeconds(2000));
                 await seed.ExecuteNonQueryAsync();
             }
 
@@ -134,9 +134,9 @@ public sealed class AuthEndpointsTests {
 
             var userId = Guid.NewGuid();
             await using (var seed = src.CreateCommand(
-                "INSERT INTO users (user_id, discord_id, created_at) VALUES ($1, NULL, $2)")) {
+                "INSERT INTO users (user_id, created_at) VALUES ($1, $2)")) {
                 seed.Parameters.AddWithValue(userId);
-                seed.Parameters.AddWithValue(3000L);
+                seed.Parameters.AddWithValue(DateTimeOffset.FromUnixTimeSeconds(3000));
                 await seed.ExecuteNonQueryAsync();
             }
 
@@ -158,12 +158,11 @@ public sealed class AuthEndpointsTests {
             Assert.False(string.IsNullOrEmpty(body!.Token));
 
             await using var cmd = src.CreateCommand(
-                "SELECT user_id, discord_id FROM sessions WHERE token = $1");
-            cmd.Parameters.AddWithValue(body.Token);
+                "SELECT user_id FROM sessions WHERE token_hash = $1");
+            cmd.Parameters.AddWithValue(TokenHash.Of(body.Token));
             await using var reader = await cmd.ExecuteReaderAsync();
             Assert.True(await reader.ReadAsync());
             Assert.Equal(userId, reader.GetGuid(0));
-            Assert.True(reader.IsDBNull(1));
         } finally {
             await DropSchemaAsync(setupSrc);
         }
@@ -187,10 +186,9 @@ public sealed class AuthEndpointsTests {
 
             var userId = Guid.NewGuid();
             await using (var seed = src.CreateCommand(
-                "INSERT INTO users (user_id, discord_id, created_at, avatar_url) VALUES ($1, $2, $3, $4)")) {
+                "INSERT INTO users (user_id, created_at, avatar) VALUES ($1, $2, $3)")) {
                 seed.Parameters.AddWithValue(userId);
-                seed.Parameters.AddWithValue("54321");
-                seed.Parameters.AddWithValue(4000L);
+                seed.Parameters.AddWithValue(DateTimeOffset.FromUnixTimeSeconds(4000));
                 seed.Parameters.AddWithValue("http://example.com/avatar.png");
                 await seed.ExecuteNonQueryAsync();
             }
@@ -214,12 +212,11 @@ public sealed class AuthEndpointsTests {
             Assert.Equal("http://example.com/avatar.png", body!.AvatarUrl);
 
             await using var cmd = src.CreateCommand(
-                "SELECT user_id, discord_id FROM sessions WHERE token = $1");
-            cmd.Parameters.AddWithValue(body.Token);
+                "SELECT user_id FROM sessions WHERE token_hash = $1");
+            cmd.Parameters.AddWithValue(TokenHash.Of(body.Token));
             await using var reader = await cmd.ExecuteReaderAsync();
             Assert.True(await reader.ReadAsync());
             Assert.Equal(userId, reader.GetGuid(0));
-            Assert.Equal("54321", reader.GetString(1));
         } finally {
             await DropSchemaAsync(setupSrc);
         }
@@ -246,12 +243,12 @@ public sealed class AuthEndpointsTests {
 
             var userId = Guid.NewGuid();
             await using (var seed = src.CreateCommand(
-                "INSERT INTO users (user_id, discord_id, created_at) VALUES ($1, NULL, $2);" +
-                "INSERT INTO sessions (token, discord_id, user_id, expires_at) VALUES ($3, NULL, $1, $4)")) {
+                "INSERT INTO users (user_id, created_at) VALUES ($1, $2);" +
+                "INSERT INTO sessions (token_hash, user_id, expires_at) VALUES ($3, $1, $4)")) {
                 seed.Parameters.AddWithValue(userId);
-                seed.Parameters.AddWithValue(3000L);
-                seed.Parameters.AddWithValue(token);
-                seed.Parameters.AddWithValue(DateTimeOffset.UtcNow.AddDays(1).ToUnixTimeSeconds());
+                seed.Parameters.AddWithValue(DateTimeOffset.FromUnixTimeSeconds(3000));
+                seed.Parameters.AddWithValue(TokenHash.Of(token));
+                seed.Parameters.AddWithValue(DateTimeOffset.UtcNow.AddDays(1));
                 await seed.ExecuteNonQueryAsync();
             }
 
@@ -265,10 +262,11 @@ public sealed class AuthEndpointsTests {
             Assert.NotNull(revokeRequest);
             Assert.Equal("/identity/revoke-session", revokeRequest!.RequestUri!.AbsolutePath);
             var body = await revokeRequest.Content!.ReadAsStringAsync();
-            Assert.Contains(token, body);
+            Assert.Contains(TokenHash.Of(token), body);
+            Assert.DoesNotContain(token, body);
 
-            await using var cmd = src.CreateCommand("SELECT COUNT(*) FROM sessions WHERE token = $1");
-            cmd.Parameters.AddWithValue(token);
+            await using var cmd = src.CreateCommand("SELECT COUNT(*) FROM sessions WHERE token_hash = $1");
+            cmd.Parameters.AddWithValue(TokenHash.Of(token));
             Assert.Equal(0L, await cmd.ExecuteScalarAsync());
         } finally {
             await DropSchemaAsync(setupSrc);
@@ -290,6 +288,14 @@ public sealed class AuthEndpointsTests {
         await ApplyMigrationAsync(src, "7_cascade_eggledger_storage.up.sql");
         await ApplyMigrationAsync(src, "8_identities.up.sql");
         await ApplyMigrationAsync(src, "9_identity_user_id_cascade.up.sql");
+        await ApplyMigrationAsync(src, "10_identities_user_id_cascade.up.sql");
+        await ApplyMigrationAsync(src, "15_inflight_mission.up.sql");
+        await ApplyMigrationAsync(src, "16_mission_fuel.up.sql");
+        await ApplyMigrationAsync(src, "17_pinned_reports.up.sql");
+        await ApplyMigrationAsync(src, "18_session_token_hash.up.sql");
+        await ApplyMigrationAsync(src, "19_users_modern_shape.up.sql");
+        await ApplyMigrationAsync(src, "20_drop_discord_id.up.sql");
+        await ApplyMigrationAsync(src, "21_epoch_columns_timestamptz.up.sql");
     }
 
     private static async Task ApplyMigrationAsync(NpgsqlDataSource src, string fileName) {

@@ -146,3 +146,15 @@ jobs:
       version-build-arg: EGGLEDGER_VERSION
     secrets:
       PACKAGES_PAT: ${{ secrets.PACKAGES_PAT }}
+
+  notify-app:
+    needs: docker
+    uses: EggIncTools/EggIdentity/.github/workflows/notify-agent.yml@main
+    with:
+      app: eggledger
+      agent-url: https://egghook.egginc.tools/agent
+      digest: ${{ needs.docker.outputs.digest }}
+      revision: ${{ github.sha }}
+      version: ${{ github.ref_name }}
+    secrets:
+      hook-secret: ${{ secrets.DEPLOY_HOOK_SECRET }}

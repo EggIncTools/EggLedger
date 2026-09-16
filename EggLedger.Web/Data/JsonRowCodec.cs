@@ -51,6 +51,9 @@ public static class JsonRowCodec {
             case var t when t == typeof(bool):
                 writer.WriteBooleanValue(reader.GetBoolean(i));
                 break;
+            case var t when t == typeof(DateTime) || t == typeof(DateTimeOffset):
+                WriteEpochValue(writer, reader, i);
+                break;
             case var t when t == typeof(long):
                 writer.WriteNumberValue(reader.GetInt64(i));
                 break;
@@ -69,14 +72,31 @@ public static class JsonRowCodec {
         }
     }
 
-    public static object JsonToDbValue(JsonElement el, bool isBlob, Provider provider) => el.ValueKind switch {
+    private static void WriteEpochValue(Utf8JsonWriter writer, DbDataReader reader, int i) {
+        var millis = reader.GetFieldValue<DateTimeOffset>(i).ToUnixTimeMilliseconds();
+        var (seconds, remainder) = Math.DivRem(millis, 1000L);
+        if (remainder == 0) {
+            writer.WriteNumberValue(seconds);
+            return;
+        }
+        writer.WriteNumberValue(millis / 1000d);
+    }
+
+    public static object JsonToDbValue(JsonElement el, bool isBlob, Provider provider) =>
+        JsonToDbValue(el, isBlob, isEpoch: false, provider);
+
+    public static object JsonToDbValue(JsonElement el, bool isBlob, bool isEpoch, Provider provider) => el.ValueKind switch {
         JsonValueKind.Null => DBNull.Value,
         JsonValueKind.True => provider.BoolAsInteger ? 1L : true,
         JsonValueKind.False => provider.BoolAsInteger ? 0L : false,
+        JsonValueKind.Number when isEpoch && !provider.BoolAsInteger => EpochToDb(el),
         JsonValueKind.Number => el.TryGetInt64(out var l) ? l : el.GetDouble(),
         JsonValueKind.String => DecodeString(el, isBlob),
         _ => el.GetRawText(),
     };
+
+    private static DateTimeOffset EpochToDb(JsonElement el) =>
+        DateTimeOffset.FromUnixTimeMilliseconds((long)Math.Round(el.GetDouble() * 1000d));
 
 
 

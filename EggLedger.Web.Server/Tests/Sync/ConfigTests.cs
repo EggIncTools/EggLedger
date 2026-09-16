@@ -5,27 +5,6 @@ namespace EggLedger.Web.Server.Tests.Sync;
 
 public class ConfigTests {
     [Fact]
-    public void FromEnv_reads_authentik_settings() {
-        var env = new Dictionary<string, string?> {
-            ["AUTHENTIK_AUTHORITY"] = "https://auth.davidarthurcole.me/application/o/egg-ledger/",
-            ["AUTHENTIK_CLIENT_ID"] = "abc",
-            ["AUTHENTIK_CLIENT_SECRET"] = "secret",
-        };
-        var cfg = AppConfig.FromEnv(k => env.GetValueOrDefault(k));
-        Assert.Equal("https://auth.davidarthurcole.me/application/o/egg-ledger/", cfg.AuthentikAuthority);
-        Assert.Equal("abc", cfg.AuthentikClientId);
-        Assert.Equal("secret", cfg.AuthentikClientSecret);
-    }
-
-    [Fact]
-    public void FromEnv_defaults_authentik_settings_to_empty() {
-        var cfg = AppConfig.FromEnv(_ => null);
-        Assert.Equal("", cfg.AuthentikAuthority);
-        Assert.Equal("", cfg.AuthentikClientId);
-        Assert.Equal("", cfg.AuthentikClientSecret);
-    }
-
-    [Fact]
     public void FromEnv_reads_identity_api_settings() {
         var env = new Dictionary<string, string?> {
             ["IDENTITY_API_URL"] = "http://localhost:8090",
@@ -47,10 +26,10 @@ public class ConfigTests {
     public void FromEnv_reads_identity_widget_url_when_set() {
         var env = new Dictionary<string, string?> {
             ["IDENTITY_API_URL"] = "http://eggidentity:8090",
-            ["IDENTITY_WIDGET_URL"] = "https://identity.davidarthurcole.me",
+            ["IDENTITY_WIDGET_URL"] = "https://identity.egginc.tools",
         };
         var cfg = AppConfig.FromEnv(k => env.GetValueOrDefault(k));
-        Assert.Equal("https://identity.davidarthurcole.me", cfg.IdentityWidgetUrl);
+        Assert.Equal("https://identity.egginc.tools", cfg.IdentityWidgetUrl);
     }
 
     [Fact]

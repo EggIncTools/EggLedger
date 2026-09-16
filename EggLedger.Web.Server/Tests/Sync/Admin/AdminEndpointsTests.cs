@@ -52,10 +52,10 @@ public sealed class AdminEndpointsTests {
         await CreateSchemaAsync(src);
         try {
             var userId = Guid.NewGuid();
-            await Exec(src, $"INSERT INTO users (discord_id, user_id, username, avatar_url, created_at) VALUES ('123', '{userId}', 'tester', '', 0)");
-            await Exec(src, $"INSERT INTO el_mission (user_id, discord_id, player_id, mission_id, start_timestamp, complete_payload) VALUES ('{userId}', '123', 'EI_A', 'm1', 1, '\\x010203')");
-            await Exec(src, $"INSERT INTO el_mission (user_id, discord_id, player_id, mission_id, start_timestamp, complete_payload) VALUES ('{userId}', '123', 'EI_A', 'm2', 2, '\\x010203')");
-            await Exec(src, $"INSERT INTO el_settings (user_id, discord_id, key, value) VALUES ('{userId}', '123', 'k', 'v')");
+            await Exec(src, $"INSERT INTO users (user_id, username, avatar, created_at) VALUES ('{userId}', 'tester', '', to_timestamp(0))");
+            await Exec(src, $"INSERT INTO el_mission (user_id, player_id, mission_id, start_timestamp, complete_payload) VALUES ('{userId}', 'EI_A', 'm1', 1, '\\x010203')");
+            await Exec(src, $"INSERT INTO el_mission (user_id, player_id, mission_id, start_timestamp, complete_payload) VALUES ('{userId}', 'EI_A', 'm2', 2, '\\x010203')");
+            await Exec(src, $"INSERT INTO el_settings (user_id, key, value) VALUES ('{userId}', 'k', 'v')");
 
             var endpoints = Endpoints(src, isAdmin: true, adminUserId: userId);
             var ctx = Ctx();
@@ -79,9 +79,9 @@ public sealed class AdminEndpointsTests {
         try {
             var adminId = Guid.NewGuid();
             var targetId = Guid.NewGuid();
-            await Exec(src, $"INSERT INTO users (discord_id, user_id, username, avatar_url, created_at) VALUES ('1', '{adminId}', 'admin', '', 0)");
-            await Exec(src, $"INSERT INTO users (discord_id, user_id, username, avatar_url, created_at) VALUES ('2', '{targetId}', 'target', '', 0)");
-            await Exec(src, $"INSERT INTO el_mission (user_id, discord_id, player_id, mission_id, start_timestamp, complete_payload) VALUES ('{targetId}', '2', 'EI_B', 'm1', 1, '\\x01')");
+            await Exec(src, $"INSERT INTO users (user_id, username, avatar, created_at) VALUES ('{adminId}', 'admin', '', to_timestamp(0))");
+            await Exec(src, $"INSERT INTO users (user_id, username, avatar, created_at) VALUES ('{targetId}', 'target', '', to_timestamp(0))");
+            await Exec(src, $"INSERT INTO el_mission (user_id, player_id, mission_id, start_timestamp, complete_payload) VALUES ('{targetId}', 'EI_B', 'm1', 1, '\\x01')");
 
             var endpoints = Endpoints(src, isAdmin: true, adminUserId: adminId);
             var ctx = Ctx();
@@ -115,10 +115,19 @@ public sealed class AdminEndpointsTests {
     private static async Task CreateSchemaAsync(NpgsqlDataSource src) {
         await Exec(src, $"DROP SCHEMA IF EXISTS {Schema} CASCADE; CREATE SCHEMA {Schema}; SET search_path TO {Schema};");
         await ApplyMigrationAsync(src, "1_initial_schema.up.sql");
+        await ApplyMigrationAsync(src, "2_add_user_profile.up.sql");
+        await ApplyMigrationAsync(src, "3_add_encryption_key.up.sql");
         await ApplyMigrationAsync(src, "4_eggledger_storage.up.sql");
         await ApplyMigrationAsync(src, "6_api_spam_log.up.sql");
         await ApplyMigrationAsync(src, "7_cascade_eggledger_storage.up.sql");
         await ApplyMigrationAsync(src, "8_identities.up.sql");
+        await ApplyMigrationAsync(src, "9_identity_user_id_cascade.up.sql");
+        await ApplyMigrationAsync(src, "10_identities_user_id_cascade.up.sql");
+        await ApplyMigrationAsync(src, "15_inflight_mission.up.sql");
+        await ApplyMigrationAsync(src, "16_mission_fuel.up.sql");
+        await ApplyMigrationAsync(src, "17_pinned_reports.up.sql");
+        await ApplyMigrationAsync(src, "18_session_token_hash.up.sql");
+        await ApplyMigrationAsync(src, "19_users_modern_shape.up.sql");
     }
 
     private static async Task ApplyMigrationAsync(NpgsqlDataSource src, string fileName) {

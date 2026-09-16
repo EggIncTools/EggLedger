@@ -1,6 +1,5 @@
 using EggIdentity.Contract;
 using EggIdentity.Metrics;
-using EggIdentity.Metrics.AdminUi;
 
 namespace EggLedger.Web.Server.Sync.Admin;
 

@@ -1,3 +1,4 @@
+using EggIdentity.Auth;
 using EggIdentity.Client;
 using EggIdentity.Contract;
 using Microsoft.AspNetCore.Http;
@@ -20,7 +21,7 @@ public sealed class CurrentUser(IdentityApiClient identity) : ICurrentUser {
     private const string RoleItemsKey = "EggIdentity.Role";
 
     public Guid? UserId(HttpContext ctx) =>
-        Guid.TryParse(ctx.Request.Headers["X-Discord-ID"].ToString(), out var id) ? id : null;
+        Guid.TryParse(ctx.Request.Headers[RequireAuth.UserIdHeader].ToString(), out var id) ? id : null;
 
     public async Task<string?> RoleAsync(HttpContext ctx, CancellationToken ct) {
         if (ctx.Items.TryGetValue(RoleItemsKey, out var cached)) return (string?)cached;

@@ -1,4 +1,5 @@
 using System.Net;
+using EggIdentity.Auth;
 using EggIdentity.Client;
 using EggLedger.Web.Server.Sync.Db;
 using EggLedger.Web.Server.Tests.Sync.Auth;
@@ -8,6 +9,9 @@ namespace EggLedger.Web.Server.Tests.Sync.Db;
 
 public sealed class SessionStoreTests {
     private const string Schema = "eltest_sessionstore";
+
+    private static SessionStore StoreFor(NpgsqlDataSource src, bool revoked) =>
+        new(src, StubIdentity(revoked), new SessionRevocationCache(TimeProvider.System, TimeSpan.FromSeconds(30)), TimeProvider.System);
 
     private static IdentityApiClient StubIdentity(bool revoked) =>
         new(new HttpClient(new StubHttpMessageHandler(_ =>
@@ -28,21 +32,22 @@ public sealed class SessionStoreTests {
             var userId = Guid.NewGuid();
             const string discordId = "99999999";
             const string token = "tok-abc";
-            var expiresAt = DateTimeOffset.UtcNow.AddDays(1).ToUnixTimeSeconds();
+            var expiresAt = DateTimeOffset.UtcNow.AddDays(1);
 
             await Exec(src, $"""
-                INSERT INTO users (user_id, discord_id, created_at) VALUES ('{userId}', '{discordId}', 0);
-                INSERT INTO sessions (token, discord_id, user_id, expires_at)
-                VALUES ('{token}', '{discordId}', '{userId}', {expiresAt});
+                INSERT INTO users (user_id, created_at) VALUES ('{userId}', to_timestamp(0));
+                INSERT INTO identities (user_id, provider, subject) VALUES ('{userId}', 'discord', '{discordId}');
+                INSERT INTO sessions (token_hash, user_id, expires_at)
+                VALUES ('{TokenHash.Of(token)}', '{userId}', '{expiresAt:O}');
                 """);
 
-            var store = new SessionStore(src, StubIdentity(revoked: false));
+            var store = StoreFor(src, revoked: false);
             var (found, returnedId, returnedExpiresAt) = await store.LookupAsync(token, CancellationToken.None);
 
             Assert.True(found);
             Assert.Equal(userId.ToString(), returnedId);
             Assert.NotEqual(discordId, returnedId);
-            Assert.Equal(expiresAt, returnedExpiresAt);
+            Assert.Equal(expiresAt.ToUnixTimeSeconds(), returnedExpiresAt);
         } finally {
             await DropSchemaAsync(setupSrc);
         }
@@ -61,15 +66,16 @@ public sealed class SessionStoreTests {
             var userId = Guid.NewGuid();
             const string discordId = "99999999";
             const string token = "tok-revoked";
-            var expiresAt = DateTimeOffset.UtcNow.AddDays(1).ToUnixTimeSeconds();
+            var expiresAt = DateTimeOffset.UtcNow.AddDays(1);
 
             await Exec(src, $"""
-                INSERT INTO users (user_id, discord_id, created_at) VALUES ('{userId}', '{discordId}', 0);
-                INSERT INTO sessions (token, discord_id, user_id, expires_at)
-                VALUES ('{token}', '{discordId}', '{userId}', {expiresAt});
+                INSERT INTO users (user_id, created_at) VALUES ('{userId}', to_timestamp(0));
+                INSERT INTO identities (user_id, provider, subject) VALUES ('{userId}', 'discord', '{discordId}');
+                INSERT INTO sessions (token_hash, user_id, expires_at)
+                VALUES ('{TokenHash.Of(token)}', '{userId}', '{expiresAt:O}');
                 """);
 
-            var store = new SessionStore(src, StubIdentity(revoked: true));
+            var store = StoreFor(src, revoked: true);
             var (found, returnedId, returnedExpiresAt) = await store.LookupAsync(token, CancellationToken.None);
 
             Assert.False(found);
@@ -88,9 +94,15 @@ public sealed class SessionStoreTests {
         await ApplyMigrationAsync(src, "4_eggledger_storage.up.sql");
         await ApplyMigrationAsync(src, "5_data_protection_keys.up.sql");
         await ApplyMigrationAsync(src, "6_api_spam_log.up.sql");
+        await ApplyMigrationAsync(src, "7_cascade_eggledger_storage.up.sql");
         await ApplyMigrationAsync(src, "8_identities.up.sql");
         await ApplyMigrationAsync(src, "9_identity_user_id_cascade.up.sql");
         await ApplyMigrationAsync(src, "10_identities_user_id_cascade.up.sql");
+        await ApplyMigrationAsync(src, "15_inflight_mission.up.sql");
+        await ApplyMigrationAsync(src, "16_mission_fuel.up.sql");
+        await ApplyMigrationAsync(src, "17_pinned_reports.up.sql");
+        await ApplyMigrationAsync(src, "18_session_token_hash.up.sql");
+        await ApplyMigrationAsync(src, "19_users_modern_shape.up.sql");
     }
 
     private static async Task ApplyMigrationAsync(NpgsqlDataSource src, string fileName) {

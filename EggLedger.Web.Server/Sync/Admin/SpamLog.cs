@@ -20,7 +20,7 @@ public sealed class SpamLog(NpgsqlDataSource source) : IRequestAuditSink {
         cmd.Parameters.AddWithValue(method);
         cmd.Parameters.AddWithValue(path);
         cmd.Parameters.AddWithValue(userAgent);
-        cmd.Parameters.AddWithValue(nowEpoch);
+        cmd.Parameters.AddWithValue(DateTimeOffset.FromUnixTimeSeconds(nowEpoch));
         await cmd.ExecuteNonQueryAsync();
     }
 
@@ -37,8 +37,8 @@ public sealed class SpamLog(NpgsqlDataSource source) : IRequestAuditSink {
                 reader.GetString(1),
                 reader.GetString(2),
                 reader.GetString(3),
-                reader.GetInt64(4),
-                reader.GetInt64(5),
+                reader.GetFieldValue<DateTimeOffset>(4).ToUnixTimeSeconds(),
+                reader.GetFieldValue<DateTimeOffset>(5).ToUnixTimeSeconds(),
                 reader.GetInt64(6)));
         }
         return rows;

@@ -10,6 +10,7 @@ using EggIdentity.Resilience;
 using EggIdentity.Settings.Store;
 using EggLedger.Web.Server.Settings;
 using EggLedger.Web.Server.Sync;
+using EggLedger.Web.Server.Sync.Db;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
@@ -45,7 +46,6 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
         "el_mission", "el_backup", "el_artifact_drops", "el_settings", "el_reports", "el_report_groups",
     ];
     private readonly IDataProtector _keyProtector = dataProtection.CreateProtector("EggLedger.EncryptionKey");
-    private static long Now() => DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
     private async Task<string> PublicBaseUrlAsync(CancellationToken ct) =>
         await LiveAsync(LedgerSettings.PublicBaseUrl, ct) ?? cfg.PublicBaseUrl;
@@ -93,7 +93,7 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
     public async Task<RedeemLoginCodeResponse> RedeemAndSignInAsync(HttpContext ctx, string code, CancellationToken ct) {
         var result = await identity.RedeemAsync(code, ct);
 
-        await UpsertLocalUserAsync(result.UserId, result.DiscordId, result.Username, result.Avatar, ct);
+        await UpsertLocalUserAsync(result.UserId, result.Username, result.Avatar, ct);
 
         if (eggIdentitySession is null) {
             var claims = new List<Claim> {
@@ -133,18 +133,13 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
 
 
 
-    private async Task UpsertLocalUserAsync(Guid userId, string? discordId, string? username, string? avatar, CancellationToken ct) {
+    private async Task UpsertLocalUserAsync(Guid userId, string? username, string? avatar, CancellationToken ct) {
         await Retry.RunAsync(async rct => {
             await using var u = source.CreateCommand(
-                "INSERT INTO users (user_id, discord_id, created_at, username, avatar_url) VALUES ($1,$2,$3,$4,$5) " +
-                "ON CONFLICT (user_id) DO UPDATE SET username = EXCLUDED.username, avatar_url = EXCLUDED.avatar_url");
+                "INSERT INTO users (user_id, created_at, username, avatar) VALUES ($1,$2,$3,$4) " +
+                "ON CONFLICT (user_id) DO UPDATE SET username = EXCLUDED.username, avatar = EXCLUDED.avatar");
             u.Parameters.AddWithValue(userId);
-            if (string.IsNullOrEmpty(discordId)) {
-                u.Parameters.AddWithValue(DBNull.Value);
-            } else {
-                u.Parameters.AddWithValue(discordId);
-            }
-            u.Parameters.AddWithValue(Now());
+            u.Parameters.AddWithValue(DateTimeOffset.UtcNow);
             u.Parameters.AddWithValue(username ?? "");
             u.Parameters.AddWithValue(avatar ?? "");
             await u.ExecuteNonQueryAsync(rct);
@@ -155,9 +150,8 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
 
     private async Task<bool> StateIsPending(string state, CancellationToken ct) {
         await using var cmd = source.CreateCommand(
-            "SELECT 1 FROM pending_auth WHERE state = $1 AND expires_at > $2");
+            "SELECT 1 FROM pending_auth WHERE state = $1 AND expires_at > now()");
         cmd.Parameters.AddWithValue(state);
-        cmd.Parameters.AddWithValue(Now());
         try {
             return await cmd.ExecuteScalarAsync(ct) is not null;
         } catch (Exception ex) {
@@ -193,19 +187,19 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
 
     public async Task Poll(HttpContext ctx, string state) {
         string? token = null;
-        long expiresAt = 0;
+        var expiresAt = DateTimeOffset.MinValue;
         string username = "", avatarUrl = "", encryptionKey = "";
         var found = false;
 
         try {
             await using var cmd = source.CreateCommand(
-                "SELECT session_token, expires_at, username, avatar_url, encryption_key FROM pending_auth WHERE state = $1");
+                "SELECT session_token, expires_at, username, avatar, encryption_key FROM pending_auth WHERE state = $1");
             cmd.Parameters.AddWithValue(state);
             await using var reader = await cmd.ExecuteReaderAsync(ctx.RequestAborted);
             if (await reader.ReadAsync(ctx.RequestAborted)) {
                 found = true;
                 token = reader.IsDBNull(0) ? null : reader.GetString(0);
-                expiresAt = reader.GetInt64(1);
+                expiresAt = reader.GetFieldValue<DateTimeOffset>(1);
                 username = reader.IsDBNull(2) ? "" : reader.GetString(2);
                 avatarUrl = reader.IsDBNull(3) ? "" : reader.GetString(3);
                 encryptionKey = reader.IsDBNull(4) ? "" : reader.GetString(4);
@@ -214,7 +208,7 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
             logger.LogWarning(ex, "auth: poll query failed for state {State}", state);
         }
 
-        if (!found || Now() > expiresAt) {
+        if (!found || DateTimeOffset.UtcNow > expiresAt) {
             await WriteTextAsync(ctx, StatusCodes.Status404NotFound, "not found\n");
             return;
         }
@@ -246,11 +240,10 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
             return;
         }
 
-        var discordId = profile.Identities.FirstOrDefault(i => i.Provider == "discord")?.Subject;
         PollResponse poll;
         try {
-            await UpsertLocalUserAsync(profile.UserId, discordId, profile.Username, profile.Avatar, ctx.RequestAborted);
-            poll = await MintSessionAsync(profile.UserId, profile.Username, discordId, ctx.RequestAborted);
+            await UpsertLocalUserAsync(profile.UserId, profile.Username, profile.Avatar, ctx.RequestAborted);
+            poll = await MintSessionAsync(profile.UserId, profile.Username, ctx.RequestAborted);
         } catch (NpgsqlException ex) {
             logger.LogError(ex, "auth: session-from-login database failure for {UserId}", profile.UserId);
             await WriteTextAsync(ctx, StatusCodes.Status503ServiceUnavailable, "database unavailable\n");
@@ -259,21 +252,16 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
         await WriteJsonAsync(ctx, poll);
     }
 
-    public async Task<PollResponse> MintSessionAsync(Guid userId, string username, string? discordId, CancellationToken ct) {
+    public async Task<PollResponse> MintSessionAsync(Guid userId, string username, CancellationToken ct) {
         var encKey = await EnsureEncryptionKeyAsync(userId);
-        var token = Guid.NewGuid().ToString("N");
+        var token = TokenHash.Mint();
 
         await Retry.RunAsync(async rct => {
             await using var ins = source.CreateCommand(
-                "INSERT INTO sessions (token, discord_id, user_id, expires_at) VALUES ($1, $2, $3, $4)");
-            ins.Parameters.AddWithValue(token);
-            if (string.IsNullOrEmpty(discordId)) {
-                ins.Parameters.AddWithValue(DBNull.Value);
-            } else {
-                ins.Parameters.AddWithValue(discordId);
-            }
+                "INSERT INTO sessions (token_hash, user_id, expires_at) VALUES ($1, $2, $3)");
+            ins.Parameters.AddWithValue(TokenHash.Of(token));
             ins.Parameters.AddWithValue(userId);
-            ins.Parameters.AddWithValue(Now() + 30L * 24 * 3600);
+            ins.Parameters.AddWithValue(DateTimeOffset.UtcNow + SessionTokens.Lifetime);
             await ins.ExecuteNonQueryAsync(rct);
         }, DbRetry, ct: ct);
 
@@ -286,7 +274,7 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
         await using var cmd = source.CreateCommand(
             "INSERT INTO pending_auth (state, expires_at) VALUES ($1, $2) ON CONFLICT (state) DO UPDATE SET expires_at = EXCLUDED.expires_at");
         cmd.Parameters.AddWithValue(state);
-        cmd.Parameters.AddWithValue(Now() + 600);
+        cmd.Parameters.AddWithValue(DateTimeOffset.UtcNow + SessionTokens.PendingLifetime);
         try { await cmd.ExecuteNonQueryAsync(ctx.RequestAborted); } catch (Exception ex) { logger.LogWarning(ex, "auth: failed to seed pending_auth row"); }
 
         var baseUrl = await PublicBaseUrlAsync(ctx.RequestAborted);
@@ -305,11 +293,10 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
         }
 
         var username = user.Identity?.Name ?? "";
-        var discordIdClaim = user.FindFirst(Server.Auth.AuthScheme.DiscordIdClaim)?.Value;
-        var poll = await MintSessionAsync(userId, username, discordIdClaim, ct);
+        var poll = await MintSessionAsync(userId, username, ct);
 
         await using var pend = source.CreateCommand(
-            "UPDATE pending_auth SET session_token = $1, username = $2, avatar_url = $3, encryption_key = $4 WHERE state = $5");
+            "UPDATE pending_auth SET session_token = $1, username = $2, avatar = $3, encryption_key = $4 WHERE state = $5");
         pend.Parameters.AddWithValue(poll.Token);
         pend.Parameters.AddWithValue(poll.Username);
         pend.Parameters.AddWithValue(poll.AvatarUrl);
@@ -320,13 +307,13 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
     }
 
     private async Task<string> UserAvatarUrlAsync(Guid userId, CancellationToken ct) {
-        await using var cmd = source.CreateCommand("SELECT avatar_url FROM users WHERE user_id = $1");
+        await using var cmd = source.CreateCommand("SELECT avatar FROM users WHERE user_id = $1");
         cmd.Parameters.AddWithValue(userId);
         try {
             var result = await cmd.ExecuteScalarAsync(ct);
             return result as string ?? "";
         } catch (Exception ex) {
-            logger.LogWarning(ex, "auth: failed to read avatar_url for {UserId}", userId);
+            logger.LogWarning(ex, "auth: failed to read avatar for {UserId}", userId);
             return "";
         }
     }
@@ -337,10 +324,11 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
             ? authHeader["Bearer ".Length..]
             : "";
         if (token.Length > 0) {
-            await using var cmd = source.CreateCommand("DELETE FROM sessions WHERE token = $1");
-            cmd.Parameters.AddWithValue(token);
+            var hash = TokenHash.Of(token);
+            await using var cmd = source.CreateCommand("DELETE FROM sessions WHERE token_hash = $1");
+            cmd.Parameters.AddWithValue(hash);
             try { await cmd.ExecuteNonQueryAsync(ctx.RequestAborted); } catch (Exception ex) { logger.LogWarning(ex, "auth: failed to delete session"); }
-            try { await identity.RevokeSessionAsync(token, ctx.RequestAborted); } catch (Exception ex) { logger.LogWarning(ex, "auth: failed to revoke session"); }
+            try { await identity.RevokeSessionAsync(hash, ctx.RequestAborted); } catch (Exception ex) { logger.LogWarning(ex, "auth: failed to revoke session"); }
         }
         ctx.Response.StatusCode = StatusCodes.Status204NoContent;
     }

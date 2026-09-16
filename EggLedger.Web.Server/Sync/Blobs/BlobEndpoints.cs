@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using EggIdentity.Auth;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Npgsql;
@@ -10,11 +11,10 @@ namespace EggLedger.Web.Server.Sync.Blobs;
 
 public sealed class BlobEndpoints(NpgsqlDataSource source, ILogger<BlobEndpoints> logger) {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
-    private static long Now() => DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
 
 
-    private static Guid UserId(HttpContext ctx) => Guid.Parse(ctx.Request.Headers["X-Discord-ID"].ToString());
+    private static Guid UserId(HttpContext ctx) => Guid.Parse(ctx.Request.Headers[RequireAuth.UserIdHeader].ToString());
 
     private static async Task WriteTextAsync(HttpContext ctx, int statusCode, string text) {
         ctx.Response.StatusCode = statusCode;
@@ -49,7 +49,7 @@ public sealed class BlobEndpoints(NpgsqlDataSource source, ILogger<BlobEndpoints
             cmd.Parameters.AddWithValue(userId);
             cmd.Parameters.AddWithValue(name);
             cmd.Parameters.AddWithValue(body.Ciphertext);
-            cmd.Parameters.AddWithValue(Now());
+            cmd.Parameters.AddWithValue(DateTimeOffset.UtcNow);
             await cmd.ExecuteNonQueryAsync(ctx.RequestAborted);
         } catch (Exception ex) {
             logger.LogWarning(ex, "blobs: failed to put blob {Name} for {UserId}", name, userId);
@@ -70,7 +70,7 @@ public sealed class BlobEndpoints(NpgsqlDataSource source, ILogger<BlobEndpoints
                 await WriteTextAsync(ctx, StatusCodes.Status404NotFound, "not found\n");
                 return;
             }
-            var resp = new GetBlobResponse(reader.GetString(0), reader.GetInt64(1));
+            var resp = new GetBlobResponse(reader.GetString(0), reader.GetFieldValue<DateTimeOffset>(1).ToUnixTimeSeconds());
             await WriteJsonAsync(ctx, resp);
         } catch (Exception ex) {
             logger.LogWarning(ex, "blobs: failed to get blob {Name} for {UserId}", name, userId);
@@ -86,7 +86,7 @@ public sealed class BlobEndpoints(NpgsqlDataSource source, ILogger<BlobEndpoints
             var items = new List<BlobListEntry>();
             await using var reader = await cmd.ExecuteReaderAsync(ctx.RequestAborted);
             while (await reader.ReadAsync(ctx.RequestAborted))
-                items.Add(new BlobListEntry(reader.GetString(0), reader.GetInt64(1)));
+                items.Add(new BlobListEntry(reader.GetString(0), reader.GetFieldValue<DateTimeOffset>(1).ToUnixTimeSeconds()));
             await WriteJsonAsync(ctx, items);
         } catch (Exception ex) {
             logger.LogWarning(ex, "blobs: failed to list blobs for {UserId}", userId);

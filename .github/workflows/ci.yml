@@ -20,16 +20,6 @@ jobs:
     secrets:
       PACKAGES_PAT: ${{ secrets.PACKAGES_PAT }}
 
-  fast-deploy:
-    needs: build-test
-    if: github.event_name == 'push'
-    uses: EggIncTools/EggIdentity/.github/workflows/fast-deploy-trigger.yml@main
-    with:
-      app: EggLedger
-      agent-url: https://eggidentity.davidarthurcole.me/agent
-    secrets:
-      deploy-secret: ${{ secrets.LEDGER_DEPLOY_SECRET }}
-
   warm-release-cache:
     if: github.event_name == 'push'
     strategy:

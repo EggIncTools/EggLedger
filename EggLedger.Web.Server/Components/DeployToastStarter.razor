@@ -1,0 +1,10 @@
+@using EggIdentity.Deploy.AdminUi
+@inject IServiceProvider Services
+
+@code {
+
+    protected override void OnInitialized() {
+        Services.GetService<DeployToastBridge>()?.Start();
+    }
+
+}

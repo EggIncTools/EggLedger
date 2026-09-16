@@ -1,7 +1,9 @@
 @using EggIdentity.UI
 @using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.Extensions.DependencyInjection
 @inherits LayoutComponentBase
 @inject AppStateService AppStateSvc
+@inject IServiceProvider Services
 @inject ScreenshotSafetyState ScreenshotSafety
 @inject IndexedDbSettings Settings
 @inject AccountLoader Loader
@@ -21,10 +23,13 @@
 
 <ToastHost/>
 
+@if (Services.GetService<IDeployToastSlot>() is { } deployToasts) {
+    @deployToasts.Render()
+}
+
 @code {
 
     [CascadingParameter] private Task<AuthenticationState>? AuthStateTask { get; set; }
-
 
     private bool IsLoggedIn = true;
 

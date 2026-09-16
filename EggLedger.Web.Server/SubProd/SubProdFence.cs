@@ -11,7 +11,7 @@ public static class SubProdFence {
     private static readonly (string AllowName, string[] Keys)[] Gates = [
         ("DISCORD", ["DISCORD_BOT_TOKEN", "DISCORD_CLIENT_ID"]),
         ("DEPLOY", ["DEPLOY_AGENT_URL", "DEPLOY_AGENT_SECRET"]),
-        ("AUTH", ["AUTHENTIK_CLIENT_SECRET", "IDENTITY_API_SECRET"]),
+        ("AUTH", ["IDENTITY_API_SECRET"]),
     ];
 
     public static bool IsStaging(string environmentName) =>

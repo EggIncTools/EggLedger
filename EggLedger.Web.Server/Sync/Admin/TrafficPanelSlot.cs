@@ -1,4 +1,4 @@
-using EggIdentity.Metrics.AdminUi;
+using EggIdentity.Metrics;
 using EggLedger.Web.Components.Admin;
 using Microsoft.AspNetCore.Components;
 

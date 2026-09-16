@@ -12,19 +12,19 @@
   <ItemGroup>
     <PackageReference Include="EggIdentity.Auth" />
     <PackageReference Include="EggIdentity.Bot" />
-    <PackageReference Include="EggIdentity.Bot.AdminUi" />
     <PackageReference Include="EggIdentity.Contract" />
     <PackageReference Include="EggIdentity.Db" />
+    <PackageReference Include="EggIdentity.Deploy" />
+    <PackageReference Include="EggIdentity.Deploy.AdminUi" />
     <PackageReference Include="EggIdentity.Fallback" />
     <PackageReference Include="EggIdentity.AdminUi" />
     <PackageReference Include="EggIdentity.Client" />
     <PackageReference Include="EggIdentity.Metrics" />
-    <PackageReference Include="EggIdentity.Metrics.AdminUi" />
     <PackageReference Include="EggIdentity.Settings" />
     <PackageReference Include="EggIdentity.Settings.Store" />
     <PackageReference Include="EggIdentity.Settings.AdminUi" />
+    <PackageReference Include="EggIdentity.Settings.Api" />
     <PackageReference Include="Npgsql" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" />
   </ItemGroup>
 
   <ItemGroup>

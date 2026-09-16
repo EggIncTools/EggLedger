@@ -51,12 +51,12 @@ public class LedgerSettingsTests {
     public void Database_wins_over_environment_for_a_restart_tier_setting() {
         var cfg = AppConfig.From(Snapshot(
             database: new Dictionary<string, string?>(StringComparer.Ordinal) {
-                [LedgerSettings.AuthentikClientId] = "from-db",
+                [LedgerSettings.DiscordClientId] = "from-db",
             },
             env: new Dictionary<string, string?>(StringComparer.Ordinal) {
-                ["AUTHENTIK_CLIENT_ID"] = "from-env",
+                ["DISCORD_CLIENT_ID"] = "from-env",
             }));
-        Assert.Equal("from-db", cfg.AuthentikClientId);
+        Assert.Equal("from-db", cfg.DiscordClientId);
     }
 
     [Fact]

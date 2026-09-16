@@ -17,6 +17,7 @@ public static class LedgerSettings {
     public const string DeployAgentSecret = "deploy.agent_secret";
     public const string DataProtectionCertPath = "deploy.data_protection_cert_path";
     public const string DataProtectionCertPassword = "deploy.data_protection_cert_password";
+    public const string SessionSweepIntervalMinutes = "deploy.session_sweep_interval_minutes";
 
     public const string DiscordClientId = "discord.client_id";
     public const string DiscordBotToken = "discord.bot_token";
@@ -24,12 +25,10 @@ public static class LedgerSettings {
     public const string SharedRoleId = "discord.shared_role_id";
     public const string DashboardChannelId = "discord.dashboard_channel_id";
 
-    public const string AuthentikAuthority = "authentik.authority";
-    public const string AuthentikClientId = "authentik.client_id";
-    public const string AuthentikClientSecret = "authentik.client_secret";
     public const string IdentityApiUrl = "identity.api_url";
     public const string IdentityApiSecret = "identity.api_secret";
     public const string IdentityWidgetUrl = "identity.widget_url";
+    public const string AdminApiSecret = "admin.api_secret";
 
     public const string MennoFunctionKey = "integrations.menno_function_key";
     public const string EgiBaseUrl = "integrations.egi_base_url";
@@ -39,7 +38,7 @@ public static class LedgerSettings {
     public const string BuildDate = "build.build_date";
     public const string GitSha = "build.git_sha";
 
-    public const string DefaultPublicBaseUrl = "https://eggledger.davidarthurcole.me";
+    public const string DefaultPublicBaseUrl = "https://eggledger.egginc.tools";
 
     public static ISettingsProvider Provider { get; } = new StaticSettingsProvider([
         new SettingDescriptor(
@@ -78,6 +77,12 @@ public static class LedgerSettings {
             DataProtectionCertPassword, "DATA_PROTECTION_CERT_PASSWORD", "Data protection cert password", Deploy,
             SettingKind.Secret, ApplyTier.Bootstrap, Sensitivity.Secret),
         new SettingDescriptor(
+            SessionSweepIntervalMinutes, "SESSION_SWEEP_INTERVAL_MINUTES", "Expired-session sweep interval (minutes)", Deploy,
+            SettingKind.Number, ApplyTier.RestartRequired, Sensitivity.Plain) {
+            Description = "How often expired sessions and abandoned pending-auth rows are deleted.",
+            Default = "10",
+        },
+        new SettingDescriptor(
             DiscordClientId, "DISCORD_CLIENT_ID", "Discord client id", Discord,
             SettingKind.Snowflake, ApplyTier.RestartRequired, Sensitivity.Plain),
         new SettingDescriptor(
@@ -95,17 +100,6 @@ public static class LedgerSettings {
             DashboardChannelId, "DISCORD_DASHBOARD_CHANNEL_ID", "Dashboard channel id", Discord,
             SettingKind.Snowflake, ApplyTier.RestartRequired, Sensitivity.Plain),
         new SettingDescriptor(
-            AuthentikAuthority, "AUTHENTIK_AUTHORITY", "Authentik authority", Identity,
-            SettingKind.Url, ApplyTier.RestartRequired, Sensitivity.Plain) {
-            Description = "Empty disables Authentik sign-in entirely.",
-        },
-        new SettingDescriptor(
-            AuthentikClientId, "AUTHENTIK_CLIENT_ID", "Authentik client id", Identity,
-            SettingKind.Text, ApplyTier.RestartRequired, Sensitivity.Plain),
-        new SettingDescriptor(
-            AuthentikClientSecret, "AUTHENTIK_CLIENT_SECRET", "Authentik client secret", Identity,
-            SettingKind.Secret, ApplyTier.RestartRequired, Sensitivity.Secret),
-        new SettingDescriptor(
             IdentityApiUrl, "IDENTITY_API_URL", "Identity API URL", Identity,
             SettingKind.Url, ApplyTier.Bootstrap, Sensitivity.Plain) {
             Description = "The identity client is built from it before authentication is wired up.",
@@ -114,6 +108,11 @@ public static class LedgerSettings {
         new SettingDescriptor(
             IdentityApiSecret, "IDENTITY_API_SECRET", "Identity API secret", Identity,
             SettingKind.Secret, ApplyTier.Bootstrap, Sensitivity.Secret) { Required = true },
+        new SettingDescriptor(
+            AdminApiSecret, "ADMIN_API_SECRET", "Admin API secret", Identity,
+            SettingKind.Secret, ApplyTier.RestartRequired, Sensitivity.Secret) {
+            Description = "Bearer credential the EggIncTools hub presents to administer this app. Leaving it empty maps no admin API at all.",
+        },
         new SettingDescriptor(
             IdentityWidgetUrl, "IDENTITY_WIDGET_URL", "Identity widget URL", Identity,
             SettingKind.Url, ApplyTier.Live, Sensitivity.Plain) {
