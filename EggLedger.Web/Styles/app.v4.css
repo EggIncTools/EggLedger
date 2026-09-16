@@ -690,6 +690,10 @@
   @apply block rounded-md text-sm bg-darkest tabular-nums appearance-none pl-0_5rem pt-0_5rem pb-0_5rem pr-select [color-scheme:dark] min-w-0 flex-1;
 }
 
+.filter-select {
+  flex-basis: 7rem;
+}
+
 .filter-select:focus {
   @apply outline-none ring-1 ring-blue-500 border-blue-500;
 }
@@ -1425,8 +1429,7 @@ input[type=number] {
   display: grid;
   grid-template-rows: auto minmax(6rem, 1fr) minmax(6rem, 1fr) auto;
   gap: 0.5rem;
-  width: fit-content;
-  min-width: 15rem;
+  width: clamp(19rem, 23vw, 30rem);
   flex-shrink: 0;
   min-height: 0;
   padding-top: 0.75rem;

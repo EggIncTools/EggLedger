@@ -211,6 +211,19 @@ public sealed class TimelineLayoutEngineTests {
     }
 
     [Fact]
+    public void Layout_MinWidth_DoesNotCollapseShortOverlappingMissionsIntoOneLane() {
+        var missions = new[] {
+            M("a", WindowStart.AddHours(12), WindowStart.AddHours(15)),
+            M("b", WindowStart.AddHours(12).AddMinutes(2), WindowStart.AddHours(15).AddMinutes(2)),
+            M("c", WindowStart.AddHours(12).AddMinutes(6), WindowStart.AddHours(15).AddMinutes(6)),
+        };
+
+        var bars = TimelineLayoutEngine.Layout(missions, WindowStart, WindowEnd, WindowEnd, minWidthPercent: 2.5);
+
+        Assert.Equal([0, 1, 2], bars.Select(b => b.Lane).OrderBy(l => l));
+    }
+
+    [Fact]
     public void Layout_MinWidth_KeepsBarInsideTheWindowAtTheRightEdge() {
         var missions = new[] { M("late", WindowEnd.AddMinutes(-10), WindowEnd) };
 

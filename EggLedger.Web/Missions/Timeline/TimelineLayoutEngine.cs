@@ -6,7 +6,7 @@ using EggLedger.Web.State;
 namespace EggLedger.Web.Missions.Timeline;
 
 public static class TimelineLayoutEngine {
-    private const double EventLaneGapFraction = 0.0001;
+    private const double LaneGapFraction = 0.0001;
 
     public static IReadOnlyList<TimelineBar> Layout(
         IReadOnlyList<DatabaseMission> missions,
@@ -23,12 +23,11 @@ public static class TimelineLayoutEngine {
         var intersecting = IntersectingMissions(missions, windowStart, windowEnd);
         var laneRights = new List<double>();
         var result = new List<TimelineBar>(intersecting.Count);
-        double iconGapFraction = minWidthPercent / 100;
 
         for (int i = 0; i < intersecting.Count; i++) {
             var m = intersecting[i];
             var (left, width, packLeft, packRight) = ClipToWindow(m.LaunchDT, m.ReturnDT, windowStart, windowSpan, minWidthPercent / 100);
-            int lane = CalendarLanePacker.AssignLane(laneRights, packLeft, packRight, iconGapFraction);
+            int lane = CalendarLanePacker.AssignLane(laneRights, packLeft, packRight, LaneGapFraction);
             bool isActive = nowUnix < m.ReturnDT;
             double fill = FillFraction(m.LaunchDT, m.ReturnDT, windowStart, windowEnd, nowUnix, isActive);
             long progress = isActive ? Math.Min(nowUnix, m.ReturnDT) : m.ReturnDT;
@@ -77,7 +76,7 @@ public static class TimelineLayoutEngine {
             long start = (long)e.StartTimestamp;
             long end = (long)e.EndTimestamp;
             var (left, width, packLeft, packRight) = ClipToWindow(start, end, windowStart, windowSpan, 0);
-            int lane = CalendarLanePacker.AssignLane(laneRights, packLeft, packRight, EventLaneGapFraction);
+            int lane = CalendarLanePacker.AssignLane(laneRights, packLeft, packRight, LaneGapFraction);
             result.Add(new TimelineEventBar(
                 Id: e.Id,
                 Lane: lane,

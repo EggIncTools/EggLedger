@@ -60,7 +60,25 @@
                                         @(month.Enabled ? "Collapse" : "Expand")
                                     </button>
 
-                                    @if (month.Enabled) {
+                                    @if (month.Enabled && FlattenDays) {
+                                        <div class="mt-1rem ml-2rem mission-grid mission-items-full">
+                                            @foreach (var mission in Grouping.Missions[yearIndex][monthIndex].SelectMany(d => d)) {
+                                                var m = mission;
+                                                <MissionCard Mission="m"
+                                                             Config="Config"
+                                                             IsSelected="@SelectedIds.Contains(m.MissiondId)"
+                                                             IsBeingViewed="@(MissionBeingViewed == m.MissiondId)"
+                                                             ViewByDate="ViewByDate"
+                                                             ViewMissionTimes="ViewMissionTimes"
+                                                             MultiViewMode="MultiViewMode"
+                                                             RecolorDC="RecolorDC"
+                                                             RecolorBC="RecolorBC"
+                                                             DropCount="@GetDropCount(m.MissiondId)"
+                                                             OnView="OnView"
+                                                             OnToggleSelected="ToggleSelected"/>
+                                            }
+                                        </div>
+                                    } else if (month.Enabled) {
                                         @for (var di = 0; di < Grouping.Missions[yearIndex][monthIndex].Count; di++) {
                                             var dayIndex = di;
                                             var day = Grouping.Arrays.Day[yearIndex][monthIndex][dayIndex];
@@ -178,6 +196,8 @@
         _lastToggledId = missionId;
         await OnSelectionChanged.InvokeAsync();
     }
+
+    private bool FlattenDays => !ViewByDate && MultiViewMode != MultiViewMode.Row;
 
     private IReadOnlyList<DatabaseMission> DisplayOrder => FlatMissions ?? TabFiltered;
 
