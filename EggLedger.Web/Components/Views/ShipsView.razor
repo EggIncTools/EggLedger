@@ -161,13 +161,10 @@
         foreach (var m in State.TabFiltered ?? Array.Empty<DatabaseMission>()) {
             State.MultiSelectedIds.Add(m.MissiondId);
         }
-
-        StateHasChanged();
     }
 
     private void DeselectAllMulti() {
         State.MultiSelectedIds.Clear();
-        StateHasChanged();
     }
 
     public async Task ResortAsync(MissionSortMethod method) {

@@ -21,9 +21,13 @@ public sealed class DesktopDownloadService(IPlatformCapabilities platform, IJSRu
         => SaveAsync(Encoding.UTF8.GetBytes(json), filename);
 
     public async ValueTask<string?> PickJsonFileAsync() {
-        var module = await _js.InvokeAsync<IJSObjectReference>("import", ModulePath).ConfigureAwait(false);
-        await using (module.ConfigureAwait(false)) {
-            return await module.InvokeAsync<string?>("pickTextFile", ".json,application/json").ConfigureAwait(false);
+        try {
+            var module = await _js.InvokeAsync<IJSObjectReference>("import", ModulePath).ConfigureAwait(false);
+            await using (module.ConfigureAwait(false)) {
+                return await module.InvokeAsync<string?>("pickTextFile", ".json,application/json").ConfigureAwait(false);
+            }
+        } catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or TaskCanceledException) {
+            return null;
         }
     }
 

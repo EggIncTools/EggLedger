@@ -82,9 +82,12 @@
     protected override async Task OnAfterRenderAsync(bool firstRender) {
         var menuOpen = _sources is not null || _error is not null;
         if (menuOpen && !_positioned) {
-            _mod ??= await JS.InvokeAsync<IJSObjectReference>("import", "./interop/loginMenu.js");
-            await _mod.InvokeVoidAsync("open", _button, _menu, LoginMenuPlacement.BottomRight.ToString());
-            _positioned = true;
+            try {
+                _mod ??= await JS.InvokeAsync<IJSObjectReference>("import", "./interop/loginMenu.js");
+                await _mod.InvokeVoidAsync("open", _button, _menu, LoginMenuPlacement.BottomRight.ToString());
+                _positioned = true;
+            } catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or TaskCanceledException) {
+            }
         } else if (!menuOpen && _positioned) {
             _positioned = false;
         }

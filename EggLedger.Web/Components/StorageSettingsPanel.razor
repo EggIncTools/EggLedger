@@ -169,7 +169,6 @@
         _backupInProgress = true;
         _backupSuccess = false;
         _backupError = "";
-        StateHasChanged();
         try {
             await Storage.BackupAsync(_backupDestPath, _backupDb, _backupExports, _backupLogs);
             _backupSuccess = true;
@@ -200,7 +199,6 @@
     private async Task RunMoveAsync() {
         _moveInProgress = true;
         _moveError = "";
-        StateHasChanged();
         try {
             await Storage.MoveAsync(_moveDestPath);
         }

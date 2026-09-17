@@ -9,9 +9,6 @@ public sealed class DownloadService(IJSRuntime js) : IDownloadService, IAsyncDis
     private const string XlsxMime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
     private IJSObjectReference? _module;
 
-    private async ValueTask<IJSObjectReference> ModuleAsync()
-        => _module ??= await js.InvokeAsync<IJSObjectReference>("import", ModulePath);
-
     public async ValueTask DownloadCsvAsync(IReadOnlyList<Mission> missions, string filename)
         => await DownloadAsync(MissionExport.MissionsToCsvBytes(missions), filename, CsvMime);
 
@@ -19,18 +16,28 @@ public sealed class DownloadService(IJSRuntime js) : IDownloadService, IAsyncDis
         => await DownloadAsync(MissionExport.MissionsToXlsxBytes(missions), filename, XlsxMime);
 
     public async ValueTask DownloadJsonAsync(string json, string filename) {
-        var module = await ModuleAsync();
-        await module.InvokeVoidAsync("downloadText", filename, json, "application/json");
+        try {
+            _module ??= await js.InvokeAsync<IJSObjectReference>("import", ModulePath);
+            await _module.InvokeVoidAsync("downloadText", filename, json, "application/json");
+        } catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or TaskCanceledException) {
+        }
     }
 
     public async ValueTask<string?> PickJsonFileAsync() {
-        var module = await ModuleAsync();
-        return await module.InvokeAsync<string?>("pickTextFile", ".json,application/json");
+        try {
+            _module ??= await js.InvokeAsync<IJSObjectReference>("import", ModulePath);
+            return await _module.InvokeAsync<string?>("pickTextFile", ".json,application/json");
+        } catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or TaskCanceledException) {
+            return null;
+        }
     }
 
     private async ValueTask DownloadAsync(byte[] bytes, string filename, string mime) {
-        var module = await ModuleAsync();
-        await module.InvokeVoidAsync("download", filename, Convert.ToBase64String(bytes), mime);
+        try {
+            _module ??= await js.InvokeAsync<IJSObjectReference>("import", ModulePath);
+            await _module.InvokeVoidAsync("download", filename, Convert.ToBase64String(bytes), mime);
+        } catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or TaskCanceledException) {
+        }
     }
 
     public async ValueTask DisposeAsync() {

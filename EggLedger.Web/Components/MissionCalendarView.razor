@@ -166,11 +166,9 @@
         if (CanPan(direction)) {
             _center += (_visibleEnd - _visibleStart) * direction;
             Recompute();
-            StateHasChanged();
             return;
         }
 
-        StateHasChanged();
         if (_grid is not null) {
             await _grid.ResetScrollAsync();
         }
@@ -441,7 +439,6 @@
         }
 
         _hoveredMissionId = missionId;
-        StateHasChanged();
     }
 
     private void CloseStillFlying() {

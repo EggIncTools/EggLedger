@@ -212,7 +212,6 @@
     private async Task PruneNowAsync() {
         _pruning = true;
         _pruneError = "";
-        StateHasChanged();
         try {
             await Exports.PruneAsync(_keepCount);
             _selected.Clear();
@@ -229,7 +228,6 @@
     private async Task DeleteSelectedAsync() {
         _deleting = true;
         _deleteError = "";
-        StateHasChanged();
         try {
             await Exports.DeleteAsync(_selected.ToList());
             _selected.Clear();

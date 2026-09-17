@@ -60,7 +60,6 @@
     private async Task RefreshNowAsync() {
         _refreshing = true;
         _error = "";
-        StateHasChanged();
         try {
             await Menno.RefreshAsync();
             var now = DateTimeOffset.UtcNow;

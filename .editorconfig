@@ -92,6 +92,9 @@ dotnet_diagnostic.IDE0005.severity = none
 
 resharper_razor_always_use_end_of_line_brace_style = true
 
+[EggLedger.Web.Server/Storage/CurrentUser.cs]
+dotnet_diagnostic.BL0013.severity = none
+
 [**/Tests/**.cs]
 dotnet_diagnostic.CA1707.severity = none
 dotnet_diagnostic.CA1822.severity = none
@@ -99,3 +102,4 @@ dotnet_diagnostic.CA1859.severity = none
 dotnet_diagnostic.CA1861.severity = none
 dotnet_diagnostic.CA1869.severity = none
 dotnet_diagnostic.CA1310.severity = none
+dotnet_diagnostic.BL0016.severity = none

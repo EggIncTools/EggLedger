@@ -25,9 +25,12 @@ public sealed class BrowserTimeZoneProvider(
     public async Task EnsureUpToDateAsync() {
         if (await TryGetProfileTimeZoneAsync() is { } profileTz && !ReferenceEquals(profileTz, TimeZone)) {
             TimeZone = profileTz;
-            var profileModule = await js.InvokeAsync<IJSObjectReference>("import", ModulePath);
-            await profileModule.InvokeVoidAsync("setCookie", profileTz.Id);
-            nav.NavigateTo(nav.Uri, forceLoad: true);
+            try {
+                var profileModule = await js.InvokeAsync<IJSObjectReference>("import", ModulePath);
+                await profileModule.InvokeVoidAsync("setCookie", profileTz.Id);
+                nav.NavigateTo(nav.Uri, forceLoad: true);
+            } catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or TaskCanceledException) {
+            }
             return;
         }
 
@@ -35,8 +38,14 @@ public sealed class BrowserTimeZoneProvider(
             return;
         }
 
-        var module = await js.InvokeAsync<IJSObjectReference>("import", ModulePath);
-        var didSet = await module.InvokeAsync<bool>("ensureCookie");
+        bool didSet;
+        try {
+            var module = await js.InvokeAsync<IJSObjectReference>("import", ModulePath);
+            didSet = await module.InvokeAsync<bool>("ensureCookie");
+        } catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or TaskCanceledException) {
+            didSet = false;
+        }
+
         if (didSet) {
             nav.NavigateTo(nav.Uri, forceLoad: true);
         }

@@ -226,7 +226,6 @@
 
     private async Task RecheckReachableAsync() {
         _reachableChecking = true;
-        StateHasChanged();
         _reachable = await CheckReachableAsync();
         _reachableChecking = false;
     }
@@ -347,7 +346,7 @@
 
         _syncInProgress = true;
         _syncError = "";
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
         try {
             var all = await Settings.GetAllSettingsAsync();
             var accounts = await Accounts.GetKnownAccountsAsync();
@@ -385,7 +384,6 @@
         _restoreInProgress = true;
         _restoreError = "";
         _restoreSuccess = false;
-        StateHasChanged();
         try {
             try {
                 var remoteAccounts = await Cloud.GetBlobAsync<List<AccountInfo>>(_session, CloudSyncBlobs.AccountsBlob);
@@ -485,7 +483,6 @@
         _deleteInProgress = true;
         _deleteError = "";
         _confirmingDelete = false;
-        StateHasChanged();
         try {
             await DeleteAllRemoteBlobsAsync();
         }

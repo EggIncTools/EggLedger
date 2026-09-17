@@ -108,12 +108,10 @@
     private async Task ReloadAccountsAsync() {
         _existing = await Queries.GetExistingDataAsync();
         await Loader.RefreshAsync();
-        StateHasChanged();
     }
 
     private async Task OnSettingAsync((string Key, string Value) change) {
         await Writer.SetAsync(change.Key, change.Value);
-        StateHasChanged();
     }
 
     private Task Close() {
