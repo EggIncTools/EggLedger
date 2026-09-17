@@ -38,9 +38,6 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
         ShouldRetry = ex => ex is NpgsqlException { IsTransient: true },
     };
 
-    private static readonly string[] ElUserTables = [
-        "el_mission", "el_backup", "el_artifact_drops", "el_settings", "el_reports", "el_report_groups",
-    ];
     private readonly IDataProtector _keyProtector = dataProtection.CreateProtector("EggLedger.EncryptionKey");
 
     private async Task<string> PublicBaseUrlAsync(CancellationToken ct) =>

@@ -27,7 +27,9 @@ public sealed class HandshakeTests {
 
         Assert.False(ok);
 
-        var won = await Task.WhenAny(listener.Served, Task.Delay(200));
+        using var cts = new CancellationTokenSource();
+        var won = await Task.WhenAny(listener.Served, Task.Delay(200, cts.Token));
+        await cts.CancelAsync();
         Assert.NotEqual(listener.Served, won);
         Assert.False(listener.Served.IsCompleted);
     }

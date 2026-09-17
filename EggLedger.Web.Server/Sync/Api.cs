@@ -32,19 +32,19 @@ public static class Api {
         app.UseEggIdentityRequestMetrics();
 
 
-        app.MapGet("/api/v1/auth/pair/begin", (HttpContext c) => auth.PairBegin(c));
-        app.MapGet("/api/v1/auth/poll", (HttpContext c) => auth.Poll(c, c.Request.Query["state"].ToString()));
-        app.MapDelete("/api/v1/auth/session", (HttpContext c) => auth.DeleteSession(c));
-        app.MapPost("/api/v1/auth/logout", (HttpContext c) => auth.Logout(c));
+        app.MapGet("/api/v1/auth/pair/begin", auth.PairBegin);
+        app.MapGet("/api/v1/auth/poll", c => auth.Poll(c, c.Request.Query["state"].ToString()));
+        app.MapDelete("/api/v1/auth/session", auth.DeleteSession);
+        app.MapPost("/api/v1/auth/logout", auth.Logout);
 
 
 
 
-        app.MapPost("/api/v1/auth/session-from-login", (HttpContext c) => auth.SessionFromLogin(c));
+        app.MapPost("/api/v1/auth/session-from-login", auth.SessionFromLogin);
 
         VerifyEndpoint.Map(app, build);
         if (!app.Environment.IsStaging() || SubProdFence.Allows("MENNO", Environment.GetEnvironmentVariable)) {
-            app.MapPost("/api/v1/menno/submit", (HttpContext c) => menno.Submit(c));
+            app.MapPost("/api/v1/menno/submit", menno.Submit);
         }
 
 

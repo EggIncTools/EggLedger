@@ -78,6 +78,7 @@ csharp_style_unused_value_expression_statement_preference = discard_variable:sil
 dotnet_remove_unnecessary_suppression_exclusions = none
 
 dotnet_diagnostic.IDE0008.severity = none
+dotnet_diagnostic.IDE0061.severity = none
 dotnet_diagnostic.IDE0021.severity = none
 dotnet_diagnostic.CA1720.severity = none
 dotnet_diagnostic.CA1036.severity = suggestion

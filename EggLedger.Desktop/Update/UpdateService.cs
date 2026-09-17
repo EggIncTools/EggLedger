@@ -280,7 +280,9 @@ public sealed class UpdateService : IUpdateStatusProvider {
         }
 
         if (listener is not null) {
-            await Task.WhenAny(listener.Served, Task.Delay(hsTimeout)).ConfigureAwait(false);
+            using var hsCts = new CancellationTokenSource();
+            await Task.WhenAny(listener.Served, Task.Delay(hsTimeout, hsCts.Token)).ConfigureAwait(false);
+            await hsCts.CancelAsync().ConfigureAwait(false);
             listener.Dispose();
         }
 
