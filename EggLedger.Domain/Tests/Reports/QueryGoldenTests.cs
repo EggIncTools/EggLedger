@@ -2,8 +2,6 @@ using EggLedger.Domain.Reports;
 
 namespace EggLedger.Domain.Tests.Reports;
 
-
-
 public class QueryGoldenTests {
     private static void AssertQuery(string gotQ, string wantQ, IReadOnlyList<object?> gotArgs, object?[] wantArgs) {
         Assert.Equal(wantQ, gotQ);

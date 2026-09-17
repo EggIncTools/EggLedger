@@ -73,10 +73,6 @@ public sealed class FetchOrchestratorTests {
         return Convert.ToBase64String(authBytes.ToArray());
     }
 
-
-
-
-
     private sealed class RoutingHandler : HttpMessageHandler {
         private readonly string _firstContactBody;
         private readonly Func<string, string?> _completeMission;
@@ -154,8 +150,6 @@ public sealed class FetchOrchestratorTests {
 
         await orchestrator.StartFetchAsync(Eid);
 
-
-
         var firstCounts = reports.First(r => r.State == AppState.FetchingMissions && r.Segment is null);
         var segmentReports = reports.Where(r => r.Segment is not null).ToList();
         Assert.NotEmpty(segmentReports);
@@ -196,8 +190,6 @@ public sealed class FetchOrchestratorTests {
         };
 
         await orchestrator.StartFetchAsync(Eid);
-
-
 
         Assert.True(firedDuringFetchingMissions);
         Assert.True(firedAtSuccess);
@@ -255,11 +247,6 @@ public sealed class FetchOrchestratorTests {
                     return;
                 }
 
-
-
-
-
-
                 reentrantFetch = orchestrator!.StartFetchAsync(Eid);
                 initialRequestTokenCancelledAfterReentry = requestToken.IsCancellationRequested;
             });
@@ -270,9 +257,6 @@ public sealed class FetchOrchestratorTests {
         if (reentrantFetch is not null) {
             await reentrantFetch;
         }
-
-
-
 
         Assert.True(initialRequestTokenCancelledAfterReentry);
         Assert.Equal(AppState.Success, orchestrator.TerminalState);

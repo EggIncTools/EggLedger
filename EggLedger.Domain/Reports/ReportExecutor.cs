@@ -240,8 +240,6 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
             }
         }
 
-
-
         StableSortFloatDescending(floatValues);
         for (var i = 0; i < rawOrder.Count; i++) {
             labels[i] = Labels.FormatLabel(def.GroupBy, rawOrder[i]);
@@ -499,8 +497,6 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
 
     private static double Denom(Dictionary<string, Dictionary<string, double>> m, string k1, string k2) =>
         m.TryGetValue(k1, out var inner) && inner.TryGetValue(k2, out var v) ? v : 0;
-
-
 
     private static void StableSortFloatDescending(List<double> values) {
         var ordered = values

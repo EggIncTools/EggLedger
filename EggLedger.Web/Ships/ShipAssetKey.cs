@@ -2,8 +2,6 @@ using Ei;
 
 namespace EggLedger.Web.Ships;
 
-
-
 public static class ShipAssetKey {
     private static readonly string[] _all = Enum.GetNames<MissionInfo.Spaceship>();
     private static readonly HashSet<string> _known = new(_all, StringComparer.Ordinal);

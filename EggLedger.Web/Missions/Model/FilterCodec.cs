@@ -3,8 +3,6 @@ using WebCondition = EggLedger.Web.Missions.FilterCondition;
 
 namespace EggLedger.Web.Missions.Model;
 
-
-
 public static class FilterCodec {
     public static Condition? FromLegacyCondition(WebCondition c) => ParseCondition(c.TopLevel, c.Op, c.Val);
 

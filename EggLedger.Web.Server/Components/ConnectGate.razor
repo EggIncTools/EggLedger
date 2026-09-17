@@ -70,8 +70,7 @@
             } else {
                 _sources = response.Sources;
             }
-        }
-        catch (HttpRequestException) {
+        } catch (HttpRequestException) {
             _error = "Login temporarily unavailable.";
         }
         finally {

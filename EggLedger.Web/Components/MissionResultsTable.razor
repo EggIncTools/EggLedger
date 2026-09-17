@@ -38,8 +38,7 @@
                 }
             </div>
         } else {
-            @for (var yi = 0; yi < Grouping.Missions.Count; yi++) {
-                var yearIndex = yi;
+            @foreach (var yearIndex in Enumerable.Range(0, Grouping.Missions.Count)) {
                 var year = Grouping.Arrays.Year[yearIndex];
                 <div>
                     <span class="text-lg font-bold mr-0_5rem ledger-underline">@year.Year</span>
@@ -48,8 +47,7 @@
                     </button>
 
                     @if (year.Enabled) {
-                        @for (var mi = 0; mi < Grouping.Missions[yearIndex].Count; mi++) {
-                            var monthIndex = mi;
+                        @foreach (var monthIndex in Enumerable.Range(0, Grouping.Missions[yearIndex].Count)) {
                             var month = Grouping.Arrays.Month[yearIndex][monthIndex];
                             <div>
                                 <div class="mt-1rem ml-2rem">
@@ -79,8 +77,7 @@
                                             }
                                         </div>
                                     } else if (month.Enabled) {
-                                        @for (var di = 0; di < Grouping.Missions[yearIndex][monthIndex].Count; di++) {
-                                            var dayIndex = di;
+                                        @foreach (var dayIndex in Enumerable.Range(0, Grouping.Missions[yearIndex][monthIndex].Count)) {
                                             var day = Grouping.Arrays.Day[yearIndex][monthIndex][dayIndex];
                                             <div>
                                                 <div class="mt-1rem ml-2rem">

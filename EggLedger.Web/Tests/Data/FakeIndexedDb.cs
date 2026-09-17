@@ -154,8 +154,6 @@ public sealed class FakeIndexedDb : IIndexedDb {
         }
     }
 
-
-
     private static bool KeyMatches(object row, object key) => (row, key) switch {
         (MissionRow m, object[] { Length: 2 } k) => m.PlayerId.Equals(k[0]) && m.MissionId.Equals(k[1]),
         (InFlightMissionRow f, object[] { Length: 2 } k) => f.PlayerId.Equals(k[0]) && f.MissionId.Equals(k[1]),

@@ -104,8 +104,6 @@ public sealed class MissionFilterMatcherTests {
         Assert.Equal(expected, await Matcher().TestMissionAgainstFilterAsync(m, C("buggedcap", "=", val)));
     }
 
-
-
     private static long Unix(int y, int mo, int d) {
         var dt = new DateTime(y, mo, d, 12, 0, 0, DateTimeKind.Local);
         return ((DateTimeOffset)dt).ToUnixTimeSeconds();

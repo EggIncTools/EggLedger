@@ -98,8 +98,6 @@ public static class JsonRowCodec {
     private static DateTimeOffset EpochToDb(JsonElement el) =>
         DateTimeOffset.FromUnixTimeMilliseconds((long)Math.Round(el.GetDouble() * 1000d));
 
-
-
     public static object DecodeString(JsonElement el, bool isBlob) {
         var s = el.GetString() ?? "";
         return isBlob ? Convert.FromBase64String(s) : s;

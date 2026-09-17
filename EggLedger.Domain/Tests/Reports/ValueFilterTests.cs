@@ -2,8 +2,6 @@ using EggLedger.Domain.Reports;
 
 namespace EggLedger.Domain.Tests.Reports;
 
-
-
 public class ValueFilterTests {
     private static ReportResult IntResult(IReadOnlyList<string> labels, IReadOnlyList<long> values) =>
         new() { Labels = [.. labels], Values = [.. values], IsFloat = false };

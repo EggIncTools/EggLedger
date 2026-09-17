@@ -1,8 +1,5 @@
 namespace EggLedger.Web.Data;
 
-
-
-
 public interface IIndexedDb {
     ValueTask PutAsync(string store, object value);
     ValueTask<int> PutManyAsync(string store, IEnumerable<object> values);

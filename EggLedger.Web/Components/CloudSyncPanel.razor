@@ -218,8 +218,7 @@
     private async Task<bool> CheckReachableAsync() {
         try {
             return await Cloud.CheckReachableAsync();
-        }
-        catch {
+        } catch {
             return false;
         }
     }
@@ -238,8 +237,7 @@
             var state = await Cloud.BeginAuthAsync();
             await SessionStore.SetPendingAuthStateAsync(state);
             await PollUntilDoneAsync(state);
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             _authWaiting = false;
             _syncError = ex.Message;
         }
@@ -272,8 +270,7 @@
                 PollResult result;
                 try {
                     result = await Cloud.PollOnceAsync(state, ct);
-                }
-                catch (CloudSyncException) {
+                } catch (CloudSyncException) {
                     continue;
                 }
 
@@ -282,13 +279,11 @@
                     return;
                 }
             }
-        }
-        catch (OperationCanceledException) {
+        } catch (OperationCanceledException) {
             if (_pollCts is not null && _pollCts.IsCancellationRequested && !_disposed) {
                 await SessionStore.ClearPendingAuthStateAsync();
             }
-        }
-        finally {
+        } finally {
             _authWaiting = false;
             if (!_disposed) {
                 await InvokeAsync(StateHasChanged);
@@ -322,8 +317,7 @@
         } else {
             try {
                 await DeleteAllRemoteBlobsAsync();
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                 _deleteError = ex.Message;
                 return;
             }
@@ -356,11 +350,9 @@
 
             _lastPushAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             await SessionStore.SetLastPushAtAsync(_lastPushAt);
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             _syncError = ex.Message;
-        }
-        finally {
+        } finally {
             _syncInProgress = false;
         }
     }
@@ -390,8 +382,7 @@
                 foreach (var acct in remoteAccounts ?? []) {
                     await Accounts.AddKnownAccountAsync(acct);
                 }
-            }
-            catch (CloudSyncException) {
+            } catch (CloudSyncException) {
                 /* nothing synced yet */
             }
             catch (Exception ex) {
@@ -403,8 +394,7 @@
                 if (remoteSettings is not null) {
                     await Settings.SetSettingsAsync(CloudSyncBlobs.UnpackSettings(remoteSettings));
                 }
-            }
-            catch (CloudSyncException) {
+            } catch (CloudSyncException) {
                 /* nothing synced yet */
             }
             catch (Exception ex) {
@@ -416,8 +406,7 @@
                 if (remoteReports is not null) {
                     await ImportReportsAsync(remoteReports);
                 }
-            }
-            catch (CloudSyncException) {
+            } catch (CloudSyncException) {
                 /* nothing synced yet */
             }
             catch (Exception ex) {
@@ -427,11 +416,9 @@
             _lastPullAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             await SessionStore.SetLastPullAtAsync(_lastPullAt);
             _restoreSuccess = true;
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             _restoreError = ex.Message;
-        }
-        finally {
+        } finally {
             _restoreInProgress = false;
         }
     }
@@ -485,11 +472,9 @@
         _confirmingDelete = false;
         try {
             await DeleteAllRemoteBlobsAsync();
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             _deleteError = ex.Message;
-        }
-        finally {
+        } finally {
             _deleteInProgress = false;
         }
     }

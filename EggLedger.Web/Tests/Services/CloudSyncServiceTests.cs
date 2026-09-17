@@ -41,8 +41,6 @@ public sealed class CloudSyncServiceTests {
         public string DataRootDir => "";
     }
 
-
-
     private sealed class FakeServer : HttpMessageHandler {
         private readonly Dictionary<string, string> _blobs = [];
         public string? PendingState;
@@ -150,8 +148,6 @@ public sealed class CloudSyncServiceTests {
         var accounts = new[] { new KnownAccount("EI1", "Alice"), new KnownAccount("EI2", "Bob") };
 
         await svc.PutBlobAsync(session, "accounts", accounts);
-
-
 
         var stored = server.Blobs["accounts"];
         Assert.DoesNotContain("Alice", stored, StringComparison.Ordinal);

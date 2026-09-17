@@ -168,8 +168,6 @@ public sealed class GithubReleaseClient(HttpClient httpClient) {
         }
     }
 
-
-
     private static T? TryParseJson<T>(string json, Func<JsonElement, T?> extract) {
         try {
             using var doc = JsonDocument.Parse(json);

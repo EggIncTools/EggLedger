@@ -177,8 +177,6 @@ public sealed class SqliteIndexedDb : IIndexedDb {
         cmd.ExecuteNonQuery();
     }
 
-
-
     private static void DeleteByKey(
         StoreMeta meta, List<(string Col, JsonElement Val)> props, SqliteConnection connection, SqliteTransaction? tx) {
         using var del = connection.CreateCommand();
@@ -278,8 +276,6 @@ public sealed class SqliteIndexedDb : IIndexedDb {
             autoIncrementColumn: null,
             boolColumns: []),
     };
-
-
 
     private void BindBlobColumns() {
         foreach (var meta in _stores.Values) {

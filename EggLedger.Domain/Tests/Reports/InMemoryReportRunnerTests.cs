@@ -4,11 +4,6 @@ using Ei;
 
 namespace EggLedger.Domain.Tests.Reports;
 
-
-
-
-
-
 public class InMemoryReportRunnerTests {
     private const string Eid = "EI1";
 
@@ -378,8 +373,6 @@ public class InMemoryReportRunnerTests {
             FamilyWeight = "tachyon-stone",
             AccountId = Eid,
         };
-
-
 
         var capRows = new object?[][]
         {

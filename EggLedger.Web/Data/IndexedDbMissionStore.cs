@@ -102,8 +102,7 @@ public sealed class IndexedDbMissionStore : IMissionStore {
             for (int start = 0; start < rows.Count; start += batch) {
                 int end = Math.Min(start + batch, rows.Count);
                 var tasks = new Task[end - start];
-                for (int i = start; i < end; i++) {
-                    int idx = i;
+                foreach (int idx in Enumerable.Range(start, end - start)) {
                     tasks[idx - start] = Assign(idx);
                 }
                 await Task.WhenAll(tasks).ConfigureAwait(false);
@@ -117,8 +116,6 @@ public sealed class IndexedDbMissionStore : IMissionStore {
             return null;
         }
     }
-
-
 
     private const int DecodeCacheCap = 256;
     private readonly Lock _decodeGate = new();
@@ -218,12 +215,6 @@ public sealed class IndexedDbMissionStore : IMissionStore {
     };
 
     private readonly HashSet<string> _dropsBackfilling = [];
-
-
-
-
-
-
 
     public void QueueArtifactDropsBackfill(string playerId) {
         if (_dropsBackfilling.Add(playerId))

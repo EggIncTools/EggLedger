@@ -37,9 +37,6 @@ public static class Api {
         app.MapDelete("/api/v1/auth/session", auth.DeleteSession);
         app.MapPost("/api/v1/auth/logout", auth.Logout);
 
-
-
-
         app.MapPost("/api/v1/auth/session-from-login", auth.SessionFromLogin);
 
         VerifyEndpoint.Map(app, build);
@@ -64,8 +61,6 @@ public static class Api {
         MapAuthed(app, ["GET"], "/api/v1/admin/users", store, admin.Users);
         MapAuthed(app, ["DELETE"], "/api/v1/admin/users/{userId}", store,
             c => admin.DeleteUser(c, (string)c.Request.RouteValues["userId"]!));
-
-
 
         var ships = app.Services.GetRequiredService<Ships.ShipAssetService>();
         MapAuthed(app, ["GET"], "/api/ships/manifest", store, async ctx => {

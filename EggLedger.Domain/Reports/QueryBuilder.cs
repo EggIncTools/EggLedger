@@ -1,8 +1,5 @@
 using System.Globalization;
 
-
-
-
 namespace EggLedger.Domain.Reports;
 
 public static class QueryBuilder {

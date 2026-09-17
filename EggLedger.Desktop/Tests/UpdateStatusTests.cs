@@ -19,8 +19,6 @@ public sealed class UpdateStatusTests {
         }
     }
 
-
-
     private static byte[] AssetPayload(string assetName) {
         var binary = new byte[1024];
         if (assetName.EndsWith(".tar.gz", StringComparison.Ordinal)) {
@@ -245,8 +243,6 @@ public sealed class UpdateStatusTests {
 
     [Fact]
     public async Task DownloadAndInstall_ReachesHandoff_LaunchesNewAndExits() {
-
-
 
         var exeDir = Path.Combine(Path.GetTempPath(), "egg-dl-handoff-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(exeDir);

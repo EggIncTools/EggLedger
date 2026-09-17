@@ -4,8 +4,6 @@ using System.Text.Json.Serialization;
 
 namespace EggLedger.Web.Data;
 
-
-
 public static class RowColumns {
     private static readonly ConcurrentDictionary<Type, string[]> _cache = new();
 

@@ -86,8 +86,6 @@ public sealed class SemVersionTests {
         Assert.Equal("1.2.3+meta", SemVersion.Parse("1.2.3+meta").Canonical());
     }
 
-
-
     [Theory]
     [InlineData("2.1.4", "2.1.5", true)]
     [InlineData("2.1.4", "2.1.4", false)]

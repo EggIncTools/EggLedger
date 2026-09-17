@@ -50,10 +50,6 @@ public sealed class AuthEndpointsTests {
         }
     }
 
-
-
-
-
     [SkippableFact]
     public async Task EnsureEncryptionKeyAsync_generates_and_persists_key_for_non_discord_user() {
         TestDbUrl.SkipIfNotConfigured("auth");
@@ -114,8 +110,6 @@ public sealed class AuthEndpointsTests {
         }
     }
 
-
-
     [SkippableFact]
     public async Task SessionFromLogin_AuthenticatedNoDiscordId_CreatesSessionWithNullDiscordId() {
         TestDbUrl.SkipIfNotConfigured("auth");
@@ -165,8 +159,6 @@ public sealed class AuthEndpointsTests {
             await DropSchemaAsync(setupSrc);
         }
     }
-
-
 
     [SkippableFact]
     public async Task SessionFromLogin_AuthenticatedWithDiscordId_CreatesSessionWithDiscordId() {
@@ -270,10 +262,6 @@ public sealed class AuthEndpointsTests {
             await DropSchemaAsync(setupSrc);
         }
     }
-
-
-
-
 
     private static async Task CreateSchemaAsync(NpgsqlDataSource src) {
         await Exec(src, $"DROP SCHEMA IF EXISTS {Schema} CASCADE; CREATE SCHEMA {Schema}; SET search_path TO {Schema};");

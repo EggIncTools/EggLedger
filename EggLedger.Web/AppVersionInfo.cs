@@ -2,8 +2,6 @@ using System.Reflection;
 
 namespace EggLedger.Web;
 
-
-
 public static class AppVersionInfo {
     public static string Current {
         get {

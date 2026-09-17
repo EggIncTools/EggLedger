@@ -2,8 +2,6 @@ using System.Collections.Concurrent;
 
 namespace EggLedger.Web.Server.Sync.Menno;
 
-
-
 public sealed class IpRateLimiter(int maxPerWindow, TimeSpan window) {
     private readonly ConcurrentDictionary<string, Queue<DateTime>> _hits = new();
 

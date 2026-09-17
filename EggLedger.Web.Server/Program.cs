@@ -46,15 +46,10 @@ if (hasDb && builder.Environment.IsStaging()) {
 var build = new VerifyInfo { Name = "EggLedger", Sha256 = cfg.BuildSha, Version = AppVersionInfo.Current, Date = cfg.BuildDate };
 var startedAt = DateTimeOffset.UtcNow;
 
-
-
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents(o => o.DetailedErrors = builder.Environment.IsDevelopment());
-
-
-
 
 builder.Services.Configure<ForwardedHeadersOptions>(o => {
     o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
@@ -67,8 +62,6 @@ builder.Services.Configure<ForwardedHeadersOptions>(o => {
         }
     }
 });
-
-
 
 var eggIdentitySession = SessionCookieOptions.FromEnvironment();
 const string SmartAuthScheme = "smart";
@@ -91,9 +84,6 @@ var authBuilder = authentication
         o.Cookie.SecurePolicy = CookieSecurePolicy.Always;
         o.ExpireTimeSpan = TimeSpan.FromDays(30);
         o.SlidingExpiration = true;
-
-
-
 
         o.Events.OnValidatePrincipal = async ctx => {
             var claim = ctx.Principal?.FindFirst(EggLedger.Web.Server.Auth.AuthScheme.UserIdClaim)?.Value;
@@ -154,9 +144,6 @@ if (hasDb) {
         .SetApplicationName("EggLedger")
         .AddKeyManagementOptions(o =>
             o.XmlRepository = new EggLedger.Web.Server.Auth.PostgresXmlRepository(dataSource));
-
-
-
 
     if (!string.IsNullOrEmpty(cfg.DataProtectionCertPath)) {
         try {
@@ -224,8 +211,6 @@ if (eggIdentitySession is not null && !string.IsNullOrEmpty(cfg.DeployAgentUrl))
     builder.Services.AddScoped<EggLedger.Web.Components.IDeployToastSlot, EggLedger.Web.Server.Deploy.DeployToastSlot>();
 }
 
-
-
 var selfBase = new Uri(builder.Configuration["SelfBaseAddress"] ?? SelfBaseFromUrls());
 builder.Services.AddEggLedgerWeb(selfBase);
 builder.Services.AddHostedService<EggLedger.Web.Server.Ships.EventIconWarmupHostedService>();
@@ -264,8 +249,6 @@ static void MirrorEggIdentityRoleClaim(Microsoft.AspNetCore.Authentication.Cooki
     ctx.ShouldRenew = true;
 }
 
-
-
 builder.Services.AddScoped<EggLedger.Web.Server.Storage.CurrentUser>();
 if (hasDb) {
     builder.Services.TryAddSingleton(TimeProvider.System);
@@ -286,8 +269,6 @@ if (hasDb) {
         ex => ex is NpgsqlException { IsTransient: true }));
     builder.Services.AddScoped<EggLedger.Web.Server.Storage.FirstLoginBackfill>();
 }
-
-
 
 builder.Services.AddSingleton(_ =>
     new EggLedger.Web.Server.Ships.ShipAssetService(

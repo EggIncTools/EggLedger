@@ -3,9 +3,6 @@ using Npgsql;
 
 namespace EggLedger.Web.Server.Sync.Admin;
 
-
-
-
 public sealed class SpamLog(NpgsqlDataSource source) : IRequestAuditSink {
     public Task RecordAsync(AuditEntry entry, CancellationToken ct) =>
         RecordAsync(entry.Ip, entry.Method, entry.Path, "", entry.AtEpochSeconds);

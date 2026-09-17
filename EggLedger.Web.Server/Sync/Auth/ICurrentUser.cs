@@ -4,12 +4,6 @@ using EggIdentity.Contract;
 
 namespace EggLedger.Web.Server.Sync.Auth;
 
-
-
-
-
-
-
 public interface ICurrentUser {
     Guid? UserId(HttpContext ctx);
     Task<string?> RoleAsync(HttpContext ctx, CancellationToken ct);

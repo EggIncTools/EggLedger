@@ -2,10 +2,6 @@ using Microsoft.AspNetCore.Http.Extensions;
 
 namespace EggLedger.Web.Server.Sync.Auth;
 
-
-
-
-
 public sealed class LoginCallbackMiddleware(RequestDelegate next, ILogger<LoginCallbackMiddleware> logger) {
     public async Task InvokeAsync(HttpContext ctx, AuthEndpoints auth) {
         if (!HttpMethods.IsGet(ctx.Request.Method) || ctx.Request.Path.StartsWithSegments("/api/v1/auth/callback")) {

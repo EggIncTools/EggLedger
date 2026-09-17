@@ -59,7 +59,7 @@ public static class MissionGrouper {
         var arrays = new GroupedArrays();
         var matrix = new List<List<List<List<DatabaseMission>>>>();
 
-        for (int yi = 0; yi < uniqueYears.Count; yi++) {
+        foreach (int yi in Enumerable.Range(0, uniqueYears.Count)) {
             int y = uniqueYears[yi];
             bool yearEnabled = !collapseOlderSections || yi == 0;
             arrays.Year.Add(new GroupedYear { Year = y, Enabled = yearEnabled });

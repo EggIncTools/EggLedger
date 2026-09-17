@@ -175,9 +175,6 @@ public static class FilterOptions {
             new() { Text = "Any Legendary", Value = "%_%_3_%", Rarity = 3, StyleClass = "text-legendary", ImagePath = "icon_help.webp" },
         };
 
-
-
-
         var stoneProtoNames = new HashSet<string>();
         foreach (var a in artifactList) {
             if (!a.ProtoName.Contains("_FRAGMENT", StringComparison.Ordinal)) {
@@ -272,8 +269,6 @@ public static class FilterOptions {
 
         return result;
     }
-
-
 
     private static string FamilyDisplayName(Dictionary<int, List<PossibleArtifact>> tierMap, List<int> tierOrder) {
         foreach (var tier in tierOrder) {

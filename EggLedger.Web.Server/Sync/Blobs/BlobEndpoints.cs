@@ -5,12 +5,8 @@ using Npgsql;
 
 namespace EggLedger.Web.Server.Sync.Blobs;
 
-
-
 public sealed class BlobEndpoints(NpgsqlDataSource source, ILogger<BlobEndpoints> logger) {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
-
-
 
     private static Guid UserId(HttpContext ctx) => Guid.Parse(ctx.Request.Headers[RequireAuth.UserIdHeader].ToString());
 
@@ -37,8 +33,6 @@ public sealed class BlobEndpoints(NpgsqlDataSource source, ILogger<BlobEndpoints
             await WriteTextAsync(ctx, StatusCodes.Status400BadRequest, "bad request\n");
             return;
         }
-
-
 
         try {
             await using var cmd = source.CreateCommand(

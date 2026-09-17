@@ -5,8 +5,6 @@ using EggLedger.Web.Ships;
 
 namespace EggLedger.Web.Server.Ships;
 
-
-
 public sealed class ShipAssetService {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
     private readonly string _dir;

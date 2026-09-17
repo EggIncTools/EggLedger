@@ -25,8 +25,6 @@ public class QualityTests {
         Assert.Equal(0d, Quality.BaseQualityFor(bad));
     }
 
-
-
     [Fact]
     public void BaseQualityFor_MatchesGoldenFields() {
         var path = Path.Combine(AppContext.BaseDirectory, "Fixtures", "eiafx-config-fixture.fields");

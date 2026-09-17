@@ -1,9 +1,3 @@
-
-
-
-
-
-
 const GAP = 6;
 const WIDTH = 200;
 let active = null;

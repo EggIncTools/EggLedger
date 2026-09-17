@@ -52,8 +52,6 @@ public sealed class ReportParityTests {
             SpecType = spec,
         };
 
-
-
     private static List<MissionRowData> Missions() =>
     [
 

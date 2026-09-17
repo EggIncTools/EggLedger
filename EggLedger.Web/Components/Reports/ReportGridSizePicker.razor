@@ -2,11 +2,9 @@
 
 <div class="flex flex-col gap-2">
     <div class="flex flex-col gap-0.5 self-start">
-        @for (var r = 1; r <= MaxRows; r++) {
-            var rr = r;
+        @foreach (var rr in Enumerable.Range(1, MaxRows)) {
             <div class="flex gap-0.5">
-                @for (var c = 1; c <= MaxCols; c++) {
-                    var cc = c;
+                @foreach (var cc in Enumerable.Range(1, MaxCols)) {
                     <button type="button"
                             class="w-3.5 h-3.5 rounded-sm border cursor-pointer transition-colors @(IsActive(cc, rr) ? "bg-indigo-600 border-indigo-500" : "bg-gray-800 border-gray-600 hover:border-gray-400")"
                             @onclick="() => Select(cc, rr)">

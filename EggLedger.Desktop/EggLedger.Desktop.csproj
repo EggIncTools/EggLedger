@@ -30,12 +30,11 @@
     <EmbeddedResource Include="Storage\Migrations\**\*.sql" />
   </ItemGroup>
 
-    <ItemGroup>
+  <ItemGroup>
     <Content Include="icon-512.png" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
-  
-    <ItemGroup>
+  <ItemGroup>
     <_WwwrootZipInput Include="wwwroot\**\*" />
     <_WwwrootZipInput Include="..\EggLedger.Web\wwwroot\**\*" />
     <_WwwrootZipInput Include="..\EggLedger.Web\bin\$(Configuration)\$(TargetFramework)\EggLedger.Web.dll" />

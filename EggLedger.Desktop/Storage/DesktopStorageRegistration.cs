@@ -24,8 +24,6 @@ public static class DesktopStorageRegistration {
 
         AddDesktopSqliteStorage(services, missionDb, reportDb);
 
-
-
         services.AddScoped(sp => new DesktopStorageService(
             dataRootDir, sp.GetRequiredService<IPlatformCapabilities>()));
         services.RemoveAll<IStorageManagement>();
@@ -75,9 +73,6 @@ public static class DesktopStorageRegistration {
             ex => ex is SqliteException { SqliteErrorCode: 5 or 6 }));
 
         services.AddSingleton(new SqliteMissionDb(missionDb));
-
-
-
 
         services.RemoveAll<IndexedDbReportRunner>();
         services.RemoveAll<IReportRunner>();

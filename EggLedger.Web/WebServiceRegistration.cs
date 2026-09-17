@@ -59,8 +59,6 @@ public static class WebServiceRegistration {
 
         services.AddSingleton<IWeightData>(_ => EiafxWeightData.Instance);
 
-
-
         services.AddSingleton(_ => new MennoService(new HttpClient()));
 
         services.AddSingleton(sp => new GameEventsService(

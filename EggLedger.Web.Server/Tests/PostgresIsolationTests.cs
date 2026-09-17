@@ -85,8 +85,6 @@ public sealed class PostgresIsolationTests {
         }
     }
 
-
-
     private const string Schema = "eltest_iso";
 
     private static async Task CreateSchemaAsync(NpgsqlDataSource src) {

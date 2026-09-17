@@ -18,10 +18,9 @@
     } else {
         var (positions, _) = ReportGridLayout.BuildOccupancyFromLayout(_defs);
         <div class="report-grid grid gap-3 relative" style="grid-template-columns: repeat(8, 1fr); grid-auto-rows: @(_rowHeightPx)px;">
-            @for (var i = 0; i < _defs.Count; i++) {
-                var index = i;
-                var def = _defs[i];
-                var pos = positions[i];
+            @foreach (var index in Enumerable.Range(0, _defs.Count)) {
+                var def = _defs[index];
+                var pos = positions[index];
                 <div @key="def.Id" draggable="@EditMode" class="@(EditMode ? "cursor-grab" : "")"
                      style="grid-column: @pos.Col / span @pos.W; grid-row: @pos.Row / span @pos.H;"
                      @ondragstart="() => OnDragStart(index)" @ondragover="@(() => { })" @ondragover:preventDefault="true"
@@ -163,8 +162,7 @@
 
             _actionMessage = $"Imported {defs.Count} report(s)";
             _actionMessageIsError = false;
-        }
-        catch (JsonException) {
+        } catch (JsonException) {
             _actionMessage = "Import failed - invalid file";
             _actionMessageIsError = true;
         }

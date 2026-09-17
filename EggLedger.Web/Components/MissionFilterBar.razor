@@ -9,8 +9,7 @@
    matcher reproduces Vue semantics exactly (see docs/filter-legacy-semantics.md). *@
 
 <div class="@(FillHeight ? "flex-1 min-h-0" : "max-h-60") overflow-y-auto">
-    @for (var i = 0; i < _draft.Rows.Count; i++) {
-        var index = i;
+    @foreach (var index in Enumerable.Range(0, _draft.Rows.Count)) {
         var row = _draft.Rows[index];
 
         @if (index != 0) {
@@ -42,8 +41,7 @@
             }
         </div>
 
-        @for (var oi = 0; oi < row.Or.Count; oi++) {
-            var orIndex = oi;
+        @foreach (var orIndex in Enumerable.Range(0, row.Or.Count)) {
             var orRow = row.Or[orIndex];
             <div class="filter-or-row filter-container">
                 <span class="filter-or-chip">OR</span>

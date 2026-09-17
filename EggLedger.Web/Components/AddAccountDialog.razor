@@ -70,11 +70,9 @@
             _loading = false;
             Close();
             await Added.InvokeAsync(account);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             _error = e.Message;
-        }
-        finally {
+        } finally {
             _loading = false;
         }
     }

@@ -4,8 +4,7 @@
 <div class="w-full h-full overflow-y-auto">
     <table class="w-full text-xs">
         <tbody>
-        @for (var i = 0; i < Result.Labels.Count; i++) {
-            var index = i;
+        @foreach (var index in Enumerable.Range(0, Result.Labels.Count)) {
             <tr class="border-b border-gray-800">
                 <td class="py-0.5 pr-2 text-gray-400 truncate max-w-xs">@Result.Labels[index]</td>
                 <td class="py-0.5 text-right font-mono text-gray-300">@FormatValue(index)</td>

@@ -82,8 +82,6 @@ public sealed class UpdateService : IUpdateStatusProvider {
 
         var snapshot = await ReadSnapshotAsync().ConfigureAwait(false);
 
-
-
         if (!force && !string.IsNullOrEmpty(snapshot.KnownTag)
             && SemVersion.TryParse(snapshot.KnownTag, out var knownVersion) && knownVersion is not null
             && knownVersion.GreaterThan(running)) {
@@ -93,8 +91,6 @@ public sealed class UpdateService : IUpdateStatusProvider {
             SetPhase(UpdatePhase.Available);
             return;
         }
-
-
 
         if (!force && snapshot.LastCheckedAt is { } last && _now() - last < UpdateCheckInterval) {
             AvailableVersion = null;
@@ -116,8 +112,6 @@ public sealed class UpdateService : IUpdateStatusProvider {
             Fail($"could not parse latest version {latestTag}");
             return;
         }
-
-
 
         if (running.GreaterThan(latestVersion)) {
             var pre = await _github.GetLatestTagIncludingPreReleasesAsync().ConfigureAwait(false);
@@ -198,11 +192,7 @@ public sealed class UpdateService : IUpdateStatusProvider {
         var tempPath = NewBinaryTempPath(exePath);
         BinaryReplacement.TryDelete(tempPath);
 
-
-
         var expectedSha = await _github.GetExpectedSha256Async(tag).ConfigureAwait(false);
-
-
 
         var assetName = GithubReleaseClient.ExpectedAssetName();
         if (ArchiveExtraction.IsArchive(assetName)) {
@@ -240,8 +230,6 @@ public sealed class UpdateService : IUpdateStatusProvider {
 
         AvailableVersion = tag;
         SetPhase(UpdatePhase.Ready);
-
-
 
         await RunSelfReplaceHandoffAsync(_exitAction, _handshakeTimeout, _exitDelay).ConfigureAwait(false);
     }

@@ -37,8 +37,6 @@ public sealed class SqliteMissionDb : IMissionDb {
         }
     }
 
-
-
     private static object? ReadValue(SqliteDataReader reader, int i) {
         if (reader.IsDBNull(i)) {
             return null;

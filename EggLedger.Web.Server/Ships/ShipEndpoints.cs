@@ -2,8 +2,6 @@ namespace EggLedger.Web.Server.Ships;
 
 public sealed record GlbResult(int Status, string? ContentType, byte[]? Bytes);
 
-
-
 public static class ShipEndpoints {
     public static async Task<GlbResult> HandleGlb(
         ShipAssetService svc, bool isAdmin, string key, CancellationToken ct) {

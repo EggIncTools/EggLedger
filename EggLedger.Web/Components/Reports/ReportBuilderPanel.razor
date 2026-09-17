@@ -402,8 +402,7 @@
         try {
             var result = await MissionDb.RunReportAsync(def, def.AccountId);
             _editingResultLabels = result.Is2D ? Array.Empty<string>() : result.Labels;
-        }
-        catch {
+        } catch {
             _editingResultLabels = Array.Empty<string>();
         }
 

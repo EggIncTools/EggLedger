@@ -223,8 +223,7 @@
             copy.UpdatedAt = 0;
             await Store.InsertReportAsync(ReportMapping.ToRow(copy));
             await OnChanged.InvokeAsync();
-        }
-        finally {
+        } finally {
             _copying = false;
         }
     }
@@ -233,8 +232,7 @@
         _deleting = true;
         try {
             await OnDelete.InvokeAsync(Def.Id);
-        }
-        finally {
+        } finally {
             _deleting = false;
             _confirmingDelete = false;
         }
@@ -272,8 +270,7 @@
         _error = null;
         try {
             _result = await MissionDb.RunReportAsync(Def, AccountId);
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             _error = "Failed to run: " + ex.Message;
             StateHasChanged();
             return;
@@ -305,8 +302,7 @@
             _mennoResult = MennoService.ExecuteComparison(
                 Def, items, _result.RawRowLabels, _result.RawColLabels);
             StateHasChanged();
-        }
-        catch {
+        } catch {
             _mennoResult = null;
         }
     }

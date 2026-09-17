@@ -22,8 +22,6 @@ public sealed class SettingsModel {
     public const string KeyBackupDestPath = "backup_dest_path";
     public const string KeyMoveDestPath = "move_dest_path";
 
-
-
     public const int MinWorkerCount = 1;
     public const int MaxWorkerCount = 10;
 

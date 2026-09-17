@@ -14,8 +14,6 @@ public static class GoFloat {
             return "-Inf";
         }
 
-
-
         string s = v.ToString("R", CultureInfo.InvariantCulture);
         if (s.IndexOf('E') < 0 && s.IndexOf('e') < 0) {
             return s;
@@ -97,8 +95,6 @@ public static class GoFloat {
         string plain = shortest.IndexOfAny(['E', 'e']) >= 0 ? ExpandExponential(shortest) : shortest;
         string abs = plain.StartsWith('-') ? plain[1..] : plain;
         bool neg = plain.StartsWith('-');
-
-
 
         int dot = abs.IndexOf('.');
         string intPart = dot < 0 ? abs : abs[..dot];

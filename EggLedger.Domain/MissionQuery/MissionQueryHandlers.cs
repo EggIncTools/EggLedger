@@ -80,8 +80,6 @@ public sealed class MissionQueryHandlers(IMissionStore store, IArtifactQuality q
 
     public async Task<Dictionary<string, List<MissionDrop>>?> GetAllPlayerDropsAsync(string playerId) {
 
-
-
         var stored = await store.GetStoredPlayerDropsAsync(playerId);
         if (stored is null) {
             return null;

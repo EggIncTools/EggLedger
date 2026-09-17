@@ -78,8 +78,6 @@ public sealed class FirstLoginBackfill(
         }
     }
 
-
-
     private async Task<string?> EncryptionKeyAsync(Guid userId, CancellationToken ct) {
         await using var cmd = source.CreateCommand("SELECT encryption_key FROM users WHERE user_id = $1");
         cmd.Parameters.AddWithValue(userId);

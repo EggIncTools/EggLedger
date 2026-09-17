@@ -9,29 +9,21 @@ public class EiafxDataTests {
         Assert.Equal(1.0, EiafxData.CraftingWeights[(2, 0)]);
     }
 
-
-
     [Fact]
     public void CraftingWeights_SelfContained_Is20() {
         Assert.Equal(20.0, EiafxData.CraftingWeights[(1, 0)]);
     }
-
-
 
     [Fact]
     public void CraftingWeights_CrossFamily_Is23() {
         Assert.Equal(23.0, EiafxData.CraftingWeights[(23, 2)]);
     }
 
-
-
     [Fact]
     public void CraftingWeights_SolarTitaniumChain() {
         Assert.Equal(10.0, EiafxData.CraftingWeights[(43, 1)]);
         Assert.Equal(120.0, EiafxData.CraftingWeights[(43, 2)]);
     }
-
-
 
     [Fact]
     public void CraftingWeights_LunarTotemT3_Is118() {

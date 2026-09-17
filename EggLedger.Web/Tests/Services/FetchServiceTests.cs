@@ -28,8 +28,6 @@ public sealed class FetchServiceTests {
         return new FetchService(api, store, settings, accounts, new LocalApiPayloadDecoder(api));
     }
 
-
-
     private static string ToApiBody<T>(T msg) {
         using var ms = new MemoryStream();
         Serializer.Serialize(ms, msg);
@@ -327,8 +325,6 @@ public sealed class FetchServiceTests {
         Assert.Contains(AppState.FetchingMissions, states);
         Assert.Contains(AppState.ExportingData, states);
         Assert.Contains(AppState.Success, states);
-
-
 
         var segs = events
             .Where(e => e.MissionId == "m1" && e.Segment is not null)

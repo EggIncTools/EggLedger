@@ -2,8 +2,6 @@ using EggLedger.Domain.Reports;
 
 namespace EggLedger.Domain.Tests.Reports;
 
-
-
 public class ExecuteTests {
 
     private sealed class FakeDb : IMissionDb {

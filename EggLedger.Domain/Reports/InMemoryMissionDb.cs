@@ -54,8 +54,6 @@ internal sealed class InMemoryMissionDb : IMissionDb {
         var hasGrp = sql.Contains(GrpMarker, StringComparison.Ordinal);
         var airtimeDenom = sql.Contains(AirtimeSumMarker, StringComparison.Ordinal);
 
-
-
         var joinDrops = sql.Contains(ArtifactJoinMarker, StringComparison.Ordinal);
 
         if (weighted) {
@@ -77,8 +75,6 @@ internal sealed class InMemoryMissionDb : IMissionDb {
         if (hasBucket) {
             return TimeSeriesCount(joinDrops);
         }
-
-
 
         if (airtimeDenom) {
             return _def.SecondaryGroupBy != "" && Is2DAirtimeQuery(sql)
@@ -202,8 +198,6 @@ internal sealed class InMemoryMissionDb : IMissionDb {
         return rows;
     }
 
-
-
     private List<object?[]> Airtime1D(bool joinDrops) {
         var col = QueryBuilder.GroupByColumn(_def.GroupBy);
         var sums = new Dictionary<string, double>(StringComparer.Ordinal);
@@ -234,8 +228,6 @@ internal sealed class InMemoryMissionDb : IMissionDb {
         }
         return [.. order.Select(k => new object?[] { k.Item1, k.Item2, sums[k] })];
     }
-
-
 
     private IEnumerable<MissionRowData> AirtimeRows(bool joinDrops, string col1, string? col2) {
         if (joinDrops
@@ -445,8 +437,6 @@ internal sealed class InMemoryMissionDb : IMissionDb {
 
     private string BucketLabel(long unixSeconds) =>
         TimeBucket.Format(_def.TimeBucket, _def.CustomBucketUnit, unixSeconds);
-
-
 
     private bool InCustomWindow(MissionRowData m) {
         if (_def.TimeBucket != "custom") {

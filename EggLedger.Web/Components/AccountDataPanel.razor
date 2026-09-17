@@ -138,11 +138,9 @@
             } else {
                 await Downloads.DownloadXlsxAsync(missions, baseName + ".xlsx");
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             _error = e.Message;
-        }
-        finally {
+        } finally {
             _busy = false;
         }
     }
@@ -153,11 +151,9 @@
         try {
             await AccountStore.RemoveKnownAccountAsync(id);
             await Changed.InvokeAsync();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             _error = e.Message;
-        }
-        finally {
+        } finally {
             _busy = false;
         }
     }

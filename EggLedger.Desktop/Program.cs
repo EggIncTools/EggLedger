@@ -15,37 +15,23 @@ internal static class Program {
         var debugMode = args.Contains("--debug")
             || string.Equals(Environment.GetEnvironmentVariable("EGGLEDGER_DEBUG"), "1", StringComparison.Ordinal);
 
-
-
         var updateBootstrap = new UpdateBootstrap(new ProcessProbe(), new BinaryReplacement(new ProcessProbe()));
         updateBootstrap.RunStartup(args, Environment.ProcessPath);
-
-
 
         EnsureWwwrootExtracted();
 
         var appBuilder = PhotinoBlazorAppBuilder.CreateDefault(args);
 
-
-
         appBuilder.Services.AddEggLedgerWeb(CloudSyncBaseAddress());
-
-
 
         var dataRootDir = StoragePaths.ResolveDataRootDir(StoragePaths.DefaultRootDir());
         appBuilder.Services.AddDesktopSqliteStorage(dataRootDir);
 
-
-
         var desktopWindow = new PhotinoDesktopWindow();
         appBuilder.Services.AddDesktopPlatformCapabilities(new ProcessRunner(), desktopWindow);
 
-
-
         var runningVersion = AppVersionInfo.Current;
         appBuilder.Services.AddDesktopUpdater(() => runningVersion);
-
-
 
         appBuilder.Services.AddDesktopExportSink();
 
@@ -56,18 +42,11 @@ internal static class Program {
 
         var app = appBuilder.Build();
 
-
-
         desktopWindow.Attach(app.MainWindow);
-
-
 
         var settings = LoadDesktopSettings(app.Services);
         var width = settings.WindowWidth > 0 ? settings.WindowWidth : SettingsModel.DefaultWindowWidth;
         var height = settings.WindowHeight > 0 ? settings.WindowHeight : SettingsModel.DefaultWindowHeight;
-
-
-
 
         var iconFile = Path.Combine(AppContext.BaseDirectory, "icon-512.png");
         app.MainWindow.SetTitle("EggLedger");
@@ -78,8 +57,6 @@ internal static class Program {
             .SetUseOsDefaultLocation(false)
             .Center();
         if (settings.StartInFullscreen) app.MainWindow.SetFullScreen(true);
-
-
 
         var platform = app.Services.GetRequiredService<IPlatformCapabilities>();
         app.MainWindow.RegisterWebMessageReceivedHandler((_, msg) => {
@@ -99,8 +76,6 @@ internal static class Program {
                 Log("FIRSTCHANCE: " + e.Exception.GetType().Name + ": " + e.Exception.Message);
             Log("debug mode on: devtools enabled (F12), WebView + managed errors logged");
         }
-
-
 
         AppDomain.CurrentDomain.UnhandledException += (_, error) =>
             Log("FATAL: " + (error.ExceptionObject.ToString() ?? "Unknown error"));
@@ -130,8 +105,6 @@ internal static class Program {
             }
         });
     }
-
-
 
     private static readonly TimeSpan GameEventsPollInterval = TimeSpan.FromMinutes(15);
 
@@ -174,8 +147,6 @@ internal static class Program {
 
     private static Uri CloudSyncBaseAddress() => new("https://eggledger.egginc.tools/");
 
-
-
     private static SettingsModel LoadDesktopSettings(IServiceProvider services) {
         var model = new SettingsModel();
         try {
@@ -186,8 +157,6 @@ internal static class Program {
         }
         return model;
     }
-
-
 
     private static void EnsureWwwrootExtracted() {
         var assembly = System.Reflection.Assembly.GetExecutingAssembly();

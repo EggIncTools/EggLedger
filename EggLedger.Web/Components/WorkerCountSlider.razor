@@ -9,8 +9,7 @@
         </div>
     </div>
     <div class="flex gap-px w-4/5 cursor-pointer">
-        @for (var i = 1; i <= SettingsModel.MaxWorkerCount; i++) {
-            var n = i;
+        @foreach (var n in Enumerable.Range(1, SettingsModel.MaxWorkerCount)) {
             <div class="flex-1 h-4 rounded-sm @WorkerCellClass(n) @(n > WorkerCount ? "opacity-20" : "")"
                  @onclick="() => SetAsync(n)">
             </div>

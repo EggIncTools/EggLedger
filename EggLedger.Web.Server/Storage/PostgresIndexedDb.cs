@@ -17,9 +17,6 @@ public sealed class PostgresIndexedDb : IIndexedDb {
         _stores = BuildStoreMeta();
     }
 
-
-
-
     private Task<Guid> UserAsync() => _user.RequireUserIdAsync();
     private Task<Guid?> TryUserAsync() => _user.GetUserIdAsync();
     private static readonly JsonSerializerOptions JsonOpts = Rows.JsonOptions;
@@ -138,8 +135,6 @@ public sealed class PostgresIndexedDb : IIndexedDb {
         using var doc = JsonSerializer.SerializeToDocument(value, value.GetType(), JsonOpts);
         var user = await UserAsync().ConfigureAwait(false);
 
-
-
         var cols = new List<string> { "user_id" };
         var values = new List<(string Param, object Value)> { ("p_user", user) };
         int p = 0;
@@ -211,8 +206,6 @@ public sealed class PostgresIndexedDb : IIndexedDb {
 
     private static (string where, object[] args) KeyPredicate(StoreMeta meta, object key) =>
         JsonRowCodec.KeyPredicate(meta.Table, meta.KeyColumns, key, Ident, JsonRowCodec.Postgres);
-
-
 
     private static string Ident(string name) {
         if (name.Contains('"', StringComparison.Ordinal)) {

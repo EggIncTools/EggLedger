@@ -16,9 +16,6 @@ using Npgsql;
 
 namespace EggLedger.Web.Server.Sync.Auth;
 
-
-
-
 public sealed record PairInitResponse(
     [property: JsonPropertyName("url")] string Url,
     [property: JsonPropertyName("state")] string State);
@@ -60,8 +57,6 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
             return null;
         }
     }
-
-
 
     private string UnprotectKey(string stored) {
         try {
@@ -124,8 +119,6 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
         ctx.Response.Redirect($"{widgetUrl.TrimEnd('/')}/auth/logout?returnUrl={Uri.EscapeDataString(returnUrl)}");
     }
 
-
-
     private async Task UpsertLocalUserAsync(Guid userId, string? username, string? avatar, CancellationToken ct) {
         await Retry.RunAsync(async rct => {
             await using var u = source.CreateCommand(
@@ -152,8 +145,6 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
             return false;
         }
     }
-
-
 
     internal async Task<string> EnsureEncryptionKeyAsync(Guid userId) {
         var encKey = "";
@@ -216,9 +207,6 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
         var plainKey = string.IsNullOrEmpty(encryptionKey) ? "" : UnprotectKey(encryptionKey);
         await WriteJsonAsync(ctx, new PollResponse(token, username, avatarUrl, plainKey));
     }
-
-
-
 
     public async Task SessionFromLogin(HttpContext ctx) {
         var token = eggIdentitySession is not null ? ctx.Request.Cookies[eggIdentitySession.CookieName] : null;

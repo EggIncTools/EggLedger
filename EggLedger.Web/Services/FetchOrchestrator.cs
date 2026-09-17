@@ -128,12 +128,7 @@ public sealed class FetchOrchestrator : IDisposable {
             result = AppState.Failed;
         }
 
-
-
-
         await _settings.RemoveSettingAsync(InProgressKeyPrefix + accountId).ConfigureAwait(false);
-
-
 
         if (_cts != cts) {
             return;

@@ -7,8 +7,6 @@ namespace EggLedger.Web.Server.Sync.Menno;
 public sealed record MennoRequest(
     [property: JsonPropertyName("eid")] string Eid);
 
-
-
 public sealed partial class MennoEndpoint(HttpClient client, string functionKey, string upstreamUrl) {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
     private static readonly IpRateLimiter Limiter = new(maxPerWindow: 10, window: TimeSpan.FromMinutes(1));
