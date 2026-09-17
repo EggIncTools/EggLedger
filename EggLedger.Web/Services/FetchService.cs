@@ -38,7 +38,7 @@ public sealed class FetchService {
         int failed = 0;
         int retried = 0;
 
-        void Report(AppState state) =>
+        void Report(AppState state) {
             progress?.Report(new FetchProgress {
                 State = state,
                 Total = Volatile.Read(ref total),
@@ -46,6 +46,7 @@ public sealed class FetchService {
                 Failed = Volatile.Read(ref failed),
                 Retried = Volatile.Read(ref retried),
             });
+        }
 
         Report(AppState.FetchingSave);
         EggIncFirstContactResponse fc;
@@ -240,13 +241,14 @@ public sealed class FetchService {
         double startTimestamp,
         IProgress<FetchProgress>? progress,
         CancellationToken cancellationToken) {
-        void Track(string segment, SegmentStatus status) =>
+        void Track(string segment, SegmentStatus status) {
             progress?.Report(new FetchProgress {
                 State = AppState.FetchingMissions,
                 MissionId = missionId,
                 Segment = segment,
                 SegmentStatus = status,
             });
+        }
 
         Track("Cache", SegmentStatus.Active);
         var cached = await _store.GetCompleteMissionAsync(playerId, missionId).ConfigureAwait(false);

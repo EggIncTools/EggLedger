@@ -3,7 +3,7 @@ using EggLedger.Domain.Export;
 namespace EggLedger.Domain.Tests.Export;
 
 internal sealed class InMemoryExportFileSystem : IExportFileSystem {
-    private readonly Dictionary<string, long> _files = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, long> _files = [with(StringComparer.Ordinal)];
 
     public void AddFile(string dir, string name, long size) {
         _files[Path.Combine(dir, name)] = size;

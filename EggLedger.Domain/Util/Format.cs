@@ -3,17 +3,11 @@ using System.Globalization;
 namespace EggLedger.Domain.Util;
 
 public static class Format {
-    private static readonly string[] Suffixes =
-    [
+    private static readonly string[] Suffixes = [
         "", "K", "M", "B", "T", "q", "Q", "s", "S", "o", "N", "d", "U", "D", "Td", "qd", "Qd", "sd", "Sd", "od", "Nd",
     ];
 
-    public static string Addendum(int oom) {
-        if (oom > 20) {
-            return "!";
-        }
-        return Suffixes[oom];
-    }
+    public static string Addendum(int oom) => oom > 20 ? "!" : Suffixes[oom];
 
     public static string AbbreviateFloat(double v) {
         var vCopy = v;
@@ -22,14 +16,7 @@ public static class Format {
             vCopy /= 1e3;
             ooms++;
         }
-        int precision;
-        if (vCopy < 10.0) {
-            precision = 2;
-        } else if (vCopy < 100.0) {
-            precision = 1;
-        } else {
-            precision = 0;
-        }
+        int precision = vCopy < 10.0 ? 2 : vCopy < 100.0 ? 1 : 0;
         var formatted = vCopy.ToString("F" + precision.ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture);
         return formatted + Addendum(ooms);
     }

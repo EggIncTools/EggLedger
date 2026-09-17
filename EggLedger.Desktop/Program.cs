@@ -7,7 +7,6 @@ using EggLedger.Web.Data;
 using EggLedger.Web.Platform;
 using EggLedger.Web.Settings;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Photino.Blazor;
 
 internal static class Program {

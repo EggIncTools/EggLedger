@@ -1,4 +1,3 @@
-using System.Globalization;
 using EggLedger.Desktop.Update;
 
 namespace EggLedger.Desktop.Tests;

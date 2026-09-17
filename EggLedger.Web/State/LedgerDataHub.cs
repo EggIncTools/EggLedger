@@ -19,7 +19,7 @@ public sealed class LedgerDataHub : IDisposable {
     private readonly TimeSpan _ttl;
     private readonly Func<DateTime> _clock;
     private readonly Lock _gate = new();
-    private readonly Dictionary<string, AccountEntry> _entries = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, AccountEntry> _entries = [with(StringComparer.Ordinal)];
     private readonly List<string> _order = [];
     private Action? _detachFetch;
 
@@ -221,7 +221,7 @@ public sealed class LedgerDataHub : IDisposable {
         public CacheSlot<IReadOnlyList<DatabaseMission>> InFlightMissions { get; } = new();
         public CacheSlot<Dictionary<string, List<MissionDrop>>> Drops { get; } = new();
         public CacheSlot<LifetimeData> Lifetime { get; } = new();
-        public Dictionary<string, Task<IReadOnlySet<string>>> FilterMatches { get; } = new(StringComparer.Ordinal);
+        public Dictionary<string, Task<IReadOnlySet<string>>> FilterMatches { get; } = [with(StringComparer.Ordinal)];
         public List<string> FilterOrder { get; } = [];
     }
 }

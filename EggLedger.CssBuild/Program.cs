@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Text;
 using EggIdentity.Styles;
 using EggIdentity.Styles.Theming;

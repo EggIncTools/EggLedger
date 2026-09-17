@@ -3,12 +3,12 @@ namespace EggLedger.Domain.Reports;
 internal sealed class PivotAccum {
     private readonly PivotAxis _rows = new();
     private readonly PivotAxis _cols = new();
-    private readonly Dictionary<string, Dictionary<string, double>> _cells = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Dictionary<string, double>> _cells = [with(StringComparer.Ordinal)];
 
     private readonly record struct LabelEntry(string Display, string RawVal);
 
     private sealed class PivotAxis {
-        private readonly HashSet<string> _seen = new(StringComparer.Ordinal);
+        private readonly HashSet<string> _seen = [with(StringComparer.Ordinal)];
         public List<LabelEntry> Entries { get; } = [];
 
         public void Add(string display, string rawVal) {
@@ -23,7 +23,7 @@ internal sealed class PivotAccum {
         _rows.Add(rowDisplay, rowRaw);
         _cols.Add(colDisplay, colRaw);
         if (!_cells.TryGetValue(rowDisplay, out var rowCells)) {
-            rowCells = new Dictionary<string, double>(StringComparer.Ordinal);
+            rowCells = [with(StringComparer.Ordinal)];
             _cells[rowDisplay] = rowCells;
         }
         rowCells.TryGetValue(colDisplay, out var cur);

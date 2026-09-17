@@ -22,7 +22,7 @@ public sealed class ReportSourceCache : IReportSourceCache, IDisposable {
     private readonly TimeSpan _ttl;
     private readonly Func<DateTime> _clock;
     private readonly Lock _gate = new();
-    private readonly Dictionary<string, SourceSlot> _slots = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, SourceSlot> _slots = [with(StringComparer.Ordinal)];
     private readonly List<string> _order = [];
     private Action? _detachHub;
 

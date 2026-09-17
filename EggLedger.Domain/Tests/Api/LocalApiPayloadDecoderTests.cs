@@ -1,8 +1,6 @@
 using EggLedger.Domain.Api;
-using EggLedger.Domain.Ei;
 using Ei;
 using ProtoBuf;
-using Xunit;
 
 namespace EggLedger.Domain.Tests.Api;
 

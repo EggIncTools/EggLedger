@@ -1,5 +1,4 @@
 using System.Text.Json;
-using EggLedger.Domain.MissionQuery;
 using EggLedger.Domain.Reports;
 using EggLedger.Web.Data;
 using EggLedger.Web.Settings;

@@ -103,16 +103,12 @@ public sealed class FetchOrchestrator : IDisposable {
 
 
             var segmentOnly = p.Segment is not null;
-            if (segmentOnly && Progress is not null) {
-                Progress = p with {
-                    Total = Progress.Total,
-                    Finished = Progress.Finished,
-                    Failed = Progress.Failed,
-                    Retried = Progress.Retried
-                };
-            } else {
-                Progress = p;
-            }
+            Progress = segmentOnly && Progress is not null ? p with {
+                Total = Progress.Total,
+                Finished = Progress.Finished,
+                Failed = Progress.Failed,
+                Retried = Progress.Retried
+            } : p;
 
             if (Progress is { Total: > 0 }) {
                 HasFetchContent = true;

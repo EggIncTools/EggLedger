@@ -1,6 +1,5 @@
 using EggLedger.Domain.MissionPacking;
 using Ei;
-using Xunit;
 
 namespace EggLedger.Domain.Tests.MissionPacking;
 

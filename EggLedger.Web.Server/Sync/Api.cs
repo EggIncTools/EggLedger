@@ -7,12 +7,6 @@ using EggLedger.Web.Server.Sync.Blobs;
 using EggLedger.Web.Server.Sync.Db;
 using EggLedger.Web.Server.Sync.Menno;
 using EggLedger.Web.Server.Sync.Verify;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace EggLedger.Web.Server.Sync;

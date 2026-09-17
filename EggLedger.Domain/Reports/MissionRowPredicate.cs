@@ -58,16 +58,13 @@ internal sealed class MissionRowPredicate(
         return true;
     }
 
-    private static readonly HashSet<string> ArtifactTopLevels = new(StringComparer.Ordinal)
-    {
+    private static readonly HashSet<string> ArtifactTopLevels = [with(StringComparer.Ordinal),
         "artifact_rarity", "artifact_spec_type", "artifact_name", "artifact_tier", "artifact_quality",
-    };
+    ];
 
     private static bool IsArtifactScope(FilterCondition c) => ArtifactTopLevels.Contains(c.TopLevel);
 
     private static bool IsMissionScope(FilterCondition c) => !IsArtifactScope(c);
-
-
 
     private bool EvalMission(FilterCondition c, MissionRowData m) {
         return c.TopLevel switch {

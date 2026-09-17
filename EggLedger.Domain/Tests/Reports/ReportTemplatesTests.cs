@@ -1,5 +1,4 @@
 using EggLedger.Domain.Reports;
-using Xunit;
 
 namespace EggLedger.Domain.Tests.Reports;
 

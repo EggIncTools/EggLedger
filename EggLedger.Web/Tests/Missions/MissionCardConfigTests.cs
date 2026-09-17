@@ -1,6 +1,5 @@
 using System.Text.Json;
 using EggLedger.Web.Missions.Model;
-using Xunit;
 
 namespace EggLedger.Web.Tests.Missions;
 

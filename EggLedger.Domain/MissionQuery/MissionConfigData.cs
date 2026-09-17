@@ -1,6 +1,5 @@
 using EggLedger.Domain.Ei;
 using EggLedger.Domain.Eiafx;
-using EggLedger.Domain.LedgerData;
 using Ei;
 
 namespace EggLedger.Domain.MissionQuery;

@@ -214,11 +214,7 @@ public sealed class MissionPacker : IMissionCompiler {
             MissionTypeString = ((MissionInfo.MissionType)mType).Display(),
             ShipEnumString = EnumNames.ProtoName(info.Ship),
         };
-        if (mission.Target.Length == 0) {
-            mission.TargetInt = -1;
-        } else {
-            mission.TargetInt = (int)info.TargetArtifact;
-        }
+        mission.TargetInt = mission.Target.Length == 0 ? -1 : (int)info.TargetArtifact;
 
         return mission;
     }

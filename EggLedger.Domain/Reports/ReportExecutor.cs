@@ -76,7 +76,7 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
 
         if (def.Mode == "time_series" && rawLabels.Count > 0) {
             (rawLabels, values) = TimeFill.FillTimeSeriesGaps(def.TimeBucket, def.CustomBucketUnit, rawLabels, values);
-            labels = new List<string>(rawLabels.Count);
+            labels = [with(rawLabels.Count)];
             foreach (var rl in rawLabels) {
                 labels.Add(Labels.FormatLabel(def.GroupBy, rl));
             }
@@ -316,7 +316,7 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
                 var k1 = Labels.FormatLabel(def.GroupBy, rawKey1);
                 var k2 = Labels.FormatLabel(def.SecondaryGroupBy, rawKey2);
                 if (!mcMap.TryGetValue(k1, out var inner)) {
-                    inner = new Dictionary<string, double>(StringComparer.Ordinal);
+                    inner = [with(StringComparer.Ordinal)];
                     mcMap[k1] = inner;
                 }
                 inner[k2] = cnt;
@@ -456,17 +456,13 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
 
     private Dictionary<string, double> Denom1D(string groupCol, string mode, string baseWhere, IReadOnlyList<object?> baseArgs) {
         string denomQuery;
-        if (mode == "airtime") {
-            denomQuery = string.Format(
-                CultureInfo.InvariantCulture,
-                "SELECT CAST({0} AS TEXT), SUM(CAST(m.return_timestamp - m.start_timestamp AS REAL) / 3600.0) FROM mission m WHERE {1} GROUP BY {0}",
-                groupCol, baseWhere);
-        } else {
-            denomQuery = string.Format(
-                CultureInfo.InvariantCulture,
-                "SELECT CAST({0} AS TEXT), COUNT(*) FROM mission m WHERE {1} GROUP BY {0}",
-                groupCol, baseWhere);
-        }
+        denomQuery = mode == "airtime" ? string.Format(
+            CultureInfo.InvariantCulture,
+            "SELECT CAST({0} AS TEXT), SUM(CAST(m.return_timestamp - m.start_timestamp AS REAL) / 3600.0) FROM mission m WHERE {1} GROUP BY {0}",
+            groupCol, baseWhere) : string.Format(
+            CultureInfo.InvariantCulture,
+            "SELECT CAST({0} AS TEXT), COUNT(*) FROM mission m WHERE {1} GROUP BY {0}",
+            groupCol, baseWhere);
         var rows = _db.Query(denomQuery, baseArgs);
         var denomMap = new Dictionary<string, double>(StringComparer.Ordinal);
         foreach (var row in rows) {
@@ -477,17 +473,13 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
 
     private Dictionary<string, Dictionary<string, double>> Denom2D(ReportDefinition def, string col1, string col2, string mode, string baseWhere, IReadOnlyList<object?> baseArgs) {
         string denomQuery;
-        if (mode == "airtime") {
-            denomQuery = string.Format(
-                CultureInfo.InvariantCulture,
-                "SELECT CAST({0} AS TEXT), CAST({1} AS TEXT), SUM(CAST(m.return_timestamp - m.start_timestamp AS REAL) / 3600.0) FROM mission m WHERE {2} GROUP BY {0}, {1}",
-                col1, col2, baseWhere);
-        } else {
-            denomQuery = string.Format(
-                CultureInfo.InvariantCulture,
-                "SELECT CAST({0} AS TEXT), CAST({1} AS TEXT), COUNT(*) FROM mission m WHERE {2} GROUP BY {0}, {1}",
-                col1, col2, baseWhere);
-        }
+        denomQuery = mode == "airtime" ? string.Format(
+            CultureInfo.InvariantCulture,
+            "SELECT CAST({0} AS TEXT), CAST({1} AS TEXT), SUM(CAST(m.return_timestamp - m.start_timestamp AS REAL) / 3600.0) FROM mission m WHERE {2} GROUP BY {0}, {1}",
+            col1, col2, baseWhere) : string.Format(
+            CultureInfo.InvariantCulture,
+            "SELECT CAST({0} AS TEXT), CAST({1} AS TEXT), COUNT(*) FROM mission m WHERE {2} GROUP BY {0}, {1}",
+            col1, col2, baseWhere);
         var rows = _db.Query(denomQuery, baseArgs);
         var denomMap = new Dictionary<string, Dictionary<string, double>>(StringComparer.Ordinal);
         foreach (var row in rows) {
@@ -497,7 +489,7 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
             var k1 = Labels.FormatLabel(def.GroupBy, rawKey1);
             var k2 = Labels.FormatLabel(def.SecondaryGroupBy, rawKey2);
             if (!denomMap.TryGetValue(k1, out var inner)) {
-                inner = new Dictionary<string, double>(StringComparer.Ordinal);
+                inner = [with(StringComparer.Ordinal)];
                 denomMap[k1] = inner;
             }
             inner[k2] = denom;

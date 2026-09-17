@@ -307,7 +307,7 @@ public sealed class SqliteIndexedDb : IIndexedDb {
             KeyColumns = keyColumns;
             AutoIncrementColumn = autoIncrementColumn;
             BoolColumns = new HashSet<string>(boolColumns, StringComparer.Ordinal);
-            BlobColumns = new HashSet<string>(StringComparer.Ordinal);
+            BlobColumns = [with(StringComparer.Ordinal)];
             UpsertByDelete = upsertByDelete;
         }
 

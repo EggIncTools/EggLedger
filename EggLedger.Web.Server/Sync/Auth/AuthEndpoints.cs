@@ -9,13 +9,9 @@ using EggIdentity.Contract;
 using EggIdentity.Resilience;
 using EggIdentity.Settings.Store;
 using EggLedger.Web.Server.Settings;
-using EggLedger.Web.Server.Sync;
 using EggLedger.Web.Server.Sync.Db;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace EggLedger.Web.Server.Sync.Auth;

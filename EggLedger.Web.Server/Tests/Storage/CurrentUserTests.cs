@@ -2,7 +2,6 @@ using System.Security.Claims;
 using EggLedger.Web.Server.Auth;
 using EggLedger.Web.Server.Storage;
 using Microsoft.AspNetCore.Components.Authorization;
-using Xunit;
 
 namespace EggLedger.Web.Server.Tests.Storage;
 

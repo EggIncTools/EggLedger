@@ -76,7 +76,7 @@ public static class ExportManagement {
             string ext = m.Groups[3].Value;
 
             if (!pairsByEid.TryGetValue(eid, out var byTs)) {
-                byTs = new Dictionary<string, FilePair>(StringComparer.Ordinal);
+                byTs = [with(StringComparer.Ordinal)];
                 pairsByEid[eid] = byTs;
                 eidOrder.Add(eid);
             }

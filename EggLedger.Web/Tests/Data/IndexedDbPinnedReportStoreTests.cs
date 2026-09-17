@@ -1,5 +1,4 @@
 using EggLedger.Web.Data;
-using Xunit;
 
 namespace EggLedger.Web.Tests.Data;
 

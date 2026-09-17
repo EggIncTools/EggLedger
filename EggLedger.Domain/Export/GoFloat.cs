@@ -69,15 +69,10 @@ public static class GoFloat {
         string digits = intPart + fracPart;
         int pointPos = intPart.Length + exp;
 
-        string result;
-        if (pointPos <= 0) {
-            result = "0." + new string('0', -pointPos) + digits;
-        } else if (pointPos >= digits.Length) {
-            result = digits + new string('0', pointPos - digits.Length);
-        } else {
-            result = digits[..pointPos] + "." + digits[pointPos..];
-        }
-
+        string result = pointPos <= 0
+            ? "0." + new string('0', -pointPos) + digits
+            : pointPos >= digits.Length ? digits + new string('0', pointPos - digits.Length) :
+                digits[..pointPos] + "." + digits[pointPos..];
         result = TrimDecimal(result);
         return neg ? "-" + result : result;
     }

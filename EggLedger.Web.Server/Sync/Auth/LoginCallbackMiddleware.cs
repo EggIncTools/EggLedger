@@ -1,7 +1,4 @@
-using EggLedger.Web.Server.Sync.Auth;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
-using Microsoft.Extensions.Logging;
 
 namespace EggLedger.Web.Server.Sync.Auth;
 

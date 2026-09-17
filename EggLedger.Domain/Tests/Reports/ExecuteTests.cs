@@ -7,7 +7,7 @@ namespace EggLedger.Domain.Tests.Reports;
 public class ExecuteTests {
 
     private sealed class FakeDb : IMissionDb {
-        private readonly Dictionary<string, IReadOnlyList<object?[]>> _byPrefix = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, IReadOnlyList<object?[]>> _byPrefix = [with(StringComparer.Ordinal)];
         public List<(string sql, IReadOnlyList<object?> args)> Calls { get; } = [];
 
 

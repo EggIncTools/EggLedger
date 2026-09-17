@@ -20,11 +20,12 @@ public static class Labels {
         return ((ArtifactSpec.Name)v).CasedName();
     }
 
-    private static readonly HashSet<string> NumericGroupBys = new(StringComparer.Ordinal)
-    {
+    private static readonly HashSet<string> NumericGroupBys =
+    [
+        with(StringComparer.Ordinal),
         "ship_type", "duration_type", "level", "mission_type",
         "rarity", "tier", "artifact_name", "mission_target",
-    };
+    ];
 
     public static bool LabelSortLess(string groupBy, string rawA, string rawB) {
         if (NumericGroupBys.Contains(groupBy)) {

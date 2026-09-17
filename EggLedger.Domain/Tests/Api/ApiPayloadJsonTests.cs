@@ -1,8 +1,6 @@
 using System.Text.Json;
 using EggLedger.Domain.Api;
-using EggLedger.Domain.Ei;
 using Ei;
-using Xunit;
 
 namespace EggLedger.Domain.Tests.Api;
 

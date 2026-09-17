@@ -110,7 +110,9 @@ public sealed class IndexedDbMissionStore : IMissionStore {
             }
             return result;
 
-            async Task Assign(int idx) => result[idx] = await DecodeAsync(rows[idx]).ConfigureAwait(false);
+            async Task Assign(int idx) {
+                result[idx] = await DecodeAsync(rows[idx]).ConfigureAwait(false);
+            }
         } catch {
             return null;
         }
@@ -121,7 +123,7 @@ public sealed class IndexedDbMissionStore : IMissionStore {
     private const int DecodeCacheCap = 256;
     private readonly Lock _decodeGate = new();
     private readonly LinkedList<(string Key, CompleteMissionResponse Value)> _decodeLru = new();
-    private readonly Dictionary<string, LinkedListNode<(string Key, CompleteMissionResponse Value)>> _decodeIndex = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, LinkedListNode<(string Key, CompleteMissionResponse Value)>> _decodeIndex = [with(StringComparer.Ordinal)];
 
     private static string DecodeKey(string playerId, string missionId) => playerId + " " + missionId;
 
@@ -162,7 +164,7 @@ public sealed class IndexedDbMissionStore : IMissionStore {
     }
 
     private readonly Lock _backfillGate = new();
-    private readonly Dictionary<string, Task> _backfillTasks = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Task> _backfillTasks = [with(StringComparer.Ordinal)];
 
     public void QueueFilterColBackfill(string eid) {
         _ = GetOrStartFilterColBackfillAsync(eid);

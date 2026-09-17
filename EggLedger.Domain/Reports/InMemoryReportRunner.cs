@@ -1,5 +1,3 @@
-using System.Globalization;
-
 namespace EggLedger.Domain.Reports;
 
 public sealed record MissionRowData {

@@ -1,7 +1,6 @@
 using EggIdentity.Settings;
 using EggLedger.Web.Server.Settings;
 using EggLedger.Web.Server.Sync;
-using Xunit;
 
 namespace EggLedger.Web.Server.Tests.Settings;
 
@@ -9,7 +8,7 @@ public class LedgerSettingsTests {
     private static SettingsSnapshot Snapshot(
         Dictionary<string, string?>? database = null, Dictionary<string, string?>? env = null) =>
         new(AppConfig.Registry,
-            database ?? new Dictionary<string, string?>(StringComparer.Ordinal),
+            database ?? [with(StringComparer.Ordinal)],
             null,
             k => env?.GetValueOrDefault(k));
 

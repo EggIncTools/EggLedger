@@ -109,7 +109,10 @@ public static class Weight {
     }
 
     private static bool HasArtifactScopeFilter(ReportFilters f) {
-        static bool IsArtifactField(string s) => s.StartsWith("artifact_", StringComparison.Ordinal);
+        static bool IsArtifactField(string s) {
+            return s.StartsWith("artifact_", StringComparison.Ordinal);
+        }
+
         foreach (var c in f.And) {
             if (IsArtifactField(c.TopLevel)) {
                 return true;

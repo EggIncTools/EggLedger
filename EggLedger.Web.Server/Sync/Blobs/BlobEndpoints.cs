@@ -1,8 +1,6 @@
 using System.Text;
 using System.Text.Json;
 using EggIdentity.Auth;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace EggLedger.Web.Server.Sync.Blobs;

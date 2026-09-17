@@ -1,7 +1,6 @@
 using EggIdentity.Auth;
 using EggIdentity.Client;
 using EggIdentity.Contract;
-using Microsoft.AspNetCore.Http;
 
 namespace EggLedger.Web.Server.Sync.Auth;
 

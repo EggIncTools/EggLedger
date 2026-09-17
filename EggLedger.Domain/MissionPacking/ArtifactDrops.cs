@@ -23,19 +23,15 @@ public static class ArtifactDrops {
                 continue;
             }
             string name = EnumNames.ProtoName(spec.name);
-            string specType;
-            if (name.Contains("_FRAGMENT", StringComparison.Ordinal)) {
-                specType = "StoneFragment";
-            } else if (name.Contains("_STONE", StringComparison.Ordinal)) {
-                specType = "Stone";
-            } else if (name.Contains("GOLD_METEORITE", StringComparison.Ordinal)
+            string specType = name.Contains("_FRAGMENT", StringComparison.Ordinal)
+                ? "StoneFragment"
+                : name.Contains("_STONE", StringComparison.Ordinal)
+                    ? "Stone"
+                    : name.Contains("GOLD_METEORITE", StringComparison.Ordinal)
                        || name.Contains("SOLAR_TITANIUM", StringComparison.Ordinal)
-                       || name.Contains("TAU_CETI_GEODE", StringComparison.Ordinal)) {
-                specType = "Ingredient";
-            } else {
-                specType = "Artifact";
-            }
-
+                       || name.Contains("TAU_CETI_GEODE", StringComparison.Ordinal)
+                    ? "Ingredient"
+                    : "Artifact";
             drops.Add(new ArtifactDrop(
                 DropIndex: i,
                 ArtifactId: (int)spec.name,

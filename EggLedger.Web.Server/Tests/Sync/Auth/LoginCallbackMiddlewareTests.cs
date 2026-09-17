@@ -1,7 +1,6 @@
 using EggLedger.Web.Server.Sync.Auth;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.WebUtilities;
-using Xunit;
 
 namespace EggLedger.Web.Server.Tests.Sync.Auth;
 

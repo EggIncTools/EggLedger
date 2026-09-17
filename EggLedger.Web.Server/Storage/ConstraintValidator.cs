@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace EggLedger.Web.Server.Storage;

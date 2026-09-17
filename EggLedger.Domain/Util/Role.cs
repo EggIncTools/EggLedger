@@ -1,5 +1,3 @@
-using EggLedger.Domain.LedgerData;
-
 namespace EggLedger.Domain.Util;
 
 public static class Role {
@@ -10,15 +8,7 @@ public static class Role {
             earningsBonusCopy /= 1e3;
             ooms++;
         }
-        int precision;
-        if (earningsBonusCopy < 10.0) {
-            precision = 2;
-        } else if (earningsBonusCopy < 100.0) {
-            precision = 1;
-        } else {
-            precision = 0;
-        }
-
+        int precision = earningsBonusCopy < 10.0 ? 2 : (earningsBonusCopy < 100.0 ? 1 : 0);
         var roles = LedgerData.LedgerData.Config.FarmerRoles;
         foreach (var role in roles) {
             if ((ooms * 3) - precision == role.Oom) {

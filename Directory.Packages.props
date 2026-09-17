@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <EggIdentityVersion>2.6.1</EggIdentityVersion>
+    <EggIdentityVersion>2.7.2</EggIdentityVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,7 +26,7 @@
     <PackageVersion Include="EggIdentity.Settings.Api" Version="$(EggIdentityVersion)" />
     <PackageVersion Include="EggIdentity.Styles" Version="$(EggIdentityVersion)" />
     <PackageVersion Include="EggIdentity.UI" Version="$(EggIdentityVersion)" />
-    <PackageVersion Include="EggIncognito.Protos" Version="2.13.0" />
+    <PackageVersion Include="EggIncognito.Protos" Version="2.15.5" />
     <PackageVersion Include="Markdig" Version="0.41.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.Authorization" Version="10.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.Web" Version="10.0.0" />

@@ -1,4 +1,3 @@
-using System.Linq;
 using EggLedger.Domain.MissionQuery;
 using EggLedger.Web.Missions;
 

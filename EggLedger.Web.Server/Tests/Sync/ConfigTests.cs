@@ -1,5 +1,4 @@
 using EggLedger.Web.Server.Sync;
-using Xunit;
 
 namespace EggLedger.Web.Server.Tests.Sync;
 

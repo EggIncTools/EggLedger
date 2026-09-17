@@ -5,7 +5,6 @@ using EggLedger.Web.Data;
 using EggLedger.Web.Services;
 using EggLedger.Web.Settings;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace EggLedger.Web.Server.Storage;

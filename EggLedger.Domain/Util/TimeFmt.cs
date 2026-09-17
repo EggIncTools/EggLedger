@@ -5,7 +5,7 @@ namespace EggLedger.Domain.Util;
 public static class TimeFmt {
     public static double TimeToUnix(DateTimeOffset t) {
 
-        var unixNano = t.ToUnixTimeMilliseconds() * 1_000_000L + (t.Ticks % 10_000L) * 100L;
+        var unixNano = t.ToUnixTimeMilliseconds() * 1_000_000L + t.Ticks % 10_000L * 100L;
         return unixNano / 1e9;
     }
 

@@ -4,7 +4,7 @@ using WebCondition = EggLedger.Web.Missions.FilterCondition;
 namespace EggLedger.Web.State;
 
 public sealed class FilterState {
-    private readonly Dictionary<string, FilterDraft> _drafts = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, FilterDraft> _drafts = [with(StringComparer.Ordinal)];
 
     public FilterDraft Resolve(
         FilterViewContext context,

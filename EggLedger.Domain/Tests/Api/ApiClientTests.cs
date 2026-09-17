@@ -1,8 +1,6 @@
 using System.IO.Compression;
 using System.Net;
-using System.Net.Http;
 using EggLedger.Domain.Api;
-using EggLedger.Domain.Ei;
 using Ei;
 using ProtoBuf;
 

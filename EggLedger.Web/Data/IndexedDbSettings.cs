@@ -6,7 +6,7 @@ public sealed class IndexedDbSettings(IIndexedDb db) {
 
     public async Task<Dictionary<string, string>> GetAllSettingsAsync() {
         if (_cache is { } cached) {
-            return new Dictionary<string, string>(cached);
+            return [with(cached)];
         }
 
         var rows = await _db.GetAllAsync<SettingRow>(IndexedDbStores.Settings);
@@ -15,7 +15,7 @@ public sealed class IndexedDbSettings(IIndexedDb db) {
             result[row.Key] = row.Value;
         }
         _cache = result;
-        return new Dictionary<string, string>(result);
+        return [with(result)];
     }
 
     public async Task SetSettingAsync(string key, string value) {

@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using EggLedger.Domain.MissionQuery;
 using EggLedger.Domain.Reports;
 using EggLedger.Web.Data;
 

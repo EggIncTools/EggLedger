@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Reflection;
-using Ei;
 using ProtoBuf;
 
 namespace EggLedger.Domain.Ei;

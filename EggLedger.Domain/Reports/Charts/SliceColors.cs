@@ -20,13 +20,7 @@ public static class SliceColors {
         double s = d == 0 ? 0 : d / (1 - Math.Abs(2 * l - 1));
         double h = 0;
         if (d != 0) {
-            if (max == rv) {
-                h = Mod((gv - bv) / d + 6, 6);
-            } else if (max == gv) {
-                h = (bv - rv) / d + 2;
-            } else {
-                h = (rv - gv) / d + 4;
-            }
+            h = max == rv ? Mod((gv - bv) / d + 6, 6) : max == gv ? (bv - rv) / d + 2 : (rv - gv) / d + 4;
             h *= 60;
         }
         return (h, s, l);
@@ -54,13 +48,13 @@ public static class SliceColors {
 
     public static Dictionary<string, string> ParseLabelColors(string? raw) {
         if (string.IsNullOrEmpty(raw)) {
-            return new Dictionary<string, string>(StringComparer.Ordinal);
+            return [with(StringComparer.Ordinal)];
         }
         try {
             var parsed = JsonSerializer.Deserialize<Dictionary<string, string>>(raw);
-            return parsed ?? new Dictionary<string, string>(StringComparer.Ordinal);
+            return parsed ?? [with(StringComparer.Ordinal)];
         } catch (JsonException) {
-            return new Dictionary<string, string>(StringComparer.Ordinal);
+            return [with(StringComparer.Ordinal)];
         }
     }
 
