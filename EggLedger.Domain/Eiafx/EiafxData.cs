@@ -42,14 +42,12 @@ public static class EiafxData {
     private static ParsedData Parse(ArtifactDataConfig cfg) {
         var families = cfg.Families ?? [];
 
-
         var tierMap = new Dictionary<(int, int), TierData>();
         foreach (var fam in families) {
             foreach (var t in fam.Tiers ?? []) {
                 tierMap[(t.AfxId, t.AfxLevel)] = t;
             }
         }
-
 
         var memo = new Dictionary<(int, int), double>();
         double ComputeWeight(int afxId, int afxLevel) {
@@ -75,15 +73,11 @@ public static class EiafxData {
             ComputeWeight(key.Item1, key.Item2);
         }
 
-        var fids = new Dictionary<string, IReadOnlyList<int>>(families.Count);
-        foreach (var f in families) {
-            fids[f.Id] = f.ChildAfxIds ?? [];
-        }
+        var fids = families
+            .GroupBy(f => f.Id)
+            .ToDictionary(g => g.Key, g => (IReadOnlyList<int>)(g.Last().ChildAfxIds ?? []));
 
-        var fams = new List<FamilyMeta>(families.Count);
-        foreach (var f in families) {
-            fams.Add(new FamilyMeta(f.Id, f.Name));
-        }
+        var fams = families.ConvertAll(f => new FamilyMeta(f.Id, f.Name));
 
         return new ParsedData(memo, fids, fams);
     }

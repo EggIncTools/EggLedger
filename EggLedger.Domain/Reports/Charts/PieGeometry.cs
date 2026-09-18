@@ -15,10 +15,7 @@ public static class PieGeometry {
             return [];
         }
 
-        var items = new List<PieItem>(labels.Count);
-        for (int i = 0; i < labels.Count; i++) {
-            items.Add(new PieItem(labels[i], i < values.Count ? values[i] : 0));
-        }
+        List<PieItem> items = [.. labels.Select((l, i) => new PieItem(l, i < values.Count ? values[i] : 0))];
 
         if (items.Count > MaxSegments) {
             var sorted = items.OrderByDescending(x => x.Value).ToList();

@@ -16,7 +16,6 @@ public sealed class IdentitiesMigrationTests {
             await ApplyMigrationAsync(src, "1_initial_schema.up.sql");
             await ApplyMigrationAsync(src, "4_eggledger_storage.up.sql");
 
-
             await Exec(src, $"""
                 SET search_path TO {Schema};
                 INSERT INTO users (discord_id, created_at) VALUES ('USER_A', 1000), ('USER_B', 2000);
@@ -29,7 +28,6 @@ public sealed class IdentitiesMigrationTests {
 
             await ApplyMigrationAsync(src, "8_identities.up.sql");
 
-
             await using (var cmd = src.CreateCommand($"SET search_path TO {Schema}; SELECT discord_id, user_id FROM users ORDER BY discord_id;")) {
                 await using var reader = await cmd.ExecuteReaderAsync();
                 var userIds = new List<Guid>();
@@ -40,7 +38,6 @@ public sealed class IdentitiesMigrationTests {
                 Assert.Equal(2, userIds.Count);
                 Assert.Equal(userIds.Count, userIds.Distinct().Count());
             }
-
 
             await using (var cmd = src.CreateCommand($"""
                 SET search_path TO {Schema};
@@ -59,7 +56,6 @@ public sealed class IdentitiesMigrationTests {
                 Assert.All(rows, r => Assert.Equal(r.DiscordId, r.Subject));
             }
 
-
             await using (var cmd = src.CreateCommand($"""
                 SET search_path TO {Schema};
                 SELECT m.player_id, i.subject
@@ -77,12 +73,10 @@ public sealed class IdentitiesMigrationTests {
                 Assert.All(rows.Where(r => r.PlayerId == "EI_B"), r => Assert.Equal("USER_B", r.DiscordId));
             }
 
-
             var dupeId = Guid.NewGuid();
             await Exec(src, $"SET search_path TO {Schema}; INSERT INTO users (user_id, discord_id, created_at) VALUES ('{dupeId}', 'USER_C', 3000);");
             await Assert.ThrowsAsync<PostgresException>(async () =>
                 await Exec(src, $"SET search_path TO {Schema}; INSERT INTO users (user_id, discord_id, created_at) VALUES ('{dupeId}', 'USER_D', 4000);"));
-
 
             await using (var cmd = src.CreateCommand($"""
                 SET search_path TO {Schema};

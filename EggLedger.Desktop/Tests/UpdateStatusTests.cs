@@ -140,7 +140,6 @@ public sealed class UpdateStatusTests {
     [Fact]
     public async Task CheckForUpdates_RunningNewerThanStable_ChecksPreReleases() {
 
-
         var stableJson = """{"tag_name":"2.5.0","body":"stable"}""";
         var preJson = """[{"tag_name":"2.7.0-rc.1","body":"rc","draft":false}]""";
         var github = Github(req =>
@@ -313,7 +312,6 @@ public sealed class UpdateStatusTests {
 
         await svc.CheckForUpdatesAsync();
 
-
         Assert.Equal(1, handler.Calls);
         Assert.Equal(UpdatePhase.Available, svc.Phase);
         Assert.Equal("2.5.0", svc.AvailableVersion);
@@ -421,7 +419,6 @@ public sealed class UpdateStatusTests {
 
     [Fact]
     public async Task Cooldown_NoSettingsStore_AlwaysPolls() {
-
 
         var handler = new CountingHandler(_ => StubHttpMessageHandler.Json("""{"tag_name":"2.5.0","body":"n"}"""));
         var github = new GithubReleaseClient(new HttpClient(handler));

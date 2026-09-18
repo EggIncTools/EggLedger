@@ -101,7 +101,6 @@ public sealed class FetchOrchestrator : IDisposable {
                 return;
             }
 
-
             var segmentOnly = p.Segment is not null;
             Progress = segmentOnly && Progress is not null ? p with {
                 Total = Progress.Total,

@@ -65,7 +65,6 @@ public static class DesktopStorageRegistration {
 
         var indexedDb = new SqliteIndexedDb(missionDb, reportDb);
 
-
         services.RemoveAll<IIndexedDb>();
         services.AddSingleton<IIndexedDb>(sp => new ResilientIndexedDb(
             indexedDb,

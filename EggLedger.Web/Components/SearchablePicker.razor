@@ -206,8 +206,7 @@
             _focusPending = false;
             try {
                 await _searchInput.FocusAsync();
-            }
-            catch {
+            } catch {
                 /* element gone (closed before focus) - ignore */
             }
         }

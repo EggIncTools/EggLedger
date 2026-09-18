@@ -65,11 +65,7 @@ public static class LifetimeAggregator {
                 }
             }
         }
-        var result = new List<DropLike>(order.Count);
-        foreach (var key in order) {
-            result.Add(map[key]);
-        }
-        return result;
+        return [.. order.Select(key => map[key])];
     }
 
 

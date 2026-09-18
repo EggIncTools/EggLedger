@@ -20,8 +20,7 @@ public static class Labels {
         return ((ArtifactSpec.Name)v).CasedName();
     }
 
-    private static readonly HashSet<string> NumericGroupBys =
-    [
+    private static readonly HashSet<string> NumericGroupBys = [
         with(StringComparer.Ordinal),
         "ship_type", "duration_type", "level", "mission_type",
         "rarity", "tier", "artifact_name", "mission_target",

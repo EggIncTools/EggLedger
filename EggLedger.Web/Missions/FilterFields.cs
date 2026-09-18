@@ -134,23 +134,9 @@ public static class FilterFields {
         return null;
     }
 
-    public static List<FilterFieldDef> ReportMissionFields() {
-        var result = new List<FilterFieldDef>();
-        foreach (var f in ReportFilterFields) {
-            if (f.Scope == "mission") {
-                result.Add(f);
-            }
-        }
-        return result;
-    }
+    public static List<FilterFieldDef> ReportMissionFields() =>
+        [.. ReportFilterFields.Where(f => f.Scope == "mission")];
 
-    public static List<FilterFieldDef> ReportArtifactFields() {
-        var result = new List<FilterFieldDef>();
-        foreach (var f in ReportFilterFields) {
-            if (f.Scope == "artifact") {
-                result.Add(f);
-            }
-        }
-        return result;
-    }
+    public static List<FilterFieldDef> ReportArtifactFields() =>
+        [.. ReportFilterFields.Where(f => f.Scope == "artifact")];
 }

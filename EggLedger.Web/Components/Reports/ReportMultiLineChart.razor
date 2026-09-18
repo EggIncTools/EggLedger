@@ -119,16 +119,11 @@
         var yRange = _h - ChartGeometry.PadTop - ChartGeometry.PadBottom;
         for (var s = 0; s < SeriesCount; s++) {
             var vals = ChartGeometry.SeriesValues(Result.MatrixValues, nR, SeriesCount, s);
-            var pts = new List<ChartPoint>(nR);
-            for (var i = 0; i < vals.Count; i++) {
-                pts.Add(new ChartPoint(
-                    ChartGeometry.PadLeft + i * xStep,
-                    ChartGeometry.PadTop + yRange * (1 - vals[i] / max),
-                    i < Result.RowLabels.Count ? Result.RowLabels[i] : "",
-                    vals[i]));
-            }
-
-            result.Add(pts);
+            result.Add([.. vals.Select((v, i) => new ChartPoint(
+                ChartGeometry.PadLeft + i * xStep,
+                ChartGeometry.PadTop + yRange * (1 - v / max),
+                i < Result.RowLabels.Count ? Result.RowLabels[i] : "",
+                v))]);
         }
 
         return result;
@@ -146,23 +141,11 @@
 
         var yRange = _h - ChartGeometry.PadTop - ChartGeometry.PadBottom;
         var ci = CultureInfo.InvariantCulture;
-        var ticks = new List<YTick>(3);
-        foreach (var frac in new[] { 0.33, 0.67, 1.0 }) {
-            var val = max * frac;
-            var y = ChartGeometry.PadTop + yRange * (1 - frac);
-            string label;
-            if (IsPct) {
-                label = val.ToString("0", ci) + "%";
-            } else if (max % 1 == 0) {
-                label = Math.Round(val).ToString(ci);
-            } else {
-                label = val.ToString("0.0", ci);
-            }
-
-            ticks.Add(new YTick(y, label));
-        }
-
-        return ticks;
+        return [.. new[] { 0.33, 0.67, 1.0 }.Select(frac => new YTick(
+            ChartGeometry.PadTop + yRange * (1 - frac),
+            IsPct ? (max * frac).ToString("0", ci) + "%"
+                : max % 1 == 0 ? Math.Round(max * frac).ToString(ci)
+                : (max * frac).ToString("0.0", ci)))];
     }
 
     private MarkupString YTickText(YTick tick) {

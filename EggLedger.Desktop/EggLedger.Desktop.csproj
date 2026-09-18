@@ -1,14 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
-        <OutputType>WinExe</OutputType>
+    <OutputType>WinExe</OutputType>
     <Description>EggLedger Photino desktop host. Boots the shared EggLedger.Web Blazor UI in a native OS window via a system WebView (the .NET-native replacement for the Go/lorca shell).</Description>
     <AssemblyName>EggLedger</AssemblyName>
     <Product>EggLedger</Product>
 
-        <RuntimeIdentifiers>win-x64;osx-x64;osx-arm64;linux-x64</RuntimeIdentifiers>
+    <RuntimeIdentifiers>win-x64;osx-x64;osx-arm64;linux-x64</RuntimeIdentifiers>
 
-        <SelfContained>true</SelfContained>
+    <SelfContained>true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>
     <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
@@ -26,7 +26,7 @@
     <ProjectReference Include="..\EggLedger.Domain\EggLedger.Domain.csproj" />
   </ItemGroup>
 
-    <ItemGroup>
+  <ItemGroup>
     <EmbeddedResource Include="Storage\Migrations\**\*.sql" />
   </ItemGroup>
 
@@ -57,14 +57,14 @@
     <ZipDirectory SourceDirectory="$(_WwwrootStageRoot)wwwroot-raw" DestinationFile="$(_WwwrootZip)" Overwrite="true" />
   </Target>
 
-    <ItemGroup Condition="'$(_EggLedgerEmbedWwwroot)' != 'false'">
+  <ItemGroup Condition="'$(_EggLedgerEmbedWwwroot)' != 'false'">
     <EmbeddedResource Include="$(IntermediateOutputPath)wwwroot.zip">
       <LogicalName>EggLedger.Desktop.wwwroot.zip</LogicalName>
       <Visible>false</Visible>
     </EmbeddedResource>
   </ItemGroup>
 
-    <Target Name="RemoveLooseWwwrootFromPublish" AfterTargets="Publish" Condition="'$(PublishSingleFile)' == 'true' And Exists('$(PublishDir)wwwroot')">
+  <Target Name="RemoveLooseWwwrootFromPublish" AfterTargets="Publish" Condition="'$(PublishSingleFile)' == 'true' And Exists('$(PublishDir)wwwroot')">
     <RemoveDir Directories="$(PublishDir)wwwroot" />
   </Target>
 

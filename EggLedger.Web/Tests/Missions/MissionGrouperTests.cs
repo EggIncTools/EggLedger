@@ -31,8 +31,7 @@ public sealed class MissionGrouperTests {
 
     [Fact]
     public void YearsSortedDescending() {
-        var missions = new[]
-        {
+        var missions = new[] {
             M(20220101, "a"),
             M(20240101, "b"),
             M(20230101, "c"),
@@ -43,8 +42,7 @@ public sealed class MissionGrouperTests {
 
     [Fact]
     public void MonthsAndDaysSortedDescending() {
-        var missions = new[]
-        {
+        var missions = new[] {
             M(20240101, "a"),
             M(20240315, "b"),
             M(20240310, "c"),
@@ -56,8 +54,7 @@ public sealed class MissionGrouperTests {
 
     [Fact]
     public void SameDayMissions_AreReversed() {
-        var missions = new[]
-        {
+        var missions = new[] {
             M(20240101, "first"),
             M(20240101, "second"),
             M(20240101, "third"),
@@ -69,8 +66,7 @@ public sealed class MissionGrouperTests {
 
     [Fact]
     public void Collapse_EnablesOnlyNewestYear() {
-        var missions = new[]
-        {
+        var missions = new[] {
             M(20240101, "a"),
             M(20230101, "b"),
         };

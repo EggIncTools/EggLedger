@@ -30,7 +30,6 @@ public sealed class SqliteIndexedDbTests : IDisposable {
         Assert.NotNull(row);
         Assert.Equal("dark", row!.Value);
 
-
         await _db.PutAsync("settings", new SettingRow { Key = "theme", Value = "light" });
         row = await _db.GetAsync<SettingRow>("settings", "theme");
         Assert.Equal("light", row!.Value);
@@ -80,8 +79,7 @@ public sealed class SqliteIndexedDbTests : IDisposable {
 
     [Fact]
     public async Task ArtifactDrops_AutoIncrementInsert() {
-        await _db.PutManyAsync("artifact_drops", new object[]
-        {
+        await _db.PutManyAsync("artifact_drops", new object[] {
             new ArtifactDropRow { MissionId = "m1", PlayerId = "EI1", DropIndex = 0, ArtifactId = 12, SpecType = "Artifact", Level = 1, Rarity = 0, Quality = 1.5 },
             new ArtifactDropRow { MissionId = "m1", PlayerId = "EI1", DropIndex = 1, ArtifactId = 13, SpecType = "Stone", Level = 2, Rarity = 1, Quality = 2.0 },
         });
@@ -137,7 +135,6 @@ public sealed class SqliteIndexedDbTests : IDisposable {
     [Fact]
     public async Task ReportStore_OverSqlite_CrudWorks() {
 
-
         var store = new IndexedDbReportStore(_db, now: () => 1234);
         await store.InsertReportAsync(new ReportRow {
             Id = "r1",
@@ -173,7 +170,6 @@ public sealed class SqliteIndexedDbTests : IDisposable {
     [Fact]
     public async Task Backup_RoundTripTimestampAndPayload() {
 
-
         var payload = new byte[] { 9, 8, 7, 254, 255, 0 };
         await _db.PutAsync("backup", new BackupRow {
             PlayerId = "EI1",
@@ -186,7 +182,6 @@ public sealed class SqliteIndexedDbTests : IDisposable {
         Assert.Equal("EI1", got!.PlayerId);
         Assert.Equal(1700000000d, got.RecordedAt);
         Assert.Equal(payload, got.Payload);
-
 
         await _db.PutAsync("backup", new BackupRow {
             PlayerId = "EI1",
@@ -201,7 +196,6 @@ public sealed class SqliteIndexedDbTests : IDisposable {
     [Fact]
     public async Task InsertBackup_RoundTripAndTwelveHourDedup() {
 
-
         var store = new IndexedDbMissionStore(_db, new EggLedger.Domain.Api.LocalApiPayloadDecoder(new EggLedger.Domain.Api.ApiClient()));
         var raw = new byte[] { 42, 7, 0, 255 };
         var gap = TimeSpan.FromHours(12);
@@ -213,13 +207,11 @@ public sealed class SqliteIndexedDbTests : IDisposable {
         Assert.Equal(t0, row!.RecordedAt);
         Assert.Equal(raw, Gunzip(row.Payload));
 
-
         await store.InsertBackupAsync("EI1", t0 + 3600, [1, 2, 3], gap);
         row = await _db.GetAsync<BackupRow>("backup", "EI1");
         Assert.Equal(t0, row!.RecordedAt);
         Assert.Equal(raw, Gunzip(row.Payload));
         Assert.Equal(1, await _db.CountAsync("backup"));
-
 
         var later = new byte[] { 5, 6, 7, 8 };
         double t1 = t0 + (13 * 3600);

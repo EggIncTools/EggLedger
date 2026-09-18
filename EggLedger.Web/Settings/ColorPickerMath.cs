@@ -5,8 +5,7 @@ using EggLedger.Domain.Reports.Charts;
 namespace EggLedger.Web.Settings;
 
 public static partial class ColorPickerMath {
-    public static readonly IReadOnlyList<string> PresetColors =
-    [
+    public static readonly IReadOnlyList<string> PresetColors = [
         "#f43f5e", "#ef4444", "#f97316", "#f59e0b",
         "#22c55e", "#10b981", "#14b8a6", "#06b6d4",
         "#3b82f6", "#6366f1", "#8b5cf6", "#a855f7",

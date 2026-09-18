@@ -35,7 +35,6 @@ internal static class Program {
 
         appBuilder.Services.AddDesktopExportSink();
 
-
         appBuilder.Services.Configure<PhotinoBlazorAppConfiguration>(opts => opts.HostPage = "desktop.html");
 
         appBuilder.RootComponents.Add<App>("#app");
@@ -70,7 +69,6 @@ internal static class Program {
         if (debugMode) {
             app.MainWindow.SetDevToolsEnabled(true);
             app.MainWindow.SetLogVerbosity(2);
-
 
             AppDomain.CurrentDomain.FirstChanceException += (_, e) =>
                 Log("FIRSTCHANCE: " + e.Exception.GetType().Name + ": " + e.Exception.Message);

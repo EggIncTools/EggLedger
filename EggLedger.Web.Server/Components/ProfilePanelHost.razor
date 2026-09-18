@@ -137,11 +137,9 @@
             if (!ok) {
                 _prefsError = "Could not save preferences.";
             }
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             _prefsError = ex.Message;
-        }
-        finally {
+        } finally {
             _prefsSaving = false;
         }
     }

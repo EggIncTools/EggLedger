@@ -122,7 +122,6 @@ public sealed class UpdateService : IUpdateStatusProvider {
             }
         }
 
-
         await WriteSnapshotAsync(latestTag, latestNotes).ConfigureAwait(false);
 
         if (running.LessThan(latestVersion)) {
@@ -273,7 +272,6 @@ public sealed class UpdateService : IUpdateStatusProvider {
             await hsCts.CancelAsync().ConfigureAwait(false);
             listener.Dispose();
         }
-
 
         await Task.Delay(oldExitDelay).ConfigureAwait(false);
         await exitAction().ConfigureAwait(false);

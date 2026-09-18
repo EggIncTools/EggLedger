@@ -134,13 +134,9 @@ public sealed class SqliteIndexedDb : IIndexedDb {
 
 
         using var doc = JsonSerializer.SerializeToDocument(value, value.GetType(), JsonOpts);
-        var props = new List<(string Col, JsonElement Val)>();
-        foreach (var prop in doc.RootElement.EnumerateObject()) {
-            if (meta.AutoIncrementColumn == prop.Name && prop.Value.ValueKind is JsonValueKind.Null) {
-                continue;
-            }
-            props.Add((prop.Name, prop.Value));
-        }
+        List<(string Col, JsonElement Val)> props = [.. doc.RootElement.EnumerateObject()
+            .Where(prop => meta.AutoIncrementColumn != prop.Name || prop.Value.ValueKind is not JsonValueKind.Null)
+            .Select(prop => (Col: prop.Name, Val: prop.Value))];
 
         var connection = Conn(meta);
         using var cmd = connection.CreateCommand();
@@ -153,13 +149,11 @@ public sealed class SqliteIndexedDb : IIndexedDb {
 
         if (meta.UpsertByDelete) {
 
-
             DeleteByKey(meta, props, connection, tx);
         }
 
         string conflict;
         if (meta.AutoIncrementColumn is not null || meta.UpsertByDelete) {
-
 
             conflict = "";
         } else {

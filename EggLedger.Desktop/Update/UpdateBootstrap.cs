@@ -61,7 +61,6 @@ public sealed class UpdateBootstrap(IProcessProbe probe, BinaryReplacement repla
         var self = selfPath ?? Environment.ProcessPath ?? "";
         var exeDir = string.IsNullOrEmpty(self) ? "" : (Path.GetDirectoryName(self) ?? "");
 
-
         if (!string.IsNullOrEmpty(exeDir)) {
             _replacement.CleanStaleBinaries(exeDir, self);
         }
@@ -101,7 +100,6 @@ public sealed class UpdateBootstrap(IProcessProbe probe, BinaryReplacement repla
 
                 return;
             }
-
 
             var attempts = oldPid == 0 ? RenameRetryAttemptsUnknownPid : RenameRetryAttemptsKnownPid;
             var delay = oldPid == 0 ? RenameRetryDelayUnknownPid : RenameRetryDelayKnownPid;

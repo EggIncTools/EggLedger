@@ -47,8 +47,7 @@ public sealed partial class ApiClient(
         }
 
         string reqDataEncoded = Convert.ToBase64String(reqBin);
-        var form = new FormUrlEncodedContent(new[]
-        {
+        var form = new FormUrlEncodedContent(new[] {
             new KeyValuePair<string, string>("data", reqDataEncoded),
         });
 

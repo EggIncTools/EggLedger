@@ -325,12 +325,9 @@
                 return "";
             }
 
-            var lines = new List<string>(hours.Count);
-            for (var ships = hours.Count - 1; ships >= 0; ships--) {
-                lines.Add(FormattableString.Invariant($"{ships} in flight: {hours[ships]:0.#}h"));
-            }
-
-            return string.Join("\n", lines);
+            return string.Join("\n", hours
+                .Select((h, ships) => FormattableString.Invariant($"{ships} in flight: {h:0.#}h"))
+                .Reverse());
         }
     }
 

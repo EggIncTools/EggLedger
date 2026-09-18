@@ -6,8 +6,7 @@ public class QueryTests {
     [Fact]
     public void BuildWhereClause_MissionScope() {
         var filters = new ReportFilters {
-            And =
-            [
+            And = [
                 new FilterCondition { TopLevel = "ship", Op = "=", Val = "3" },
                 new FilterCondition { TopLevel = "duration", Op = "!=", Val = "0" },
             ],
@@ -21,8 +20,7 @@ public class QueryTests {
     [Fact]
     public void BuildWhereClause_ArtifactScope() {
         var filters = new ReportFilters {
-            And =
-            [
+            And = [
                 new FilterCondition { TopLevel = "artifact_rarity", Op = ">=", Val = "2" },
                 new FilterCondition { TopLevel = "artifact_spec_type", Op = "=", Val = "Artifact" },
             ],
@@ -36,8 +34,7 @@ public class QueryTests {
     [Fact]
     public void BuildWhereClause_BooleanOps() {
         var filters = new ReportFilters {
-            And =
-            [
+            And = [
                 new FilterCondition { TopLevel = "dubcap", Op = "true" },
                 new FilterCondition { TopLevel = "buggedcap", Op = "false" },
             ],
@@ -62,8 +59,7 @@ public class QueryTests {
         }
     }
 
-    public static IEnumerable<object?[]> NumericValidationCases() => new[]
-    {
+    public static IEnumerable<object?[]> NumericValidationCases() => new[] {
         new object?[] { new FilterCondition { TopLevel = "artifact_tier", Op = "=", Val = "3" }, "d.level = ?", "3", false },
         [new FilterCondition { TopLevel = "artifact_rarity", Op = ">=", Val = "2" }, "d.rarity >= ?", "2", false],
         [new FilterCondition { TopLevel = "level", Op = "=", Val = "5" }, "m.level = ?", "5", false],

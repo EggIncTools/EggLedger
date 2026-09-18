@@ -271,10 +271,7 @@
         _focusPending = false;
         try {
             await _popRef.FocusAsync();
-        }
-        catch (JSDisconnectedException) {
-        }
-        catch (JSException) {
+        } catch (Exception ex) when (ex is JSDisconnectedException or JSException) {
         }
     }
 
@@ -332,8 +329,7 @@
         _lastWarnedFetchActive = active;
         try {
             await Js.InvokeVoidAsync("setFetchInProgressWarning", active);
-        }
-        catch (JSDisconnectedException) {
+        } catch (JSDisconnectedException) {
         }
     }
 

@@ -11,10 +11,6 @@ public static class MissionFuels {
         if (fuels is null || fuels.Count == 0) {
             return [];
         }
-        var result = new List<FuelEntry>(fuels.Count);
-        for (int i = 0; i < fuels.Count; i++) {
-            result.Add(new FuelEntry(i, (int)fuels[i].Egg, fuels[i].Amount));
-        }
-        return result;
+        return [.. fuels.Select((f, i) => new FuelEntry(i, (int)f.Egg, f.Amount))];
     }
 }

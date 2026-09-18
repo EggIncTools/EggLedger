@@ -4,10 +4,8 @@ namespace EggLedger.Domain.Tests.Reports;
 
 
 public class QueryDropsTests {
-    public static IEnumerable<object?[]> Cases() => new[]
-    {
-        new object?[]
-        {
+    public static IEnumerable<object?[]> Cases() => new[] {
+        new object?[] {
             new FilterCondition { TopLevel = "drops", Op = "c", Val = "12_3_2_4.5" },
             "EXISTS (SELECT 1 FROM artifact_drops WHERE mission_id = m.mission_id AND player_id = m.player_id AND artifact_id = ? AND level = ? AND rarity = ?)",
             new object?[] { "12", "3", "2" },

@@ -13,8 +13,7 @@ public static partial class ChartGeometry {
     public const double PadTop = 10;
     public const double PadBottom = 60;
     public const int MaxLabels = 12;
-    private static readonly string[] Months =
-    [
+    private static readonly string[] Months = [
         "Jan", "Feb", "Mar", "Apr", "May", "Jun",
         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
     ];
@@ -31,16 +30,11 @@ public static partial class ChartGeometry {
         double max = Math.Max(values.Max(), 1);
         double xStep = (w - PadLeft - PadRight) / (values.Count - 1);
         double yRange = h - PadTop - PadBottom;
-        var points = new List<ChartPoint>(values.Count);
-        for (int i = 0; i < values.Count; i++) {
-            double v = values[i];
-            points.Add(new ChartPoint(
-                PadLeft + i * xStep,
-                PadTop + yRange * (1 - v / max),
-                i < labels.Count ? labels[i] : "",
-                v));
-        }
-        return points;
+        return [.. values.Select((v, i) => new ChartPoint(
+            PadLeft + i * xStep,
+            PadTop + yRange * (1 - v / max),
+            i < labels.Count ? labels[i] : "",
+            v))];
     }
 
     public static string PolylinePoints(IReadOnlyList<ChartPoint> points) =>
@@ -62,13 +56,7 @@ public static partial class ChartGeometry {
             return [.. points];
         }
         int step = (int)Math.Ceiling((double)points.Count / MaxLabels);
-        var result = new List<ChartPoint>();
-        for (int i = 0; i < points.Count; i++) {
-            if (i % step == 0 || i == points.Count - 1) {
-                result.Add(points[i]);
-            }
-        }
-        return result;
+        return [.. points.Where((_, i) => i % step == 0 || i == points.Count - 1)];
     }
 
     public static List<YTick> YTicks(double max, double h, bool isFloat) {
@@ -77,16 +65,11 @@ public static partial class ChartGeometry {
         }
         double yRange = h - PadTop - PadBottom;
         double[] fracs = [0.33, 0.67, 1.0];
-        var ticks = new List<YTick>(3);
-        foreach (var frac in fracs) {
-            double val = max * frac;
-            double y = PadTop + yRange * (1 - frac);
-            string label = isFloat
-                ? val.ToString("0.0", CultureInfo.InvariantCulture)
-                : Math.Round(val).ToString(CultureInfo.InvariantCulture);
-            ticks.Add(new YTick(y, label));
-        }
-        return ticks;
+        return [.. fracs.Select(frac => new YTick(
+            PadTop + yRange * (1 - frac),
+            isFloat
+                ? (max * frac).ToString("0.0", CultureInfo.InvariantCulture)
+                : Math.Round(max * frac).ToString(CultureInfo.InvariantCulture)))];
     }
 
     public static string FormatXLabel(string s) {
@@ -151,12 +134,9 @@ public static partial class ChartGeometry {
     }
 
     public static List<double> SeriesValues(IReadOnlyList<double> matrix, int rowCount, int colCount, int seriesIdx) {
-        var result = new List<double>(rowCount);
-        for (int r = 0; r < rowCount; r++) {
-            int flat = r * colCount + seriesIdx;
-            result.Add(flat < matrix.Count ? matrix[flat] : 0);
-        }
-        return result;
+        return [.. Enumerable.Range(0, rowCount)
+            .Select(r => r * colCount + seriesIdx)
+            .Select(flat => flat < matrix.Count ? matrix[flat] : 0)];
     }
 
     public static string EscapeText(string s) =>

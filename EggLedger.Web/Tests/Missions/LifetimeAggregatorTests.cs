@@ -25,27 +25,20 @@ public sealed class LifetimeAggregatorTests {
             IVOrder = iv,
         };
 
-    private static Dictionary<string, List<MissionDrop>> Missions(params (string Id, MissionDrop[] Drops)[] missions) {
-        var d = new Dictionary<string, List<MissionDrop>>();
-        foreach (var (id, drops) in missions) {
-            d[id] = [.. drops];
-        }
-        return d;
-    }
+    private static Dictionary<string, List<MissionDrop>> Missions(params (string Id, MissionDrop[] Drops)[] missions) =>
+        missions.GroupBy(m => m.Id).ToDictionary(g => g.Key, g => g.Last().Drops.ToList());
 
     [Fact]
     public void Aggregate_RepresentativeInput_ProducesNonEmptyGroups() {
 
         var input = Missions(
-            ("m1", new[]
-            {
+            ("m1", new[] {
                 Drop(1, "Artifact", level: 2, rarity: 3, name: "TACHYON_DEFLECTOR"),
                 Drop(2, "Stone", name: "TACHYON_STONE"),
                 Drop(3, "StoneFragment", name: "TACHYON_STONE_FRAGMENT"),
                 Drop(4, "Ingredient", name: "GOLD_METEORITE"),
             }),
-            ("m2", new[]
-            {
+            ("m2", new[] {
                 Drop(1, "Artifact", level: 2, rarity: 3, name: "TACHYON_DEFLECTOR"),
             }));
 
@@ -75,8 +68,7 @@ public sealed class LifetimeAggregatorTests {
     public void Aggregate_MergeKeyIsIdLevelRarity_NotName() {
 
         var input = Missions(
-            ("m1", new[]
-            {
+            ("m1", new[] {
                 Drop(1, "Artifact", level: 1, rarity: 0),
                 Drop(1, "Artifact", level: 2, rarity: 0),
             }));
@@ -91,8 +83,7 @@ public sealed class LifetimeAggregatorTests {
     [Fact]
     public void Aggregate_DifferentRarity_AreSeparateGroups() {
         var input = Missions(
-            ("m1", new[]
-            {
+            ("m1", new[] {
                 Drop(1, "Artifact", level: 0, rarity: 0),
                 Drop(1, "Artifact", level: 0, rarity: 1),
             }));
@@ -105,8 +96,7 @@ public sealed class LifetimeAggregatorTests {
     [Fact]
     public void Aggregate_RoutesEachSpecTypeToItsBucket() {
         var input = Missions(
-            ("m1", new[]
-            {
+            ("m1", new[] {
                 Drop(1, "Artifact"),
                 Drop(2, "Stone"),
                 Drop(3, "StoneFragment"),
@@ -137,8 +127,7 @@ public sealed class LifetimeAggregatorTests {
     [Fact]
     public void Aggregate_FirstOccurrenceIsRepresentative_PreservesOrder() {
         var input = Missions(
-            ("m1", new[]
-            {
+            ("m1", new[] {
                 Drop(5, "Artifact", level: 0, name: "FIRST"),
                 Drop(6, "Artifact", level: 0, name: "SECOND"),
             }));

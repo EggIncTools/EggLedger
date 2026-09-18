@@ -47,7 +47,6 @@ public sealed class AccountLoaderTests {
 
         active.SetActive("EI7");
 
-
         Assert.Equal("EI7", await store.GetActiveAccountIdAsync());
         loader.Dispose();
     }

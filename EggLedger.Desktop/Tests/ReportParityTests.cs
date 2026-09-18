@@ -55,7 +55,6 @@ public sealed class ReportParityTests {
     private static List<MissionRowData> Missions() =>
     [
 
-
         M("m1", ship: 1, duration: 0, start: 1758100000, ret: 1758100000 + 3600, cap: 10, nominal: 5, type: 0, level: 1),
         M("m2", ship: 1, duration: 0, start: 1758200000, ret: 1758200000 + 7200, cap: 10, nominal: 5, type: 0, level: 1),
         M("m3", ship: 1, duration: 1, start: 1761000000, ret: 1761000000 + 3600, cap: 8, nominal: 4, type: 1, level: 2),

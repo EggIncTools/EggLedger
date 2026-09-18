@@ -28,7 +28,6 @@ public sealed class AccountFactoryTests {
 
         var acct = AccountFactory.FromBackup(Eid, backup);
 
-
         Assert.Equal("1.50B", acct.SeString);
         Assert.Equal(42, acct.PeCount);
     }

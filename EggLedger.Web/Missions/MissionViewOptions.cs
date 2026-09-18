@@ -58,13 +58,7 @@ public sealed class MissionViewOptions {
         if (missionTypeTab is null || filteredMissions is null) {
             return filteredMissions;
         }
-        var result = new List<DatabaseMission>();
-        foreach (var m in filteredMissions) {
-            if (m.MissionType == missionTypeTab.Value) {
-                result.Add(m);
-            }
-        }
-        return result;
+        return [.. filteredMissions.Where(m => m.MissionType == missionTypeTab.Value)];
     }
 
     public static MultiViewMode ParseMultiViewMode(string? raw) => raw switch {

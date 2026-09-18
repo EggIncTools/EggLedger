@@ -109,7 +109,6 @@ public sealed class FirstLoginBackfill(
             return JsonSerializer.Deserialize<T>(plaintext, Json);
         } catch (Exception ex) {
 
-
             logger.LogWarning(ex, "backfill: failed to decrypt blob {Name}", name);
             return default;
         }

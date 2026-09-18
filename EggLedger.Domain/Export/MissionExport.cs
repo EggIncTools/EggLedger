@@ -5,8 +5,7 @@ using EggLedger.Domain.Export.Xlsx;
 namespace EggLedger.Domain.Export;
 
 public static class MissionExport {
-    private static readonly (string Header, double Width)[] ColumnDefs =
-    [
+    private static readonly (string Header, double Width)[] ColumnDefs = [
         ("ID", 40),
         ("Type", 12),
         ("Ship", 26),
@@ -30,19 +29,14 @@ public static class MissionExport {
     }
 
     public static List<string> BuildHeader(int maxArtifactCount) {
-        var header = new List<string>(ColumnDefs.Length + maxArtifactCount);
-        foreach (var c in ColumnDefs) {
-            header.Add(c.Header);
-        }
-        for (int i = 1; i <= maxArtifactCount; i++) {
-            header.Add("Artifact " + i.ToString(CultureInfo.InvariantCulture));
-        }
-        return header;
+        return [
+            .. ColumnDefs.Select(c => c.Header),
+            .. Enumerable.Range(1, maxArtifactCount).Select(i => "Artifact " + i.ToString(CultureInfo.InvariantCulture)),
+        ];
     }
 
     private static List<string> BuildCsvRow(Mission m, int mac) {
-        var row = new List<string>(ColumnDefs.Length + mac)
-        {
+        var row = new List<string>(ColumnDefs.Length + mac) {
             m.Id,
             m.TypeName,
             m.ShipName,
@@ -99,15 +93,10 @@ public static class MissionExport {
         using (var w = XlsxWriter.New(ms)) {
             w.SetColWidths(colWidths);
 
-            var header = new List<XlsxCell>(ColumnDefs.Length + mac);
-            foreach (var h in BuildHeader(mac)) {
-                header.Add(XlsxCell.String(h));
-            }
-            w.WriteRow(header);
+            w.WriteRow([.. BuildHeader(mac).Select(XlsxCell.String)]);
 
             foreach (var m in missions) {
-                var row = new List<XlsxCell>(ColumnDefs.Length + mac)
-                {
+                var row = new List<XlsxCell>(ColumnDefs.Length + mac) {
                     XlsxCell.String(m.Id),
                     XlsxCell.String(m.TypeName),
                     XlsxCell.String(m.ShipName),

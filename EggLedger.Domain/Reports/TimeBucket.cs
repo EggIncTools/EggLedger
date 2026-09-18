@@ -26,8 +26,7 @@ internal static class TimeBucket {
 
     public static bool TryParseDateToUnix(string value, out long unixSeconds) {
         unixSeconds = 0;
-        string[] formats =
-        [
+        string[] formats = [
             "yyyy-MM-dd",
             "yyyy-MM-dd HH:mm:ss",
             "yyyy-MM-ddTHH:mm:ss",

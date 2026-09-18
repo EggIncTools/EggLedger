@@ -95,7 +95,6 @@ public sealed class DesktopExportServiceTests {
         var svc = new DesktopExportService(root, fs);
         var (deleted, freed) = await svc.PruneAsync(1);
 
-
         Assert.Equal(5, deleted);
         Assert.Equal(20, freed);
         Assert.False(fs.Exists(Path.Combine(md, "EI123.20240310_000000.csv")));

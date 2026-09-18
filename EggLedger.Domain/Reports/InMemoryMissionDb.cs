@@ -82,7 +82,6 @@ internal sealed class InMemoryMissionDb : IMissionDb {
                 : Airtime1D(joinDrops);
         }
 
-
         if (!sql.Contains(CountMarker, StringComparison.Ordinal)
             || !sql.Contains(GroupByMarker, StringComparison.Ordinal)) {
             throw new InvalidOperationException($"unrecognized query shape: {sql}");
@@ -135,7 +134,6 @@ internal sealed class InMemoryMissionDb : IMissionDb {
             counts.TryGetValue(key, out var cur);
             counts[key] = cur + 1;
         }
-
 
         var rows = order
             .Select((k, i) => (k, i, c: counts[k]))

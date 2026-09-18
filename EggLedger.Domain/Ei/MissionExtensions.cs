@@ -82,18 +82,12 @@ public static class MissionExtensions {
     }
 
     public static List<MissionInfo> GetInProgressMissions(this EggIncFirstContactResponse fc) {
-        var inProgress = new List<MissionInfo>();
         var afxdb = fc.Backup?.ArtifactsDb;
-        if (afxdb != null) {
-            foreach (var mission in afxdb.MissionInfos) {
-                var status = mission.status;
-                if (status is MissionInfo.Status.Exploring
-                    or MissionInfo.Status.Fueling
-                    or MissionInfo.Status.PrepareToLaunch) {
-                    inProgress.Add(mission);
-                }
-            }
-        }
+        List<MissionInfo> inProgress = afxdb == null
+            ? []
+            : [.. afxdb.MissionInfos.Where(m => m.status is MissionInfo.Status.Exploring
+                or MissionInfo.Status.Fueling
+                or MissionInfo.Status.PrepareToLaunch)];
         return StableSortByStartTime(inProgress);
     }
 

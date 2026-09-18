@@ -26,8 +26,7 @@ public sealed class MissionDetailBuilderTests {
 
     [Fact]
     public void BuildBase_SplitsDropsBySpecType() {
-        var drops = new[]
-        {
+        var drops = new[] {
             Drop("Artifact"),
             Drop("Stone"),
             Drop("StoneFragment"),
@@ -102,8 +101,7 @@ public sealed class MissionDetailBuilderTests {
 
     [Fact]
     public void ApplySortMethod_ReSortsAllLists() {
-        var drops = new[]
-        {
+        var drops = new[] {
             Drop("Artifact", id: 1, level: 0, rarity: 0),
             Drop("Artifact", id: 2, level: 1, rarity: 0),
         };

@@ -159,7 +159,6 @@ public sealed class IndexedDbReportStoreTests {
         var rows = await store.RetrieveAccountReportsAsync("EI1");
         var ids = rows.Select(r => r.Id).ToArray();
 
-
         Assert.Equal(new[] { "g", "a", "b" }, ids);
     }
 

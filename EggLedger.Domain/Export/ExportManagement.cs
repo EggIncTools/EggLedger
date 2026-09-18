@@ -34,12 +34,9 @@ public sealed class PhysicalExportFileSystem : IExportFileSystem {
         if (!Directory.Exists(dir)) {
             return null;
         }
-        var entries = new List<ExportFileEntry>();
-        foreach (var path in Directory.EnumerateFiles(dir)) {
-            var info = new FileInfo(path);
-            entries.Add(new ExportFileEntry(info.Name, info.Length));
-        }
-        return entries;
+        return [.. Directory.EnumerateFiles(dir)
+            .Select(path => new FileInfo(path))
+            .Select(info => new ExportFileEntry(info.Name, info.Length))];
     }
 
     public long? Size(string path) => File.Exists(path) ? new FileInfo(path).Length : null;
@@ -101,14 +98,10 @@ public static class ExportManagement {
             }
         }
 
-        var groups = new List<ExportGroup>(eidOrder.Count);
-        foreach (var eid in eidOrder) {
-            var pairs = pairsByEid[eid].Values.ToList();
-
-            pairs.Sort((a, b) => string.CompareOrdinal(b.Timestamp, a.Timestamp));
-            groups.Add(new ExportGroup { Eid = eid, Pairs = pairs });
-        }
-        return groups;
+        return [.. eidOrder.Select(eid => new ExportGroup {
+            Eid = eid,
+            Pairs = [.. pairsByEid[eid].Values.OrderByDescending(p => p.Timestamp, StringComparer.Ordinal)],
+        })];
     }
 
     private static string FormatExportTimestamp(string ts) {

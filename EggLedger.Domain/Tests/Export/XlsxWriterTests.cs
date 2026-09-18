@@ -9,15 +9,13 @@ public class XlsxWriterTests {
         using var ms = new MemoryStream();
         using (var w = XlsxWriter.New(ms)) {
             w.SetColWidths(new[] { 20.0, 22.0, 15.0 });
-            w.WriteRow(new[]
-            {
+            w.WriteRow(new[] {
                 XlsxCell.String("ID"),
                 XlsxCell.String("Launched at"),
                 XlsxCell.String("Duration days"),
             });
             var ts = new DateTimeOffset(2023, 5, 15, 14, 30, 0, TimeSpan.Zero);
-            w.WriteRow(new[]
-            {
+            w.WriteRow(new[] {
                 XlsxCell.String("abc<>&123"),
                 XlsxCell.Datetime(ts),
                 XlsxCell.Number(0.25),
@@ -42,8 +40,7 @@ public class XlsxWriterTests {
     [Fact]
     public void Writer_ZipEntries() {
         var contents = OpenXlsx(BuildXlsx());
-        string[] required =
-        [
+        string[] required = [
             "[Content_Types].xml",
             "_rels/.rels",
             "xl/workbook.xml",
@@ -59,8 +56,7 @@ public class XlsxWriterTests {
     [Fact]
     public void Writer_SheetStructure() {
         var sheet = OpenXlsx(BuildXlsx())["xl/worksheets/sheet1.xml"];
-        string[] wants =
-        [
+        string[] wants = [
             "<cols>",
             "width=\"20.00\"",
             "<sheetData>",

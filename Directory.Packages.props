@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <EggIdentityVersion>3.0.2</EggIdentityVersion>
+    <EggIdentityVersion>3.1.0</EggIdentityVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,8 +12,10 @@
     <PackageVersion Include="EggIdentity.Bot" Version="$(EggIdentityVersion)" />
     <PackageVersion Include="EggIdentity.Client" Version="$(EggIdentityVersion)" />
     <PackageVersion Include="EggIdentity.CodeStyle" Version="$(EggIdentityVersion)" />
+    <PackageVersion Include="EggIdentity.Consent" Version="$(EggIdentityVersion)" />
     <PackageVersion Include="EggIdentity.Contract" Version="$(EggIdentityVersion)" />
     <PackageVersion Include="EggIdentity.Db" Version="$(EggIdentityVersion)" />
+    <PackageVersion Include="EggIdentity.DbClone" Version="$(EggIdentityVersion)" />
     <PackageVersion Include="EggIdentity.Deploy" Version="$(EggIdentityVersion)" />
     <PackageVersion Include="EggIdentity.Deploy.AdminUi" Version="$(EggIdentityVersion)" />
     <PackageVersion Include="EggIdentity.Fallback" Version="$(EggIdentityVersion)" />
@@ -26,6 +28,7 @@
     <PackageVersion Include="EggIdentity.Settings.Api" Version="$(EggIdentityVersion)" />
     <PackageVersion Include="EggIdentity.Styles" Version="$(EggIdentityVersion)" />
     <PackageVersion Include="EggIdentity.UI" Version="$(EggIdentityVersion)" />
+    <PackageVersion Include="EggIdentity.Visits" Version="$(EggIdentityVersion)" />
     <PackageVersion Include="EggIncognito.Protos" Version="2.15.5" />
     <PackageVersion Include="Markdig" Version="0.41.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.Authorization" Version="10.0.0" />

@@ -189,7 +189,6 @@ public class MissionQueryHandlersTests {
         Assert.Equal(artifact.CombinedEffectString(), drops[0].EffectString);
         Assert.NotEqual("", drops[0].EffectString);
 
-
         Assert.Equal("Stone", drops[1].SpecType);
         Assert.Equal("TACHYON_STONE", drops[1].Name);
         Assert.Equal(stone.CombinedEffectString(), drops[1].EffectString);
@@ -225,8 +224,7 @@ public class MissionQueryHandlersTests {
         int frag = (int)ArtifactSpec.Name.TachyonStoneFragment;
         int gold = (int)ArtifactSpec.Name.GoldMeteorite;
         store.CompleteMissionIds = ["m1", "m2"];
-        store.StoredDrops["p"] =
-        [
+        store.StoredDrops["p"] = [
             new StoredDrop("m1", frag, 0, 0),
             new StoredDrop("m2", gold, 0, 0),
             new StoredDrop("m2", frag, 0, 0),
@@ -259,7 +257,6 @@ public class MissionQueryHandlersTests {
     public async Task GetAllPlayerDrops_ZeroDropMissionsAreSeededWithEmptyList() {
         var (h, store, _) = NewSut();
 
-
         int frag = (int)ArtifactSpec.Name.TachyonStoneFragment;
         store.CompleteMissionIds = ["m1", "m2"];
         store.StoredDrops["p"] = [new StoredDrop("m1", frag, 0, 0)];
@@ -276,11 +273,9 @@ public class MissionQueryHandlersTests {
     public async Task GetAllPlayerDrops_SentinelRowExcludedFromDropsButMissionCounted() {
         var (h, store, _) = NewSut();
 
-
         int frag = (int)ArtifactSpec.Name.TachyonStoneFragment;
         store.CompleteMissionIds = ["m1", "m2"];
-        store.StoredDrops["p"] =
-        [
+        store.StoredDrops["p"] = [
             new StoredDrop("m1", 0, 0, 0, DropIndex: -1),
             new StoredDrop("m2", frag, 0, 0),
         ];

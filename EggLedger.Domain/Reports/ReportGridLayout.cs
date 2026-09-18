@@ -108,7 +108,6 @@ public static class ReportGridLayout {
             }
         }
 
-
         int insertAt = zone.InsertAfter;
         if (fromIdx <= insertAt) {
             insertAt--;
@@ -139,11 +138,7 @@ public static class ReportGridLayout {
             return [];
         }
         int maxRow = cardPositions.Max(p => p.Row + p.H - 1);
-        var zones = new List<EmptyZone>();
-        for (int r = 1; r <= maxRow; r++) {
-            zones.AddRange(RowEmptyZones(r, occupied, cardPositions));
-        }
-        return zones;
+        return [.. Enumerable.Range(1, maxRow).SelectMany(r => RowEmptyZones(r, occupied, cardPositions))];
     }
 
     public static int ComputeRowHeightPx(double containerWidthPx) {

@@ -51,8 +51,7 @@ public sealed class FilterOptionsTests {
 
     [Fact]
     public void TargetOptions_MapIdAndImage() {
-        var targets = new[]
-        {
+        var targets = new[] {
             new PossibleTarget { DisplayName = "None (Pre 1.27)", Id = -1, ImageString = "none.png" },
             new PossibleTarget { DisplayName = "Tachyon", Id = 1, ImageString = "tach.png" },
         };
@@ -64,8 +63,7 @@ public sealed class FilterOptionsTests {
 
     [Fact]
     public void ArtifactTierOptions_DedupedSortedAscending() {
-        var arts = new[]
-        {
+        var arts = new[] {
             new PossibleArtifact { Name = 1, Level = 2 },
             new PossibleArtifact { Name = 2, Level = 0 },
             new PossibleArtifact { Name = 3, Level = 2 },
@@ -80,8 +78,7 @@ public sealed class FilterOptionsTests {
 
     [Fact]
     public void ArtifactNameOptions_RepresentativeIsLowestLevelSortedByText() {
-        var arts = new[]
-        {
+        var arts = new[] {
             new PossibleArtifact { Name = 10, ProtoName = "ZETA", DisplayName = "Zeta", Level = 1 },
             new PossibleArtifact { Name = 10, ProtoName = "ZETA", DisplayName = "Zeta Low", Level = 0 },
             new PossibleArtifact { Name = 5, ProtoName = "ALPHA", DisplayName = "Alpha", Level = 0 },
@@ -107,8 +104,7 @@ public sealed class FilterOptionsTests {
 
     [Fact]
     public void DropOptions_FiltersByMaxQualityAndEncodesValue() {
-        var arts = new[]
-        {
+        var arts = new[] {
             new PossibleArtifact { Name = 40, ProtoName = "BOOK_OF_BASAN", DisplayName = "Book of Basan", Level = 1, Rarity = 0, BaseQuality = 3 },
             new PossibleArtifact { Name = 41, ProtoName = "TOO_RARE", DisplayName = "Too Rare", Level = 0, Rarity = 0, BaseQuality = 999 },
         };
@@ -122,8 +118,7 @@ public sealed class FilterOptionsTests {
 
     [Fact]
     public void DropOptions_AdvancedAddsAnyAndAnyRarityRows() {
-        var arts = new[]
-        {
+        var arts = new[] {
             new PossibleArtifact { Name = 40, ProtoName = "BASAN", DisplayName = "Basan", Level = 1, Rarity = 0, BaseQuality = 3 },
             new PossibleArtifact { Name = 40, ProtoName = "BASAN", DisplayName = "Basan", Level = 1, Rarity = 1, BaseQuality = 3 },
         };
@@ -138,14 +133,12 @@ public sealed class FilterOptionsTests {
 
     [Fact]
     public void DropOptions_MergesStoneFragmentIntoStoneFamily() {
-        var arts = new[]
-        {
+        var arts = new[] {
             new PossibleArtifact { Name = 100, ProtoName = "LUNAR_STONE_FRAGMENT", DisplayName = "Lunar stone fragment", Level = 0, Rarity = 0, BaseQuality = 1 },
             new PossibleArtifact { Name = 200, ProtoName = "LUNAR_STONE", DisplayName = "Lunar stone", Level = 0, Rarity = 0, BaseQuality = 2 },
             new PossibleArtifact { Name = 200, ProtoName = "LUNAR_STONE", DisplayName = "Lunar stone", Level = 1, Rarity = 0, BaseQuality = 3 },
         };
         var opts = FilterOptions.GetDropFilterOptions(arts, maxQuality: 100, advanced: true);
-
 
         Assert.Equal(7, opts.Count);
 
@@ -164,12 +157,10 @@ public sealed class FilterOptionsTests {
 
     [Fact]
     public void DropOptions_SingleOptionFamilySkipsAnyRow() {
-        var arts = new[]
-        {
+        var arts = new[] {
             new PossibleArtifact { Name = 300, ProtoName = "LONE", DisplayName = "Lone artifact", Level = 0, Rarity = 0, BaseQuality = 1 },
         };
         var opts = FilterOptions.GetDropFilterOptions(arts, maxQuality: 100, advanced: true);
-
 
         Assert.Equal(4, opts.Count);
         Assert.DoesNotContain(opts, o => o.Value == "300_%_%_%");
@@ -177,8 +168,7 @@ public sealed class FilterOptionsTests {
 
     [Fact]
     public void DropOptions_ConcreteArtifactsGetRarityStyleClass() {
-        var arts = new[]
-        {
+        var arts = new[] {
             new PossibleArtifact { Name = 40, ProtoName = "BASAN", DisplayName = "Basan", Level = 1, Rarity = 0, BaseQuality = 3 },
             new PossibleArtifact { Name = 41, ProtoName = "RARE_ONE", DisplayName = "Rare One", Level = 0, Rarity = 1, BaseQuality = 3 },
             new PossibleArtifact { Name = 42, ProtoName = "EPIC_ONE", DisplayName = "Epic One", Level = 0, Rarity = 2, BaseQuality = 3 },

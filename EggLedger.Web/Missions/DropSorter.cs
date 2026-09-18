@@ -27,11 +27,7 @@ public static class DropSorter {
                 order.Add(key);
             }
         }
-        var result = new List<DropLike>(order.Count);
-        foreach (var key in order) {
-            result.Add(map[key]);
-        }
-        return result;
+        return [.. order.Select(key => map[key])];
     }
 
     public static List<DropLike> SortGroupAlreadyCombed(IEnumerable<DropLike> collection) {
@@ -49,20 +45,12 @@ public static class DropSorter {
 
 
     internal static List<DropLike> StableSort(IEnumerable<DropLike> collection, Comparison<DropLike> cmp) {
-        var indexed = new List<(DropLike Item, int Index)>();
-        int i = 0;
-        foreach (var item in collection) {
-            indexed.Add((item, i++));
-        }
+        List<(DropLike Item, int Index)> indexed = [.. collection.Select((item, i) => (item, i))];
         indexed.Sort((a, b) => {
             int c = cmp(a.Item, b.Item);
             return c != 0 ? c : a.Index.CompareTo(b.Index);
         });
-        var result = new List<DropLike>(indexed.Count);
-        foreach (var (item, _) in indexed) {
-            result.Add(item);
-        }
-        return result;
+        return [.. indexed.Select(x => x.Item)];
     }
 
     private static int CombedComparer(DropLike a, DropLike b) {

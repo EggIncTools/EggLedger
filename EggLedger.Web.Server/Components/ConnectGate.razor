@@ -72,8 +72,7 @@
             }
         } catch (HttpRequestException) {
             _error = "Login temporarily unavailable.";
-        }
-        finally {
+        } finally {
             _loading = false;
         }
     }
@@ -102,8 +101,7 @@
         if (_mod is not null) {
             try {
                 await _mod.InvokeVoidAsync("close");
-            }
-            catch (JSDisconnectedException) {
+            } catch (JSDisconnectedException) {
             }
         }
 
@@ -114,14 +112,12 @@
         if (_mod is not null) {
             try {
                 await _mod.InvokeVoidAsync("close");
-            }
-            catch (JSDisconnectedException) {
+            } catch (JSDisconnectedException) {
             }
 
             try {
                 await _mod.DisposeAsync();
-            }
-            catch (JSDisconnectedException) {
+            } catch (JSDisconnectedException) {
             }
         }
     }

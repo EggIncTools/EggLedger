@@ -27,12 +27,7 @@ public sealed class FilterDraft {
             }
 
             and.Add(CloneOf(row.Cond));
-            var siblings = new List<WebCondition>();
-            foreach (var sibling in row.Or) {
-                if (IsComplete(sibling)) {
-                    siblings.Add(CloneOf(sibling));
-                }
-            }
+            var siblings = row.Or.Where(IsComplete).Select(CloneOf).ToList();
 
             or.Add(siblings.Count > 0 ? siblings : null);
         }

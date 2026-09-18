@@ -61,7 +61,6 @@ public sealed class IndexedDbMissionStore : IMissionStore {
 
     public async Task<CompleteMissionResponse?> GetCompleteMissionAsync(string playerId, string missionId) {
 
-
         var key = DecodeKey(playerId, missionId);
         if (DecodeCacheGet(key) is { } hit) {
             return hit;
@@ -86,10 +85,10 @@ public sealed class IndexedDbMissionStore : IMissionStore {
 
     public async Task<IReadOnlyList<IMissionRow>?> GetPlayerMissionMetaAsync(string eid) {
         var rows = await PlayerMetaRowsAsync(eid);
-        var result = new List<IMissionRow>();
-        foreach (var row in rows.Where(r => r.Ship != -1).OrderBy(r => r.StartTimestamp)) {
-            result.Add(_packer.MissionMetaToDBMission(ToMeta(row)));
-        }
+        List<IMissionRow> result = [.. rows
+            .Where(r => r.Ship != -1)
+            .OrderBy(r => r.StartTimestamp)
+            .Select(row => _packer.MissionMetaToDBMission(ToMeta(row)))];
         return result;
     }
 

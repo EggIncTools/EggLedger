@@ -196,7 +196,6 @@
         _reachable = await CheckReachableAsync();
         _reachableChecking = false;
 
-
         if (_reachable && !_connected) {
             var pending = await SessionStore.GetPendingAuthStateAsync();
             if (!string.IsNullOrEmpty(pending)) {
@@ -209,8 +208,7 @@
             try {
                 var session = await Cloud.ConnectViaLoginAsync();
                 await OnAuthCompleteAsync(session);
-            }
-            catch (CloudSyncException) {
+            } catch (CloudSyncException) {
             }
         }
     }
@@ -250,11 +248,9 @@
         try {
             var session = await Cloud.ConnectViaLoginAsync();
             await OnAuthCompleteAsync(session);
-        }
-        catch (CloudSyncException ex) {
+        } catch (CloudSyncException ex) {
             _syncError = ex.Message;
-        }
-        finally {
+        } finally {
             _authWaiting = false;
         }
     }
@@ -309,8 +305,7 @@
             if (_session is not null) {
                 try {
                     await Cloud.DisconnectAsync(_session.Token);
-                }
-                catch {
+                } catch {
                     /* server logout is best-effort */
                 }
             }
@@ -384,8 +379,7 @@
                 }
             } catch (CloudSyncException) {
                 /* nothing synced yet */
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                 throw new CloudSyncException($"restore accounts: {ex.Message}", ex);
             }
 
@@ -396,8 +390,7 @@
                 }
             } catch (CloudSyncException) {
                 /* nothing synced yet */
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                 throw new CloudSyncException($"restore settings: {ex.Message}", ex);
             }
 
@@ -408,8 +401,7 @@
                 }
             } catch (CloudSyncException) {
                 /* nothing synced yet */
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                 throw new CloudSyncException($"restore reports: {ex.Message}", ex);
             }
 

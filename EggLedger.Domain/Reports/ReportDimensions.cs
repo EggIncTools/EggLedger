@@ -8,8 +8,7 @@ public enum DimensionScope {
 public sealed record ReportDimension(string Value, string Label, DimensionScope Scope);
 
 public static class ReportDimensions {
-    public static readonly IReadOnlyList<ReportDimension> Mission = new[]
-    {
+    public static readonly IReadOnlyList<ReportDimension> Mission = new[] {
         new ReportDimension("ship_type", "Ship Type", DimensionScope.Mission),
         new ReportDimension("duration_type", "Duration Type", DimensionScope.Mission),
         new ReportDimension("level", "Level", DimensionScope.Mission),
@@ -17,8 +16,7 @@ public static class ReportDimensions {
         new ReportDimension("mission_target", "Mission Target", DimensionScope.Mission),
     };
 
-    public static readonly IReadOnlyList<ReportDimension> Artifact = new[]
-    {
+    public static readonly IReadOnlyList<ReportDimension> Artifact = new[] {
         new ReportDimension("artifact_name", "Artifact Name", DimensionScope.Artifact),
         new ReportDimension("rarity", "Rarity", DimensionScope.Artifact),
         new ReportDimension("tier", "Tier", DimensionScope.Artifact),

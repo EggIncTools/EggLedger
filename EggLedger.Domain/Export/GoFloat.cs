@@ -32,9 +32,7 @@ public static class GoFloat {
             return "-Inf";
         }
 
-
         string shortest = v.ToString("R", CultureInfo.InvariantCulture);
-
 
         return NormalizeG(v, shortest);
     }
@@ -91,7 +89,6 @@ public static class GoFloat {
             return shortest;
         }
 
-
         string plain = shortest.IndexOfAny(['E', 'e']) >= 0 ? ExpandExponential(shortest) : shortest;
         string abs = plain.StartsWith('-') ? plain[1..] : plain;
         bool neg = plain.StartsWith('-');
@@ -111,7 +108,6 @@ public static class GoFloat {
             }
             exp = -(lead + 1);
         }
-
 
         if (exp is < -4 or >= 21) {
             return ToGoExponential(neg, intPart, fracPart, exp);

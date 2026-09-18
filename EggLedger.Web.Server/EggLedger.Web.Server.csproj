@@ -19,11 +19,14 @@
     <PackageReference Include="EggIdentity.Fallback" />
     <PackageReference Include="EggIdentity.AdminUi" />
     <PackageReference Include="EggIdentity.Client" />
+    <PackageReference Include="EggIdentity.Consent" />
+    <PackageReference Include="EggIdentity.DbClone" />
     <PackageReference Include="EggIdentity.Metrics" />
     <PackageReference Include="EggIdentity.Settings" />
     <PackageReference Include="EggIdentity.Settings.Store" />
     <PackageReference Include="EggIdentity.Settings.AdminUi" />
     <PackageReference Include="EggIdentity.Settings.Api" />
+    <PackageReference Include="EggIdentity.Visits" />
     <PackageReference Include="Npgsql" />
   </ItemGroup>
 

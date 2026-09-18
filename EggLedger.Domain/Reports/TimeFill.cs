@@ -12,17 +12,12 @@ public static class TimeFill {
         if (allBuckets == null || allBuckets.Count == rawLabels.Count) {
             return (rawLabels, values);
         }
-        var lookup = new Dictionary<string, long>(rawLabels.Count);
-        for (var i = 0; i < rawLabels.Count; i++) {
-            lookup[rawLabels[i]] = values[i];
-        }
-        var outLabels = new List<string>(allBuckets.Count);
-        var outV = new List<long>(allBuckets.Count);
-        foreach (var b in allBuckets) {
-            outLabels.Add(b);
-            outV.Add(lookup.TryGetValue(b, out var v) ? v : 0);
-        }
-        return (outLabels, outV);
+        var lookup = rawLabels
+            .Select((label, i) => (label, i))
+            .GroupBy(x => x.label, StringComparer.Ordinal)
+            .ToDictionary(g => g.Key, g => values[g.Last().i], StringComparer.Ordinal);
+        List<long> outV = [.. allBuckets.Select(b => lookup.GetValueOrDefault(b, 0))];
+        return (allBuckets, outV);
     }
 
     public static (List<string> labels, List<double> values) FillTimeSeriesGapsFloat(
@@ -34,17 +29,12 @@ public static class TimeFill {
         if (allBuckets == null || allBuckets.Count == rawLabels.Count) {
             return (rawLabels, values);
         }
-        var lookup = new Dictionary<string, double>(rawLabels.Count);
-        for (var i = 0; i < rawLabels.Count; i++) {
-            lookup[rawLabels[i]] = values[i];
-        }
-        var outLabels = new List<string>(allBuckets.Count);
-        var outV = new List<double>(allBuckets.Count);
-        foreach (var b in allBuckets) {
-            outLabels.Add(b);
-            outV.Add(lookup.TryGetValue(b, out var v) ? v : 0);
-        }
-        return (outLabels, outV);
+        var lookup = rawLabels
+            .Select((label, i) => (label, i))
+            .GroupBy(x => x.label, StringComparer.Ordinal)
+            .ToDictionary(g => g.Key, g => values[g.Last().i], StringComparer.Ordinal);
+        List<double> outV = [.. allBuckets.Select(b => lookup.GetValueOrDefault(b, 0))];
+        return (allBuckets, outV);
     }
 
     public static (List<string> labels, double[] matrix) FillTimePivotGaps(
@@ -56,10 +46,10 @@ public static class TimeFill {
         if (allBuckets == null || allBuckets.Count == bucketLabels.Count) {
             return (bucketLabels, matrixValues);
         }
-        var rowIndex = new Dictionary<string, int>(bucketLabels.Count);
-        for (var i = 0; i < bucketLabels.Count; i++) {
-            rowIndex[bucketLabels[i]] = i;
-        }
+        var rowIndex = bucketLabels
+            .Select((label, i) => (label, i))
+            .GroupBy(x => x.label, StringComparer.Ordinal)
+            .ToDictionary(g => g.Key, g => g.Last().i, StringComparer.Ordinal);
         var newMatrix = new double[allBuckets.Count * nCols];
         for (var newR = 0; newR < allBuckets.Count; newR++) {
             if (rowIndex.TryGetValue(allBuckets[newR], out var oldR)) {
@@ -120,11 +110,7 @@ public static class TimeFill {
             || !int.TryParse(last, NumberStyles.Integer, CultureInfo.InvariantCulture, out var y1)) {
             return null;
         }
-        var outList = new List<string>();
-        for (var y = y0; y <= y1; y++) {
-            outList.Add(y.ToString("D4", CultureInfo.InvariantCulture));
-        }
-        return outList;
+        return [.. Enumerable.Range(y0, Math.Max(y1 - y0 + 1, 0)).Select(y => y.ToString("D4", CultureInfo.InvariantCulture))];
     }
 
     private static bool TryParseSQLiteWeekLabel(string label, out DateTime result) {

@@ -51,14 +51,11 @@ public sealed class PostgresIsolationTests {
             Assert.Single(bAll);
             Assert.Equal("EI_B", bAll[0].PlayerId);
 
-
             var leaked = await b.GetAsync<MissionRow>("mission", new object[] { "EI_A", "m1" });
             Assert.Null(leaked);
 
-
             Assert.Equal(2, await a.CountAsync("mission"));
             Assert.Equal(1, await b.CountAsync("mission"));
-
 
             await b.ClearAsync("mission");
             Assert.Equal(2, (await a.GetAllAsync<MissionRow>("mission")).Length);

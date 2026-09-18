@@ -22,7 +22,6 @@ public static class Weight {
             return "MEDIUM";
         }
 
-
         if (def.SecondaryGroupBy != "") {
             var eitherIsArtifact = IsArtifactDimension(def.GroupBy) || IsArtifactDimension(def.SecondaryGroupBy);
             if (eitherIsArtifact) {
@@ -33,7 +32,6 @@ public static class Weight {
             }
             return "LOW";
         }
-
 
         if (def.Mode == "time_series") {
             if (def.TimeBucket == "custom") {
@@ -84,10 +82,7 @@ public static class Weight {
 
     private static int DateFilterWindowDays(ReportFilters f) {
         var minDays = 9999;
-        var all = new List<FilterCondition>(f.And);
-        foreach (var group in f.Or) {
-            all.AddRange(group);
-        }
+        List<FilterCondition> all = [.. f.And, .. f.Or.SelectMany(g => g)];
         var now = DateTime.UtcNow;
         foreach (var c in all) {
             if (c.TopLevel is not "launchDT" and not "returnDT") {

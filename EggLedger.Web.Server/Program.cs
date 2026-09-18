@@ -1,7 +1,9 @@
 using EggIdentity.Auth;
 using EggIdentity.Bot;
+using EggIdentity.Consent;
 using EggIdentity.Contract;
 using EggIdentity.Db;
+using EggIdentity.DbClone;
 using EggIdentity.Deploy;
 using EggIdentity.Deploy.AdminUi;
 using EggIdentity.Fallback;
@@ -10,6 +12,7 @@ using EggIdentity.Settings;
 using EggIdentity.Settings.Api;
 using EggIdentity.Settings.Store;
 using EggIdentity.Styles;
+using EggIdentity.Visits;
 using EggLedger.Web;
 using EggLedger.Web.Data;
 using EggLedger.Web.Server;
@@ -25,13 +28,16 @@ using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
-SubProdFence.ForceSessionIsolation(Environment.SetEnvironmentVariable, builder.Environment.EnvironmentName);
-SubProdFence.ForceGateIsolation(
-    Environment.GetEnvironmentVariable, Environment.SetEnvironmentVariable, builder.Environment.EnvironmentName);
-var fencedGetter = SubProdFence.WrapGetter(Environment.GetEnvironmentVariable, builder.Environment.EnvironmentName, out var subProdFenceReport);
-foreach (var entry in subProdFenceReport) {
-    if (entry.Forced) {
-        await Console.Error.WriteLineAsync($"eggledger: sub-prod fence forced {entry.Key} empty");
+var isSubProd = EggIdentity.DbClone.SubProdFence.Applies(Environment.GetEnvironmentVariable);
+if (isSubProd) {
+    Environment.SetEnvironmentVariable("EGGIDENTITY_SESSION_SECRET", "eggledger-subprod-local-only-not-a-real-secret");
+    Environment.SetEnvironmentVariable("EGGIDENTITY_SESSION_SECRET_PREVIOUS", "eggledger-subprod-local-only-not-a-real-secret");
+    Environment.SetEnvironmentVariable("EGGIDENTITY_SESSION_COOKIE_DOMAIN", null);
+}
+var fencedGetter = LedgerClonePlan.Fence.Wrap(Environment.GetEnvironmentVariable);
+foreach (var entry in LedgerClonePlan.Fence.Report()) {
+    if (entry.Fenced) {
+        await Console.Error.WriteLineAsync($"eggledger: sub-prod fence forced {entry.EnvKey} empty");
     }
 }
 
@@ -40,8 +46,8 @@ var bootstrapSettings = new SettingsSnapshot(
     settingsRegistry, new Dictionary<string, string?>(StringComparer.Ordinal), null, fencedGetter);
 var cfg = AppConfig.From(bootstrapSettings);
 var hasDb = !string.IsNullOrEmpty(cfg.DatabaseUrl);
-if (hasDb && builder.Environment.IsStaging()) {
-    SubProdBootGuard.EnsureSubProdDatabase(cfg.DatabaseUrl);
+if (hasDb && isSubProd) {
+    SubProdGuard.EnsureDatabase(cfg.DatabaseUrl, LedgerClonePlan.TargetDatabase);
 }
 var build = new VerifyInfo { Name = "EggLedger", Sha256 = cfg.BuildSha, Version = AppVersionInfo.Current, Date = cfg.BuildDate };
 var startedAt = DateTimeOffset.UtcNow;
@@ -110,7 +116,9 @@ if (eggIdentitySession is not null) {
     });
     builder.Services.AddSingleton(eggIdentitySession);
     builder.Services.AddScoped<EggLedger.Web.Components.IProfilePanelSlot, EggLedger.Web.Server.Components.ProfilePanelSlot>();
+    builder.Services.AddScoped<EggLedger.Web.Components.ICookieBannerSlot, EggLedger.Web.Server.Components.CookieBannerSlot>();
 }
+builder.Services.AddEggIdentityConsent(new ConsentOptions { CookieDomain = eggIdentitySession?.CookieDomain });
 
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
@@ -172,6 +180,8 @@ if (hasDb) {
     builder.Services.AddSingleton<ITrafficSource, EggLedger.Web.Server.Sync.Admin.InProcessTrafficSource>();
     builder.Services.AddScoped<EggLedger.Web.Components.Admin.ITrafficPanelSlot, EggLedger.Web.Server.Sync.Admin.TrafficPanelSlot>();
     builder.Services.AddSingleton<EggLedger.Web.Components.Admin.IAdminData, EggLedger.Web.Server.Sync.Admin.AdminDataService>();
+    builder.Services.AddEggIdentityVisits(new VisitsOptions("eggledger") { HostedBehindProxy = true });
+    builder.Services.AddScoped<EggLedger.Web.Components.Admin.IVisitsPanelSlot, EggLedger.Web.Server.Sync.Admin.VisitsPanelSlot>();
 
     if (!string.IsNullOrEmpty(cfg.BotToken)) {
         builder.Services.AddSingleton(new BotConfig {
@@ -274,7 +284,6 @@ builder.Services.AddSingleton(_ =>
     new EggLedger.Web.Server.Ships.ShipAssetService(
         Path.Combine(builder.Environment.ContentRootPath, "ships")));
 
-
 builder.Services.AddHttpClient("auxbrain", c => c.BaseAddress = new Uri("https://www.auxbrain.com"));
 
 builder.Services.AddEggIdentityFallback(new FallbackBranding("EggLedger", new Dictionary<string, string> {
@@ -298,22 +307,18 @@ var app = builder.Build();
 app.UseExceptionHandler();
 app.UseForwardedHeaders();
 
-
 app.UseRouting();
 app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 if (hasDb) {
 
-
     app.UseMiddleware<EggLedger.Web.Server.Sync.Auth.LoginCallbackMiddleware>();
 }
 
 app.UseEggIdentityFallback();
 
-
 app.UseAntiforgery();
-
 
 app.Map("/egg-api/{**rest}", async (HttpContext ctx, IHttpClientFactory factory, string rest) => {
     var client = factory.CreateClient("auxbrain");
@@ -356,9 +361,7 @@ app.MapGet("/api/v1/event-icon", (HttpContext ctx, EventIconCache icons) => {
     return ctx.Response.Body.WriteAsync(icon.Bytes, ctx.RequestAborted).AsTask();
 });
 
-
 if (hasDb) {
-
 
     app.Logger.LogInformation("eggledger: DB configured, running migrations. selfBase={SelfBase}", selfBase);
     var conn = await Database.InitAsync(cfg.DatabaseUrl);
@@ -367,7 +370,9 @@ if (hasDb) {
         conn,
         Path.Combine(AppContext.BaseDirectory, "Migrations"),
         EggLedger.Web.Server.Storage.MigrationLedger.Table);
+    await app.Services.GetRequiredService<VisitsStore>().MigrateAsync();
     app.Logger.LogInformation("eggledger: migrations complete, /api/v1 + Postgres storage active");
+    app.MapEggIdentityVisits();
 
     _ = new EggLedger.Web.Server.Sync.Db.ExpiredSessionSweeper(
             app.Services.GetRequiredService<NpgsqlDataSource>(),
@@ -409,7 +414,11 @@ if (hasDb) {
 }
 
 if (!string.IsNullOrEmpty(cfg.AdminApiSecret)) {
-    app.MapAdminApi(new AdminApiOptions("eggledger", cfg.AdminApiSecret));
+    var adminApi = app.MapAdminApi(new AdminApiOptions("eggledger", cfg.AdminApiSecret));
+    if (hasDb) {
+        adminApi.MapEggIdentityVisitsAdminApi();
+        adminApi.MapCloneAdminApi(LedgerClonePlan.Plan);
+    }
 }
 
 app.MapRazorComponents<AppHost>()

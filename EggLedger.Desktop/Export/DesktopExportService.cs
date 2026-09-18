@@ -20,10 +20,9 @@ public sealed class DesktopExportService(
             return groups;
         }
         var accounts = await accountLookup();
-        var byId = new Dictionary<string, AccountInfo>(StringComparer.Ordinal);
-        foreach (var a in accounts) {
-            byId[a.Id] = a;
-        }
+        var byId = accounts
+            .GroupBy(a => a.Id, StringComparer.Ordinal)
+            .ToDictionary(g => g.Key, g => g.Last(), StringComparer.Ordinal);
         foreach (var g in groups) {
             if (byId.TryGetValue(g.Eid, out var acct)) {
                 g.Nickname = acct.Nickname;

@@ -39,11 +39,7 @@ public static class SliceColors {
 
     public static IReadOnlyList<string> AutoSliceColors(string baseColor, int count) {
         var (h, s, l) = HexToHsl(baseColor);
-        var result = new List<string>(Math.Max(count, 0));
-        for (int i = 0; i < count; i++) {
-            result.Add(HslToHex(Mod(h + (double)i * 360 / count, 360), s, l));
-        }
-        return result;
+        return Enumerable.Range(0, Math.Max(count, 0)).Select(i => HslToHex(Mod(h + (double)i * 360 / count, 360), s, l)).ToList();
     }
 
     public static Dictionary<string, string> ParseLabelColors(string? raw) {

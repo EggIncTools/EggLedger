@@ -38,8 +38,7 @@ public class ExecuteTests {
     [Fact]
     public void ExecuteReport_Aggregate_FormatsShipLabels() {
 
-        var db = new FakeDb().On("GROUP BY m.ship", new object?[][]
-        {
+        var db = new FakeDb().On("GROUP BY m.ship", new object?[][] {
             ["9", 10L],
             ["3", 4L],
         });
@@ -59,8 +58,7 @@ public class ExecuteTests {
 
     [Fact]
     public void ExecuteReport_Pivot_ProducesSortedMatrix() {
-        var db = new FakeDb().On("GROUP BY m.ship, m.duration_type", new object?[][]
-        {
+        var db = new FakeDb().On("GROUP BY m.ship, m.duration_type", new object?[][] {
             ["3", "1", 2L],
             ["9", "0", 5L],
             ["9", "1", 7L],
@@ -87,9 +85,7 @@ public class ExecuteTests {
     [Fact]
     public void ExecuteReport_FamilyWeighted_UsesWeightedPath() {
 
-
-        var db = new FakeDb().On("cap_weight", new object?[][]
-        {
+        var db = new FakeDb().On("cap_weight", new object?[][] {
             ["9", 1L, 0L, 2.0],
             ["3", 2L, 0L, 1.0],
         });

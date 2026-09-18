@@ -50,51 +50,39 @@ public static class SqliteReportSource {
         ArgumentNullException.ThrowIfNull(db);
         object?[] args = [accountId];
 
-        var missionRows = db.Query(MissionSql, args);
-        var missions = new List<MissionRowData>(missionRows.Count);
-        foreach (var r in missionRows) {
-            missions.Add(new MissionRowData {
-                PlayerId = AsString(r[0]),
-                MissionId = AsString(r[1]),
-                Ship = AsLong(r[2]),
-                DurationType = AsLong(r[3]),
-                Level = AsLong(r[4]),
-                Target = AsLong(r[5]),
-                MissionType = AsLong(r[6]),
-                StartTimestamp = AsLong(r[7]),
-                ReturnTimestamp = AsLong(r[8]),
-                Capacity = AsLong(r[9]),
-                NominalCapacity = AsLong(r[10]),
-                IsDubCap = AsBool(r[11]),
-                IsBuggedCap = AsBool(r[12]),
-            });
-        }
+        var missions = db.Query(MissionSql, args).Select(r => new MissionRowData {
+            PlayerId = AsString(r[0]),
+            MissionId = AsString(r[1]),
+            Ship = AsLong(r[2]),
+            DurationType = AsLong(r[3]),
+            Level = AsLong(r[4]),
+            Target = AsLong(r[5]),
+            MissionType = AsLong(r[6]),
+            StartTimestamp = AsLong(r[7]),
+            ReturnTimestamp = AsLong(r[8]),
+            Capacity = AsLong(r[9]),
+            NominalCapacity = AsLong(r[10]),
+            IsDubCap = AsBool(r[11]),
+            IsBuggedCap = AsBool(r[12]),
+        }).ToList();
 
-        var dropRows = db.Query(DropsSql, args);
-        var drops = new List<ArtifactDropRowData>(dropRows.Count);
-        foreach (var r in dropRows) {
-            drops.Add(new ArtifactDropRowData {
-                PlayerId = AsString(r[0]),
-                MissionId = AsString(r[1]),
-                DropIndex = AsLong(r[2]),
-                ArtifactId = AsLong(r[3]),
-                SpecType = AsString(r[4]),
-                Level = AsLong(r[5]),
-                Rarity = AsLong(r[6]),
-                Quality = AsDouble(r[7]),
-            });
-        }
+        var drops = db.Query(DropsSql, args).Select(r => new ArtifactDropRowData {
+            PlayerId = AsString(r[0]),
+            MissionId = AsString(r[1]),
+            DropIndex = AsLong(r[2]),
+            ArtifactId = AsLong(r[3]),
+            SpecType = AsString(r[4]),
+            Level = AsLong(r[5]),
+            Rarity = AsLong(r[6]),
+            Quality = AsDouble(r[7]),
+        }).ToList();
 
-        var fuelRows = db.Query(FuelSql, args);
-        var fuel = new List<FuelRowData>(fuelRows.Count);
-        foreach (var r in fuelRows) {
-            fuel.Add(new FuelRowData {
-                PlayerId = AsString(r[0]),
-                MissionId = AsString(r[1]),
-                EggId = AsLong(r[2]),
-                Amount = AsDouble(r[3]),
-            });
-        }
+        var fuel = db.Query(FuelSql, args).Select(r => new FuelRowData {
+            PlayerId = AsString(r[0]),
+            MissionId = AsString(r[1]),
+            EggId = AsLong(r[2]),
+            Amount = AsDouble(r[3]),
+        }).ToList();
 
         return new ReportSource(missions, drops, fuel);
     }

@@ -174,20 +174,11 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null)
 
     private static List<ConfigurationItem> Filter(
         IReadOnlyList<ConfigurationItem> items, int shipId, int durationId, int level, int targetId) {
-        var result = new List<ConfigurationItem>();
-        foreach (var item in items) {
-            var sc = item.ShipConfiguration;
-            if (sc?.ShipType is null || sc.ShipDurationType is null || sc.TargetArtifact is null) {
-                continue;
-            }
-            if (sc.ShipType.Id == shipId
-                && sc.ShipDurationType.Id == durationId
-                && sc.Level == level
-                && sc.TargetArtifact.Id == targetId) {
-                result.Add(item);
-            }
-        }
-        return result;
+        return [.. items.Where(item => item.ShipConfiguration is { ShipType: not null, ShipDurationType: not null, TargetArtifact: not null } sc
+            && sc.ShipType.Id == shipId
+            && sc.ShipDurationType.Id == durationId
+            && sc.Level == level
+            && sc.TargetArtifact.Id == targetId)];
     }
 
     public static ReportResult? ExecuteComparison(
@@ -232,14 +223,8 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null)
         var (matrixValues, airtimeMatrixValues) = ComputeMatrix(
             familyDrops, estimatedMissions, nR, nC, isPct, pctMode, shipAxis, durAxis, rawRowLabels, rawColLabels);
 
-        var rowLabels = new List<string>(nR);
-        var colLabels = new List<string>(nC);
-        for (int i = 0; i < nR; i++) {
-            rowLabels.Add(Labels.FormatLabel(def.GroupBy, rawRowLabels[i]));
-        }
-        for (int i = 0; i < nC; i++) {
-            colLabels.Add(Labels.FormatLabel(def.SecondaryGroupBy, rawColLabels[i]));
-        }
+        var rowLabels = rawRowLabels.Select(l => Labels.FormatLabel(def.GroupBy, l)).ToList();
+        var colLabels = rawColLabels.Select(l => Labels.FormatLabel(def.SecondaryGroupBy, l)).ToList();
 
         return new ReportResult {
             RowLabels = rowLabels,

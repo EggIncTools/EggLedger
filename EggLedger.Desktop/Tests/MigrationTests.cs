@@ -7,7 +7,6 @@ namespace EggLedger.Desktop.Tests;
 public sealed class MigrationTests {
     private static SqliteConnection FreshConnection() {
 
-
         var name = "migtest_" + Guid.NewGuid().ToString("N");
         var conn = new SqliteConnection($"Data Source={name};Mode=Memory;Cache=Shared");
         conn.Open();
@@ -56,8 +55,7 @@ public sealed class MigrationTests {
         }
 
         var missionCols = Columns(conn, "mission");
-        foreach (var expected in new[]
-        {
+        foreach (var expected in new[] {
             "player_id", "mission_id", "start_timestamp", "complete_payload", "mission_type",
             "ship", "duration_type", "level", "capacity", "is_dub_cap", "is_bugged_cap",
             "target", "return_timestamp", "nominal_capacity",
@@ -134,7 +132,6 @@ public sealed class MigrationTests {
             cmd.CommandText = "PRAGMA foreign_keys;";
             Assert.Equal(1L, (long)cmd.ExecuteScalar()!);
         } finally {
-
 
             SqliteConnection.ClearAllPools();
             if (Directory.Exists(dir)) {

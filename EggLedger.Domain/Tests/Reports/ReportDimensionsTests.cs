@@ -6,8 +6,7 @@ namespace EggLedger.Domain.Tests.Reports;
 public class ReportDimensionsTests {
     [Fact]
     public void Mission_HasExpectedValuesAndLabels() {
-        var expected = new (string, string)[]
-        {
+        var expected = new (string, string)[] {
             ("ship_type", "Ship Type"),
             ("duration_type", "Duration Type"),
             ("level", "Level"),
@@ -24,8 +23,7 @@ public class ReportDimensionsTests {
 
     [Fact]
     public void Artifact_HasExpectedValuesAndLabels() {
-        var expected = new (string, string)[]
-        {
+        var expected = new (string, string)[] {
             ("artifact_name", "Artifact Name"),
             ("rarity", "Rarity"),
             ("tier", "Tier"),

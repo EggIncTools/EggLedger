@@ -131,14 +131,7 @@
                 return [];
             }
 
-            var result = new List<FilePair>();
-            foreach (var g in _groups) {
-                if (g.Pairs.Count > _keepCount) {
-                    result.AddRange(g.Pairs.GetRange(_keepCount, g.Pairs.Count - _keepCount));
-                }
-            }
-
-            return result;
+            return [.. _groups.SelectMany(g => g.Pairs.Skip(_keepCount))];
         }
     }
 
@@ -216,11 +209,9 @@
             await Exports.PruneAsync(_keepCount);
             _selected.Clear();
             await LoadFilesAsync();
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             _pruneError = ex.Message;
-        }
-        finally {
+        } finally {
             _pruning = false;
         }
     }
@@ -232,11 +223,9 @@
             await Exports.DeleteAsync(_selected.ToList());
             _selected.Clear();
             await LoadFilesAsync();
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             _deleteError = ex.Message;
-        }
-        finally {
+        } finally {
             _deleting = false;
         }
     }

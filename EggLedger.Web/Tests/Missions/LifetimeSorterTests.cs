@@ -28,8 +28,7 @@ public sealed class LifetimeSorterTests {
 
     [Fact]
     public void SortGroupByCount_OrdersByCountDesc() {
-        var input = new[]
-        {
+        var input = new[] {
             D(1, 0, 0, count: 1),
             D(2, 0, 0, count: 5),
             D(3, 0, 0, count: 3),
@@ -45,8 +44,7 @@ public sealed class LifetimeSorterTests {
     [Fact]
     public void SortGroupByCount_TieBreaksByLevelThenRarityThenIdThenQuality() {
 
-        var input = new[]
-        {
+        var input = new[] {
             D(1, level: 1, rarity: 0, count: 2, quality: 0),
             D(2, level: 2, rarity: 0, count: 2, quality: 0),
             D(3, level: 2, rarity: 1, count: 2, quality: 0),
@@ -74,7 +72,6 @@ public sealed class LifetimeSorterTests {
         };
 
         LifetimeSorter.Sort(data, LifetimeSortMethod.Default);
-
 
         Assert.Equal(0, data.Artifacts[0].Level);
         Assert.Equal(2, data.Artifacts[1].Level);

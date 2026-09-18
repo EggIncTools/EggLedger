@@ -62,12 +62,7 @@ public static class TimelineLayoutEngine {
         long windowEnd = visibleEnd.ToUnixTimeSeconds();
         double windowSpan = windowEnd - windowStart;
 
-        var intersecting = new List<GameEvent>();
-        foreach (var e in events) {
-            if (e.EndTimestamp > windowStart && e.StartTimestamp < windowEnd) {
-                intersecting.Add(e);
-            }
-        }
+        var intersecting = events.Where(e => e.EndTimestamp > windowStart && e.StartTimestamp < windowEnd).ToList();
         intersecting.Sort((a, b) => a.StartTimestamp.CompareTo(b.StartTimestamp));
 
         var laneRights = new List<double>();
@@ -97,12 +92,7 @@ public static class TimelineLayoutEngine {
 
     private static List<DatabaseMission> IntersectingMissions(
         IReadOnlyList<DatabaseMission> missions, long windowStart, long windowEnd) {
-        var intersecting = new List<DatabaseMission>();
-        foreach (var m in missions) {
-            if (m.ReturnDT > windowStart && m.LaunchDT < windowEnd) {
-                intersecting.Add(m);
-            }
-        }
+        var intersecting = missions.Where(m => m.ReturnDT > windowStart && m.LaunchDT < windowEnd).ToList();
         intersecting.Sort((a, b) => a.LaunchDT.CompareTo(b.LaunchDT));
         return intersecting;
     }

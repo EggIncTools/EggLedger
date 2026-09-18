@@ -6,8 +6,7 @@ public sealed class FilterFieldsTests {
     [Fact]
     public void ReportFilterFields_HasExpectedKeysInOrder() {
         var keys = FilterFields.ReportFilterFields.Select(f => f.Key).ToArray();
-        Assert.Equal(new[]
-        {
+        Assert.Equal(new[] {
             "ship", "duration", "level", "target", "type", "launchDT", "returnDT",
             "dubcap", "buggedcap", "drops",
             "artifact_name", "artifact_rarity", "artifact_tier", "artifact_spec_type", "artifact_quality",
@@ -25,7 +24,6 @@ public sealed class FilterFieldsTests {
         var ops = FilterFields.MissionBarOpsFor(FilterFields.GetReportField("launchDT")!);
         Assert.Equal(new[] { "d=", "<", ">" }, ops.Select(o => o.Value).ToArray());
         Assert.Equal("d=", ops.First(o => o.Label == "on").Value);
-
 
         var shipOps = FilterFields.MissionBarOpsFor(FilterFields.GetReportField("ship")!);
         Assert.Same(FilterFields.GetReportField("ship")!.Ops, shipOps);

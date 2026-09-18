@@ -15,12 +15,11 @@
         <div class="cp-popover">
             <div class="cp-presets">
                 @foreach (var swatch in ColorPickerMath.PresetColors) {
-                    var s = swatch;
                     <button type="button"
-                            class="cp-preset @(string.Equals(s, CurrentHex, StringComparison.OrdinalIgnoreCase) ? "cp-preset-active" : "")"
-                            style="background-color: @s"
-                            aria-label="@s"
-                            @onclick="() => SelectAsync(s)">
+                            class="cp-preset @(string.Equals(swatch, CurrentHex, StringComparison.OrdinalIgnoreCase) ? "cp-preset-active" : "")"
+                            style="background-color: @swatch"
+                            aria-label="@swatch"
+                            @onclick="() => SelectAsync(swatch)">
                     </button>
                 }
             </div>

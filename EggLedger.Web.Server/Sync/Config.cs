@@ -30,7 +30,7 @@ public sealed record AppConfig(
         ["127.0.0.0/8", "::1/128", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fc00::/7", "fe80::/10"];
 
     public static SettingsRegistry Registry { get; } =
-        new([LedgerSettings.Provider, EggIdentity.Auth.SessionSettings.Provider]);
+        new([LedgerSettings.Provider, EggIdentity.Auth.SessionSettings.Provider, EggIdentity.DbClone.EnvironmentSettings.Provider]);
 
     public static AppConfig FromEnv(Func<string, string?> get) =>
         From(new SettingsSnapshot(Registry, new Dictionary<string, string?>(StringComparer.Ordinal), null, get));

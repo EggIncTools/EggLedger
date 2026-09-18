@@ -172,11 +172,9 @@
         try {
             await Storage.BackupAsync(_backupDestPath, _backupDb, _backupExports, _backupLogs);
             _backupSuccess = true;
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             _backupError = ex.Message;
-        }
-        finally {
+        } finally {
             _backupInProgress = false;
         }
     }
@@ -201,8 +199,7 @@
         _moveError = "";
         try {
             await Storage.MoveAsync(_moveDestPath);
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             _moveError = ex.Message;
             _moveInProgress = false;
         }

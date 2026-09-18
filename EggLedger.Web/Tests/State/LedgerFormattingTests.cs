@@ -9,8 +9,7 @@ public sealed class LedgerFormattingTests {
 
     [Fact]
     public void SortByMissionCountDescendingOrdersByCount() {
-        var input = new[]
-        {
+        var input = new[] {
             Acct("EI1", "Low", 5),
             Acct("EI2", "High", 50),
             Acct("EI3", "Mid", 20),
@@ -23,8 +22,7 @@ public sealed class LedgerFormattingTests {
 
     [Fact]
     public void SortIsStableForEqualCounts() {
-        var input = new[]
-        {
+        var input = new[] {
             Acct("EI1", "First", 10),
             Acct("EI2", "Second", 10),
             Acct("EI3", "Third", 10),
@@ -84,8 +82,7 @@ public sealed class LedgerFormattingTests {
 
     [Fact]
     public void FilterAccountsMatchesIdOrNicknameCaseInsensitive() {
-        var input = new List<DatabaseAccount>
-        {
+        var input = new List<DatabaseAccount> {
             Acct("EI1111111111111111", "Alice", 1),
             Acct("EI2222222222222222", "Bob", 1),
         };

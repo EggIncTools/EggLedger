@@ -398,7 +398,6 @@
         _open = true;
         StateHasChanged();
 
-
         try {
             var result = await MissionDb.RunReportAsync(def, def.AccountId);
             _editingResultLabels = result.Is2D ? Array.Empty<string>() : result.Labels;
@@ -510,7 +509,6 @@
 
         var timeSeries = f.Mode == "time_series";
         var hasSecondary = !string.IsNullOrEmpty(f.SecondaryGroupBy);
-
 
         var displayMode = f.DisplayMode;
         if (hasSecondary) {

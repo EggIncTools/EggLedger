@@ -30,26 +30,19 @@ public sealed class MissionQueryHandlers(IMissionStore store, IArtifactQuality q
 
     public async Task<IReadOnlyList<IMissionRow>?> ViewMissionsOfEidAsync(string eid) {
 
-
         store.QueueArtifactDropsBackfill(eid);
 
         int? pending = await store.CountPendingFilterColsAsync(eid);
-
 
         if (pending is 0) {
             return await store.GetPlayerMissionMetaAsync(eid);
         }
 
-
         var complete = await store.GetPlayerCompleteMissionsAsync(eid);
         if (complete is null) {
             return null;
         }
-        var missions = new List<IMissionRow>(complete.Count);
-        foreach (var cm in complete) {
-            missions.Add(compiler.CompileMissionInformation(cm));
-        }
-
+        List<IMissionRow> missions = [.. complete.Select(compiler.CompileMissionInformation)];
 
         if (pending is > 0) {
             store.QueueFilterColBackfill(eid);
@@ -63,17 +56,16 @@ public sealed class MissionQueryHandlers(IMissionStore store, IArtifactQuality q
         var result = new List<PossibleMission>();
         foreach (var mission in missionParameters) {
             int maxLevels = mission.LevelMissionRequirements?.Length ?? 0;
-            var durations = new List<DurationConfig>();
-            foreach (var d in mission.Durations) {
-                durations.Add(new DurationConfig {
+            result.Add(new PossibleMission {
+                Ship = mission.Ship,
+                Durations = [.. mission.Durations.Select(d => new DurationConfig {
                     DurationType = d.DurationType,
                     MinQuality = d.MinQuality,
                     MaxQuality = d.MaxQuality,
                     LevelQualityBump = d.LevelQualityBump,
                     MaxLevels = maxLevels,
-                });
-            }
-            result.Add(new PossibleMission { Ship = mission.Ship, Durations = durations });
+                })],
+            });
         }
         return result;
     }
@@ -116,14 +108,7 @@ public sealed class MissionQueryHandlers(IMissionStore store, IArtifactQuality q
         if (cm is null) {
             return null;
         }
-        var drops = new List<MissionDrop>();
-        foreach (var artifact in cm.Artifacts) {
-            var spec = artifact.Spec;
-            if (spec is not null) {
-                drops.Add(ShapeDrop(spec));
-            }
-        }
-        return drops;
+        return [.. cm.Artifacts.Select(a => a.Spec).OfType<ArtifactSpec>().Select(ShapeDrop)];
     }
 
     private MissionDrop ShapeDrop(ArtifactSpec spec) {

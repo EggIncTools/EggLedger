@@ -275,8 +275,7 @@ public static class ArtifactExtensions {
     private static string CapitalizeArtifactName(string n) {
         n = char.ToUpperInvariant(n[0]) + n[1..];
 
-        var replacements = new (string from, string to)[]
-        {
+        var replacements = new (string from, string to)[] {
             ("demeters", "Demeters"),
             ("midas", "Midas"),
             ("eggendil", "Eggendil"),

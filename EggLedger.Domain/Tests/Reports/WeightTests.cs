@@ -133,8 +133,7 @@ public class WeightTests {
             GroupBy = "time_bucket",
             TimeBucket = "month",
             Filters = new ReportFilters {
-                And =
-                [
+                And = [
                     new FilterCondition { TopLevel = "launchDT", Op = ">=", Val = Ago(90) },
                     new FilterCondition { TopLevel = "launchDT", Op = ">=", Val = Ago(10) },
                 ],

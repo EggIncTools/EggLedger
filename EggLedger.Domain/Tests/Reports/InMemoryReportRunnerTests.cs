@@ -109,8 +109,7 @@ public class InMemoryReportRunnerTests {
 
     [Fact]
     public void Parity_AggregateByShip() {
-        var missions = new List<MissionRowData>
-        {
+        var missions = new List<MissionRowData> {
             M("a", ship: 9, duration: 0, start: 1_700_000_000, ret: 1_700_003_600),
             M("b", ship: 9, duration: 1, start: 1_700_100_000, ret: 1_700_103_600),
             M("c", ship: 3, duration: 0, start: 1_700_200_000, ret: 1_700_203_600),
@@ -129,8 +128,7 @@ public class InMemoryReportRunnerTests {
     [Fact]
     public void Parity_AggregateByShip_WithFilter() {
 
-        var missions = new List<MissionRowData>
-        {
+        var missions = new List<MissionRowData> {
             M("a", ship: 9, duration: 0, start: 1_700_000_000, ret: 1_700_003_600),
             M("b", ship: 9, duration: 1, start: 1_700_100_000, ret: 1_700_103_600),
             M("c", ship: 3, duration: 0, start: 1_700_200_000, ret: 1_700_203_600),
@@ -157,8 +155,7 @@ public class InMemoryReportRunnerTests {
 
     [Fact]
     public void Parity_PivotShipByDuration() {
-        var missions = new List<MissionRowData>
-        {
+        var missions = new List<MissionRowData> {
             M("a", ship: 3, duration: 1, start: 1, ret: 2),
             M("b", ship: 9, duration: 0, start: 1, ret: 2),
             M("c", ship: 9, duration: 1, start: 1, ret: 2),
@@ -187,13 +184,11 @@ public class InMemoryReportRunnerTests {
     [Fact]
     public void Parity_DropBasedAggregateByRarity() {
 
-        var missions = new List<MissionRowData>
-        {
+        var missions = new List<MissionRowData> {
             M("a", ship: 9, duration: 0, start: 1, ret: 2),
             M("b", ship: 3, duration: 0, start: 1, ret: 2),
         };
-        var drops = new List<ArtifactDropRowData>
-        {
+        var drops = new List<ArtifactDropRowData> {
             D("a", artifactId: 12, rarity: 3, tier: 2),
             D("a", artifactId: 13, rarity: 3, tier: 1, dropIndex: 1),
             D("b", artifactId: 14, rarity: 1, tier: 0),
@@ -201,7 +196,6 @@ public class InMemoryReportRunnerTests {
             D("b", artifactId: 16, rarity: 0, tier: 0, dropIndex: -1),
         };
         var def = new ReportDefinition { Mode = "aggregate", GroupBy = "rarity", Subject = "artifacts", AccountId = Eid };
-
 
         var keptDrops = drops.Where(d => d.DropIndex >= 0);
         var rarityRows = Group1DRaw(keptDrops.Select(d => d.Rarity.ToString(CultureInfo.InvariantCulture)));
@@ -217,13 +211,11 @@ public class InMemoryReportRunnerTests {
     [Fact]
     public void Parity_DropFilterContains() {
 
-        var missions = new List<MissionRowData>
-        {
+        var missions = new List<MissionRowData> {
             M("a", ship: 9, duration: 0, start: 1, ret: 2),
             M("b", ship: 3, duration: 0, start: 1, ret: 2),
         };
-        var drops = new List<ArtifactDropRowData>
-        {
+        var drops = new List<ArtifactDropRowData> {
             D("a", artifactId: 12, rarity: 3, tier: 2),
             D("b", artifactId: 14, rarity: 1, tier: 0),
         };
@@ -237,7 +229,6 @@ public class InMemoryReportRunnerTests {
             },
         };
 
-
         var sqlDb = new FakeDb().On("GROUP BY m.ship", Group1D(missions.Where(m => m.MissionId == "a"), Ship));
         var sqlResult = new ReportExecutor(sqlDb, new NoWeights()).ExecuteReport(def);
         var memResult = new InMemoryReportRunner(new NoWeights()).Run(def, missions, drops, Array.Empty<FuelRowData>());
@@ -250,9 +241,7 @@ public class InMemoryReportRunnerTests {
     [Fact]
     public void Parity_TimeSeriesByMonth() {
 
-
-        var missions = new List<MissionRowData>
-        {
+        var missions = new List<MissionRowData> {
             M("a", ship: 9, duration: 0, start: 1_700_000_000, ret: 1_700_003_600),
             M("b", ship: 9, duration: 0, start: 1_700_500_000, ret: 1_700_503_600),
             M("c", ship: 3, duration: 0, start: 1_704_067_200, ret: 1_704_070_800),
@@ -283,9 +272,7 @@ public class InMemoryReportRunnerTests {
     [Fact]
     public void Parity_NormalizedAggregate_Launches() {
 
-
-        var missions = new List<MissionRowData>
-        {
+        var missions = new List<MissionRowData> {
             M("a", ship: 9, duration: 0, start: 1, ret: 2),
             M("b", ship: 9, duration: 1, start: 1, ret: 2),
             M("c", ship: 3, duration: 0, start: 1, ret: 2),
@@ -297,7 +284,6 @@ public class InMemoryReportRunnerTests {
             AccountId = Eid,
             NormalizeBy = "launches",
         };
-
 
         var grouped = Group1D(missions, Ship);
         var sqlDb = new FakeDb()
@@ -314,13 +300,11 @@ public class InMemoryReportRunnerTests {
     [Fact]
     public void Parity_FamilyWeightedAggregate() {
 
-        var missions = new List<MissionRowData>
-        {
+        var missions = new List<MissionRowData> {
             M("a", ship: 9, duration: 0, start: 1, ret: 2, cap: 4, nominal: 8),
             M("b", ship: 3, duration: 0, start: 1, ret: 2, cap: 4, nominal: 4),
         };
-        var drops = new List<ArtifactDropRowData>
-        {
+        var drops = new List<ArtifactDropRowData> {
             D("a", artifactId: 12, rarity: 3, tier: 0),
             D("b", artifactId: 13, rarity: 1, tier: 0),
 
@@ -335,9 +319,7 @@ public class InMemoryReportRunnerTests {
             AccountId = Eid,
         };
 
-
-        var sqlDb = new FakeDb().On("cap_weight", new object?[][]
-        {
+        var sqlDb = new FakeDb().On("cap_weight", new object?[][] {
             ["9", 12L, 0L, 2.0],
             ["3", 13L, 0L, 1.0],
         });
@@ -352,14 +334,11 @@ public class InMemoryReportRunnerTests {
     [Fact]
     public void Parity_FamilyWeightedPivot_MissionCountCountsMissionsNotDrops() {
 
-
-        var missions = new List<MissionRowData>
-        {
+        var missions = new List<MissionRowData> {
             M("a", ship: 9, duration: 0, start: 1, ret: 3, cap: 4, nominal: 8),
             M("b", ship: 3, duration: 1, start: 1, ret: 3, cap: 4, nominal: 4),
         };
-        var drops = new List<ArtifactDropRowData>
-        {
+        var drops = new List<ArtifactDropRowData> {
             D("a", artifactId: 12, rarity: 3, tier: 0, dropIndex: 0),
             D("a", artifactId: 13, rarity: 1, tier: 0, dropIndex: 1),
             D("b", artifactId: 12, rarity: 0, tier: 0, dropIndex: 0),
@@ -374,15 +353,13 @@ public class InMemoryReportRunnerTests {
             AccountId = Eid,
         };
 
-        var capRows = new object?[][]
-        {
+        var capRows = new object?[][] {
             ["9", "0", 12L, 0L, 2.0],
             ["9", "0", 13L, 0L, 2.0],
             ["3", "1", 12L, 0L, 1.0],
         };
 
-        var missionCountRows = new object?[][]
-        {
+        var missionCountRows = new object?[][] {
             ["3", "1", 1L],
             ["9", "0", 1L],
         };

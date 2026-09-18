@@ -1,5 +1,5 @@
 <h1 class="legal-title">Privacy &amp; Cookies</h1>
-<p class="legal-updated">Last updated 26 August 2026</p>
+<p class="legal-updated">Last updated 18 September 2026</p>
 
 <div class="legal-disclaimer">
     EggLedger is an independent, fan-made tool and is not affiliated with, endorsed by, or
@@ -10,8 +10,9 @@
 <section class="legal-section">
     <h2>The short version</h2>
     <p>
-        EggLedger reads your mission history from the Egg, Inc. API. There is no advertising, no
-        third-party tracking, and no analytics. What is stored, and where, depends on which build
+        EggLedger reads your mission history from the Egg, Inc. API. There is no advertising and
+        no third-party tracking. The hosted web app counts visits anonymously, as described below.
+        What is stored, and where, depends on which build
         you use. The desktop app keeps your mission data on your own machine. The hosted web app
         decodes it on the server and keeps it under your account until it is deleted. Payment data
         is never handled here.
@@ -78,6 +79,13 @@
         IP address, path, and user agent, so that abuse can be blocked. Those rows carry no account
         identifier and are not joined to your data.
     </p>
+    <p>
+        The hosted web app also counts page visits. Counting is anonymous and cookieless: a per-day
+        hash of your address and browser is kept in memory only and discarded at midnight, and only
+        daily totals per page are stored. No visitor can be identified or followed across days.
+        Browsers sending Do Not Track or Global Privacy Control are not counted, and declining
+        analytics in the cookie banner stops counting too.
+    </p>
 </section>
 
 <section class="legal-section">
@@ -100,8 +108,9 @@
 <section class="legal-section">
     <h2>Cookies</h2>
     <p>
-        The web app uses only strictly-necessary cookies. There are no advertising or tracking
-        cookies, so there is no consent banner to click through. The cookies used are:
+        The web app uses strictly-necessary cookies, plus one consent cookie that records your
+        choice. A small banner asks once; the choice applies across every EggIdentity-backed site
+        and is remembered on your account when you are signed in. The cookies used are:
     </p>
     <ul>
         <li>
@@ -111,6 +120,11 @@
         <li>
             <strong>Antiforgery token cookie.</strong> A security cookie that protects form
             submissions against cross-site request forgery. It does not identify you.
+        </li>
+        <li>
+            <strong>Consent cookie.</strong> Records whether you allowed optional functional and
+            analytics cookies. Set on the shared parent domain so you decide once for every site.
+            Kept for one year.
         </li>
     </ul>
     <p>

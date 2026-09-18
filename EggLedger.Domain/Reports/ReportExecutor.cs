@@ -76,10 +76,7 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
 
         if (def.Mode == "time_series" && rawLabels.Count > 0) {
             (rawLabels, values) = TimeFill.FillTimeSeriesGaps(def.TimeBucket, def.CustomBucketUnit, rawLabels, values);
-            labels = [with(rawLabels.Count)];
-            foreach (var rl in rawLabels) {
-                labels.Add(Labels.FormatLabel(def.GroupBy, rl));
-            }
+            labels = [.. rawLabels.Select(rl => Labels.FormatLabel(def.GroupBy, rl))];
         }
 
         if (def.NormalizeBy != "" && def.NormalizeBy != ReportDefaults.NormalizeNone && def.Mode == "aggregate") {
@@ -89,10 +86,7 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
             }
             var denomMap = Denom1D(groupCol, def.NormalizeBy, baseWhere, baseArgs);
 
-            var floatValues = new List<double>(values.Count);
-            for (var i = 0; i < values.Count; i++) {
-                floatValues.Add(0);
-            }
+            var floatValues = Enumerable.Repeat(0d, values.Count).ToList();
             for (var i = 0; i < rawLabels.Count; i++) {
                 denomMap.TryGetValue(rawLabels[i], out var denom);
                 if (denom > 0) {
@@ -276,7 +270,6 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
         var rowLabels = f.RowLabels;
         var colLabels = f.ColLabels;
 
-
         var mcMap = BuildMissionCountMap(def, baseWhere, baseArgs);
 
         var missionCountMatrix = BuildMissionCountMatrix(mcMap, rowLabels, colLabels);
@@ -324,13 +317,7 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
     }
 
     private static List<long> BuildMissionCountMatrix(Dictionary<string, Dictionary<string, double>> mcMap, List<string> rowLabels, List<string> colLabels) {
-        var missionCountMatrix = new List<long>(rowLabels.Count * colLabels.Count);
-        for (var r = 0; r < rowLabels.Count; r++) {
-            for (var c = 0; c < colLabels.Count; c++) {
-                missionCountMatrix.Add((long)Denom(mcMap, rowLabels[r], colLabels[c]));
-            }
-        }
-        return missionCountMatrix;
+        return [.. rowLabels.SelectMany(r => colLabels.Select(c => (long)Denom(mcMap, r, c)))];
     }
 
 
@@ -394,10 +381,7 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
             accum[rawBucket] = cur + (capWeight * w);
         }
 
-        var floatValues = new List<double>(buckets.Count);
-        foreach (var b in buckets) {
-            floatValues.Add(accum[b]);
-        }
+        List<double> floatValues = [.. buckets.Select(b => accum[b])];
 
         (buckets, floatValues) = TimeFill.FillTimeSeriesGapsFloat(def.TimeBucket, def.CustomBucketUnit, buckets, floatValues);
 
@@ -462,11 +446,9 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
             "SELECT CAST({0} AS TEXT), COUNT(*) FROM mission m WHERE {1} GROUP BY {0}",
             groupCol, baseWhere);
         var rows = _db.Query(denomQuery, baseArgs);
-        var denomMap = new Dictionary<string, double>(StringComparer.Ordinal);
-        foreach (var row in rows) {
-            denomMap[AsString(row[0])] = AsDouble(row[1]);
-        }
-        return denomMap;
+        return rows
+            .GroupBy(row => AsString(row[0]), StringComparer.Ordinal)
+            .ToDictionary(g => g.Key, g => AsDouble(g.Last()[1]), StringComparer.Ordinal);
     }
 
     private Dictionary<string, Dictionary<string, double>> Denom2D(ReportDefinition def, string col1, string col2, string mode, string baseWhere, IReadOnlyList<object?> baseArgs) {

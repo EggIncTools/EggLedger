@@ -147,13 +147,10 @@
     };
 
     private async Task ViewSelectedMultiAsync() {
-        var ids = new List<string>();
-        foreach (var m in State.TabFiltered ?? Array.Empty<DatabaseMission>()) {
-            if (State.MultiSelectedIds.Contains(m.MissiondId)) {
-                ids.Add(m.MissiondId);
-            }
-        }
-
+        var ids = (State.TabFiltered ?? Array.Empty<DatabaseMission>())
+            .Select(m => m.MissiondId)
+            .Where(State.MultiSelectedIds.Contains)
+            .ToList();
         await ViewRowAsync(ids);
     }
 

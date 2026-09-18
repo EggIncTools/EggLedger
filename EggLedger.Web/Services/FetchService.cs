@@ -57,7 +57,6 @@ public sealed class FetchService {
             return AppState.Interrupted;
         }
 
-
         await StashInFlightMissionsAsync(playerId, fc).ConfigureAwait(false);
 
         var completed = fc.GetCompletedMissions();
@@ -119,7 +118,6 @@ public sealed class FetchService {
                 return AppState.Failed;
             }
         }
-
 
         Report(AppState.ExportingData);
 

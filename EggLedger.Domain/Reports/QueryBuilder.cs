@@ -122,8 +122,6 @@ public static class QueryBuilder {
                 case "<":
                 case ">=":
                 case "<=":
-
-
                     if (!IsInt(c.Val)) {
                         return ("", []);
                     }
@@ -134,7 +132,6 @@ public static class QueryBuilder {
 
         if (ArtifactFieldToColumn.TryGetValue(c.TopLevel, out var acol)) {
 
-
             switch (c.Op) {
                 case "=":
                 case "!=":
@@ -144,7 +141,6 @@ public static class QueryBuilder {
                 case "<=":
                     switch (c.TopLevel) {
                         case "artifact_spec_type":
-
                             break;
                         case "artifact_quality":
                             if (!IsFloat(c.Val)) {

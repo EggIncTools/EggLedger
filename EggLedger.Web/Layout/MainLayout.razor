@@ -27,6 +27,10 @@
     @deployToasts.Render()
 }
 
+@if (Services.GetService<ICookieBannerSlot>() is { } cookieBanner) {
+    @cookieBanner.Render()
+}
+
 @code {
 
     [CascadingParameter] private Task<AuthenticationState>? AuthStateTask { get; set; }
@@ -51,8 +55,7 @@
     private static async Task PreloadAsync(Func<Task> ensureInitialized) {
         try {
             await ensureInitialized();
-        }
-        catch {
+        } catch {
         }
     }
 

@@ -11,10 +11,8 @@ public sealed class DownloadServiceTests {
         return (new DownloadService(runtime), module);
     }
 
-    private static IReadOnlyList<Mission> CannedMissions() => new[]
-    {
-        new Mission
-        {
+    private static IReadOnlyList<Mission> CannedMissions() => new[] {
+        new Mission {
             Id = "m1",
             TypeName = "Standard",
             ShipName = "Chicken One",

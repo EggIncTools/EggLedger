@@ -61,12 +61,10 @@ public sealed class CloudSyncServiceTests {
             var path = request.RequestUri!.AbsolutePath;
             var method = request.Method;
 
-
             if (method == HttpMethod.Get && path == "/api/v1/auth/pair/begin") {
                 PendingState = "state-xyz";
                 return Json200(new AuthInitResponse("https://discord/oauth?state=state-xyz", PendingState));
             }
-
 
             if (method == HttpMethod.Get && path == "/api/v1/auth/poll") {
                 if (PollPayload is null) {
@@ -75,11 +73,9 @@ public sealed class CloudSyncServiceTests {
                 return Json200(PollPayload);
             }
 
-
             if (method == HttpMethod.Delete && path == "/api/v1/auth/session") {
                 return new HttpResponseMessage(HttpStatusCode.NoContent);
             }
-
 
             if (method == HttpMethod.Post && path == "/api/v1/auth/session-from-login") {
                 if (RejectLogin) {
@@ -87,7 +83,6 @@ public sealed class CloudSyncServiceTests {
                 }
                 return Json200(LoginPayload ?? new PollResponse(Token, "user#1", "https://cdn/a.png", HexKey));
             }
-
 
             var auth = request.Headers.Authorization;
             if (RejectAuth || auth is null || auth.Scheme != "Bearer" || auth.Parameter != ExpectedBearer) {

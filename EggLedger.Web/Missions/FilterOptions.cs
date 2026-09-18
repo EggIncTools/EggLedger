@@ -7,32 +7,24 @@ namespace EggLedger.Web.Missions;
 
 public static class FilterOptions {
     public static List<FilterOption> GetShipFilterOptions() {
-        var result = new List<FilterOption>();
-        foreach (var s in Enum.GetValues<MissionInfo.Spaceship>().OrderBy(s => (int)s)) {
-            result.Add(new FilterOption { Text = s.Name(), Value = ((int)s).ToString(CultureInfo.InvariantCulture) });
-        }
-        return result;
+        return [.. Enum.GetValues<MissionInfo.Spaceship>()
+            .OrderBy(s => (int)s)
+            .Select(s => new FilterOption { Text = s.Name(), Value = ((int)s).ToString(CultureInfo.InvariantCulture) })];
     }
 
     public static List<FilterOption> GetDurationFilterOptions() {
-        var result = new List<FilterOption>();
-        foreach (var d in Enum.GetValues<MissionInfo.DurationType>().OrderBy(d => (int)d)) {
-            int i = (int)d;
-            result.Add(new FilterOption {
+        return [.. Enum.GetValues<MissionInfo.DurationType>()
+            .OrderBy(d => (int)d)
+            .Select(d => new FilterOption {
                 Text = d.Display(),
-                Value = i.ToString(CultureInfo.InvariantCulture),
-                StyleClass = "text-duration-" + i,
-            });
-        }
-        return result;
+                Value = ((int)d).ToString(CultureInfo.InvariantCulture),
+                StyleClass = "text-duration-" + (int)d,
+            })];
     }
 
     public static List<FilterOption> GetLevelFilterOptions() {
-        var result = new List<FilterOption>(9);
-        for (int i = 0; i < 9; i++) {
-            result.Add(new FilterOption { Text = i + "★", Value = i.ToString(CultureInfo.InvariantCulture) });
-        }
-        return result;
+        return [.. Enumerable.Range(0, 9)
+            .Select(i => new FilterOption { Text = i + "★", Value = i.ToString(CultureInfo.InvariantCulture) })];
     }
 
     public static List<FilterOption> GetMissionTypeFilterOptions() =>
@@ -55,15 +47,11 @@ public static class FilterOptions {
     ];
 
     public static List<FilterOption> GetTargetFilterOptions(IEnumerable<PossibleTarget> possibleTargets) {
-        var result = new List<FilterOption>();
-        foreach (var t in possibleTargets) {
-            result.Add(new FilterOption {
-                Text = t.DisplayName,
-                Value = t.Id.ToString(CultureInfo.InvariantCulture),
-                ImagePath = t.ImageString,
-            });
-        }
-        return result;
+        return [.. possibleTargets.Select(t => new FilterOption {
+            Text = t.DisplayName,
+            Value = t.Id.ToString(CultureInfo.InvariantCulture),
+            ImagePath = t.ImageString,
+        })];
     }
 
     public static List<FilterOption> GetArtifactRarityFilterOptions() =>
@@ -93,18 +81,11 @@ public static class FilterOptions {
     };
 
     public static List<FilterOption> GetArtifactTierFilterOptions(IEnumerable<PossibleArtifact> artifactConfigs) {
-        var levels = new SortedSet<int>();
-        foreach (var a in artifactConfigs) {
-            levels.Add(a.Level);
-        }
-        var result = new List<FilterOption>();
-        foreach (var level in levels) {
-            result.Add(new FilterOption {
-                Text = "Tier " + (level + 1),
-                Value = level.ToString(CultureInfo.InvariantCulture),
-            });
-        }
-        return result;
+        var levels = new SortedSet<int>(artifactConfigs.Select(a => a.Level));
+        return [.. levels.Select(level => new FilterOption {
+            Text = "Tier " + (level + 1),
+            Value = level.ToString(CultureInfo.InvariantCulture),
+        })];
     }
 
     public static List<FilterOption> GetArtifactNameFilterOptions(IReadOnlyList<PossibleArtifact> artifactConfigs) {
@@ -114,14 +95,11 @@ public static class FilterOptions {
                 representatives[a.Name] = a;
             }
         }
-        var result = new List<FilterOption>();
-        foreach (var a in representatives.Values) {
-            result.Add(new FilterOption {
-                Text = a.DisplayName,
-                Value = a.Name.ToString(CultureInfo.InvariantCulture),
-                ImagePath = DropPath(a),
-            });
-        }
+        List<FilterOption> result = [.. representatives.Values.Select(a => new FilterOption {
+            Text = a.DisplayName,
+            Value = a.Name.ToString(CultureInfo.InvariantCulture),
+            ImagePath = DropPath(a),
+        })];
 
         result.Sort((x, y) => string.Compare(x.Text, y.Text, StringComparison.OrdinalIgnoreCase));
         return result;
@@ -161,26 +139,18 @@ public static class FilterOptions {
         IReadOnlyList<PossibleArtifact> artifactConfigs,
         double maxQuality,
         bool advanced) {
-        var artifactList = new List<PossibleArtifact>();
-        foreach (var a in artifactConfigs) {
-            if (a.BaseQuality <= maxQuality) {
-                artifactList.Add(a);
-            }
-        }
+        List<PossibleArtifact> artifactList = [.. artifactConfigs.Where(a => a.BaseQuality <= maxQuality)];
 
-        var result = new List<FilterOption>
-        {
+        var result = new List<FilterOption> {
             new() { Text = "Any Rare", Value = "%_%_1_%", Rarity = 1, StyleClass = "text-rare", ImagePath = "icon_help.webp" },
             new() { Text = "Any Epic", Value = "%_%_2_%", Rarity = 2, StyleClass = "text-epic", ImagePath = "icon_help.webp" },
             new() { Text = "Any Legendary", Value = "%_%_3_%", Rarity = 3, StyleClass = "text-legendary", ImagePath = "icon_help.webp" },
         };
 
-        var stoneProtoNames = new HashSet<string>();
-        foreach (var a in artifactList) {
-            if (!a.ProtoName.Contains("_FRAGMENT", StringComparison.Ordinal)) {
-                stoneProtoNames.Add(a.ProtoName);
-            }
-        }
+        var stoneProtoNames = artifactList
+            .Where(a => !a.ProtoName.Contains("_FRAGMENT", StringComparison.Ordinal))
+            .Select(a => a.ProtoName)
+            .ToHashSet();
         var canonicalFamily = new Dictionary<int, int>();
         foreach (var a in artifactList) {
             if (a.ProtoName.Contains("_FRAGMENT", StringComparison.Ordinal)) {
@@ -195,7 +165,6 @@ public static class FilterOptions {
                 }
             }
         }
-
 
         var byFamily = new Dictionary<int, Dictionary<int, List<PossibleArtifact>>>();
         var familyOrder = new List<int>();

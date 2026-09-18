@@ -22,17 +22,16 @@
         @if (FlatMissions is not null) {
             <div class="mt-1rem mission-grid mission-items-full">
                 @foreach (var mission in FlatMissions) {
-                    var m = mission;
-                    <MissionCard Mission="m"
+                    <MissionCard Mission="mission"
                                  Config="Config"
-                                 IsSelected="@SelectedIds.Contains(m.MissiondId)"
-                                 IsBeingViewed="@(MissionBeingViewed == m.MissiondId)"
+                                 IsSelected="@SelectedIds.Contains(mission.MissiondId)"
+                                 IsBeingViewed="@(MissionBeingViewed == mission.MissiondId)"
                                  ViewByDate="@false"
                                  ViewMissionTimes="ViewMissionTimes"
                                  MultiViewMode="MultiViewMode"
                                  RecolorDC="RecolorDC"
                                  RecolorBC="RecolorBC"
-                                 DropCount="@GetDropCount(m.MissiondId)"
+                                 DropCount="@GetDropCount(mission.MissiondId)"
                                  OnView="OnView"
                                  OnToggleSelected="ToggleSelected"/>
                 }
@@ -61,17 +60,16 @@
                                     @if (month.Enabled && FlattenDays) {
                                         <div class="mt-1rem ml-2rem mission-grid mission-items-full">
                                             @foreach (var mission in Grouping.Missions[yearIndex][monthIndex].SelectMany(d => d)) {
-                                                var m = mission;
-                                                <MissionCard Mission="m"
+                                                <MissionCard Mission="mission"
                                                              Config="Config"
-                                                             IsSelected="@SelectedIds.Contains(m.MissiondId)"
-                                                             IsBeingViewed="@(MissionBeingViewed == m.MissiondId)"
+                                                             IsSelected="@SelectedIds.Contains(mission.MissiondId)"
+                                                             IsBeingViewed="@(MissionBeingViewed == mission.MissiondId)"
                                                              ViewByDate="ViewByDate"
                                                              ViewMissionTimes="ViewMissionTimes"
                                                              MultiViewMode="MultiViewMode"
                                                              RecolorDC="RecolorDC"
                                                              RecolorBC="RecolorBC"
-                                                             DropCount="@GetDropCount(m.MissiondId)"
+                                                             DropCount="@GetDropCount(mission.MissiondId)"
                                                              OnView="OnView"
                                                              OnToggleSelected="ToggleSelected"/>
                                             }
@@ -100,17 +98,16 @@
                                                         <div class="mission-grid mission-items-full flex-1">
                                                             @if (DayVisible(yearIndex, monthIndex, dayIndex)) {
                                                                 @foreach (var mission in Grouping.Missions[yearIndex][monthIndex][dayIndex]) {
-                                                                    var m = mission;
-                                                                    <MissionCard Mission="m"
+                                                                    <MissionCard Mission="mission"
                                                                                  Config="Config"
-                                                                                 IsSelected="@SelectedIds.Contains(m.MissiondId)"
-                                                                                 IsBeingViewed="@(MissionBeingViewed == m.MissiondId)"
+                                                                                 IsSelected="@SelectedIds.Contains(mission.MissiondId)"
+                                                                                 IsBeingViewed="@(MissionBeingViewed == mission.MissiondId)"
                                                                                  ViewByDate="ViewByDate"
                                                                                  ViewMissionTimes="ViewMissionTimes"
                                                                                  MultiViewMode="MultiViewMode"
                                                                                  RecolorDC="RecolorDC"
                                                                                  RecolorBC="RecolorBC"
-                                                                                 DropCount="@GetDropCount(m.MissiondId)"
+                                                                                 DropCount="@GetDropCount(mission.MissiondId)"
                                                                                  OnView="OnView"
                                                                                  OnToggleSelected="ToggleSelected"/>
                                                                 }
@@ -168,11 +165,7 @@
     }
 
     private async Task ViewRow(int yi, int mi, int di) {
-        var ids = new List<string>();
-        foreach (var m in Grouping!.Missions[yi][mi][di]) {
-            ids.Add(m.MissiondId);
-        }
-
+        var ids = Grouping!.Missions[yi][mi][di].Select(m => m.MissiondId).ToList();
         await OnViewRow.InvokeAsync(ids);
     }
 
@@ -228,7 +221,6 @@
     private bool DayVisible(int yi, int mi, int di) {
         return ViewByDate ? Grouping!.Arrays.Day[yi][mi][di].Enabled : Grouping!.Arrays.Month[yi][mi].Enabled;
     }
-
 
     private bool AllExpanded {
         get {
@@ -304,5 +296,4 @@
     private async Task NotifyAsync() {
         await OnGroupingChanged.InvokeAsync();
     }
-
 }

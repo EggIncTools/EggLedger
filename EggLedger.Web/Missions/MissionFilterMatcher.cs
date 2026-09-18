@@ -31,11 +31,9 @@ public sealed class MissionFilterMatcher {
         foreach (var pm in durationConfigs) {
             int ship = Convert.ToInt32(pm.Ship, CultureInfo.InvariantCulture);
             _shipConfigs[ship] = pm;
-            var durs = new Dictionary<int, DurationConfig>();
-            foreach (var d in pm.Durations) {
-                durs[Convert.ToInt32(d.DurationType, CultureInfo.InvariantCulture)] = d;
-            }
-            _durByShip[ship] = durs;
+            _durByShip[ship] = pm.Durations
+                .GroupBy(d => Convert.ToInt32(d.DurationType, CultureInfo.InvariantCulture))
+                .ToDictionary(g => g.Key, g => g.Last());
         }
 
         _evaluator = new FilterEvaluator<DatabaseMission, FilterField>()

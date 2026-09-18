@@ -20,7 +20,6 @@ public static class BlobCrypto {
             gcm.Encrypt(nonce, plaintext, ciphertext, tag);
         }
 
-
         var sealed_ = new byte[NonceSize + ciphertext.Length + TagSize];
         Buffer.BlockCopy(nonce, 0, sealed_, 0, NonceSize);
         Buffer.BlockCopy(ciphertext, 0, sealed_, NonceSize, ciphertext.Length);

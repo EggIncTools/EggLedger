@@ -213,7 +213,6 @@
         _isLoading = false;
         StateHasChanged();
 
-
         foreach (var data in _multi) {
             var mission = FindMission(data.MissionInfo.MissiondId);
             if (mission is not null) {

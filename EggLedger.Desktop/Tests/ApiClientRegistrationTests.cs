@@ -11,7 +11,6 @@ public class ApiClientRegistrationTests {
     public void DesktopApiClient_CallsAuxbrainDirect_NotEggApiProxy() {
         var services = new ServiceCollection();
 
-
         services.AddEggLedgerWeb(new Uri("https://eggledger.egginc.tools/"));
         var missionDb = SqliteDatabase.OpenMissionDb(":memory:");
         var reportDb = SqliteDatabase.OpenReportDb(":memory:");

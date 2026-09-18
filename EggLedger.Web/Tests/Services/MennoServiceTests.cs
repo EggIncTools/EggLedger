@@ -69,7 +69,6 @@ public sealed class MennoServiceTests {
     [Fact]
     public void Decode_MissingRequiredNestedField_ThrowsLoudly() {
 
-
         const string drifted = """
         [
           {
@@ -145,13 +144,11 @@ public sealed class MennoServiceTests {
         Assert.Equal(new[] { "9", "10" }, result.RawRowLabels);
         Assert.Equal(new[] { "0", "1" }, result.RawColLabels);
 
-
         var expected = new[] { 70.0, 62.0, 60.0, 78.0 };
         Assert.Equal(expected.Length, result.MatrixValues.Count);
         for (int i = 0; i < expected.Length; i++) {
             Assert.Equal(expected[i], result.MatrixValues[i], 9);
         }
-
 
         Assert.NotNull(result.AirtimeMatrixValues);
         var expectedAir = new[] { 70.0 / 24, 62.0 / 48, 60.0 / 48, 78.0 / 72 };
@@ -171,9 +168,7 @@ public sealed class MennoServiceTests {
 
         Assert.NotNull(result);
 
-
-        var expected = new[]
-        {
+        var expected = new[] {
             2800.0 / 3420 * 100, 620.0 / 3420 * 100,
             1200.0 / 1980 * 100, 780.0 / 1980 * 100,
         };

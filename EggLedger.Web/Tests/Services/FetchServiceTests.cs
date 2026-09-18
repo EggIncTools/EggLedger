@@ -340,7 +340,6 @@ public sealed class FetchServiceTests {
     public async Task FetchPlayerData_MissionFails_ReportsFailedMissionWithReason() {
         var db = new FakeIndexedDb();
 
-
         var handler = new RoutingHandler(
             FirstContactBody(new[] { "bad" }),
             id => id == "bad" ? null : CompleteMissionBody(id));

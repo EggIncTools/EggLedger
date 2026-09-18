@@ -36,8 +36,7 @@ public static class MissionConfigData {
     }
 
     public static List<PossibleTarget> Targets() {
-        var result = new List<PossibleTarget>
-        {
+        var result = new List<PossibleTarget> {
             new() { DisplayName = "None (Pre 1.27)", Id = -1, ImageString = "none.png" },
         };
         foreach (var target in LedgerData.LedgerData.Config.ArtifactTargets) {
@@ -53,23 +52,16 @@ public static class MissionConfigData {
 
     public static List<PossibleArtifact> Artifacts() {
         double maxQuality = MaxQuality();
-        var result = new List<PossibleArtifact>();
-        foreach (var artifact in EiafxConfig.Config.artifact_parameters) {
-            var spec = artifact.Spec;
-            if (spec is null) {
-                continue;
-            }
-            if (maxQuality >= artifact.BaseQuality) {
-                result.Add(new PossibleArtifact {
-                    Name = (int)spec.name,
-                    ProtoName = EnumNames.ProtoName(spec.name),
-                    DisplayName = spec.CasedSmallName(),
-                    Level = (int)spec.level,
-                    Rarity = (int)spec.rarity,
-                    BaseQuality = artifact.BaseQuality,
-                });
-            }
-        }
-        return result;
+        return [.. EiafxConfig.Config.artifact_parameters
+            .Select(artifact => (artifact.Spec, artifact.BaseQuality))
+            .Where(p => p.Spec is not null && maxQuality >= p.BaseQuality)
+            .Select(p => new PossibleArtifact {
+                Name = (int)p.Spec.name,
+                ProtoName = EnumNames.ProtoName(p.Spec.name),
+                DisplayName = p.Spec.CasedSmallName(),
+                Level = (int)p.Spec.level,
+                Rarity = (int)p.Spec.rarity,
+                BaseQuality = p.BaseQuality,
+            })];
     }
 }

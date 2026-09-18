@@ -44,7 +44,6 @@ public sealed class DesktopCommandBuilderTests {
         var (exe, args) = DesktopCommandBuilder.BuildOpenInFolderCommand(OSPlatform.Linux, "/home/me/sub/file.json");
         Assert.Equal("xdg-open", exe);
 
-
         Assert.Single(args);
         Assert.EndsWith("file.json", "/home/me/sub/file.json");
         Assert.DoesNotContain("file.json", args[0]);

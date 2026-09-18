@@ -8,8 +8,7 @@ public sealed class DropSorterTests {
 
     [Fact]
     public void GroupedSpecType_CombinesIdenticalAndCounts() {
-        var input = new[]
-        {
+        var input = new[] {
             D(1, "A", 0, 0),
             D(1, "A", 0, 0),
             D(2, "B", 1, 0),
@@ -22,8 +21,7 @@ public sealed class DropSorterTests {
 
     [Fact]
     public void GroupedSpecType_KeyIncludesSpecType() {
-        var input = new[]
-        {
+        var input = new[] {
             D(1, "A", 0, 0, spec: "Artifact"),
             D(1, "A", 0, 0, spec: "Stone"),
         };
@@ -34,8 +32,7 @@ public sealed class DropSorterTests {
     [Fact]
     public void SortGroupAlreadyCombed_OrdersLevelAscRarityAsc() {
 
-        var input = new[]
-        {
+        var input = new[] {
             D(1, "A", 2, 0),
             D(2, "B", 0, 3),
             D(3, "C", 0, 0),
@@ -51,8 +48,7 @@ public sealed class DropSorterTests {
 
     [Fact]
     public void SortGroupAlreadyCombed_QualityDescendingWithinTie() {
-        var input = new[]
-        {
+        var input = new[] {
             D(1, "A", 0, 0, quality: 1),
             D(1, "A", 0, 0, quality: 5),
         };
@@ -63,8 +59,7 @@ public sealed class DropSorterTests {
 
     [Fact]
     public void InventoryVisualizerSort_RarityDescIvDescLevelDesc() {
-        var input = new[]
-        {
+        var input = new[] {
             D(1, "A", 0, 1, iv: 1),
             D(2, "B", 3, 3, iv: 5),
             D(3, "C", 0, 1, iv: 9),

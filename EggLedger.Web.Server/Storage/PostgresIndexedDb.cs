@@ -154,7 +154,6 @@ public sealed class PostgresIndexedDb : IIndexedDb {
             conflict = "";
         } else {
 
-
             var keyCols = new List<string> { "user_id" };
             keyCols.AddRange(meta.KeyColumns);
             var updates = cols

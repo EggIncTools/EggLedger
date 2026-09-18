@@ -41,7 +41,6 @@ public sealed partial class SemVersion : IComparable<SemVersion>, IEquatable<Sem
             return false;
         }
 
-
         var segmentsStr = match.Groups[1].Value.Split('.');
         var segments = new long[segmentsStr.Length];
         for (var i = 0; i < segmentsStr.Length; i++) {
@@ -51,19 +50,16 @@ public sealed partial class SemVersion : IComparable<SemVersion>, IEquatable<Sem
             segments[i] = val;
         }
 
-
         if (segments.Length < 3) {
             var padded = new long[3];
             Array.Copy(segments, padded, segments.Length);
             segments = padded;
         }
 
-
         var pre = match.Groups[7].Value;
         if (pre.Length == 0) {
             pre = match.Groups[4].Value;
         }
-
 
         var metadata = match.Groups[10].Value;
 
@@ -95,7 +91,6 @@ public sealed partial class SemVersion : IComparable<SemVersion>, IEquatable<Sem
 
     public int CompareTo(SemVersion? other) {
         ArgumentNullException.ThrowIfNull(other);
-
 
         if (Canonical() == other.Canonical()) {
             return 0;

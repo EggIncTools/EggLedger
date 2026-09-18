@@ -65,11 +65,9 @@
             var now = DateTimeOffset.UtcNow;
             Model.LastMennoRefreshAt = now;
             await OnSetting.InvokeAsync((SettingsModel.KeyLastMennoRefresh, now.ToString("O")));
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             _error = e.Message;
-        }
-        finally {
+        } finally {
             _refreshing = false;
         }
     }

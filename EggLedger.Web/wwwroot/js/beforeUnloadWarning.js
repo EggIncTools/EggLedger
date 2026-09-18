@@ -1,5 +1,3 @@
-
-
 (function () {
   if (window.__beforeUnloadWarningInit) return;
   window.__beforeUnloadWarningInit = true;

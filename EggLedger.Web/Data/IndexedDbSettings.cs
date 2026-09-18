@@ -10,10 +10,7 @@ public sealed class IndexedDbSettings(IIndexedDb db) {
         }
 
         var rows = await _db.GetAllAsync<SettingRow>(IndexedDbStores.Settings);
-        var result = new Dictionary<string, string>(rows.Length);
-        foreach (var row in rows) {
-            result[row.Key] = row.Value;
-        }
+        var result = rows.ToDictionary(row => row.Key, row => row.Value);
         _cache = result;
         return [with(result)];
     }

@@ -1,7 +1,6 @@
 using EggIdentity.Auth;
 using EggIdentity.Contract;
 using EggIdentity.Metrics;
-using EggLedger.Web.Server.SubProd;
 using EggLedger.Web.Server.Sync.Auth;
 using EggLedger.Web.Server.Sync.Blobs;
 using EggLedger.Web.Server.Sync.Db;
@@ -31,7 +30,6 @@ public static class Api {
 
         app.UseEggIdentityRequestMetrics();
 
-
         app.MapGet("/api/v1/auth/pair/begin", auth.PairBegin);
         app.MapGet("/api/v1/auth/poll", c => auth.Poll(c, c.Request.Query["state"].ToString()));
         app.MapDelete("/api/v1/auth/session", auth.DeleteSession);
@@ -40,10 +38,9 @@ public static class Api {
         app.MapPost("/api/v1/auth/session-from-login", auth.SessionFromLogin);
 
         VerifyEndpoint.Map(app, build);
-        if (!app.Environment.IsStaging() || SubProdFence.Allows("MENNO", Environment.GetEnvironmentVariable)) {
+        if (!string.IsNullOrEmpty(cfg.MennoFunctionKey)) {
             app.MapPost("/api/v1/menno/submit", menno.Submit);
         }
-
 
         MapAuthed(app, ["PUT"], "/api/v1/blobs/{name}", store,
             c => blobs.Put(c, (string)c.Request.RouteValues["name"]!));
@@ -55,7 +52,6 @@ public static class Api {
             c => blobs.Delete(c, (string)c.Request.RouteValues["name"]!));
         MapAuthed(app, ["DELETE"], "/api/v1/user", store,
             c => blobs.DeleteUser(c));
-
 
         MapAuthed(app, ["GET"], "/api/v1/admin/me", store, admin.Me);
         MapAuthed(app, ["GET"], "/api/v1/admin/users", store, admin.Users);

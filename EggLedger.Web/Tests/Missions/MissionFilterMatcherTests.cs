@@ -156,13 +156,10 @@ public sealed class MissionFilterMatcherTests {
     }
 
 
-    private static IReadOnlyList<PossibleMission> DropConfigs() => new[]
-    {
-        new PossibleMission
-        {
+    private static IReadOnlyList<PossibleMission> DropConfigs() => new[] {
+        new PossibleMission {
             Ship = MissionInfo.Spaceship.ChickenOne,
-            Durations =
-            [
+            Durations = [
                 new() { DurationType = MissionInfo.DurationType.Short, MinQuality = 0, MaxQuality = 5, LevelQualityBump = 1 },
             ],
         },
@@ -259,8 +256,7 @@ public sealed class MissionFilterMatcherTests {
     public async Task MissionMatches_OrSiblingRescuesFailingAnd() {
         var m = Mission(ship: MissionInfo.Spaceship.ChickenOne, level: 3);
         var filters = new[] { C("level", "=", "4") };
-        var or = new IReadOnlyList<FilterCondition>?[]
-        {
+        var or = new IReadOnlyList<FilterCondition>?[] {
             new[] { C("level", "=", "3") },
         };
         Assert.True(await Matcher().MissionMatchesFilterAsync(m, filters, or));
@@ -270,8 +266,7 @@ public sealed class MissionFilterMatcherTests {
     public async Task MissionMatches_OrSiblingAllFail_StillFails() {
         var m = Mission(level: 3);
         var filters = new[] { C("level", "=", "4") };
-        var or = new IReadOnlyList<FilterCondition>?[]
-        {
+        var or = new IReadOnlyList<FilterCondition>?[] {
             new[] { C("level", "=", "5") },
         };
         Assert.False(await Matcher().MissionMatchesFilterAsync(m, filters, or));

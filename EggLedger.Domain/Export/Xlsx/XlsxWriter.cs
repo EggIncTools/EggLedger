@@ -140,8 +140,7 @@ public sealed class XlsxWriter : IDisposable {
         return sb.ToString();
     }
 
-    private static readonly (string Name, string Content)[] StaticEntries =
-    [
+    private static readonly (string Name, string Content)[] StaticEntries = [
         ("[Content_Types].xml",
             "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
             + "<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">"

@@ -42,8 +42,7 @@ public sealed class AppStateServiceTests {
         var fired = 0;
         sut.Changed += () => fired++;
 
-        var accounts = new List<KnownAccount>
-        {
+        var accounts = new List<KnownAccount> {
             new() { Id = "EI1", Nickname = "Alice" },
         };
         sut.KnownAccounts = accounts;

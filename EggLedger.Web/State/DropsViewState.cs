@@ -173,12 +173,9 @@ public sealed class DropsViewState(
                 return;
             }
 
-            var filteredDrops = new Dictionary<string, List<MissionDrop>>();
-            foreach (var kvp in _allDropsCache) {
-                if (matchedIds.Contains(kvp.Key)) {
-                    filteredDrops[kvp.Key] = kvp.Value;
-                }
-            }
+            var filteredDrops = _allDropsCache
+                .Where(kvp => matchedIds.Contains(kvp.Key))
+                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
             var data = LifetimeAggregator.Aggregate(filteredDrops);
             LifetimeSorter.Sort(data, SortMethod);

@@ -17,7 +17,6 @@ public static class WebServiceRegistration {
     public static IServiceCollection AddEggLedgerWeb(this IServiceCollection services, Uri httpBaseAddress) {
         services.AddScoped(_ => new HttpClient { BaseAddress = httpBaseAddress });
 
-
         services.AddScoped<IndexedDbSettings>();
         services.AddScoped<IndexedDbAccountStore>();
         services.AddScoped<IndexedDbReportStore>();
@@ -43,7 +42,6 @@ public static class WebServiceRegistration {
 
         services.AddSingleton<EggLedger.Web.Missions.MissionConfigProvider>();
 
-
         services.AddScoped(sp => new ApiClient(sp.GetRequiredService<HttpClient>(), apiPrefix: "/egg-api"));
 
         services.AddScoped<IApiPayloadDecoder>(sp => new LocalApiPayloadDecoder(sp.GetRequiredService<ApiClient>()));
@@ -51,7 +49,6 @@ public static class WebServiceRegistration {
         services.AddScoped<FetchService>();
         services.AddScoped<FetchOrchestrator>();
         services.AddScoped<AddAccountService>();
-
 
         services.AddScoped<DownloadService>();
         services.AddScoped<IDownloadService>(sp => sp.GetRequiredService<DownloadService>());
@@ -74,7 +71,6 @@ public static class WebServiceRegistration {
             Environment.GetEnvironmentVariable(GameEventsService.ApiKeyVariable),
             logger: sp.GetService<ILogger<EventIconCache>>()));
 
-
         services.AddScoped<EggIdentity.UI.OutsideClickInterop>();
         services.AddEggIdentityToasts();
 
@@ -86,7 +82,6 @@ public static class WebServiceRegistration {
         services.AddScoped<AdminState>();
         services.AddScoped<EggLedger.Web.Settings.CloudSessionStore>();
         services.AddScoped<EggLedger.Web.Settings.SettingsWriteCoordinator>();
-
 
         services.AddScoped<ActiveAccount>();
         services.AddScoped<ScreenshotSafetyState>();
@@ -102,11 +97,9 @@ public static class WebServiceRegistration {
         services.AddLedgerState();
         services.AddScoped<IPlatformCapabilities, BrowserPlatformCapabilities>();
 
-
         services.AddScoped<BrowserStorageManagement>();
         services.AddScoped<IStorageManagement>(sp => sp.GetRequiredService<BrowserStorageManagement>());
         services.AddScoped<IExportManagement>(sp => sp.GetRequiredService<BrowserStorageManagement>());
-
 
         services.AddScoped<IUpdateStatusProvider, NoOpUpdateStatusProvider>();
 

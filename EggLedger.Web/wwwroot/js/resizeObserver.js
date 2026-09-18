@@ -1,5 +1,3 @@
-
-
 export function observe(el, dotNetRef, methodName) {
   const ro = new ResizeObserver(entries => {
     for (const entry of entries) {

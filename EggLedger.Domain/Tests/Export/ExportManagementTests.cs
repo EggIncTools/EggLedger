@@ -50,8 +50,7 @@ public class ExportManagementTests {
         const string root = "root";
         var md = MissionsDir(root);
         var fs = new InMemoryExportFileSystem();
-        foreach (var f in new[]
-        {
+        foreach (var f in new[] {
             "EI123.20240310_000000.csv", "EI123.20240310_000000.xlsx",
             "EI123.20240311_000000.csv", "EI123.20240311_000000.xlsx",
             "EI123.20240312_000000.csv", "EI123.20240312_000000.xlsx",

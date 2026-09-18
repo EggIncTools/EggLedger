@@ -8,8 +8,7 @@ namespace EggLedger.Domain.Tests.Export;
 public class ExportTests {
     private static List<Mission> TestMissions() =>
     [
-        new Mission
-        {
+        new Mission {
             Id = "test-uuid-001",
             TypeName = "Standard",
             ShipName = "Chicken One",
@@ -24,8 +23,7 @@ public class ExportTests {
             TargetArtifact = ArtifactSpec.Name.Unknown,
             ArtifactNames = ["Book of Basan (T4)", "Lunar Totem (T1)"],
         },
-        new Mission
-        {
+        new Mission {
             Id = "test-uuid-002",
             TypeName = "Standard",
             ShipName = "Chicken Nine",
@@ -44,16 +42,8 @@ public class ExportTests {
 
     private static List<string[]> ParseCsv(byte[] bytes) {
 
-
         var text = Encoding.UTF8.GetString(bytes);
-        var records = new List<string[]>();
-        foreach (var line in text.Split("\r\n")) {
-            if (line.Length == 0) {
-                continue;
-            }
-            records.Add(SplitCsvLine(line));
-        }
-        return records;
+        return [.. text.Split("\r\n").Where(line => line.Length != 0).Select(SplitCsvLine)];
     }
 
     private static string[] SplitCsvLine(string line) {
@@ -105,8 +95,7 @@ public class ExportTests {
 
         var header = records[0];
         Assert.Equal(12, header.Length);
-        string[] wantHeaders =
-        [
+        string[] wantHeaders = [
             "ID", "Type", "Ship", "Duration Type", "Level",
             "Launched at", "Returned at", "Duration days", "Capacity", "Target",
             "Artifact 1", "Artifact 2",
@@ -135,10 +124,8 @@ public class ExportTests {
 
     [Fact]
     public void ExportMissionsToCsv_UnknownMissionType() {
-        var missions = new List<Mission>
-        {
-            new()
-            {
+        var missions = new List<Mission> {
+            new() {
                 Id = "test-unknown-type",
                 TypeName = Mission.MissionTypeName(-1),
                 ShipName = "Chicken One",
@@ -166,8 +153,7 @@ public class ExportTests {
         var sheetXml = ReadZipEntry(data, "xl/worksheets/sheet1.xml");
         Assert.NotEqual("", sheetXml);
 
-        string[] wantHeaders =
-        [
+        string[] wantHeaders = [
             "ID", "Type", "Ship", "Duration Type", "Level",
             "Launched at", "Returned at", "Duration days", "Capacity", "Target",
         ];
