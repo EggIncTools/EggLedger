@@ -3,7 +3,7 @@
   "isRoot": true,
   "tools": {
     "protobuf-net.protogen": {
-      "version": "3.4.21",
+      "version": "3.4.30",
       "commands": [
         "protogen"
       ],

@@ -98,7 +98,7 @@
                 @foreach (var entry in Fetch.Log) {
                     <div class="flex gap-1">
                         <span class="shrink-0 @(entry.IsError ? "text-red-700" : "text-green-700")">@FormatClock(entry.At)|</span>
-                        <span class="min-w-0 whitespace-pre-wrap break-all"><LogLine Text="@entry.Text" IsError="entry.IsError" Masked="ScreenshotSafety.Enabled"/></span>
+                        <span class="min-w-0 whitespace-pre-wrap wrap-break-word"><LogLine Text="@entry.Text" IsError="entry.IsError" Masked="ScreenshotSafety.Enabled"/></span>
                     </div>
                 }
             </div>

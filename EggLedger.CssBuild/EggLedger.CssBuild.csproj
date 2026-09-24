@@ -4,6 +4,7 @@
     <OutputType>Exe</OutputType>
     <Description>Build-time CSS compiler for EggLedger.Web: scans .razor/.html markup for utility/component class tokens and compiles wwwroot/styles.css via MonorailCss + EggIdentity.Styles.</Description>
     <InvariantGlobalization>true</InvariantGlobalization>
+    <MinVerSkip>true</MinVerSkip>
   </PropertyGroup>
 
   <ItemGroup>
