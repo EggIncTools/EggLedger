@@ -4,10 +4,22 @@ using EggLedger.Desktop.Platform;
 using EggLedger.Domain.Util;
 using EggLedger.Web.Data;
 using EggLedger.Web.Platform;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EggLedger.Desktop.Update;
 
-public sealed class UpdateService : IUpdateStatusProvider {
+public sealed class UpdateService(
+    GithubReleaseClient github,
+    Func<string> runningVersion,
+    Func<string?>? exePath = null,
+    IProcessRunner? processRunner = null,
+    Func<Task>? exitAction = null,
+    TimeSpan? handshakeTimeout = null,
+    TimeSpan? exitDelay = null,
+    IndexedDbSettings? settings = null,
+    TimeProvider? time = null,
+    ILogger<UpdateService>? logger = null) : IUpdateStatusProvider {
     public static readonly TimeSpan OldExitDelay = TimeSpan.FromSeconds(5);
 
     public static readonly TimeSpan UpdateCheckInterval = TimeSpan.FromHours(12);
@@ -20,36 +32,16 @@ public sealed class UpdateService : IUpdateStatusProvider {
 
     public const string KnownLatestReleaseNotesKey = "known_latest_release_notes";
 
-    private readonly GithubReleaseClient _github;
-    private readonly IProcessRunner _processRunner;
-    private readonly Func<string> _runningVersion;
-    private readonly Func<string?> _exePath;
-    private readonly Func<Task> _exitAction;
-    private readonly TimeSpan _handshakeTimeout;
-    private readonly TimeSpan _exitDelay;
-    private readonly IndexedDbSettings? _settings;
-    private readonly Func<DateTimeOffset> _now;
-
-    public UpdateService(
-        GithubReleaseClient github,
-        Func<string> runningVersion,
-        Func<string?>? exePath = null,
-        IProcessRunner? processRunner = null,
-        Func<Task>? exitAction = null,
-        TimeSpan? handshakeTimeout = null,
-        TimeSpan? exitDelay = null,
-        IndexedDbSettings? settings = null,
-        Func<DateTimeOffset>? now = null) {
-        _github = github;
-        _runningVersion = runningVersion;
-        _exePath = exePath ?? (() => Environment.ProcessPath);
-        _processRunner = processRunner ?? new ProcessRunner();
-        _exitAction = exitAction ?? (() => Task.CompletedTask);
-        _handshakeTimeout = handshakeTimeout ?? DefaultHandshakeTimeout;
-        _exitDelay = exitDelay ?? OldExitDelay;
-        _settings = settings;
-        _now = now ?? (() => DateTimeOffset.UtcNow);
-    }
+    private readonly GithubReleaseClient _github = github;
+    private readonly IProcessRunner _processRunner = processRunner ?? new ProcessRunner();
+    private readonly Func<string> _runningVersion = runningVersion;
+    private readonly Func<string?> _exePath = exePath ?? (() => Environment.ProcessPath);
+    private readonly Func<Task> _exitAction = exitAction ?? (() => Task.CompletedTask);
+    private readonly TimeSpan _handshakeTimeout = handshakeTimeout ?? DefaultHandshakeTimeout;
+    private readonly TimeSpan _exitDelay = exitDelay ?? OldExitDelay;
+    private readonly IndexedDbSettings? _settings = settings;
+    private readonly TimeProvider _time = time ?? TimeProvider.System;
+    private readonly ILogger<UpdateService> _logger = logger ?? NullLogger<UpdateService>.Instance;
 
     public static IReadOnlyList<string> BuildReplaceArgs(int oldPid, string oldPath, string? handshakeAddr, string? handshakeToken) {
         List<string> args = [
@@ -92,7 +84,7 @@ public sealed class UpdateService : IUpdateStatusProvider {
             return;
         }
 
-        if (!force && snapshot.LastCheckedAt is { } last && _now() - last < UpdateCheckInterval) {
+        if (!force && snapshot.LastCheckedAt is { } last && _time.GetUtcNow() - last < UpdateCheckInterval) {
             AvailableVersion = null;
             ReleaseNotes = null;
             Message = null;
@@ -100,24 +92,22 @@ public sealed class UpdateService : IUpdateStatusProvider {
             return;
         }
 
-        var latest = await _github.GetLatestTagAsync().ConfigureAwait(false);
-        if (latest is null) {
+        if (await _github.GetLatestTagAsync().ConfigureAwait(false) is not { } latest) {
             Fail("could not fetch latest release");
             return;
         }
 
-        var latestTag = latest.Value.Tag;
-        var latestNotes = latest.Value.Body;
+        var (latestTag, latestNotes) = latest;
         if (!SemVersion.TryParse(latestTag, out var latestVersion) || latestVersion is null) {
             Fail($"could not parse latest version {latestTag}");
             return;
         }
 
         if (running.GreaterThan(latestVersion)) {
-            var pre = await _github.GetLatestTagIncludingPreReleasesAsync().ConfigureAwait(false);
-            if (pre is not null && SemVersion.TryParse(pre.Value.Tag, out var preVersion) && preVersion is not null) {
-                latestTag = pre.Value.Tag;
-                latestNotes = pre.Value.Body;
+            if (await _github.GetLatestTagIncludingPreReleasesAsync().ConfigureAwait(false) is { } pre
+                && SemVersion.TryParse(pre.Tag, out var preVersion) && preVersion is not null) {
+                latestTag = pre.Tag;
+                latestNotes = pre.Body;
                 latestVersion = preVersion;
             }
         }
@@ -164,7 +154,7 @@ public sealed class UpdateService : IUpdateStatusProvider {
         }
 
         await _settings.SetSettingsAsync(new Dictionary<string, string> {
-            [LastUpdateCheckAtKey] = _now().ToString("O", CultureInfo.InvariantCulture),
+            [LastUpdateCheckAtKey] = _time.GetUtcNow().ToString("O", CultureInfo.InvariantCulture),
             [KnownLatestVersionKey] = latestTag,
             [KnownLatestReleaseNotesKey] = latestNotes,
         }).ConfigureAwait(false);
@@ -189,39 +179,39 @@ public sealed class UpdateService : IUpdateStatusProvider {
         }
 
         var tempPath = NewBinaryTempPath(exePath);
-        BinaryReplacement.TryDelete(tempPath);
+        BinaryReplacement.TryDelete(tempPath, _logger);
 
         var expectedSha = await _github.GetExpectedSha256Async(tag).ConfigureAwait(false);
 
         var assetName = GithubReleaseClient.ExpectedAssetName();
         if (ArchiveExtraction.IsArchive(assetName)) {
             var archivePath = Path.Combine(Path.GetTempPath(), assetName);
-            BinaryReplacement.TryDelete(archivePath);
+            BinaryReplacement.TryDelete(archivePath, _logger);
             try {
                 await _github.DownloadAsync(assetUrl, archivePath, OnProgress).ConfigureAwait(false);
                 if (!VerifySha256(archivePath, expectedSha)) {
-                    BinaryReplacement.TryDelete(archivePath);
+                    BinaryReplacement.TryDelete(archivePath, _logger);
                     Fail("checksum mismatch: downloaded archive does not match the published SHA-256");
                     return;
                 }
                 ArchiveExtraction.Extract(archivePath, tempPath);
             } catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException or InvalidOperationException) {
-                BinaryReplacement.TryDelete(archivePath);
-                BinaryReplacement.TryDelete(tempPath);
+                BinaryReplacement.TryDelete(archivePath, _logger);
+                BinaryReplacement.TryDelete(tempPath, _logger);
                 Fail($"download failed: {ex.Message}");
                 return;
             }
-            BinaryReplacement.TryDelete(archivePath);
+            BinaryReplacement.TryDelete(archivePath, _logger);
         } else {
             try {
                 await _github.DownloadAsync(assetUrl, tempPath, OnProgress).ConfigureAwait(false);
                 if (!VerifySha256(tempPath, expectedSha)) {
-                    BinaryReplacement.TryDelete(tempPath);
+                    BinaryReplacement.TryDelete(tempPath, _logger);
                     Fail("checksum mismatch: downloaded binary does not match the published SHA-256");
                     return;
                 }
             } catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException) {
-                BinaryReplacement.TryDelete(tempPath);
+                BinaryReplacement.TryDelete(tempPath, _logger);
                 Fail($"download failed: {ex.Message}");
                 return;
             }
@@ -251,9 +241,9 @@ public sealed class UpdateService : IUpdateStatusProvider {
         var token = HandshakeToken.New();
         HandshakeListener? listener = null;
         try {
-            listener = HandshakeListener.Start(token);
+            listener = HandshakeListener.Start(token, _logger);
         } catch (Exception ex) when (ex is System.Net.HttpListenerException or System.Net.Sockets.SocketException) {
-
+            _logger.LogDebug(ex, "update: handshake listener failed to start, handing off without handshake");
         }
 
         var args = BuildReplaceArgs(Environment.ProcessId, exePath, listener?.Address, token);

@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Globalization;
 using EggLedger.Domain.LedgerData;
 using Ei;
@@ -34,13 +35,11 @@ public static class ArtifactExtensions {
     public static ArtifactSpec.Name Family(this ArtifactSpec.Name a) =>
         a.ArtifactType() == ArtifactSpec.Type.StoneIngredient ? a.CorrespondingStone() : a;
 
-    public static ArtifactSpec.Name CorrespondingStone(this ArtifactSpec.Name a) {
-        if (Config.StoneFragmentMap.TryGetValue(EnumNames.ProtoName(a), out var stone)
-            && EnumNames.TryValue<ArtifactSpec.Name>(stone, out var val)) {
-            return val;
-        }
-        return ArtifactSpec.Name.Unknown;
-    }
+    public static ArtifactSpec.Name CorrespondingStone(this ArtifactSpec.Name a) =>
+        Config.StoneFragmentMap.TryGetValue(EnumNames.ProtoName(a), out var stone)
+            && EnumNames.TryValue<ArtifactSpec.Name>(stone, out var val)
+            ? val
+            : ArtifactSpec.Name.Unknown;
 
     public static ArtifactSpec.Name CorrespondingFragment(this ArtifactSpec.Name a) {
         string target = EnumNames.ProtoName(a);
@@ -52,12 +51,8 @@ public static class ArtifactExtensions {
         return ArtifactSpec.Name.Unknown;
     }
 
-    public static string GenericBenefitString(this ArtifactSpec a) {
-        if (!a.ShouldSerializename()) {
-            return "";
-        }
-        return Config.GenericBenefitStrings.TryGetValue(EnumNames.ProtoName(a.name), out var s) ? s : "";
-    }
+    public static string GenericBenefitString(this ArtifactSpec a) =>
+        a.ShouldSerializename() && Config.GenericBenefitStrings.TryGetValue(EnumNames.ProtoName(a.name), out var s) ? s : "";
 
     public static string DropEffectString(this ArtifactSpec a) {
         var v = EffectTableValue(a);
@@ -73,10 +68,7 @@ public static class ArtifactExtensions {
             return "";
         }
         var row = effects[(int)a.level];
-        if (!a.ShouldSerializerarity() || (int)a.rarity >= row.Length) {
-            return "";
-        }
-        return row[(int)a.rarity];
+        return !a.ShouldSerializerarity() || (int)a.rarity >= row.Length ? "" : row[(int)a.rarity];
     }
 
     public static string CombinedEffectString(this ArtifactSpec a) {
@@ -110,11 +102,11 @@ public static class ArtifactExtensions {
         return includeSpace ? tierName + " " : tierName;
     }
 
-    private static readonly Dictionary<ArtifactSpec.Name, string> BaseNameOverrides = new() {
+    private static readonly FrozenDictionary<ArtifactSpec.Name, string> BaseNameOverrides = new Dictionary<ArtifactSpec.Name, string> {
         [ArtifactSpec.Name.VialMartianDust] = "VIAL OF MARTIAN DUST",
         [ArtifactSpec.Name.TheChalice] = "CHALICE",
         [ArtifactSpec.Name.MercurysLens] = "MERCURY'S LENS",
-    };
+    }.ToFrozenDictionary();
 
     public static string FamilyBaseName(this ArtifactSpec.Name a) =>
         BaseNameOverrides.TryGetValue(a, out var overrideName) ? overrideName : EnumNames.ProtoName(a).Replace("_", " ");
@@ -294,9 +286,6 @@ public static class ArtifactExtensions {
 
     private static string ReplaceFirst(string source, string oldValue, string newValue) {
         int idx = source.IndexOf(oldValue, StringComparison.Ordinal);
-        if (idx < 0) {
-            return source;
-        }
-        return string.Concat(source.AsSpan(0, idx), newValue, source.AsSpan(idx + oldValue.Length));
+        return idx < 0 ? source : string.Concat(source.AsSpan(0, idx), newValue, source.AsSpan(idx + oldValue.Length));
     }
 }

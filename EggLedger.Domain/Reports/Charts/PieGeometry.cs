@@ -19,7 +19,7 @@ public static class PieGeometry {
 
         if (items.Count > MaxSegments) {
             var sorted = items.OrderByDescending(x => x.Value).ToList();
-            var kept = sorted.Take(MaxSegments - 1).ToList();
+            List<PieItem> kept = [.. sorted.Take(MaxSegments - 1)];
             double other = sorted.Skip(MaxSegments - 1).Sum(x => x.Value);
             kept.Add(new PieItem("Other", other));
             return kept;

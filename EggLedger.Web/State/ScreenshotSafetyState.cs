@@ -16,12 +16,8 @@ public sealed partial class ScreenshotSafetyState {
 
     public event Action? Changed;
 
-    public string Mask(string? text) {
-        if (string.IsNullOrEmpty(text) || !Enabled) {
-            return text ?? "";
-        }
-        return EidRegex().Replace(text, "EI[eid-bar]");
-    }
+    public string Mask(string? text) =>
+        string.IsNullOrEmpty(text) || !Enabled ? text ?? "" : EidRegex().Replace(text, "EI[eid-bar]");
 
     [GeneratedRegex(@"EI\d{16}")]
     private static partial Regex EidRegex();

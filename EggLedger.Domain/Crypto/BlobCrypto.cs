@@ -56,10 +56,9 @@ public static class BlobCrypto {
     private static byte[] DecodeKey(string hexKey) {
         ArgumentNullException.ThrowIfNull(hexKey);
         var key = Convert.FromHexString(hexKey);
-        if (key.Length != KeySize) {
-            throw new CryptographicException(
+        return key.Length == KeySize
+            ? key
+            : throw new CryptographicException(
                 $"AES-256 key must be {KeySize} bytes ({KeySize * 2} hex chars), got {key.Length}");
-        }
-        return key;
     }
 }

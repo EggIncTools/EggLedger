@@ -17,7 +17,7 @@ public sealed class MissionGrouperTests {
 
     [Fact]
     public void EmptyInput_ReturnsAllVisibleEmpty() {
-        var g = MissionGrouper.Group(Array.Empty<DatabaseMission>(), FakeLedgerDate, collapseOlderSections: false);
+        var g = MissionGrouper.Group([], FakeLedgerDate, collapseOlderSections: false);
         Assert.Empty(g.Missions);
         Assert.True(g.AllVisible);
     }
@@ -61,7 +61,7 @@ public sealed class MissionGrouperTests {
         };
         var g = MissionGrouper.Group(missions, FakeLedgerDate, collapseOlderSections: false);
         var dayList = g.Missions[0][0][0];
-        Assert.Equal(new[] { "third", "second", "first" }, dayList.Select(m => m.MissiondId).ToArray());
+        Assert.Equal(["third", "second", "first"], [.. dayList.Select(m => m.MissiondId)]);
     }
 
     [Fact]
@@ -90,7 +90,7 @@ public sealed class MissionGrouperTests {
     public void NoCollapse_EverythingEnabled() {
         var missions = new[] { M(20240101, "a"), M(20230101, "b") };
         var g = MissionGrouper.Group(missions, FakeLedgerDate, collapseOlderSections: false);
-        Assert.True(g.Arrays.Year.All(y => y.Enabled));
+        Assert.True(g.Arrays.Year.TrueForAll(y => y.Enabled));
         Assert.True(g.AllVisible);
     }
 }

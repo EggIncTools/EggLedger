@@ -63,8 +63,7 @@ public static partial class CustomCssSanitizer {
             string hex = m.Groups[1].Value;
             if (hex.Length > 0) {
                 int codepoint = int.Parse(hex, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
-                if (codepoint is 0 or >= 0xD800 and <= 0xDFFF or > 0x10FFFF) return ReplacementChar;
-                return char.ConvertFromUtf32(codepoint);
+                return codepoint is 0 or >= 0xD800 and <= 0xDFFF or > 0x10FFFF ? ReplacementChar : char.ConvertFromUtf32(codepoint);
             }
 
             return m.Groups[2].Value;

@@ -8,34 +8,21 @@ using Microsoft.Extensions.Logging;
 
 namespace EggLedger.Web.Data;
 
-public sealed class IndexedDbMissionStore : IMissionStore {
-    private readonly IIndexedDb _db;
-    private readonly MissionPacker _packer;
-    private readonly IApiPayloadDecoder _decoder;
-    private readonly IndexedDbAccountStore? _accounts;
-    private readonly ILogger<IndexedDbMissionStore>? _logger;
-
-    public IndexedDbMissionStore(IIndexedDb db, IApiPayloadDecoder decoder, MissionPacker? packer = null, IndexedDbAccountStore? accounts = null, ILogger<IndexedDbMissionStore>? logger = null) {
-        _db = db;
-        _decoder = decoder;
-        _packer = packer ?? new MissionPacker(EiafxMissionConfigSource.Instance);
-        _accounts = accounts;
-        _logger = logger;
-    }
+public sealed class IndexedDbMissionStore(IIndexedDb db, IApiPayloadDecoder decoder, MissionPacker? packer = null, IndexedDbAccountStore? accounts = null, ILogger<IndexedDbMissionStore>? logger = null, TimeProvider? time = null) : IMissionStore {
+    private readonly MissionPacker _packer = packer ?? new MissionPacker(EiafxMissionConfigSource.Instance);
+    private readonly TimeProvider _time = time ?? TimeProvider.System;
 
     public async Task<IReadOnlyList<string>?> GetCompleteMissionIdsAsync(string playerId) {
         var rows = await PlayerMetaRowsAsync(playerId);
-        return rows.OrderBy(r => r.StartTimestamp)
-            .Select(r => r.MissionId)
-            .ToList();
+        return [.. rows.OrderBy(r => r.StartTimestamp).Select(r => r.MissionId)];
     }
 
     public async Task<IReadOnlyList<KnownAccount>> GetKnownAccountsAsync() {
-        if (_accounts is null) {
+        if (accounts is null) {
             return [];
         }
-        var accounts = await _accounts.GetKnownAccountsAsync().ConfigureAwait(false);
-        return accounts.Select(a => a.ToKnownAccount()).ToList();
+        var known = await accounts.GetKnownAccountsAsync().ConfigureAwait(false);
+        return [.. known.Select(a => a.ToKnownAccount())];
     }
 
     public async Task<PlayerMissionStats?> GetPlayerMissionStatsAsync(string playerId) {
@@ -51,7 +38,8 @@ public sealed class IndexedDbMissionStore : IMissionStore {
 
             try {
                 cm = await DecodeAsync(row).ConfigureAwait(false);
-            } catch {
+            } catch (Exception ex) {
+                logger?.LogDebug(ex, "mission decode failed while streaming {MissionId}", row.MissionId);
                 return false;
             }
             onMission(cm);
@@ -65,7 +53,7 @@ public sealed class IndexedDbMissionStore : IMissionStore {
         if (DecodeCacheGet(key) is { } hit) {
             return hit;
         }
-        var row = await _db.GetAsync<MissionRow>(IndexedDbStores.Mission, new object[] { playerId, missionId }).ConfigureAwait(false);
+        var row = await db.GetAsync<MissionRow>(IndexedDbStores.Mission, new object[] { playerId, missionId }).ConfigureAwait(false);
         if (row is null) {
             return null;
         }
@@ -73,7 +61,8 @@ public sealed class IndexedDbMissionStore : IMissionStore {
             var decoded = await DecodeAsync(row).ConfigureAwait(false);
             DecodeCachePut(key, decoded);
             return decoded;
-        } catch {
+        } catch (Exception ex) {
+            logger?.LogDebug(ex, "mission decode failed for {MissionId}", missionId);
             return null;
         }
     }
@@ -111,7 +100,8 @@ public sealed class IndexedDbMissionStore : IMissionStore {
             async Task Assign(int idx) {
                 result[idx] = await DecodeAsync(rows[idx]).ConfigureAwait(false);
             }
-        } catch {
+        } catch (Exception ex) {
+            logger?.LogDebug(ex, "complete mission decode failed for player {PlayerId}", eid);
             return null;
         }
     }
@@ -162,9 +152,8 @@ public sealed class IndexedDbMissionStore : IMissionStore {
     private readonly Lock _backfillGate = new();
     private readonly Dictionary<string, Task> _backfillTasks = [with(StringComparer.Ordinal)];
 
-    public void QueueFilterColBackfill(string eid) {
+    public void QueueFilterColBackfill(string eid) =>
         _ = GetOrStartFilterColBackfillAsync(eid);
-    }
 
     public Task EnsureFilterColsBackfilledAsync(string eid) =>
         GetOrStartFilterColBackfillAsync(eid);
@@ -187,10 +176,15 @@ public sealed class IndexedDbMissionStore : IMissionStore {
                     continue;
 
                 CompleteMissionResponse decoded;
-                try { decoded = await DecodeAsync(row).ConfigureAwait(false); } catch { continue; }
+                try {
+                    decoded = await DecodeAsync(row).ConfigureAwait(false);
+                } catch (Exception ex) {
+                    logger?.LogDebug(ex, "filter column backfill decode failed for {MissionId}", row.MissionId);
+                    continue;
+                }
 
                 if (_packer.TryComputeMissionFilterCols(row.StartTimestamp, decoded, out var cols)) {
-                    await _db.PutAsync(IndexedDbStores.Mission, WithCols(row, cols)).ConfigureAwait(false);
+                    await db.PutAsync(IndexedDbStores.Mission, WithCols(row, cols)).ConfigureAwait(false);
                     DecodeCacheEvict(DecodeKey(eid, row.MissionId));
                 }
             }
@@ -235,11 +229,16 @@ public sealed class IndexedDbMissionStore : IMissionStore {
                     continue;
 
                 CompleteMissionResponse decoded;
-                try { decoded = await GetCompleteMissionAsync(playerId, missionId).ConfigureAwait(false) ?? throw new InvalidOperationException(); } catch { continue; }
+                try {
+                    decoded = await GetCompleteMissionAsync(playerId, missionId).ConfigureAwait(false) ?? throw new InvalidOperationException();
+                } catch (Exception ex) {
+                    logger?.LogDebug(ex, "artifact drops backfill decode failed for {MissionId}", missionId);
+                    continue;
+                }
 
                 var drops = ArtifactDrops.Build(decoded);
                 if (drops.Count == 0) {
-                    await _db.PutAsync(IndexedDbStores.ArtifactDrops, new ArtifactDropRow {
+                    await db.PutAsync(IndexedDbStores.ArtifactDrops, new ArtifactDropRow {
                         MissionId = missionId,
                         PlayerId = playerId,
                         DropIndex = -1,
@@ -257,7 +256,7 @@ public sealed class IndexedDbMissionStore : IMissionStore {
                     Rarity = d.Rarity,
                     Quality = d.Quality,
                 });
-                await _db.PutManyAsync(IndexedDbStores.ArtifactDrops, rows).ConfigureAwait(false);
+                await db.PutManyAsync(IndexedDbStores.ArtifactDrops, rows).ConfigureAwait(false);
             }
         } finally {
             _dropsBackfilling.Remove(playerId);
@@ -266,7 +265,7 @@ public sealed class IndexedDbMissionStore : IMissionStore {
 
     public async Task InsertBackupAsync(string playerId, double timestamp, byte[] rawPayload, TimeSpan minimumGap) {
         if (minimumGap > TimeSpan.Zero) {
-            var existing = await _db.GetAsync<BackupRow>(IndexedDbStores.Backup, playerId);
+            var existing = await db.GetAsync<BackupRow>(IndexedDbStores.Backup, playerId);
             if (existing is not null) {
                 double gapSeconds = timestamp - existing.RecordedAt;
                 if (gapSeconds < minimumGap.TotalSeconds) {
@@ -280,7 +279,7 @@ public sealed class IndexedDbMissionStore : IMissionStore {
             RecordedAt = timestamp,
             Payload = Gzip(rawPayload),
         };
-        await _db.PutAsync(IndexedDbStores.Backup, row);
+        await db.PutAsync(IndexedDbStores.Backup, row);
     }
 
     public async Task InsertCompleteMissionAsync(
@@ -307,7 +306,7 @@ public sealed class IndexedDbMissionStore : IMissionStore {
             Target = cols.Target,
             ReturnTimestamp = cols.ReturnTimestamp,
         };
-        await _db.PutAsync(IndexedDbStores.Mission, row);
+        await db.PutAsync(IndexedDbStores.Mission, row);
         DecodeCacheEvict(DecodeKey(playerId, missionId));
 
         var drops = ArtifactDrops.Build(decoded);
@@ -322,7 +321,7 @@ public sealed class IndexedDbMissionStore : IMissionStore {
                 Rarity = d.Rarity,
                 Quality = d.Quality,
             });
-            await _db.PutManyAsync(IndexedDbStores.ArtifactDrops, rows);
+            await db.PutManyAsync(IndexedDbStores.ArtifactDrops, rows);
         }
 
         var fuel = MissionFuels.Build(decoded);
@@ -334,12 +333,12 @@ public sealed class IndexedDbMissionStore : IMissionStore {
                 EggId = f.EggId,
                 Amount = f.Amount,
             });
-            await _db.PutManyAsync(IndexedDbStores.MissionFuel, fuelRows);
+            await db.PutManyAsync(IndexedDbStores.MissionFuel, fuelRows);
         }
     }
 
     public async Task<bool> ReplaceInFlightMissionsAsync(string playerId, IReadOnlyList<DatabaseMission> missions) {
-        long capturedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        long capturedAt = _time.GetUtcNow().ToUnixTimeSeconds();
         var keep = new HashSet<string>(StringComparer.Ordinal);
         var rows = new List<object>(missions.Count);
         foreach (var mission in missions) {
@@ -356,21 +355,21 @@ public sealed class IndexedDbMissionStore : IMissionStore {
 
         try {
             if (rows.Count > 0) {
-                await _db.PutManyAsync(IndexedDbStores.InFlightMission, rows).ConfigureAwait(false);
+                await db.PutManyAsync(IndexedDbStores.InFlightMission, rows).ConfigureAwait(false);
             }
 
-            var stored = await _db
+            var stored = await db
                 .GetAllByIndexAsync<InFlightMissionRow>(IndexedDbStores.InFlightMission, IndexedDbStores.PlayerIdIndex, playerId)
                 .ConfigureAwait(false);
             foreach (var stale in stored.Select(r => r.MissionId).Where(id => !keep.Contains(id))) {
-                await _db.DeleteAsync(
+                await db.DeleteAsync(
                     IndexedDbStores.InFlightMission, new object[] { playerId, stale }).ConfigureAwait(false);
             }
             return true;
         } catch (OperationCanceledException) {
             throw;
         } catch (Exception ex) {
-            _logger?.LogWarning(ex, "failed to persist in-flight missions for player {PlayerId}", playerId);
+            logger?.LogWarning(ex, "failed to persist in-flight missions for player {PlayerId}", playerId);
             return false;
         }
     }
@@ -378,13 +377,13 @@ public sealed class IndexedDbMissionStore : IMissionStore {
     public async Task<IReadOnlyList<DatabaseMission>> GetInFlightMissionsAsync(string playerId) {
         InFlightMissionRow[] rows;
         try {
-            rows = await _db
+            rows = await db
                 .GetAllByIndexAsync<InFlightMissionRow>(IndexedDbStores.InFlightMission, IndexedDbStores.PlayerIdIndex, playerId)
                 .ConfigureAwait(false);
         } catch (OperationCanceledException) {
             throw;
         } catch (Exception ex) {
-            _logger?.LogWarning(ex, "failed to read in-flight missions for player {PlayerId}", playerId);
+            logger?.LogWarning(ex, "failed to read in-flight missions for player {PlayerId}", playerId);
             return [];
         }
 
@@ -393,7 +392,8 @@ public sealed class IndexedDbMissionStore : IMissionStore {
             DatabaseMission? mission;
             try {
                 mission = JsonSerializer.Deserialize<DatabaseMission>(row.Payload, Rows.JsonOptions);
-            } catch (JsonException) {
+            } catch (JsonException ex) {
+                logger?.LogDebug(ex, "in-flight mission payload unreadable for {MissionId}", row.MissionId);
                 continue;
             }
             if (mission is not null) {
@@ -414,21 +414,22 @@ public sealed class IndexedDbMissionStore : IMissionStore {
     }
 
     private async Task<List<MissionRow>> PlayerRowsAsync(string playerId) {
-        var rows = await _db.GetAllByIndexAsync<MissionRow>(IndexedDbStores.Mission, IndexedDbStores.PlayerIdIndex, playerId);
+        var rows = await db.GetAllByIndexAsync<MissionRow>(IndexedDbStores.Mission, IndexedDbStores.PlayerIdIndex, playerId);
         return [.. rows];
     }
 
 
     private async Task<List<MissionMetaRow>> PlayerMetaRowsAsync(string playerId) {
-        var rows = await _db.GetAllByIndexProjectedAsync<MissionMetaRow>(IndexedDbStores.Mission, IndexedDbStores.PlayerIdIndex, playerId);
+        var rows = await db.GetAllByIndexProjectedAsync<MissionMetaRow>(IndexedDbStores.Mission, IndexedDbStores.PlayerIdIndex, playerId);
         return [.. rows];
     }
 
     public async Task<IReadOnlyList<StoredDrop>?> GetStoredPlayerDropsAsync(string playerId) {
         try {
-            var rows = await _db.GetAllByIndexAsync<ArtifactDropRow>(IndexedDbStores.ArtifactDrops, IndexedDbStores.PlayerIdIndex, playerId);
+            var rows = await db.GetAllByIndexAsync<ArtifactDropRow>(IndexedDbStores.ArtifactDrops, IndexedDbStores.PlayerIdIndex, playerId);
             return [.. rows.Select(r => new StoredDrop(r.MissionId, r.ArtifactId, r.Level, r.Rarity, r.DropIndex))];
-        } catch {
+        } catch (Exception ex) {
+            logger?.LogDebug(ex, "stored drops read failed for player {PlayerId}", playerId);
             return null;
         }
     }
@@ -436,35 +437,35 @@ public sealed class IndexedDbMissionStore : IMissionStore {
     public async Task DeleteAllForPlayerAsync(string playerId) {
         var missionRows = await PlayerMetaRowsAsync(playerId).ConfigureAwait(false);
         foreach (var row in missionRows) {
-            await _db.DeleteAsync(IndexedDbStores.Mission, new object[] { playerId, row.MissionId }).ConfigureAwait(false);
+            await db.DeleteAsync(IndexedDbStores.Mission, new object[] { playerId, row.MissionId }).ConfigureAwait(false);
             DecodeCacheEvict(DecodeKey(playerId, row.MissionId));
         }
 
-        var dropRows = await _db.GetAllByIndexAsync<ArtifactDropRow>(IndexedDbStores.ArtifactDrops, IndexedDbStores.PlayerIdIndex, playerId).ConfigureAwait(false);
+        var dropRows = await db.GetAllByIndexAsync<ArtifactDropRow>(IndexedDbStores.ArtifactDrops, IndexedDbStores.PlayerIdIndex, playerId).ConfigureAwait(false);
         foreach (var row in dropRows) {
             if (row.Id is { } id) {
-                await _db.DeleteAsync(IndexedDbStores.ArtifactDrops, id).ConfigureAwait(false);
+                await db.DeleteAsync(IndexedDbStores.ArtifactDrops, id).ConfigureAwait(false);
             }
         }
 
-        var fuelRows = await _db.GetAllByIndexAsync<FuelRow>(IndexedDbStores.MissionFuel, IndexedDbStores.PlayerIdIndex, playerId).ConfigureAwait(false);
+        var fuelRows = await db.GetAllByIndexAsync<FuelRow>(IndexedDbStores.MissionFuel, IndexedDbStores.PlayerIdIndex, playerId).ConfigureAwait(false);
         foreach (var row in fuelRows) {
             if (row.Id is { } id) {
-                await _db.DeleteAsync(IndexedDbStores.MissionFuel, id).ConfigureAwait(false);
+                await db.DeleteAsync(IndexedDbStores.MissionFuel, id).ConfigureAwait(false);
             }
         }
 
-        var inFlightRows = await _db.GetAllByIndexAsync<InFlightMissionRow>(IndexedDbStores.InFlightMission, IndexedDbStores.PlayerIdIndex, playerId).ConfigureAwait(false);
+        var inFlightRows = await db.GetAllByIndexAsync<InFlightMissionRow>(IndexedDbStores.InFlightMission, IndexedDbStores.PlayerIdIndex, playerId).ConfigureAwait(false);
         foreach (var row in inFlightRows) {
-            await _db.DeleteAsync(IndexedDbStores.InFlightMission, new object[] { playerId, row.MissionId }).ConfigureAwait(false);
+            await db.DeleteAsync(IndexedDbStores.InFlightMission, new object[] { playerId, row.MissionId }).ConfigureAwait(false);
         }
 
-        await _db.DeleteAsync(IndexedDbStores.Backup, playerId).ConfigureAwait(false);
+        await db.DeleteAsync(IndexedDbStores.Backup, playerId).ConfigureAwait(false);
     }
 
     private async Task<CompleteMissionResponse> DecodeAsync(MissionRow row) {
         byte[] raw = Gunzip(row.CompletePayload);
-        var resp = await _decoder.DecodeCompleteMissionAsync(raw).ConfigureAwait(false);
+        var resp = await decoder.DecodeCompleteMissionAsync(raw).ConfigureAwait(false);
         resp.Info?.StartTimeDerived = row.StartTimestamp;
         return resp;
     }

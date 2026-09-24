@@ -12,6 +12,9 @@
 @inject IPlatformCapabilities Platform
 @inject NavigationManager Nav
 @inject LedgerShellState Shell
+@inject TimeProvider Time
+@inject ILogger<AccountFetchHeader> Logger
+@inject ILogger<OutsideClickRegistration> OutsideClickLogger
 
 <div class="filter-panel account-bar">
     <button type="button" class="account-rail-chip" title="@ChipTitle" aria-label="Expand sidebar" @onclick="RequestExpand">
@@ -117,7 +120,7 @@
         }
     };
 
-    private static bool IsStaleBackup(AccountInfo? info) =>
+    private bool IsStaleBackup(AccountInfo? info) =>
         info is not null && info.LastBackupTime > 0 && NowUnix - info.LastBackupTime > StaleBackupSeconds;
 
     private const double StaleBackupSeconds = 60 * 60 * 24;
@@ -211,7 +214,7 @@
     private bool? _lastWarnedFetchActive;
     private int _workerCount = SettingsModel.MinWorkerCount;
 
-    private static double NowUnix => DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+    private double NowUnix => Time.GetUtcNow().ToUnixTimeSeconds();
 
     private IReadOnlyList<KnownAccount> Accounts =>
         AppStateSvc.KnownAccounts;
@@ -220,13 +223,11 @@
 
     private string ChipTitle => _active?.Nickname ?? "No account selected";
 
-    private AccountInfo? InfoFor(string id) {
-        return Loader.Accounts.FirstOrDefault(a => a.Id == id);
-    }
+    private AccountInfo? InfoFor(string id) =>
+        Loader.Accounts.FirstOrDefault(a => a.Id == id);
 
-    private DatabaseAccount? StatsFor(string id) {
-        return _existing.FirstOrDefault(a => a.Id == id);
-    }
+    private DatabaseAccount? StatsFor(string id) =>
+        _existing.FirstOrDefault(a => a.Id == id);
 
     private static readonly string[] LinkResultQueryKeys = ["linked=", "linkConflict=", "linkRejected=", "linkError="];
 
@@ -272,6 +273,7 @@
         try {
             await _popRef.FocusAsync();
         } catch (Exception ex) when (ex is JSDisconnectedException or JSException) {
+            Logger.LogDebug(ex, "account popover focus failed");
         }
     }
 
@@ -298,7 +300,7 @@
 
         var incomplete = await FetchOrchestrator.GetIncompleteAccountsAsync(SettingsStore);
         var knownIds = AppStateSvc.KnownAccounts.Select(a => a.Id).ToHashSet();
-        if (incomplete.FirstOrDefault(knownIds.Contains) is { } resumeId) {
+        if (incomplete.Find(knownIds.Contains) is { } resumeId) {
             _ = StartFetchFor(resumeId);
         }
     }
@@ -329,17 +331,16 @@
         _lastWarnedFetchActive = active;
         try {
             await Js.InvokeVoidAsync("setFetchInProgressWarning", active);
-        } catch (JSDisconnectedException) {
+        } catch (JSDisconnectedException ex) {
+            Logger.LogDebug(ex, "setting fetch-in-progress unload warning failed");
         }
     }
 
-    private void RefreshActive() {
+    private void RefreshActive() =>
         _active = AppStateSvc.KnownAccounts.FirstOrDefault(a => a.Id == Active.ActiveAccountId);
-    }
 
-    private async Task RefreshExistingAsync() {
+    private async Task RefreshExistingAsync() =>
         _existing = await Queries.GetExistingDataAsync();
-    }
 
     private async Task StartFetch() {
         if (Active.ActiveAccountId is not { } id) {
@@ -368,7 +369,7 @@
     private async Task OpenPopover() {
         _open = true;
         _focusPending = true;
-        _outsideClick ??= new OutsideClickRegistration(OutsideClick, HandleOutsideClickAsync);
+        _outsideClick ??= new OutsideClickRegistration(OutsideClick, HandleOutsideClickAsync, logger: OutsideClickLogger);
         await _outsideClick.RegisterAsync(_wrapRef);
     }
 

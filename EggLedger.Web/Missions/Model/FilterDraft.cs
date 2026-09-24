@@ -72,9 +72,8 @@ public sealed class FilterDraft {
         }
     }
 
-    private static WebCondition CloneOf(WebCondition c) {
-        return new WebCondition(c.TopLevel, c.Op, c.Val);
-    }
+    private static WebCondition CloneOf(WebCondition c) =>
+        new(c.TopLevel, c.Op, c.Val);
 
     private static void Copy(WebCondition from, WebCondition to) {
         to.TopLevel = from.TopLevel;

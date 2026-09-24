@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Globalization;
 
 namespace EggLedger.Domain.Reports;
@@ -58,9 +59,8 @@ internal sealed class MissionRowPredicate(
         return true;
     }
 
-    private static readonly HashSet<string> ArtifactTopLevels = [with(StringComparer.Ordinal),
-        "artifact_rarity", "artifact_spec_type", "artifact_name", "artifact_tier", "artifact_quality",
-    ];
+    private static readonly FrozenSet<string> ArtifactTopLevels = FrozenSet.Create(StringComparer.Ordinal,
+        "artifact_rarity", "artifact_spec_type", "artifact_name", "artifact_tier", "artifact_quality");
 
     private static bool IsArtifactScope(FilterCondition c) => ArtifactTopLevels.Contains(c.TopLevel);
 
@@ -84,10 +84,7 @@ internal sealed class MissionRowPredicate(
 
     private static bool EvalArtifact(FilterCondition c, ArtifactDropRowData d) {
 
-        if (c.Op is not ("=" or "!=" or ">" or "<" or ">=" or "<=")) {
-            return true;
-        }
-        return c.TopLevel switch {
+        return c.Op is not ("=" or "!=" or ">" or "<" or ">=" or "<=") || c.TopLevel switch {
             "artifact_rarity" => IsInt(c.Val) && CompareLong(c.Op, d.Rarity, long.Parse(c.Val, CultureInfo.InvariantCulture)),
             "artifact_tier" => IsInt(c.Val) && CompareLong(c.Op, d.Level, long.Parse(c.Val, CultureInfo.InvariantCulture)),
             "artifact_name" => IsInt(c.Val) && CompareLong(c.Op, d.ArtifactId, long.Parse(c.Val, CultureInfo.InvariantCulture)),
@@ -113,10 +110,7 @@ internal sealed class MissionRowPredicate(
             if (parts.Length > 1 && parts[1] != "%" && parts[1] != "" && d.Level.ToString(CultureInfo.InvariantCulture) != parts[1]) {
                 return false;
             }
-            if (parts.Length > 2 && parts[2] != "%" && parts[2] != "" && d.Rarity.ToString(CultureInfo.InvariantCulture) != parts[2]) {
-                return false;
-            }
-            return true;
+            return parts.Length <= 2 || parts[2] is "%" or "" || d.Rarity.ToString(CultureInfo.InvariantCulture) == parts[2];
         }
         var exists = dropsByMission[(m.PlayerId, m.MissionId)].Any(Matches);
         return c.Op == "dnc" ? !exists : exists;
@@ -126,11 +120,7 @@ internal sealed class MissionRowPredicate(
         if (c.Op is not ("=" or "!=" or ">" or "<" or ">=" or "<=")) {
             return true;
         }
-        if (!IsInt(c.Val)) {
-
-            return true;
-        }
-        return CompareLong(c.Op, actual, long.Parse(c.Val, CultureInfo.InvariantCulture));
+        return !IsInt(c.Val) || CompareLong(c.Op, actual, long.Parse(c.Val, CultureInfo.InvariantCulture));
     }
 
     private static bool EvalDate(FilterCondition c, long actualUnix) {

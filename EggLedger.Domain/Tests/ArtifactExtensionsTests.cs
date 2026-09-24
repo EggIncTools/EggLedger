@@ -100,9 +100,8 @@ public class ArtifactExtensionsTests {
     [InlineData(ArtifactSpec.Name.BookOfBasan, 33)]
     [InlineData(ArtifactSpec.Name.TachyonStone, 6)]
     [InlineData(ArtifactSpec.Name.Unknown, 0)]
-    public void InventoryVisualizerOrder(ArtifactSpec.Name name, int want) {
+    public void InventoryVisualizerOrder(ArtifactSpec.Name name, int want) =>
         Assert.Equal(want, name.InventoryVisualizerOrder());
-    }
 
     [Fact]
     public void InventoryVisualizerOrder_StoneFragmentMatchesStone() {
@@ -117,9 +116,8 @@ public class ArtifactExtensionsTests {
     [InlineData(ArtifactSpec.Name.TachyonStoneFragment, ArtifactSpec.Type.StoneIngredient)]
     [InlineData(ArtifactSpec.Name.GoldMeteorite, ArtifactSpec.Type.Ingredient)]
     [InlineData(ArtifactSpec.Name.Unknown, ArtifactSpec.Type.Artifact)]
-    public void ArtifactType(ArtifactSpec.Name name, ArtifactSpec.Type want) {
+    public void ArtifactType(ArtifactSpec.Name name, ArtifactSpec.Type want) =>
         Assert.Equal(want, name.ArtifactType());
-    }
 
     [Fact]
     public void CorrespondingStone() {

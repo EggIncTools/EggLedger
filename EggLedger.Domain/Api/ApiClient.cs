@@ -47,9 +47,9 @@ public sealed partial class ApiClient(
         }
 
         string reqDataEncoded = Convert.ToBase64String(reqBin);
-        var form = new FormUrlEncodedContent(new[] {
+        var form = new FormUrlEncodedContent([
             new KeyValuePair<string, string>("data", reqDataEncoded),
-        });
+        ]);
 
         HttpResponseMessage resp;
         try {
@@ -78,7 +78,7 @@ public sealed partial class ApiClient(
         }
     }
 
-    public TMsg DecodeApiResponse<TMsg>(string apiUrl, byte[] payload, bool authenticated) {
+    public static TMsg DecodeApiResponse<TMsg>(string apiUrl, byte[] payload, bool authenticated) {
         if (!authenticated) {
             try {
                 return Deserialize<TMsg>(payload);
@@ -135,16 +135,14 @@ public sealed partial class ApiClient(
         return string.Join(" -> ", parts);
     }
 
-    private static ApiRequestException InterpretUnmarshalError(string message, Exception inner) {
-        if (inner.Message.Contains("invalid UTF-8", StringComparison.OrdinalIgnoreCase) ||
-            inner.Message.Contains("invalid UTF8", StringComparison.OrdinalIgnoreCase)) {
-            return new ApiRequestException(
+    private static ApiRequestException InterpretUnmarshalError(string message, Exception inner) =>
+        inner.Message.Contains("invalid UTF-8", StringComparison.OrdinalIgnoreCase) ||
+        inner.Message.Contains("invalid UTF8", StringComparison.OrdinalIgnoreCase)
+            ? new ApiRequestException(
                 "API returned corrupted data (invalid UTF-8 in one or more string fields); " +
                 "this is a known issue affecting some players, and it can only be resolved when " +
-                "Auxbrain fixes their server bug", inner);
-        }
-        return new ApiRequestException(message, inner);
-    }
+                "Auxbrain fixes their server bug", inner)
+            : new ApiRequestException(message, inner);
 }
 
 public sealed class ApiRequestException : Exception {

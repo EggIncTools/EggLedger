@@ -5,7 +5,7 @@ using Npgsql;
 
 namespace EggLedger.Web.Server.Sync.Admin;
 
-public sealed class AdminDataService(NpgsqlDataSource source, IdentityApiClient identity) : IAdminData {
+public sealed class AdminDataService(NpgsqlDataSource source, IdentityApiClient identity, TimeProvider time) : IAdminData {
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(2);
     private readonly Lock _cacheGate = new();
     private (DateTimeOffset ExpiresAt, IReadOnlyList<AdminUser> Users)? _cache;
@@ -55,14 +55,14 @@ public sealed class AdminDataService(NpgsqlDataSource source, IdentityApiClient 
 
     public async Task<IReadOnlyList<AdminUser>> GetUsersAsync(CancellationToken ct = default) {
         lock (_cacheGate) {
-            if (_cache is { } cached && cached.ExpiresAt > DateTimeOffset.UtcNow) {
+            if (_cache is { } cached && cached.ExpiresAt > time.GetUtcNow()) {
                 return cached.Users;
             }
         }
 
         var users = await LoadUsersAsync(ct).ConfigureAwait(false);
         lock (_cacheGate) {
-            _cache = (DateTimeOffset.UtcNow + CacheTtl, users);
+            _cache = (time.GetUtcNow() + CacheTtl, users);
         }
         return users;
     }

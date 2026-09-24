@@ -50,9 +50,10 @@ if (hasDb && isSubProd) {
     SubProdGuard.EnsureDatabase(cfg.DatabaseUrl, LedgerClonePlan.TargetDatabase);
 }
 var build = new VerifyInfo { Name = "EggLedger", Sha256 = cfg.BuildSha, Version = AppVersionInfo.Current, Date = cfg.BuildDate };
-var startedAt = DateTimeOffset.UtcNow;
+var startedAt = TimeProvider.System.GetUtcNow();
 
 builder.Services.AddHttpContextAccessor();
+builder.Services.TryAddSingleton(TimeProvider.System);
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents(o => o.DetailedErrors = builder.Environment.IsDevelopment());
@@ -75,12 +76,10 @@ const string SmartAuthScheme = "smart";
 var authentication = eggIdentitySession is null
     ? builder.Services.AddAuthentication(EggLedger.Web.Server.Auth.AuthScheme.Cookie)
     : builder.Services.AddAuthentication(SmartAuthScheme)
-        .AddPolicyScheme(SmartAuthScheme, SmartAuthScheme, o => {
-            o.ForwardDefaultSelector = ctx =>
-                ctx.Request.Cookies.ContainsKey(eggIdentitySession.CookieName)
-                    ? EggIdentitySessionDefaults.Scheme
-                    : EggLedger.Web.Server.Auth.AuthScheme.Cookie;
-        });
+        .AddPolicyScheme(SmartAuthScheme, SmartAuthScheme, o => o.ForwardDefaultSelector = ctx =>
+            ctx.Request.Cookies.ContainsKey(eggIdentitySession.CookieName)
+                ? EggIdentitySessionDefaults.Scheme
+                : EggLedger.Web.Server.Auth.AuthScheme.Cookie);
 
 var authBuilder = authentication
     .AddCookie(EggLedger.Web.Server.Auth.AuthScheme.Cookie, o => {
@@ -222,7 +221,7 @@ if (eggIdentitySession is not null && !string.IsNullOrEmpty(cfg.DeployAgentUrl))
 }
 
 var selfBase = new Uri(builder.Configuration["SelfBaseAddress"] ?? SelfBaseFromUrls());
-builder.Services.AddEggLedgerWeb(selfBase);
+builder.Services.AddEggLedgerWeb(selfBase, cfg.EgiBaseUrl, cfg.EgiApiKey);
 builder.Services.AddHostedService<EggLedger.Web.Server.Ships.EventIconWarmupHostedService>();
 builder.Services.AddScoped<EggLedger.Web.Platform.IUserTimeZoneProvider, EggLedger.Web.Server.Platform.BrowserTimeZoneProvider>();
 
@@ -235,10 +234,9 @@ builder.Services.AddScoped(sp => {
 static string SelfBaseFromUrls() {
     var urls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
     var first = urls?.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault();
-    if (string.IsNullOrEmpty(first)) {
-        return "http://localhost:5015";
-    }
-    return first.Replace("0.0.0.0", "localhost").Replace("[::]", "localhost").Replace("+", "localhost");
+    return string.IsNullOrEmpty(first)
+        ? "http://localhost:5015"
+        : first.Replace("0.0.0.0", "localhost").Replace("[::]", "localhost").Replace("+", "localhost");
 }
 
 static void MirrorEggIdentityRoleClaim(Microsoft.AspNetCore.Authentication.Cookies.CookieValidatePrincipalContext ctx) {
@@ -261,7 +259,6 @@ static void MirrorEggIdentityRoleClaim(Microsoft.AspNetCore.Authentication.Cooki
 
 builder.Services.AddScoped<EggLedger.Web.Server.Storage.CurrentUser>();
 if (hasDb) {
-    builder.Services.TryAddSingleton(TimeProvider.System);
     builder.Services.TryAddSingleton(sp =>
         new SessionRevocationCache(sp.GetRequiredService<TimeProvider>(), TimeSpan.FromSeconds(30)));
     builder.Services.AddScoped<ISessionStore>(sp =>
@@ -376,11 +373,13 @@ if (hasDb) {
 
     _ = new EggLedger.Web.Server.Sync.Db.ExpiredSessionSweeper(
             app.Services.GetRequiredService<NpgsqlDataSource>(),
-            TimeSpan.FromMinutes(cfg.SessionSweepIntervalMinutes))
+            TimeSpan.FromMinutes(cfg.SessionSweepIntervalMinutes),
+            app.Services.GetRequiredService<ILogger<EggLedger.Web.Server.Sync.Db.ExpiredSessionSweeper>>())
         .RunAsync(app.Lifetime.ApplicationStopping);
 
     var constraintValidator = new EggLedger.Web.Server.Storage.ConstraintValidator(
         app.Services.GetRequiredService<NpgsqlDataSource>(),
+        app.Services.GetRequiredService<TimeProvider>(),
         app.Services.GetRequiredService<ILogger<EggLedger.Web.Server.Storage.ConstraintValidator>>());
     app.Lifetime.ApplicationStarted.Register(() =>
         _ = Task.Run(() => constraintValidator.RunAsync(app.Lifetime.ApplicationStopping)));
@@ -403,7 +402,7 @@ if (hasDb) {
             var tracker = new DeployVersionTracker(new DeployStateStore(deployDataSource), notifier);
             try {
                 await tracker.CheckAndNotifyAsync(
-                    botCfg.Name, Environment.GetEnvironmentVariable("GIT_SHA") ?? "", botCfg.Build.Version, CancellationToken.None);
+                    botCfg.Name, cfg.GitSha, botCfg.Build.Version, CancellationToken.None);
             } catch (Exception ex) {
                 app.Logger.LogWarning(ex, "eggledger: deploy self-report failed, continuing");
             }

@@ -8,11 +8,11 @@ public sealed class IndexedDbReportRunnerTests {
 
     private sealed class NoWeights : IWeightData {
         public double CraftingWeight(long artifactId, long level) => 1;
-        public IReadOnlyList<int> FamilyAfxIds(string familyId) => Array.Empty<int>();
+        public IReadOnlyList<int> FamilyAfxIds(string familyId) => [];
     }
 
     private static IndexedDbReportRunner Runner(IIndexedDb db) =>
-        new(new ReportSourceCache(IndexedDbReportSource.Loader(db, new FakeMissionStore())), new NoWeights());
+        new(new ReportSourceCache(IndexedDbReportSource.Loader(db, new FakeMissionStore()), new ManualClock()), new NoWeights());
 
     private static MissionRow Mission(string id, int ship, double start) => new() {
         PlayerId = Eid,

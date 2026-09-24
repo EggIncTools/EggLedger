@@ -3,6 +3,8 @@
 @inject IDownloadService Downloads
 @inject CloudAutoSyncCoordinator AutoSync
 @inject IndexedDbReportStore ReportStore
+@inject TimeProvider Time
+@inject ILogger<AccountDataPanel> Logger
 
 @* Browser adaptation of the desktop ExportManagementPanel: manages per-account stored data (count, last fetch, export-to-download, delete) since the browser has no on-disk export files. *@
 <div class="px-2 py-2 text-sm text-gray-400 bg-darker rounded-md tabular-nums overflow-auto">
@@ -108,7 +110,7 @@
 
     public sealed record FetchingCard(string Id, string Nickname, string Color, int Finished, int Total);
 
-    private static double NowUnix => DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+    private double NowUnix => Time.GetUtcNow().ToUnixTimeSeconds();
 
     private IReadOnlyList<DatabaseAccount> Sorted =>
         LedgerFormatting.SortByMissionCountDescending(Accounts);
@@ -169,7 +171,8 @@
             await Changed.InvokeAsync();
             try {
                 await AutoSync.NotifySettingsChangedAsync();
-            } catch {
+            } catch (Exception ex) {
+                Logger.LogDebug(ex, "auto-sync notify after account data delete failed");
             }
         } catch (Exception e) {
             _error = e.Message;

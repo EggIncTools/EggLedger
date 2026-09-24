@@ -8,20 +8,20 @@ public sealed class MissionQueryHandlers(IMissionStore store, IArtifactQuality q
         store.GetCompleteMissionIdsAsync(playerId);
 
     public async Task<List<DatabaseAccount>> GetExistingDataAsync() {
-        var result = new List<DatabaseAccount>();
+        List<DatabaseAccount> result = [];
         foreach (var acct in await store.GetKnownAccountsAsync()) {
             var stats = await store.GetPlayerMissionStatsAsync(acct.Id);
-            if (stats is null) {
+            if (stats is not { } s) {
                 continue;
             }
-            if (stats.Value.Count > 0) {
+            if (s.Count > 0) {
                 result.Add(new DatabaseAccount {
                     Id = acct.Id,
                     Nickname = acct.Nickname,
-                    MissionCount = stats.Value.Count,
+                    MissionCount = s.Count,
                     EBString = acct.EBString,
                     AccountColor = acct.AccountColor,
-                    LastMissionReturnDT = stats.Value.MaxReturnTimestamp,
+                    LastMissionReturnDT = s.MaxReturnTimestamp,
                 });
             }
         }
@@ -53,7 +53,7 @@ public sealed class MissionQueryHandlers(IMissionStore store, IArtifactQuality q
 
     public static List<PossibleMission> GetDurationConfigs(
         IEnumerable<ArtifactsConfigurationResponse.MissionParameters> missionParameters) {
-        var result = new List<PossibleMission>();
+        List<PossibleMission> result = [];
         foreach (var mission in missionParameters) {
             int maxLevels = mission.LevelMissionRequirements?.Length ?? 0;
             result.Add(new PossibleMission {
@@ -105,10 +105,7 @@ public sealed class MissionQueryHandlers(IMissionStore store, IArtifactQuality q
 
     public async Task<List<MissionDrop>?> GetShipDropsAsync(string playerId, string missionId) {
         var cm = await store.GetCompleteMissionAsync(playerId, missionId);
-        if (cm is null) {
-            return null;
-        }
-        return [.. cm.Artifacts.Select(a => a.Spec).OfType<ArtifactSpec>().Select(ShapeDrop)];
+        return cm is null ? null : [.. cm.Artifacts.Select(a => a.Spec).OfType<ArtifactSpec>().Select(ShapeDrop)];
     }
 
     private MissionDrop ShapeDrop(ArtifactSpec spec) {

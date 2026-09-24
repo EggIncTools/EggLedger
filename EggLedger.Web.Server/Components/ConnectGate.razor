@@ -7,6 +7,7 @@
 @inject NavigationManager Nav
 @inject IdentityApiClient Identity
 @inject IJSRuntime JS
+@inject ILogger<ConnectGate> Logger
 @using EggLedger.Web.State
 @implements IAsyncDisposable
 <div class="flex flex-col items-center justify-center gap-4 py-16 text-center">
@@ -70,7 +71,8 @@
             } else {
                 _sources = response.Sources;
             }
-        } catch (HttpRequestException) {
+        } catch (HttpRequestException ex) {
+            Logger.LogDebug(ex, "login: failed to fetch login sources");
             _error = "Login temporarily unavailable.";
         } finally {
             _loading = false;
@@ -85,6 +87,7 @@
                 await _mod.InvokeVoidAsync("open", _button, _menu, LoginMenuPlacement.BottomRight.ToString());
                 _positioned = true;
             } catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or TaskCanceledException) {
+                Logger.LogDebug(ex, "login: failed to open login menu");
             }
         } else if (!menuOpen && _positioned) {
             _positioned = false;
@@ -101,7 +104,8 @@
         if (_mod is not null) {
             try {
                 await _mod.InvokeVoidAsync("close");
-            } catch (JSDisconnectedException) {
+            } catch (JSDisconnectedException ex) {
+                Logger.LogDebug(ex, "login: failed to close login menu");
             }
         }
 
@@ -112,12 +116,14 @@
         if (_mod is not null) {
             try {
                 await _mod.InvokeVoidAsync("close");
-            } catch (JSDisconnectedException) {
+            } catch (JSDisconnectedException ex) {
+                Logger.LogDebug(ex, "login: failed to close login menu on dispose");
             }
 
             try {
                 await _mod.DisposeAsync();
-            } catch (JSDisconnectedException) {
+            } catch (JSDisconnectedException ex) {
+                Logger.LogDebug(ex, "login: failed to dispose login menu module");
             }
         }
     }

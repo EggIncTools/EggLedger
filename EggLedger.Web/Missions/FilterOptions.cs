@@ -117,9 +117,8 @@ public static class FilterOptions {
     public static string RarityWord(int rarity) =>
         rarity >= 0 && rarity < RarityWords.Length ? RarityWords[rarity] : "";
 
-    private static string ArtifactDisplayText(PossibleArtifact artifact) {
-        return artifact.DisplayName + " (T" + TierNumber(artifact) + ")";
-    }
+    private static string ArtifactDisplayText(PossibleArtifact artifact) =>
+        artifact.DisplayName + " (T" + TierNumber(artifact) + ")";
 
     private static int TierNumber(PossibleArtifact artifact) {
         bool isStoneNotFragment =

@@ -3,6 +3,7 @@
 @inject MennoService Menno
 @inject IndexedDbReportStore Store
 @inject IDownloadService Downloader
+@inject ILogger<ReportCard> Logger
 
 @* A single report card: header (name + weight badge), dispatched chart, edit/delete/
    copy/export controls. When Menno-enabled and the result is a 2D heatmap, also runs
@@ -302,7 +303,8 @@
             _mennoResult = MennoService.ExecuteComparison(
                 Def, items, _result.RawRowLabels, _result.RawColLabels);
             StateHasChanged();
-        } catch {
+        } catch (Exception ex) {
+            Logger.LogDebug(ex, "menno comparison for report failed");
             _mennoResult = null;
         }
     }

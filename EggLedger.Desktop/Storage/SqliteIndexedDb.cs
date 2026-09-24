@@ -53,10 +53,7 @@ public sealed class SqliteIndexedDb : IIndexedDb {
             cmd.CommandText = $"SELECT * FROM {meta.Table} WHERE {where} LIMIT 1;";
             BindArgs(cmd, keyArgs);
             using var reader = cmd.ExecuteReader();
-            if (!reader.Read()) {
-                return ValueTask.FromResult<T?>(default);
-            }
-            return ValueTask.FromResult<T?>(Materialize<T>(meta, reader));
+            return ValueTask.FromResult<T?>(reader.Read() ? Materialize<T>(meta, reader) : default);
         }
     }
 
@@ -180,10 +177,10 @@ public sealed class SqliteIndexedDb : IIndexedDb {
         var clauses = new List<string>(meta.KeyColumns.Length);
         var k = 0;
         foreach (var keyCol in meta.KeyColumns) {
-            var match = props.First(p => p.Col == keyCol);
+            var (_, val) = props.First(p => p.Col == keyCol);
             var name = "@d" + k.ToString(CultureInfo.InvariantCulture);
             clauses.Add($"{keyCol} = {name}");
-            del.Parameters.AddWithValue(name, JsonRowCodec.JsonToDbValue(match.Val, meta.BlobColumns.Contains(keyCol), JsonRowCodec.Sqlite));
+            del.Parameters.AddWithValue(name, JsonRowCodec.JsonToDbValue(val, meta.BlobColumns.Contains(keyCol), JsonRowCodec.Sqlite));
             k++;
         }
         del.CommandText = $"DELETE FROM {meta.Table} WHERE {string.Join(" AND ", clauses)};";
@@ -288,25 +285,15 @@ public sealed class SqliteIndexedDb : IIndexedDb {
         }
     }
 
-    private sealed class StoreMeta {
-        public StoreMeta(
-            string table, bool useReportDb, string[] keyColumns, string? autoIncrementColumn,
-            string[] boolColumns, bool upsertByDelete = false) {
-            Table = table;
-            UseReportDb = useReportDb;
-            KeyColumns = keyColumns;
-            AutoIncrementColumn = autoIncrementColumn;
-            BoolColumns = new HashSet<string>(boolColumns, StringComparer.Ordinal);
-            BlobColumns = [with(StringComparer.Ordinal)];
-            UpsertByDelete = upsertByDelete;
-        }
-
-        public string Table { get; }
-        public bool UseReportDb { get; }
-        public string[] KeyColumns { get; }
-        public string? AutoIncrementColumn { get; }
-        public bool UpsertByDelete { get; }
-        public HashSet<string> BoolColumns { get; }
-        public HashSet<string> BlobColumns { get; }
+    private sealed class StoreMeta(
+        string table, bool useReportDb, string[] keyColumns, string? autoIncrementColumn,
+        string[] boolColumns, bool upsertByDelete = false) {
+        public string Table { get; } = table;
+        public bool UseReportDb { get; } = useReportDb;
+        public string[] KeyColumns { get; } = keyColumns;
+        public string? AutoIncrementColumn { get; } = autoIncrementColumn;
+        public bool UpsertByDelete { get; } = upsertByDelete;
+        public HashSet<string> BoolColumns { get; } = new(boolColumns, StringComparer.Ordinal);
+        public HashSet<string> BlobColumns { get; } = [with(StringComparer.Ordinal)];
     }
 }

@@ -2,6 +2,9 @@
 @inject IDownloadService Downloader
 @inject IJSRuntime Js
 @inject ReportsViewState State
+@inject TimeProvider Time
+@inject ILogger<ReportGrid> Logger
+@inject ILogger<JsResizeObserver> ResizeLogger
 @using System.Text.Json
 @implements IAsyncDisposable
 
@@ -40,9 +43,9 @@
     [Parameter] public string? GroupFilter { get; set; }
 
     [Parameter] public bool EditMode { get; set; }
-    [Parameter] public IReadOnlyList<ReportGroupRow> Groups { get; set; } = Array.Empty<ReportGroupRow>();
+    [Parameter] public IReadOnlyList<ReportGroupRow> Groups { get; set; } = [];
     [Parameter] public EventCallback<ReportDefinition> OnEdit { get; set; }
-    private List<ReportDefinition> _defs = new();
+    private List<ReportDefinition> _defs = [];
     private int? _draggingIndex;
     private string? _actionMessage;
     private bool _actionMessageIsError;
@@ -57,7 +60,7 @@
 
     protected override async Task OnParametersSetAsync() {
         if (string.IsNullOrEmpty(AccountId)) {
-            _defs = new List<ReportDefinition>();
+            _defs = [];
             return;
         }
 
@@ -74,13 +77,13 @@
 
     private void RecomputeDefs() {
         var rows = GroupFilter is null ? State.Reports : State.Reports.Where(r => r.GroupId == GroupFilter);
-        _defs = rows.ToList();
+        _defs = [.. rows];
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender) {
         if (firstRender) {
             _selfRef = DotNetObjectReference.Create(this);
-            _resizeObserver = new JsResizeObserver(Js);
+            _resizeObserver = new JsResizeObserver(Js, ResizeLogger);
             await _resizeObserver.ObserveAsync(_gridRef, _selfRef, nameof(OnGridResized));
         }
     }
@@ -96,7 +99,7 @@
 
     public async Task ReloadAsync() {
         if (string.IsNullOrEmpty(AccountId)) {
-            _defs = new List<ReportDefinition>();
+            _defs = [];
             return;
         }
 
@@ -130,9 +133,9 @@
 
     public async Task ExportAllAsync() {
         var rows = await Store.RetrieveAccountReportsAsync(AccountId);
-        var defs = rows.Select(ReportMapping.ToDefinition).ToList();
+        var defs = rows.Select(r => ReportMapping.ToDefinition(r, Logger)).ToList();
         var json = JsonSerializer.Serialize(defs, new JsonSerializerOptions { WriteIndented = true });
-        await Downloader.DownloadJsonAsync(json, $"reports-export-{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}.json");
+        await Downloader.DownloadJsonAsync(json, $"reports-export-{Time.GetUtcNow():yyyyMMdd-HHmmss}.json");
         _actionMessage = $"Exported {defs.Count} report(s)";
         _actionMessageIsError = false;
         StateHasChanged();
@@ -174,16 +177,15 @@
     private static List<ReportDefinition> ParseImportedDefinitions(string json) {
         var trimmed = json.TrimStart();
         if (trimmed.StartsWith('[')) {
-            return JsonSerializer.Deserialize<List<ReportDefinition>>(json) ?? new List<ReportDefinition>();
+            return JsonSerializer.Deserialize<List<ReportDefinition>>(json) ?? [];
         }
 
         var single = JsonSerializer.Deserialize<ReportDefinition>(json);
-        return single is null ? new List<ReportDefinition>() : new List<ReportDefinition> { single };
+        return single is null ? [] : [single];
     }
 
-    private void ClearMessageLater() {
+    private void ClearMessageLater() =>
         _ = ClearMessageLaterAsync();
-    }
 
     private async Task ClearMessageLaterAsync() {
         await Task.Delay(5000);

@@ -2,7 +2,7 @@ using Npgsql;
 
 namespace EggLedger.Web.Server.Storage;
 
-public sealed class ConstraintValidator(NpgsqlDataSource source, ILogger<ConstraintValidator> logger) {
+public sealed class ConstraintValidator(NpgsqlDataSource source, TimeProvider time, ILogger<ConstraintValidator> logger) {
     private const string PendingSql = """
         SELECT conrelid::regclass::text, conname
         FROM pg_constraint
@@ -20,14 +20,15 @@ public sealed class ConstraintValidator(NpgsqlDataSource source, ILogger<Constra
             foreach (var (table, name) in pending) {
                 await ValidateAsync(table, name, ct);
             }
-        } catch (OperationCanceledException) {
+        } catch (OperationCanceledException ex) {
+            logger.LogDebug(ex, "constraints: background validation cancelled");
         } catch (Exception ex) {
             logger.LogWarning(ex, "constraints: background validation stopped");
         }
     }
 
     public async Task<IReadOnlyList<(string Table, string Name)>> PendingAsync(CancellationToken ct) {
-        var rows = new List<(string, string)>();
+        List<(string, string)> rows = [];
         await using var conn = await source.OpenConnectionAsync(ct);
         await using var cmd = new NpgsqlCommand(PendingSql, conn);
         await using var reader = await cmd.ExecuteReaderAsync(ct);
@@ -38,14 +39,14 @@ public sealed class ConstraintValidator(NpgsqlDataSource source, ILogger<Constra
     }
 
     private async Task ValidateAsync(string table, string name, CancellationToken ct) {
-        var started = DateTimeOffset.UtcNow;
+        var started = time.GetTimestamp();
         try {
             await using var conn = await source.OpenConnectionAsync(ct);
             await using var cmd = new NpgsqlCommand($"ALTER TABLE {Quote(table)} VALIDATE CONSTRAINT {Quote(name)}", conn);
             cmd.CommandTimeout = 0;
             await cmd.ExecuteNonQueryAsync(ct);
             logger.LogInformation("constraints: validated {Constraint} on {Table} in {Elapsed}",
-                name, table, DateTimeOffset.UtcNow - started);
+                name, table, time.GetElapsedTime(started));
         } catch (OperationCanceledException) {
             throw;
         } catch (Exception ex) {
@@ -53,10 +54,8 @@ public sealed class ConstraintValidator(NpgsqlDataSource source, ILogger<Constra
         }
     }
 
-    private static string Quote(string identifier) {
-        if (identifier.Contains('"', StringComparison.Ordinal)) {
-            throw new ArgumentException($"illegal identifier {identifier}", nameof(identifier));
-        }
-        return string.Join('.', identifier.Split('.').Select(part => "\"" + part + "\""));
-    }
+    private static string Quote(string identifier) =>
+        identifier.Contains('"', StringComparison.Ordinal)
+            ? throw new ArgumentException($"illegal identifier {identifier}", nameof(identifier))
+            : string.Join('.', identifier.Split('.').Select(part => "\"" + part + "\""));
 }

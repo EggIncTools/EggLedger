@@ -1,3 +1,6 @@
+@inject IUserTimeZoneProvider TzProvider
+@inject TimeProvider Time
+
 <div class="admin-panel">
     <div class="admin-panel-head">
         <span class="admin-panel-title">Users (@(Users is null ? "..." : Users.Count.ToString()))</span>
@@ -90,18 +93,15 @@
         return ordered.ToList();
     }
 
-    private IOrderedEnumerable<AdminUser> Order<TKey>(Func<AdminUser, TKey> selector) {
-        return _sortAsc ? Users!.OrderBy(selector) : Users!.OrderByDescending(selector);
-    }
+    private IOrderedEnumerable<AdminUser> Order<TKey>(Func<AdminUser, TKey> selector) =>
+        _sortAsc ? Users!.OrderBy(selector) : Users!.OrderByDescending(selector);
 
-    private static string LastLoginLabel(long? lastSession) {
-        return lastSession is { } s ? LedgerFormatting.FormatTimeSince(s, DateTimeOffset.UtcNow.ToUnixTimeSeconds()) : "no pairing";
-    }
+    private string LastLoginLabel(long? lastSession) =>
+        lastSession is { } s ? LedgerFormatting.FormatTimeSince(s, Time.GetUtcNow().ToUnixTimeSeconds()) : "no pairing";
 
-    private static string LastLoginTitle(long? lastSession) {
-        return lastSession is { } s
-            ? DateTimeOffset.FromUnixTimeSeconds(s).ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+    private string LastLoginTitle(long? lastSession) =>
+        lastSession is { } s
+            ? TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(s), TzProvider.TimeZone).ToString("yyyy-MM-dd HH:mm")
             : "Desktop app has never paired via Discord for this user.";
-    }
 
 }

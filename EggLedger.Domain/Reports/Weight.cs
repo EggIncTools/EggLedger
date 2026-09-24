@@ -3,32 +3,24 @@ using System.Globalization;
 namespace EggLedger.Domain.Reports;
 
 public static class Weight {
-    public static string ClassifyWeight(ReportDefinition def) {
+    public static string ClassifyWeight(ReportDefinition def, TimeProvider? time = null) {
+        var clock = time ?? TimeProvider.System;
 
         if (def.SecondaryGroupBy != "" && def.Mode == "time_series") {
             var eitherIsArtifact = IsArtifactDimension(def.GroupBy) || IsArtifactDimension(def.SecondaryGroupBy);
             if (eitherIsArtifact) {
-                if (HasDateFilter(def.Filters)) {
-                    return "MEDIUM";
-                }
-                return "HEAVY";
+                return HasDateFilter(def.Filters) ? "MEDIUM" : "HEAVY";
             }
             if (!HasDateFilter(def.Filters)) {
                 return "HEAVY";
             }
-            if (DateFilterWindowDays(def.Filters) > 90) {
-                return "HEAVY";
-            }
-            return "MEDIUM";
+            return DateFilterWindowDays(def.Filters, clock) > 90 ? "HEAVY" : "MEDIUM";
         }
 
         if (def.SecondaryGroupBy != "") {
             var eitherIsArtifact = IsArtifactDimension(def.GroupBy) || IsArtifactDimension(def.SecondaryGroupBy);
             if (eitherIsArtifact) {
-                if (HasDateFilter(def.Filters)) {
-                    return "MEDIUM";
-                }
-                return "HEAVY";
+                return HasDateFilter(def.Filters) ? "MEDIUM" : "HEAVY";
             }
             return "LOW";
         }
@@ -36,25 +28,16 @@ public static class Weight {
         if (def.Mode == "time_series") {
             if (def.TimeBucket == "custom") {
                 var days = CustomBucketDays(def.CustomBucketN, def.CustomBucketUnit);
-                if (days > 90) {
-                    return "HEAVY";
-                }
-                return "MEDIUM";
+                return days > 90 ? "HEAVY" : "MEDIUM";
             }
             if (!HasDateFilter(def.Filters)) {
                 return "HEAVY";
             }
-            var d = DateFilterWindowDays(def.Filters);
-            if (d > 90) {
-                return "HEAVY";
-            }
-            return "MEDIUM";
+            var d = DateFilterWindowDays(def.Filters, clock);
+            return d > 90 ? "HEAVY" : "MEDIUM";
         }
 
-        if (def.Mode == "aggregate" && HasArtifactScopeFilter(def.Filters)) {
-            return "MEDIUM";
-        }
-        return "LOW";
+        return def.Mode == "aggregate" && HasArtifactScopeFilter(def.Filters) ? "MEDIUM" : "LOW";
     }
 
     private static int CustomBucketDays(int n, string unit) => unit switch {
@@ -80,10 +63,10 @@ public static class Weight {
         return false;
     }
 
-    private static int DateFilterWindowDays(ReportFilters f) {
+    private static int DateFilterWindowDays(ReportFilters f, TimeProvider clock) {
         var minDays = 9999;
         List<FilterCondition> all = [.. f.And, .. f.Or.SelectMany(g => g)];
-        var now = DateTime.UtcNow;
+        var now = clock.GetUtcNow().UtcDateTime;
         foreach (var c in all) {
             if (c.TopLevel is not "launchDT" and not "returnDT") {
                 continue;

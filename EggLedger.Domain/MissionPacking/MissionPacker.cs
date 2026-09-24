@@ -232,10 +232,6 @@ public sealed class MissionPacker : IMissionCompiler {
         return (float)info.Capacity >= nominalCapacity * 1.7f;
     }
 
-    public bool IsBuggedCap(CompleteMissionResponse mission) {
-        if (mission.Info is null) {
-            return false;
-        }
-        return mission.Info.StartTimeDerived is > BuggedCapLower and < BuggedCapUpper;
-    }
+    public static bool IsBuggedCap(CompleteMissionResponse mission) =>
+        mission.Info is { StartTimeDerived: > BuggedCapLower and < BuggedCapUpper };
 }

@@ -1,9 +1,10 @@
+using System.Collections.Frozen;
 using Ei;
 
 namespace EggLedger.Domain.MissionPacking;
 
 public static class ShipFuelCosts {
-    private static readonly Dictionary<(long Ship, long DurationType), IReadOnlyList<FuelEntry>> Table = BuildTable();
+    private static readonly FrozenDictionary<(long Ship, long DurationType), IReadOnlyList<FuelEntry>> Table = BuildTable().ToFrozenDictionary();
 
     public static IReadOnlyList<FuelEntry> For(long ship, long durationType) =>
         Table.TryGetValue((ship, durationType), out var entries) ? entries : [];

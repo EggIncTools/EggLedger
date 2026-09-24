@@ -43,7 +43,7 @@ public sealed class MissionDateBucketingTests {
 
     [Fact]
     public void ByDay_EmptyInput_ReturnsEmpty() {
-        var result = MissionDateBucketing.ByDay(Array.Empty<DatabaseMission>(), FakeLedgerDate);
+        var result = MissionDateBucketing.ByDay([], FakeLedgerDate);
 
         Assert.Empty(result);
     }

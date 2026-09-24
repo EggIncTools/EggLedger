@@ -22,9 +22,7 @@ public sealed class XlsxWriter : IDisposable {
         return w;
     }
 
-    public void SetColWidths(IReadOnlyList<double> widths) {
-        _colWidths = [.. widths];
-    }
+    public void SetColWidths(IReadOnlyList<double> widths) => _colWidths = [.. widths];
 
     public void WriteRow(IReadOnlyList<XlsxCell> cells) {
         if (!_sheetStarted) {
@@ -33,20 +31,20 @@ public sealed class XlsxWriter : IDisposable {
         }
         _rowNum++;
         var buf = _sheet!;
-        buf.Append(CultureInfo.InvariantCulture, $"<row r=\"{_rowNum}\">");
+        buf.Append(CultureInfo.InvariantCulture, $"""<row r="{_rowNum}">""");
         for (int col = 0; col < cells.Count; col++) {
             var cell = cells[col];
             string r = XlsxCell.CellRef(col + 1, _rowNum);
             if (cell.IsNum) {
                 string s = GoFloat.FormatF(cell.NumVal);
                 if (cell.Style != XlsxStyle.None) {
-                    buf.Append(CultureInfo.InvariantCulture, $"<c r=\"{r}\" s=\"{(int)cell.Style}\"><v>{s}</v></c>");
+                    buf.Append(CultureInfo.InvariantCulture, $"""<c r="{r}" s="{(int)cell.Style}"><v>{s}</v></c>""");
                 } else {
-                    buf.Append(CultureInfo.InvariantCulture, $"<c r=\"{r}\"><v>{s}</v></c>");
+                    buf.Append(CultureInfo.InvariantCulture, $"""<c r="{r}"><v>{s}</v></c>""");
                 }
             } else {
                 string escaped = EscapeText(cell.StrVal);
-                buf.Append(CultureInfo.InvariantCulture, $"<c r=\"{r}\" t=\"inlineStr\"><is><t>{escaped}</t></is></c>");
+                buf.Append(CultureInfo.InvariantCulture, $"""<c r="{r}" t="inlineStr"><is><t>{escaped}</t></is></c>""");
             }
         }
         buf.Append("</row>");
@@ -75,15 +73,15 @@ public sealed class XlsxWriter : IDisposable {
 
     private void StartSheet() {
         var sb = new StringBuilder();
-        sb.Append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
-        sb.Append("<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">");
-        sb.Append("<sheetFormatPr defaultRowHeight=\"15\"/>");
+        sb.Append("""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>""");
+        sb.Append("""<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">""");
+        sb.Append("""<sheetFormatPr defaultRowHeight="15"/>""");
         if (_colWidths.Length > 0) {
             sb.Append("<cols>");
             for (int i = 0; i < _colWidths.Length; i++) {
                 int col = i + 1;
                 string width = _colWidths[i].ToString("F2", CultureInfo.InvariantCulture);
-                sb.Append(CultureInfo.InvariantCulture, $"<col min=\"{col}\" max=\"{col}\" width=\"{width}\" customWidth=\"1\"/>");
+                sb.Append(CultureInfo.InvariantCulture, $"""<col min="{col}" max="{col}" width="{width}" customWidth="1"/>""");
             }
             sb.Append("</cols>");
         }
@@ -142,46 +140,46 @@ public sealed class XlsxWriter : IDisposable {
 
     private static readonly (string Name, string Content)[] StaticEntries = [
         ("[Content_Types].xml",
-            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
-            + "<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">"
-            + "<Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/>"
-            + "<Default Extension=\"xml\" ContentType=\"application/xml\"/>"
-            + "<Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\"/>"
-            + "<Override PartName=\"/xl/worksheets/sheet1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\"/>"
-            + "<Override PartName=\"/xl/styles.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml\"/>"
+            """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>"""
+            + """<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">"""
+            + """<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>"""
+            + """<Default Extension="xml" ContentType="application/xml"/>"""
+            + """<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>"""
+            + """<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>"""
+            + """<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>"""
             + "</Types>"),
         ("_rels/.rels",
-            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
-            + "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">"
-            + "<Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"xl/workbook.xml\"/>"
+            """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>"""
+            + """<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">"""
+            + """<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>"""
             + "</Relationships>"),
         ("xl/workbook.xml",
-            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
-            + "<workbook xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">"
-            + "<sheets><sheet name=\"Sheet1\" sheetId=\"1\" r:id=\"rId1\"/></sheets>"
+            """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>"""
+            + """<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">"""
+            + """<sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets>"""
             + "</workbook>"),
         ("xl/_rels/workbook.xml.rels",
-            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
-            + "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">"
-            + "<Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet1.xml\"/>"
-            + "<Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" Target=\"styles.xml\"/>"
+            """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>"""
+            + """<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">"""
+            + """<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>"""
+            + """<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>"""
             + "</Relationships>"),
         ("xl/styles.xml",
-            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
-            + "<styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">"
-            + "<numFmts count=\"1\"><numFmt numFmtId=\"164\" formatCode=\"yyyy-mm-dd hh:mm:ss\"/></numFmts>"
-            + "<fonts count=\"1\"><font><name val=\"Consolas\"/><sz val=\"11\"/></font></fonts>"
-            + "<fills count=\"2\">"
-            + "<fill><patternFill patternType=\"none\"/></fill>"
-            + "<fill><patternFill patternType=\"gray125\"/></fill>"
+            """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>"""
+            + """<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">"""
+            + """<numFmts count="1"><numFmt numFmtId="164" formatCode="yyyy-mm-dd hh:mm:ss"/></numFmts>"""
+            + """<fonts count="1"><font><name val="Consolas"/><sz val="11"/></font></fonts>"""
+            + """<fills count="2">"""
+            + """<fill><patternFill patternType="none"/></fill>"""
+            + """<fill><patternFill patternType="gray125"/></fill>"""
             + "</fills>"
-            + "<borders count=\"1\"><border><left/><right/><top/><bottom/><diagonal/></border></borders>"
-            + "<cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/></cellStyleXfs>"
-            + "<cellXfs count=\"2\">"
-            + "<xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\"/>"
-            + "<xf numFmtId=\"164\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\"/>"
+            + """<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>"""
+            + """<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>"""
+            + """<cellXfs count="2">"""
+            + """<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>"""
+            + """<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>"""
             + "</cellXfs>"
-            + "<cellStyles count=\"1\"><cellStyle name=\"Normal\" xfId=\"0\" builtinId=\"0\"/></cellStyles>"
+            + """<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>"""
             + "</styleSheet>"),
     ];
 }

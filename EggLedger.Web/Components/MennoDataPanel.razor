@@ -1,5 +1,7 @@
 @using System.Globalization
 @inject MennoService Menno
+@inject IUserTimeZoneProvider TzProvider
+@inject TimeProvider Time
 
 <div class="px-2 py-2 text-sm text-gray-400 bg-darker rounded-md tabular-nums overflow-auto">
     @if (ShowHeading) {
@@ -48,21 +50,20 @@
     private string _error = "";
 
     private bool OnCooldown =>
-        Model.LastMennoRefreshAt is { } last && DateTimeOffset.UtcNow - last < TimeSpan.FromDays(1);
+        Model.LastMennoRefreshAt is { } last && Time.GetUtcNow() - last < TimeSpan.FromDays(1);
 
     private string LastRefreshText =>
         Model.LastMennoRefreshAt is { } last ? FormatLocal(last) : "Never";
 
-    private static string FormatLocal(DateTimeOffset t) {
-        return t.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
-    }
+    private string FormatLocal(DateTimeOffset t) =>
+        TimeZoneInfo.ConvertTime(t, TzProvider.TimeZone).ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
 
     private async Task RefreshNowAsync() {
         _refreshing = true;
         _error = "";
         try {
             await Menno.RefreshAsync();
-            var now = DateTimeOffset.UtcNow;
+            var now = Time.GetUtcNow();
             Model.LastMennoRefreshAt = now;
             await OnSetting.InvokeAsync((SettingsModel.KeyLastMennoRefresh, now.ToString("O")));
         } catch (Exception e) {

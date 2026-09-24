@@ -308,7 +308,7 @@ public sealed class UpdateStatusTests {
         var now = DateTimeOffset.Parse("2026-06-23T12:00:00Z", System.Globalization.CultureInfo.InvariantCulture);
         var handler = new CountingHandler(_ => StubHttpMessageHandler.Json("""{"tag_name":"2.5.0","body":"new"}"""));
         var github = new GithubReleaseClient(new HttpClient(handler));
-        var svc = new UpdateService(github, () => "2.1.4", settings: settings, now: () => now);
+        var svc = new UpdateService(github, () => "2.1.4", settings: settings, time: new TestClock(now));
 
         await svc.CheckForUpdatesAsync();
 
@@ -335,7 +335,7 @@ public sealed class UpdateStatusTests {
         });
         var handler = new CountingHandler(_ => StubHttpMessageHandler.Json("""{"tag_name":"9.9.9","body":"should-not-be-fetched"}"""));
         var github = new GithubReleaseClient(new HttpClient(handler));
-        var svc = new UpdateService(github, () => "2.1.4", settings: settings, now: () => now);
+        var svc = new UpdateService(github, () => "2.1.4", settings: settings, time: new TestClock(now));
 
         await svc.CheckForUpdatesAsync();
 
@@ -356,7 +356,7 @@ public sealed class UpdateStatusTests {
         });
         var handler = new CountingHandler(_ => StubHttpMessageHandler.Json("""{"tag_name":"9.9.9","body":"x"}"""));
         var github = new GithubReleaseClient(new HttpClient(handler));
-        var svc = new UpdateService(github, () => "2.1.4", settings: settings, now: () => now);
+        var svc = new UpdateService(github, () => "2.1.4", settings: settings, time: new TestClock(now));
 
         await svc.CheckForUpdatesAsync();
 
@@ -379,7 +379,7 @@ public sealed class UpdateStatusTests {
         });
         var handler = new CountingHandler(_ => StubHttpMessageHandler.Json("""{"tag_name":"2.6.0","body":"fresh"}"""));
         var github = new GithubReleaseClient(new HttpClient(handler));
-        var svc = new UpdateService(github, () => "2.1.4", settings: settings, now: () => now);
+        var svc = new UpdateService(github, () => "2.1.4", settings: settings, time: new TestClock(now));
 
         await svc.CheckForUpdatesAsync();
 
@@ -405,7 +405,7 @@ public sealed class UpdateStatusTests {
         });
         var handler = new CountingHandler(_ => StubHttpMessageHandler.Json("""{"tag_name":"2.7.0","body":"forced"}"""));
         var github = new GithubReleaseClient(new HttpClient(handler));
-        var svc = new UpdateService(github, () => "2.1.4", settings: settings, now: () => now);
+        var svc = new UpdateService(github, () => "2.1.4", settings: settings, time: new TestClock(now));
 
         await svc.CheckForUpdatesAsync(force: true);
 

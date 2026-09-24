@@ -4,20 +4,11 @@ namespace EggLedger.Web.Services;
 
 public sealed record CachedIcon(byte[] Bytes, string ContentType);
 
-public sealed class EventIconCache {
-    private readonly HttpClient _http;
-    private readonly ILogger<EventIconCache>? _logger;
-    private readonly string? _baseUrl;
-    private readonly string? _apiKey;
+public sealed class EventIconCache(HttpClient http, string? baseUrl, string? apiKey, ILogger<EventIconCache>? logger = null) {
+    private readonly string? _baseUrl = string.IsNullOrWhiteSpace(baseUrl) ? null : baseUrl.Trim().TrimEnd('/');
+    private readonly string? _apiKey = string.IsNullOrWhiteSpace(apiKey) ? null : apiKey.Trim();
     private readonly Lock _gate = new();
     private readonly Dictionary<string, CachedIcon> _icons = [];
-
-    public EventIconCache(HttpClient http, string? baseUrl, string? apiKey, ILogger<EventIconCache>? logger = null) {
-        _http = http;
-        _logger = logger;
-        _baseUrl = string.IsNullOrWhiteSpace(baseUrl) ? null : baseUrl.Trim().TrimEnd('/');
-        _apiKey = string.IsNullOrWhiteSpace(apiKey) ? null : apiKey.Trim();
-    }
 
     public bool IsConfigured => _baseUrl is not null;
 
@@ -65,7 +56,7 @@ public sealed class EventIconCache {
                 request.Headers.TryAddWithoutValidation("X-Api-Key", _apiKey);
             }
 
-            using var response = await _http.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            using var response = await http.SendAsync(request, cancellationToken).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode) {
                 return;
             }
@@ -76,7 +67,7 @@ public sealed class EventIconCache {
                 _icons[KeyFor(type, ultra)] = new CachedIcon(bytes, contentType);
             }
         } catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException) {
-            _logger?.LogWarning(ex, "event icon fetch failed for {Type} (ultra={Ultra})", type, ultra);
+            logger?.LogWarning(ex, "event icon fetch failed for {Type} (ultra={Ultra})", type, ultra);
         }
     }
 }

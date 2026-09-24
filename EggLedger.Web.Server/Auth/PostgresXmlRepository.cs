@@ -13,12 +13,11 @@ public sealed class PostgresXmlRepository(NpgsqlDataSource source) : IXmlReposit
         ShouldRetry = ex => ex is NpgsqlException npg && npg.IsTransient,
     };
 
-    public IReadOnlyCollection<XElement> GetAllElements() {
-        return Retry.RunAsync(_ => Task.FromResult(GetAllElementsOnce()), RetryOpts).GetAwaiter().GetResult();
-    }
+    public IReadOnlyCollection<XElement> GetAllElements() =>
+        Retry.RunAsync(_ => Task.FromResult(GetAllElementsOnce()), RetryOpts).GetAwaiter().GetResult();
 
     private List<XElement> GetAllElementsOnce() {
-        var elements = new List<XElement>();
+        List<XElement> elements = [];
         using var cmd = source.CreateCommand("SELECT xml FROM data_protection_keys");
         using var reader = cmd.ExecuteReader();
         while (reader.Read()) {

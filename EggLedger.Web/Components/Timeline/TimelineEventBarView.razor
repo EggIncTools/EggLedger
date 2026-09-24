@@ -1,3 +1,4 @@
+@using System.Collections.Frozen
 @using System.Globalization
 @inject IUserTimeZoneProvider TzProvider
 
@@ -22,11 +23,11 @@
 
 @code {
 
-    private static readonly Dictionary<string, string> ColorByType = new(StringComparer.OrdinalIgnoreCase) {
+    private static readonly FrozenDictionary<string, string> ColorByType = new Dictionary<string, string> {
         ["mission-fuel"] = "#8b5cf6",
         ["mission-capacity"] = "#a21caf",
         ["mission-duration"] = "#be185d"
-    };
+    }.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
 
     [Parameter] public required TimelineEventBar Bar { get; set; }
 
@@ -42,9 +43,8 @@
     private string BarStyle =>
         FormattableString.Invariant($"--evt-start:{Bar.LeftPercent};--evt-size:{Bar.WidthPercent};--evt-bg:{EventColor};");
 
-    private string FormatTime(long unixSeconds) {
-        return TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(unixSeconds), TzProvider.TimeZone)
+    private string FormatTime(long unixSeconds) =>
+        TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(unixSeconds), TzProvider.TimeZone)
             .ToString("MMM d, h:mm tt", CultureInfo.InvariantCulture);
-    }
 
 }

@@ -8,20 +8,16 @@ public sealed record FamilyMeta(string Id, string Name);
 public static class EiafxData {
     private const string ResourceName = "EggLedger.Domain.Resources.eiafx-data-min.json";
 
-    private static readonly Lazy<ParsedData> _data = new(LoadEmbedded);
+    private static readonly Lazy<ParsedData> Data = new(LoadEmbedded);
 
-    public static IReadOnlyDictionary<(int AfxId, int AfxLevel), double> CraftingWeights => _data.Value.CraftingWeights;
+    public static IReadOnlyDictionary<(int AfxId, int AfxLevel), double> CraftingWeights => Data.Value.CraftingWeights;
 
-    public static IReadOnlyDictionary<string, IReadOnlyList<int>> FamilyAfxIds => _data.Value.FamilyAfxIds;
+    public static IReadOnlyDictionary<string, IReadOnlyList<int>> FamilyAfxIds => Data.Value.FamilyAfxIds;
 
-    public static IReadOnlyList<FamilyMeta> Families => _data.Value.Families;
+    public static IReadOnlyList<FamilyMeta> Families => Data.Value.Families;
 
-    public static double CraftingWeightOrOne(long afxId, long afxLevel) {
-        if (CraftingWeights.TryGetValue(((int)afxId, (int)afxLevel), out var w) && w != 0d) {
-            return w;
-        }
-        return 1d;
-    }
+    public static double CraftingWeightOrOne(long afxId, long afxLevel) =>
+        CraftingWeights.TryGetValue(((int)afxId, (int)afxLevel), out var w) && w != 0d ? w : 1d;
 
     private sealed record ParsedData(
         IReadOnlyDictionary<(int, int), double> CraftingWeights,
@@ -55,7 +51,7 @@ public static class EiafxData {
             if (memo.TryGetValue(key, out var cached)) {
                 return cached;
             }
-            if (!tierMap.TryGetValue(key, out var t) || t.Recipe == null || t.Recipe.Count == 0) {
+            if (!tierMap.TryGetValue(key, out var t) || t.Recipe is null or { Count: 0 }) {
                 memo[key] = 1.0;
                 return 1.0;
             }
@@ -69,8 +65,8 @@ public static class EiafxData {
             return w;
         }
 
-        foreach (var key in tierMap.Keys) {
-            ComputeWeight(key.Item1, key.Item2);
+        foreach (var (afxId, afxLevel) in tierMap.Keys) {
+            ComputeWeight(afxId, afxLevel);
         }
 
         var fids = families

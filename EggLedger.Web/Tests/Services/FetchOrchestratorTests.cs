@@ -20,7 +20,7 @@ public sealed class FetchOrchestratorTests {
         var settings = new IndexedDbSettings(db);
         var store = new IndexedDbMissionStore(db, new LocalApiPayloadDecoder(new ApiClient()));
         var accounts = new IndexedDbAccountStore(settings);
-        var fetch = new FetchService(api, store, settings, accounts, new LocalApiPayloadDecoder(api));
+        var fetch = new FetchService(api, store, settings, accounts, new LocalApiPayloadDecoder(api), NullLogger<FetchService>.Instance);
         return new FetchOrchestrator(fetch, new AppStateService(), settings, NullLogger<FetchOrchestrator>.Instance);
     }
 
@@ -73,38 +73,22 @@ public sealed class FetchOrchestratorTests {
         return Convert.ToBase64String(authBytes.ToArray());
     }
 
-    private sealed class RoutingHandler : HttpMessageHandler {
-        private readonly string _firstContactBody;
-        private readonly Func<string, string?> _completeMission;
-        private readonly Action<string>? _onCompleteMissionRequest;
-        private readonly Action<string, CancellationToken>? _onCompleteMissionRequestWithToken;
-
-        public RoutingHandler(string firstContactBody, Func<string, string?> completeMission, Action<string>? onCompleteMissionRequest = null, Action<string, CancellationToken>? onCompleteMissionRequestWithToken = null) {
-            _firstContactBody = firstContactBody;
-            _completeMission = completeMission;
-            _onCompleteMissionRequest = onCompleteMissionRequest;
-            _onCompleteMissionRequestWithToken = onCompleteMissionRequestWithToken;
-        }
-
+    private sealed class RoutingHandler(string firstContactBody, Func<string, string?> completeMission, Action<string>? onCompleteMissionRequest = null, Action<string, CancellationToken>? onCompleteMissionRequestWithToken = null) : HttpMessageHandler {
         protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request, CancellationToken cancellationToken) {
             string path = request.RequestUri!.AbsolutePath;
             string form = await request.Content!.ReadAsStringAsync(cancellationToken);
 
             if (path.EndsWith(ApiClient.FirstContactEndpoint, StringComparison.Ordinal)) {
-                return Ok(_firstContactBody);
+                return Ok(firstContactBody);
             }
             if (path.EndsWith(ApiClient.CompleteMissionEndpoint, StringComparison.Ordinal)) {
                 string id = ExtractMissionId(form);
-                _onCompleteMissionRequest?.Invoke(id);
-                _onCompleteMissionRequestWithToken?.Invoke(id, cancellationToken);
-                string? body = _completeMission(id);
-                if (body is null) {
-                    return new HttpResponseMessage(System.Net.HttpStatusCode.InternalServerError) {
-                        Content = new StringContent(""),
-                    };
-                }
-                return Ok(body);
+                onCompleteMissionRequest?.Invoke(id);
+                onCompleteMissionRequestWithToken?.Invoke(id, cancellationToken);
+                return completeMission(id) is { } body
+                    ? Ok(body)
+                    : new HttpResponseMessage(System.Net.HttpStatusCode.InternalServerError) { Content = new StringContent("") };
             }
             return new HttpResponseMessage(System.Net.HttpStatusCode.NotFound);
         }
@@ -135,29 +119,176 @@ public sealed class FetchOrchestratorTests {
         await task;
     }
 
-    [Fact]
-    public async Task StartFetchAsync_SegmentOnlyReport_CarriesForwardCounts() {
+    private static FetchOrchestrator MakeDetached(TimeProvider clock) {
         var db = new FakeIndexedDb();
-        var handler = new RoutingHandler(FirstContactBody(["m1"]), CompleteMissionBody);
-        var orchestrator = Make(db, handler);
+        var http = new HttpClient(new RoutingHandler("", _ => null)) { BaseAddress = new Uri("https://example.test") };
+        var api = new ApiClient(http);
+        var settings = new IndexedDbSettings(db);
+        var store = new IndexedDbMissionStore(db, new LocalApiPayloadDecoder(new ApiClient()));
+        var fetch = new FetchService(api, store, settings, new IndexedDbAccountStore(settings), new LocalApiPayloadDecoder(api), NullLogger<FetchService>.Instance);
+        return new FetchOrchestrator(fetch, new AppStateService(), settings, NullLogger<FetchOrchestrator>.Instance, clock);
+    }
 
-        var reports = new List<FetchProgress>();
-        orchestrator.Changed += () => {
-            if (orchestrator.Progress is { } p) {
-                reports.Add(p);
-            }
-        };
+    private static FetchProgress Segment(string id, string segment, SegmentStatus status) => new() {
+        State = AppState.FetchingMissions,
+        MissionId = id,
+        MissionLabel = "Henerprise, Epic, 2026-09-01",
+        Segment = segment,
+        SegmentStatus = status,
+    };
 
-        await orchestrator.StartFetchAsync(Eid);
+    [Fact]
+    public void Apply_SegmentOnlyReport_CarriesForwardCounts() {
+        using var orchestrator = MakeDetached(new ManualClock());
 
-        var firstCounts = reports.First(r => r.State == AppState.FetchingMissions && r.Segment is null);
-        var segmentReports = reports.Where(r => r.Segment is not null).ToList();
-        Assert.NotEmpty(segmentReports);
-        foreach (var seg in segmentReports) {
-            Assert.Equal(firstCounts.Total, seg.Total);
-            Assert.Equal(firstCounts.Failed, seg.Failed);
-            Assert.Equal(firstCounts.Retried, seg.Retried);
+        orchestrator.Apply(new FetchProgress { State = AppState.FetchingMissions, Total = 7, Finished = 2, Failed = 1, Retried = 3 });
+        orchestrator.Apply(Segment("m1", "Fetch", SegmentStatus.Active));
+
+        var p = orchestrator.Progress!;
+        Assert.Equal("Fetch", p.Segment);
+        Assert.Equal((7, 2, 1, 3), (p.Total, p.Finished, p.Failed, p.Retried));
+    }
+
+    [Fact]
+    public void Apply_ManyReports_CoalesceIntoOneChangedPerFlush() {
+        using var orchestrator = MakeDetached(new ManualClock());
+        int changed = 0;
+        orchestrator.Changed += () => changed++;
+
+        for (int i = 0; i < 100; i++) {
+            orchestrator.Apply(Segment($"m{i % 3}", "Fetch", SegmentStatus.Active));
         }
+        Assert.Equal(0, changed);
+
+        orchestrator.Flush();
+        Assert.Equal(1, changed);
+
+        orchestrator.Apply(new FetchProgress { State = AppState.Failed });
+        Assert.Equal(2, changed);
+    }
+
+    [Fact]
+    public void Apply_LogLines_RouteToGlobalAndRow() {
+        using var orchestrator = MakeDetached(new ManualClock());
+
+        orchestrator.Apply(new FetchProgress { State = AppState.FetchingSave, LogText = "hello" });
+        orchestrator.Apply(new FetchProgress { State = AppState.FetchingMissions, MissionId = "m1", MissionLabel = "L", LogText = "retry", LogIsError = true, LogRowOnly = true });
+        orchestrator.Apply(new FetchProgress { State = AppState.FetchingMissions, MissionId = "m1", MissionLabel = "L", LogText = "boom", LogIsError = true });
+        orchestrator.Flush();
+
+        Assert.Equal(["hello", "boom"], orchestrator.Log.Select(e => e.Text));
+        var row = Assert.Single(orchestrator.Processes);
+        Assert.Equal("L", row.Label);
+        Assert.Equal(["retry", "boom"], row.Logs.Select(e => e.Text));
+        Assert.Equal(ProcessStatus.Failed, row.Status);
+    }
+
+    [Fact]
+    public void Apply_GlobalLog_CapsAt2000() {
+        using var orchestrator = MakeDetached(new ManualClock());
+
+        for (int i = 0; i < 2100; i++) {
+            orchestrator.Apply(new FetchProgress { State = AppState.FetchingSave, LogText = $"line {i}" });
+        }
+        orchestrator.Flush();
+
+        Assert.Equal(2000, orchestrator.Log.Count);
+        Assert.Equal("line 100", orchestrator.Log[0].Text);
+    }
+
+    [Fact]
+    public void Flush_ReapsFinishedRowsAfterFiveSeconds() {
+        var clock = new ManualClock();
+        using var orchestrator = MakeDetached(clock);
+
+        orchestrator.Apply(Segment("m1", "Store", SegmentStatus.Done));
+        orchestrator.Apply(Segment("m2", "Fetch", SegmentStatus.Active));
+        orchestrator.Flush();
+        Assert.Equal(2, orchestrator.Processes.Count);
+        Assert.Equal(ProcessStatus.Done, orchestrator.Processes[0].Status);
+
+        clock.Advance(TimeSpan.FromSeconds(5));
+        orchestrator.Flush();
+
+        Assert.Equal("m2", Assert.Single(orchestrator.Processes).Id);
+    }
+
+    [Fact]
+    public void Flush_MoreThanFiveRows_HidesDoneRows() {
+        using var orchestrator = MakeDetached(new ManualClock());
+
+        for (int i = 0; i < 4; i++) {
+            orchestrator.Apply(Segment($"r{i}", "Fetch", SegmentStatus.Active));
+        }
+        orchestrator.Apply(Segment("d0", "Cache", SegmentStatus.Done));
+        orchestrator.Apply(Segment("d1", "Store", SegmentStatus.Done));
+        orchestrator.Flush();
+
+        Assert.Equal(4, orchestrator.Processes.Count);
+        Assert.All(orchestrator.Processes, p => Assert.Equal(ProcessStatus.Running, p.Status));
+    }
+
+    [Fact]
+    public void Apply_StageTransitions_NoMissionsNoExport_SkipsBoth() {
+        using var orchestrator = MakeDetached(new ManualClock());
+
+        orchestrator.Apply(new FetchProgress { State = AppState.FetchingSave });
+        Assert.Equal(StageStatus.Active, orchestrator.SaveStage);
+
+        orchestrator.Apply(new FetchProgress { State = AppState.ExportingData });
+        Assert.Equal((StageStatus.Done, StageStatus.Skipped, StageStatus.Active), (orchestrator.SaveStage, orchestrator.MissionsStage, orchestrator.ExportStage));
+
+        orchestrator.Apply(new FetchProgress { State = AppState.Success });
+        Assert.Equal(StageStatus.Skipped, orchestrator.ExportStage);
+    }
+
+    [Fact]
+    public void Apply_StageTransitions_WithExport_EndsDone() {
+        using var orchestrator = MakeDetached(new ManualClock());
+
+        orchestrator.Apply(new FetchProgress { State = AppState.FetchingSave });
+        orchestrator.Apply(new FetchProgress { State = AppState.FetchingMissions, Total = 1 });
+        Assert.Equal((StageStatus.Done, StageStatus.Active), (orchestrator.SaveStage, orchestrator.MissionsStage));
+
+        orchestrator.Apply(new FetchProgress { State = AppState.ExportingData, Total = 1, Finished = 1 });
+        orchestrator.Apply(new FetchProgress { State = AppState.Success, ExportedFiles = ["a.csv"] });
+
+        Assert.Equal((StageStatus.Done, StageStatus.Done), (orchestrator.MissionsStage, orchestrator.ExportStage));
+        Assert.Equal(["a.csv"], orchestrator.ExportedFiles);
+    }
+
+    [Fact]
+    public void Apply_FailureDuringMissions_FailsActiveStage() {
+        using var orchestrator = MakeDetached(new ManualClock());
+
+        orchestrator.Apply(new FetchProgress { State = AppState.FetchingMissions, Total = 3 });
+        orchestrator.Apply(new FetchProgress { State = AppState.Failed, Total = 3, Finished = 3, Failed = 1 });
+
+        Assert.Equal((StageStatus.Done, StageStatus.Failed, StageStatus.Pending), (orchestrator.SaveStage, orchestrator.MissionsStage, orchestrator.ExportStage));
+    }
+
+    [Fact]
+    public void Eta_NullUntilThreeFinished_ThenProjectsRemaining() {
+        var clock = new ManualClock();
+        using var orchestrator = MakeDetached(clock);
+
+        orchestrator.Apply(new FetchProgress { State = AppState.FetchingMissions, Total = 10 });
+        clock.Advance(TimeSpan.FromSeconds(4));
+        orchestrator.Apply(new FetchProgress { State = AppState.FetchingMissions, Total = 10, Finished = 2 });
+        Assert.Null(orchestrator.Eta);
+
+        clock.Advance(TimeSpan.FromSeconds(2));
+        orchestrator.Apply(new FetchProgress { State = AppState.FetchingMissions, Total = 10, Finished = 3 });
+        Assert.Equal(TimeSpan.FromSeconds(14), orchestrator.Eta);
+    }
+
+    [Fact]
+    public void Apply_ActiveSegment_SetsCurrentMissionLabel() {
+        using var orchestrator = MakeDetached(new ManualClock());
+
+        orchestrator.Apply(Segment("m1", "Fetch", SegmentStatus.Active));
+
+        Assert.Equal("Henerprise, Epic, 2026-09-01", orchestrator.CurrentMissionLabel);
     }
 
     [Fact]
@@ -174,25 +305,22 @@ public sealed class FetchOrchestratorTests {
     }
 
     [Fact]
-    public async Task Changed_FiresOnProgressAndOnCompletion() {
+    public async Task Changed_FiresOnCompletion_WithFetchLog() {
         var db = new FakeIndexedDb();
         var handler = new RoutingHandler(FirstContactBody(["m1"]), CompleteMissionBody);
         var orchestrator = Make(db, handler);
 
-        bool firedDuringFetchingMissions = false;
         bool firedAtSuccess = false;
         orchestrator.Changed += () => {
             if (orchestrator.TerminalState == AppState.Success) {
                 firedAtSuccess = true;
-            } else if (orchestrator.Progress?.State == AppState.FetchingMissions) {
-                firedDuringFetchingMissions = true;
             }
         };
 
         await orchestrator.StartFetchAsync(Eid);
 
-        Assert.True(firedDuringFetchingMissions);
         Assert.True(firedAtSuccess);
+        Assert.Contains(orchestrator.Log, e => e.Text.StartsWith("successfully fetched backup", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -219,7 +347,8 @@ public sealed class FetchOrchestratorTests {
         using var hub = new LedgerDataHub(
             _ => Task.FromResult<IReadOnlyList<DatabaseMission>?>([]),
             _ => Task.FromResult<Dictionary<string, List<MissionDrop>>?>(null),
-            TimeSpan.FromMinutes(5));
+            TimeSpan.FromMinutes(5),
+            new ManualClock());
         var invalidated = new List<string>();
         hub.AccountInvalidated += invalidated.Add;
         hub.AttachFetch(orchestrator);

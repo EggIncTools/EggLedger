@@ -11,19 +11,17 @@ public static class LedgerFormatting {
         if (bytes < 1024 * 1024) {
             return $"{bytes / 1024.0:0.0} KB";
         }
-        if (bytes < 1024L * 1024 * 1024) {
-            return $"{bytes / (1024.0 * 1024):0.0} MB";
-        }
-        return $"{bytes / (1024.0 * 1024 * 1024):0.0} GB";
+        return bytes < 1024L * 1024 * 1024
+            ? $"{bytes / (1024.0 * 1024):0.0} MB"
+            : $"{bytes / (1024.0 * 1024 * 1024):0.0} GB";
     }
 
     public static IReadOnlyList<DatabaseAccount> SortByMissionCountDescending(IEnumerable<DatabaseAccount> accounts) =>
-        accounts
+        [.. accounts
             .Select((acct, index) => (acct, index))
             .OrderByDescending(x => x.acct.MissionCount)
             .ThenBy(x => x.index)
-            .Select(x => x.acct)
-            .ToList();
+            .Select(x => x.acct)];
 
     public static string FormatTimeSince(double returnUnixSeconds, double nowUnixSeconds) {
         if (returnUnixSeconds == 0) {
@@ -51,11 +49,10 @@ public static class LedgerFormatting {
             return accounts;
         }
         string q = query.ToLower(CultureInfo.InvariantCulture);
-        return accounts
+        return [.. accounts
             .Where(a =>
                 a.Id.ToLower(CultureInfo.InvariantCulture).Contains(q, StringComparison.Ordinal)
-                || a.Nickname.ToLower(CultureInfo.InvariantCulture).Contains(q, StringComparison.Ordinal))
-            .ToList();
+                || a.Nickname.ToLower(CultureInfo.InvariantCulture).Contains(q, StringComparison.Ordinal))];
     }
 
     public static string NormalizeEid(string? eid) =>
@@ -75,10 +72,7 @@ public static class LedgerFormatting {
         if (v.Length > 18) {
             return "Player ID is too long (expected EI + 16 digits)";
         }
-        if (!IsEiPlusSixteenDigits(v)) {
-            return "Player ID must be EI followed by exactly 16 digits";
-        }
-        return "";
+        return IsEiPlusSixteenDigits(v) ? "" : "Player ID must be EI followed by exactly 16 digits";
     }
 
     public static bool IsEidValid(string normalizedEid) =>

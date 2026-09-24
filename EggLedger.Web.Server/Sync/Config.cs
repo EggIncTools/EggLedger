@@ -21,6 +21,9 @@ public sealed record AppConfig(
     IReadOnlyList<string> TrustedProxyNetworks,
     string BuildSha,
     string BuildDate,
+    string GitSha,
+    string EgiBaseUrl,
+    string EgiApiKey,
     string DataProtectionCertPath,
     string DataProtectionCertPassword,
     int SessionSweepIntervalMinutes) {
@@ -62,6 +65,9 @@ public sealed record AppConfig(
             TrustedProxyNetworks: proxyNets.Count > 0 ? proxyNets : DefaultProxyNetworks,
             BuildSha: V(LedgerSettings.BuildSha),
             BuildDate: V(LedgerSettings.BuildDate),
+            GitSha: V(LedgerSettings.GitSha),
+            EgiBaseUrl: V(LedgerSettings.EgiBaseUrl),
+            EgiApiKey: V(LedgerSettings.EgiApiKey),
             DataProtectionCertPath: V(LedgerSettings.DataProtectionCertPath),
             DataProtectionCertPassword: V(LedgerSettings.DataProtectionCertPassword),
             SessionSweepIntervalMinutes: Math.Max(1, settings.Value(LedgerSettings.SessionSweepIntervalMinutes).AsInt(10)));

@@ -309,7 +309,7 @@ public sealed class TimelineLayoutEngineTests {
 
     [Fact]
     public void Layout_EmptyInput_ReturnsEmpty() {
-        var bars = TimelineLayoutEngine.Layout(Array.Empty<DatabaseMission>(), WindowStart, WindowEnd, WindowStart);
+        var bars = TimelineLayoutEngine.Layout([], WindowStart, WindowEnd, WindowStart);
 
         Assert.Empty(bars);
     }
@@ -351,7 +351,7 @@ public sealed class TimelineLayoutEngineTests {
 
     [Fact]
     public void LayoutEvents_EmptyInput_ReturnsEmpty() {
-        var bars = TimelineLayoutEngine.LayoutEvents(Array.Empty<GameEvent>(), WindowStart, WindowEnd);
+        var bars = TimelineLayoutEngine.LayoutEvents([], WindowStart, WindowEnd);
 
         Assert.Empty(bars);
     }

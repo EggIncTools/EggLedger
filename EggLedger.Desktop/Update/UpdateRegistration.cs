@@ -2,6 +2,7 @@ using EggLedger.Web.Data;
 using EggLedger.Web.Platform;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace EggLedger.Desktop.Update;
 
@@ -14,7 +15,8 @@ public static class UpdateRegistration {
         });
 
         services.AddSingleton(sp => new GithubReleaseClient(
-            sp.GetService<HttpClient>() ?? new HttpClient()));
+            sp.GetService<HttpClient>() ?? new HttpClient(),
+            sp.GetService<ILogger<GithubReleaseClient>>()));
 
         services.RemoveAll<IUpdateStatusProvider>();
         services.AddSingleton<IUpdateStatusProvider>(sp => new UpdateService(
@@ -22,7 +24,9 @@ public static class UpdateRegistration {
             runningVersion,
             exitAction: exit,
 
-            settings: new IndexedDbSettings(sp.GetRequiredService<IIndexedDb>())));
+            settings: new IndexedDbSettings(sp.GetRequiredService<IIndexedDb>()),
+            time: sp.GetRequiredService<TimeProvider>(),
+            logger: sp.GetService<ILogger<UpdateService>>()));
 
         return services;
     }

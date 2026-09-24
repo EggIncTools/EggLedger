@@ -1,19 +1,23 @@
 using System.Globalization;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EggLedger.Desktop.Update;
 
-public sealed class BinaryReplacement(IProcessProbe probe) {
+public sealed class BinaryReplacement(IProcessProbe probe, ILogger<BinaryReplacement>? logger = null) {
     public const string LockFileName = ".egg-update.lock";
 
     private readonly IProcessProbe _probe = probe;
+    private readonly ILogger<BinaryReplacement> _logger = logger ?? NullLogger<BinaryReplacement>.Instance;
 
-    public static bool RenameWithRetry(string src, string dst, int attempts, TimeSpan delay) {
+    public static bool RenameWithRetry(string src, string dst, int attempts, TimeSpan delay, ILogger? logger = null) {
         for (var i = 0; i < attempts; i++) {
             try {
 
                 File.Move(src, dst, overwrite: true);
                 return true;
             } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) {
+                logger?.LogDebug(ex, "update: rename attempt {Attempt} failed for {Destination}", i + 1, dst);
                 Thread.Sleep(delay);
             }
         }
@@ -38,7 +42,7 @@ public sealed class BinaryReplacement(IProcessProbe probe) {
                 return (null, false);
             }
 
-            TryDelete(lockPath);
+            TryDelete(lockPath, _logger);
             f = TryCreate();
             if (f is null) {
                 return (null, false);
@@ -57,7 +61,7 @@ public sealed class BinaryReplacement(IProcessProbe probe) {
                 return;
             }
             released = true;
-            TryDelete(lockPath);
+            TryDelete(lockPath, _logger);
         }
         return (Release, true);
     }
@@ -69,28 +73,29 @@ public sealed class BinaryReplacement(IProcessProbe probe) {
             try {
                 matches = Directory.GetFiles(exeDir, pattern);
             } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or DirectoryNotFoundException) {
+                _logger.LogDebug(ex, "update: listing stale binaries failed for pattern {Pattern}", pattern);
                 continue;
             }
             foreach (var match in matches) {
-                if (SameFile(match, selfPath)) {
+                if (SameFile(match, selfPath, _logger)) {
                     continue;
                 }
-                TryDelete(match);
+                TryDelete(match, _logger);
             }
         }
 
         var lockPath = Path.Combine(exeDir, LockFileName);
         if (TryReadPid(lockPath, out var pid)) {
             if (!_probe.Exists(pid)) {
-                TryDelete(lockPath);
+                TryDelete(lockPath, _logger);
             }
         } else if (File.Exists(lockPath)) {
 
-            TryDelete(lockPath);
+            TryDelete(lockPath, _logger);
         }
     }
 
-    public static bool SameFile(string a, string b) {
+    public static bool SameFile(string a, string b, ILogger? logger = null) {
         try {
             var fa = new FileInfo(a);
             var fb = new FileInfo(b);
@@ -101,7 +106,7 @@ public sealed class BinaryReplacement(IProcessProbe probe) {
                 return string.Equals(fa.FullName, fb.FullName, comparison);
             }
         } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException) {
-
+            logger?.LogDebug(ex, "update: file identity check failed, falling back to path comparison");
         }
 
         try {
@@ -112,6 +117,7 @@ public sealed class BinaryReplacement(IProcessProbe probe) {
                 : StringComparison.Ordinal;
             return string.Equals(ra, rb, comparison);
         } catch (Exception ex) when (ex is ArgumentException or IOException) {
+            logger?.LogDebug(ex, "update: path comparison failed");
             return false;
         }
     }
@@ -126,10 +132,11 @@ public sealed class BinaryReplacement(IProcessProbe probe) {
         }
     }
 
-    internal static void TryDelete(string path) {
+    internal static void TryDelete(string path, ILogger? logger = null) {
         try {
             File.Delete(path);
         } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) {
+            logger?.LogDebug(ex, "update: delete failed for {Path}", path);
         }
     }
 }

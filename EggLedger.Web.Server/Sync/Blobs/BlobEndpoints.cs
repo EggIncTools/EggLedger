@@ -5,7 +5,7 @@ using Npgsql;
 
 namespace EggLedger.Web.Server.Sync.Blobs;
 
-public sealed class BlobEndpoints(NpgsqlDataSource source, ILogger<BlobEndpoints> logger) {
+public sealed class BlobEndpoints(NpgsqlDataSource source, TimeProvider time, ILogger<BlobEndpoints> logger) {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
     private static Guid UserId(HttpContext ctx) => Guid.Parse(ctx.Request.Headers[RequireAuth.UserIdHeader].ToString());
@@ -25,7 +25,8 @@ public sealed class BlobEndpoints(NpgsqlDataSource source, ILogger<BlobEndpoints
     public async Task Put(HttpContext ctx, string name) {
         var userId = UserId(ctx);
         PutBlobRequest? body;
-        try { body = await JsonSerializer.DeserializeAsync<PutBlobRequest>(ctx.Request.Body, Json, ctx.RequestAborted); } catch (JsonException) {
+        try { body = await JsonSerializer.DeserializeAsync<PutBlobRequest>(ctx.Request.Body, Json, ctx.RequestAborted); } catch (JsonException ex) {
+            logger.LogDebug(ex, "blobs: malformed put body for blob {Name}", name);
             await WriteTextAsync(ctx, StatusCodes.Status400BadRequest, "bad request\n");
             return;
         }
@@ -41,7 +42,7 @@ public sealed class BlobEndpoints(NpgsqlDataSource source, ILogger<BlobEndpoints
             cmd.Parameters.AddWithValue(userId);
             cmd.Parameters.AddWithValue(name);
             cmd.Parameters.AddWithValue(body.Ciphertext);
-            cmd.Parameters.AddWithValue(DateTimeOffset.UtcNow);
+            cmd.Parameters.AddWithValue(time.GetUtcNow());
             await cmd.ExecuteNonQueryAsync(ctx.RequestAborted);
         } catch (Exception ex) {
             logger.LogWarning(ex, "blobs: failed to put blob {Name} for {UserId}", name, userId);

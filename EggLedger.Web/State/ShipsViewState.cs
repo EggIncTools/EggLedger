@@ -8,6 +8,7 @@ using EggLedger.Web.Missions;
 using EggLedger.Web.Missions.Model;
 using EggLedger.Web.Platform;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 
 namespace EggLedger.Web.State;
 
@@ -25,7 +26,8 @@ public sealed class ShipsViewState(
     ActiveAccount active,
     IndexedDbSettings settings,
     LedgerDataHub hub,
-    IUserTimeZoneProvider timeZones) : IDisposable {
+    IUserTimeZoneProvider timeZones,
+    ILogger<ShipsViewState> logger) : IDisposable {
     private static readonly JsonSerializerOptions CardJsonOptions = new(JsonSerializerDefaults.Web);
 
     private Func<Func<Task>, Task>? _dispatch;
@@ -190,7 +192,8 @@ public sealed class ShipsViewState(
             Regroup();
             Applying = false;
             Changed?.Invoke();
-        } catch (Exception) {
+        } catch (Exception ex) {
+            logger.LogDebug(ex, "ships filter failed for generation {Generation}", generation);
             if (generation != _filterGeneration) {
                 return;
             }
@@ -201,9 +204,8 @@ public sealed class ShipsViewState(
         }
     }
 
-    private static bool HasConditions(MissionFilterBar.LegacyFilter filter) {
-        return filter.And.Count > 0 || filter.Or.Any(g => g is { Count: > 0 });
-    }
+    private static bool HasConditions(MissionFilterBar.LegacyFilter filter) =>
+        filter.And.Count > 0 || filter.Or.Any(g => g is { Count: > 0 });
 
     private static DropMatch? CountableDrop(MissionFilterBar.LegacyFilter filter) {
         foreach (var fc in filter.And) {
@@ -319,9 +321,8 @@ public sealed class ShipsViewState(
         hub.AccountInvalidated -= OnAccountInvalidated;
     }
 
-    private void OnAccountChanged() {
+    private void OnAccountChanged() =>
         _ = _dispatch?.Invoke(LoadAsync);
-    }
 
     private void OnAccountInvalidated(string accountId) {
         if (accountId == active.ActiveAccountId) {
@@ -345,11 +346,7 @@ public sealed class ShipsViewState(
                 DropCounts.TryGetValue(a.MissiondId, out var ca);
                 DropCounts.TryGetValue(b.MissiondId, out var cb);
                 var cmp = cb.CompareTo(ca);
-                if (cmp != 0) {
-                    return cmp;
-                }
-
-                return b.LaunchDT.CompareTo(a.LaunchDT);
+                return cmp != 0 ? cmp : b.LaunchDT.CompareTo(a.LaunchDT);
             });
             FlatSorted = sorted;
         } else {

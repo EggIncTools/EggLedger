@@ -12,10 +12,7 @@ public static class MennoComparison {
         if (def.DisplayMode != "heatmap") {
             return false;
         }
-        if (userResult is null || !userResult.Is2D || mennoResult is null) {
-            return false;
-        }
-        return true;
+        return userResult is { Is2D: true } && mennoResult is not null;
     }
 
     public static ReportResult MennoAirtimeResult(ReportDefinition def, ReportResult mennoResult) {
@@ -23,18 +20,12 @@ public static class MennoComparison {
             return mennoResult;
         }
         var avm = mennoResult.AirtimeMatrixValues;
-        if (avm is null || avm.Count == 0) {
-            return mennoResult;
-        }
-        return Clone(mennoResult, matrixValues: [.. avm]);
+        return avm is null or { Count: 0 } ? mennoResult : Clone(mennoResult, matrixValues: [.. avm]);
     }
 
     public static ReportResult UserPerMissionResult(ReportResult userResult) {
         var rpm = userResult.RawPerMissionValues;
-        if (rpm is null || rpm.Count == 0) {
-            return userResult;
-        }
-        return Clone(userResult, matrixValues: [.. rpm]);
+        return rpm is null or { Count: 0 } ? userResult : Clone(userResult, matrixValues: [.. rpm]);
     }
 
     public static IReadOnlyList<double?> RatioMatrix(ReportResult userResult, ReportResult mennoResult) {

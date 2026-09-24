@@ -15,10 +15,7 @@ public static class GoFloat {
         }
 
         string s = v.ToString("R", CultureInfo.InvariantCulture);
-        if (s.IndexOf('E') < 0 && s.IndexOf('e') < 0) {
-            return s;
-        }
-        return ExpandExponential(s);
+        return s.IndexOf('E') < 0 && s.IndexOf('e') < 0 ? s : ExpandExponential(s);
     }
 
     public static string FormatG(double v) {
@@ -109,10 +106,7 @@ public static class GoFloat {
             exp = -(lead + 1);
         }
 
-        if (exp is < -4 or >= 21) {
-            return ToGoExponential(neg, intPart, fracPart, exp);
-        }
-        return plain;
+        return exp is < -4 or >= 21 ? ToGoExponential(neg, intPart, fracPart, exp) : plain;
     }
 
     private static string ToGoExponential(bool neg, string intPart, string fracPart, int exp) {

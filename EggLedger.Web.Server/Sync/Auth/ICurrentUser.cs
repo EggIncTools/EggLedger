@@ -18,9 +18,8 @@ public sealed class CurrentUser(IdentityApiClient identity) : ICurrentUser {
 
     public async Task<string?> RoleAsync(HttpContext ctx, CancellationToken ct) {
         if (ctx.Items.TryGetValue(RoleItemsKey, out var cached)) return (string?)cached;
-        var userId = UserId(ctx);
-        if (userId is null) { ctx.Items[RoleItemsKey] = null; return null; }
-        var user = await identity.GetAsync(userId.Value, ct);
+        if (UserId(ctx) is not { } userId) { ctx.Items[RoleItemsKey] = null; return null; }
+        var user = await identity.GetAsync(userId, ct);
         var role = user?.Role;
         ctx.Items[RoleItemsKey] = role;
         return role;
@@ -28,7 +27,6 @@ public sealed class CurrentUser(IdentityApiClient identity) : ICurrentUser {
 
     public async Task<bool> IsAtLeastAsync(HttpContext ctx, UserRole role, CancellationToken ct) {
         var rawRole = await RoleAsync(ctx, ct);
-        if (rawRole is null) return false;
-        return UserRoles.IsAtLeast(UserRoles.Parse(rawRole), role);
+        return rawRole is not null && UserRoles.IsAtLeast(UserRoles.Parse(rawRole), role);
     }
 }

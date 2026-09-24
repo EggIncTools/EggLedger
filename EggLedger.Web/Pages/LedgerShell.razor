@@ -14,6 +14,7 @@
 @inject ShipsViewState Ships
 @inject NavigationManager Nav
 @inject IJSRuntime JS
+@inject ILogger<LedgerShell> Logger
 
 <PageTitle>EggLedger - @ViewLabel(Shell.View)</PageTitle>
 
@@ -325,8 +326,10 @@
             if (_routeSyncStarted) {
                 try {
                     await _routeSync.DisposeAsync();
-                } catch (Microsoft.JSInterop.JSDisconnectedException) {
-                } catch (InvalidOperationException) {
+                } catch (Microsoft.JSInterop.JSDisconnectedException ex) {
+                    Logger.LogDebug(ex, "route sync dispose failed, circuit disconnected");
+                } catch (InvalidOperationException ex) {
+                    Logger.LogDebug(ex, "route sync dispose failed");
                 }
             }
         }

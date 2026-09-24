@@ -49,7 +49,6 @@ public class MissionCardConfigTests {
     }
 
     [Fact]
-    public void Classic_ShowsExpectedDropsPerShipByDefault() {
+    public void Classic_ShowsExpectedDropsPerShipByDefault() =>
         Assert.True(MissionCardConfig.Classic.ShowExpectedDropsPerShip);
-    }
 }

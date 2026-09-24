@@ -95,7 +95,7 @@ public sealed class FilterOptionsTests {
 
     [Fact]
     public void DropOptions_LeadWithAnyRarityTrio() {
-        var opts = FilterOptions.GetDropFilterOptions(Array.Empty<PossibleArtifact>(), 100, advanced: false);
+        var opts = FilterOptions.GetDropFilterOptions([], 100, advanced: false);
         Assert.Equal(3, opts.Count);
         Assert.Equal("%_%_1_%", opts[0].Value);
         Assert.Equal("%_%_2_%", opts[1].Value);

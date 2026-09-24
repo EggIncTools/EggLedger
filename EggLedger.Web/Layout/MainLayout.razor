@@ -10,6 +10,7 @@
 @inject IUserTimeZoneProvider TzProvider
 @inject DropsViewState DropsState
 @inject ReportsViewState ReportsState
+@inject ILogger<MainLayout> Logger
 
 @* No cascading AuthenticationState means no auth gate exists at all (the desktop host's App.razor
    never wraps in CascadingAuthenticationState), so the account controls stay enabled there. *@
@@ -52,10 +53,11 @@
             ScreenshotSafety.Enabled = v == "true";
     }
 
-    private static async Task PreloadAsync(Func<Task> ensureInitialized) {
+    private async Task PreloadAsync(Func<Task> ensureInitialized) {
         try {
             await ensureInitialized();
-        } catch {
+        } catch (Exception ex) {
+            Logger.LogDebug(ex, "view state preload failed");
         }
     }
 

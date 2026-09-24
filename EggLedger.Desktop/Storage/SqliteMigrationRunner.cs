@@ -66,7 +66,7 @@ public static class SqliteMigrationRunner {
     private static List<(int Version, string Sql)> LoadMigrations(string set) {
         var assembly = typeof(SqliteMigrationRunner).Assembly;
         var prefix = $".Migrations.{set}.";
-        var result = new List<(int, string)>();
+        List<(int Version, string Sql)> result = [];
 
         foreach (var name in assembly.GetManifestResourceNames()) {
             if (!name.Contains(prefix, StringComparison.Ordinal) || !name.EndsWith(".up.sql", StringComparison.Ordinal)) {
@@ -80,7 +80,7 @@ public static class SqliteMigrationRunner {
             result.Add((version, ReadResource(assembly, name)));
         }
 
-        result.Sort((a, b) => a.Item1.CompareTo(b.Item1));
+        result.Sort((a, b) => a.Version.CompareTo(b.Version));
         return result;
     }
 

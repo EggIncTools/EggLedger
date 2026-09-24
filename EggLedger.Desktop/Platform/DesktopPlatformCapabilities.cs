@@ -67,9 +67,6 @@ public sealed class DesktopPlatformCapabilities(IProcessRunner processRunner, ID
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
             return OSPlatform.Windows;
         }
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
-            return OSPlatform.OSX;
-        }
-        return OSPlatform.Linux;
+        return RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? OSPlatform.OSX : OSPlatform.Linux;
     }
 }

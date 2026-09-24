@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Globalization;
 
 namespace EggLedger.Domain.Reports;
@@ -10,8 +11,8 @@ public static class QueryBuilder {
         double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out _);
 
     public static (string clause, List<object?> args) BuildWhereClause(ReportFilters filters) {
-        var clauses = new List<string>();
-        var args = new List<object?>();
+        List<string> clauses = [];
+        List<object?> args = [];
 
         void AddCond(FilterCondition c) {
             var (clause, cargs) = ConditionToSql(c);
@@ -27,7 +28,7 @@ public static class QueryBuilder {
         }
 
         foreach (var group in filters.Or) {
-            var orParts = new List<string>();
+            List<string> orParts = [];
             foreach (var c in group) {
                 var (clause, cargs) = ConditionToSql(c);
                 if (clause == "") {
@@ -41,13 +42,10 @@ public static class QueryBuilder {
             }
         }
 
-        if (clauses.Count == 0) {
-            return ("", []);
-        }
-        return (string.Join(" AND ", clauses), args);
+        return clauses.Count == 0 ? ("", []) : (string.Join(" AND ", clauses), args);
     }
 
-    private static readonly Dictionary<string, string> MissionFieldToColumn = new() {
+    private static readonly FrozenDictionary<string, string> MissionFieldToColumn = new Dictionary<string, string> {
         ["ship"] = "m.ship",
         ["duration"] = "m.duration_type",
         ["level"] = "m.level",
@@ -55,15 +53,15 @@ public static class QueryBuilder {
         ["type"] = "m.mission_type",
         ["launchDT"] = "m.start_timestamp",
         ["returnDT"] = "m.return_timestamp",
-    };
+    }.ToFrozenDictionary();
 
-    private static readonly Dictionary<string, string> ArtifactFieldToColumn = new() {
+    private static readonly FrozenDictionary<string, string> ArtifactFieldToColumn = new Dictionary<string, string> {
         ["artifact_rarity"] = "d.rarity",
         ["artifact_spec_type"] = "d.spec_type",
         ["artifact_name"] = "d.artifact_id",
         ["artifact_tier"] = "d.level",
         ["artifact_quality"] = "d.quality",
-    };
+    }.ToFrozenDictionary();
 
     public static (string clause, List<object?> args) ConditionToSql(FilterCondition c) {
         switch (c.TopLevel) {
@@ -85,8 +83,8 @@ public static class QueryBuilder {
                 var parts = c.Val.Split('_');
 
                 string[] cols = ["artifact_id", "level", "rarity"];
-                var preds = new List<string>();
-                var qargs = new List<object?>();
+                List<string> preds = [];
+                List<object?> qargs = [];
                 for (var i = 0; i < cols.Length; i++) {
                     if (i >= parts.Length || parts[i] == "%" || parts[i] == "") {
                         continue;
@@ -234,7 +232,7 @@ public static class QueryBuilder {
             if (ArtifactSrc) {
                 where += " AND d.drop_index >= 0";
             }
-            if (ExtraWhere != null) {
+            if (ExtraWhere is not null) {
                 foreach (var c in ExtraWhere) {
                     where += " AND " + c;
                 }

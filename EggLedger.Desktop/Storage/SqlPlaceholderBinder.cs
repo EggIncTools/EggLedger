@@ -17,10 +17,9 @@ public static class SqlPlaceholderBinder {
             cmd.Parameters.AddWithValue(name, idx < args.Count ? args[idx] ?? DBNull.Value : DBNull.Value);
             idx++;
         }
-        if (idx != args.Count) {
-            throw new InvalidOperationException(
+        return idx == args.Count
+            ? result
+            : throw new InvalidOperationException(
                 $"placeholder/arg mismatch: {idx} '?' placeholders but {args.Count} args");
-        }
-        return result;
     }
 }

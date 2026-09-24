@@ -2,6 +2,7 @@
    opens a Blazor-controlled overlay (full-screen fixed backdrop + centered panel). NOT a
    native <dialog>.showModal(): top-layer promotion desyncs the Blazor Server render tree
    (insertBefore/parentNode-null crashes). Backdrop click closes. Drops show a rarity ring. *@
+@inject ILogger<SearchablePicker> Logger
 
 @if (TriggerContent is not null) {
     <button type="button" class="@TriggerClass" aria-label="@Placeholder" data-tt="@Placeholder" @onclick="Open">@TriggerContent</button>
@@ -206,7 +207,8 @@
             _focusPending = false;
             try {
                 await _searchInput.FocusAsync();
-            } catch {
+            } catch (Exception ex) {
+                Logger.LogDebug(ex, "picker search input focus failed");
                 /* element gone (closed before focus) - ignore */
             }
         }

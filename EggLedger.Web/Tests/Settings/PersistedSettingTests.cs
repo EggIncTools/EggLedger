@@ -11,9 +11,7 @@ public sealed class PersistedSettingTests {
         Sweet
     }
 
-    private static IndexedDbSettings NewStore() {
-        return new IndexedDbSettings(new FakeIndexedDb());
-    }
+    private static IndexedDbSettings NewStore() => new(new FakeIndexedDb());
 
     [Fact]
     public async Task Load_KeyAbsent_KeepsDefault() {

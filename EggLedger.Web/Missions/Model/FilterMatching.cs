@@ -49,7 +49,6 @@ public static class FilterMatching {
         return matched;
     }
 
-    private static void Append(StringBuilder sb, WebCondition c) {
+    private static void Append(StringBuilder sb, WebCondition c) =>
         sb.Append(c.TopLevel).Append('~').Append(c.Op).Append('~').Append(c.Val);
-    }
 }

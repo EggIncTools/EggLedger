@@ -1,9 +1,10 @@
 using EggLedger.Domain.Export;
+using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 
 namespace EggLedger.Web.Services;
 
-public sealed class DownloadService(IJSRuntime js) : IDownloadService, IAsyncDisposable {
+public sealed class DownloadService(IJSRuntime js, ILogger<DownloadService> logger) : IDownloadService, IAsyncDisposable {
     private const string ModulePath = "./_content/EggLedger.Web/js/download.js";
     private const string CsvMime = "text/csv";
     private const string XlsxMime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -20,6 +21,7 @@ public sealed class DownloadService(IJSRuntime js) : IDownloadService, IAsyncDis
             _module ??= await js.InvokeAsync<IJSObjectReference>("import", ModulePath);
             await _module.InvokeVoidAsync("downloadText", filename, json, "application/json");
         } catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or TaskCanceledException) {
+            logger.LogDebug(ex, "json download failed for {Filename}", filename);
         }
     }
 
@@ -28,6 +30,7 @@ public sealed class DownloadService(IJSRuntime js) : IDownloadService, IAsyncDis
             _module ??= await js.InvokeAsync<IJSObjectReference>("import", ModulePath);
             return await _module.InvokeAsync<string?>("pickTextFile", ".json,application/json");
         } catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or TaskCanceledException) {
+            logger.LogDebug(ex, "json file pick failed for {Module}", ModulePath);
             return null;
         }
     }
@@ -37,6 +40,7 @@ public sealed class DownloadService(IJSRuntime js) : IDownloadService, IAsyncDis
             _module ??= await js.InvokeAsync<IJSObjectReference>("import", ModulePath);
             await _module.InvokeVoidAsync("download", filename, Convert.ToBase64String(bytes), mime);
         } catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or TaskCanceledException) {
+            logger.LogDebug(ex, "file download failed for {Filename}", filename);
         }
     }
 

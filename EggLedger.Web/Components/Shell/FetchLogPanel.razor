@@ -1,75 +1,174 @@
 @inject FetchOrchestrator Fetch
+@inject ScreenshotSafetyState ScreenshotSafety
+@inject IndexedDbSettings Settings
+@inject IUserTimeZoneProvider TzProvider
 @implements IDisposable
 
-<div class="fetch-log-body">
-    @switch (DisplayState) {
-        case AppState.FetchingSave:
-            <div class="text-yellow-400">Fetching save...</div>
-            break;
-        case AppState.FetchingMissions:
-            <div class="text-yellow-400">
-                Fetching missions...
-                @if (Fetch.Progress?.MissionId is { Length: > 0 } mid) {
-                    <span class="text-gray-400 italic break-all">@mid</span>
+<div class="fetch-log-body flex flex-col gap-1.5">
+    @if (DisplayState is { } state and not AppState.AwaitingInput) {
+        <div>
+            @switch (state) {
+                case AppState.FetchingSave:
+                    <div>Fetching save...</div>
+                    break;
+                case AppState.FetchingMissions:
+                    <div>
+                        <span class="text-yellow-400">Fetching missions...</span>
+                        @if (Fetch.CurrentMissionLabel is { Length: > 0 } label) {
+                            <span class="text-gray-400 italic break-all"> @label</span>
+                        }
+                    </div>
+                    <div>
+                        <span class="text-green-400">@(Fetch.Progress?.Finished ?? 0)</span>
+                        <span class="text-gray-400 whitespace-pre"> / @(Fetch.Progress?.Total ?? 0)@(Fetch.Eta is { } eta ? "  ETA " + FormatEta(eta) : "")</span>
+                    </div>
+                    @if (FailedCount > 0 || RetriedCount > 0) {
+                        <div>
+                            @if (FailedCount > 0) {
+                                <span class="text-red-500">@FailedCount failed</span>
+                            }
+                            @if (FailedCount > 0 && RetriedCount > 0) {
+                                <span class="text-gray-400">, </span>
+                            }
+                            @if (RetriedCount > 0) {
+                                <span class="text-orange-400">@RetriedCount retried</span>
+                            }
+                        </div>
+                    }
+                    break;
+                case AppState.ExportingData:
+                    <div>Exporting data...</div>
+                    break;
+                case AppState.Success:
+                    @if (Fetch.ExportedFiles.Count > 0) {
+                        <div>Successfully exported to:</div>
+                        <ul class="pl-3">
+                            @foreach (var file in Fetch.ExportedFiles) {
+                                <li class="break-all">
+                                    <LogLine Text="@file" IsError="false" Masked="ScreenshotSafety.Enabled"/>
+                                </li>
+                            }
+                        </ul>
+                    } else {
+                        <div>Fetch complete.</div>
+                    }
+                    break;
+                case AppState.Failed:
+                    <div class="text-red-500">Data fetching failed. Please try again.</div>
+                    @if (Fetch.Progress?.FailedMissions is { Count: > 0 } fails) {
+                        <ul class="mt-1 pl-3 max-h-32 overflow-auto">
+                            @foreach (var f in fails) {
+                                <li class="break-all @(f.IsTimeout ? "text-yellow-600" : "text-gray-500")">
+                                    <span class="@(f.IsTimeout ? "text-yellow-500" : "text-gray-400") font-mono">@f.MissionId</span>
+                                    @if (f.IsTimeout) {
+                                        <span class="text-yellow-600/80"> - timed out after multiple attempts</span>
+                                    } else {
+                                        <span> - @f.Reason</span>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    }
+                    break;
+                case AppState.Interrupted:
+                    <div>Interrupted.</div>
+                    break;
+            }
+
+            <div class="flex gap-1 mt-1">
+                @StageBar(Fetch.SaveStage, "save", 100, Fetch.SaveStage == StageStatus.Active)
+                @StageBar(Fetch.MissionsStage, "missions", MissionsWidth, MissionsPulsing)
+                @StageBar(Fetch.ExportStage, "export", 100, Fetch.ExportStage == StageStatus.Active)
+            </div>
+            <div class="flex mt-0.5 text-gray-600 text-[0.6rem]">
+                @StageLabel(Fetch.SaveStage, "save", "Save", Fetch.SaveStage == StageStatus.Active)
+                @StageLabel(Fetch.MissionsStage, "missions", "Missions", MissionsPulsing)
+                @StageLabel(Fetch.ExportStage, "export", "Export", Fetch.ExportStage == StageStatus.Active)
+            </div>
+        </div>
+    }
+
+    @if (_showMissionProgress) {
+        <MissionProgressPanel Processes="Fetch.Processes"/>
+    }
+
+    @if (Fetch.Log.Count > 0) {
+        <div class="flex flex-col-reverse max-h-60 overflow-auto px-2 py-1 text-xs font-mono text-gray-400 bg-darkest rounded-md">
+            <div>
+                @foreach (var entry in Fetch.Log) {
+                    <div class="whitespace-pre">
+                        <span class="@(entry.IsError ? "text-red-700" : "text-green-700")">@FormatClock(entry.At)|</span>
+                        <LogLine Text="@entry.Text" IsError="entry.IsError" Masked="ScreenshotSafety.Enabled"/>
+                    </div>
                 }
             </div>
-            <div class="mt-0.5">
-                <span class="text-green-400">@(Fetch.Progress?.Finished ?? 0)</span>
-                <span class="text-gray-400"> / @(Fetch.Progress?.Total ?? 0) (@(Fetch.Percent)%)</span>
-            </div>
-            @if ((Fetch.Progress?.Failed ?? 0) > 0 || (Fetch.Progress?.Retried ?? 0) > 0) {
-                <div class="mt-0.5">
-                    @if ((Fetch.Progress?.Failed ?? 0) > 0) {
-                        <span class="text-red-500">@Fetch.Progress?.Failed failed</span>
-                    }
-                    @if ((Fetch.Progress?.Failed ?? 0) > 0 && (Fetch.Progress?.Retried ?? 0) > 0) {
-                        <span class="text-gray-400"> &middot; </span>
-                    }
-                    @if ((Fetch.Progress?.Retried ?? 0) > 0) {
-                        <span class="text-orange-400">@Fetch.Progress?.Retried retried</span>
-                    }
-                </div>
-            }
-
-            <div class="h-3 mt-1.5 rounded-sm overflow-hidden bg-dark">
-                <div class="h-full bg-green-500 transition-all duration-300 rounded-sm" style="width: @(Fetch.Percent)%"></div>
-            </div>
-            break;
-        case AppState.ExportingData:
-            <div class="text-yellow-400">Exporting data...</div>
-            break;
-        case AppState.Success:
-            <div class="text-green-400">Fetch complete.</div>
-            break;
-        case AppState.Failed:
-            <div class="text-red-500">Data fetching failed. Please try again.</div>
-            @if (Fetch.Progress?.FailedMissions is { Count: > 0 } fails) {
-                <ul class="mt-1 pl-3 max-h-32 overflow-auto">
-                    @foreach (var f in fails) {
-                        <li class="break-all @(f.IsTimeout ? "text-yellow-600" : "text-gray-500")">
-                            <span class="@(f.IsTimeout ? "text-yellow-500" : "text-gray-400") font-mono">@f.MissionId</span>
-                            @if (f.IsTimeout) {
-                                <span class="text-yellow-600/80"> - timed out after multiple attempts</span>
-                            } else {
-                                <span> - @f.Reason</span>
-                            }
-                        </li>
-                    }
-                </ul>
-            }
-
-            break;
-        case AppState.Interrupted:
-            <div class="text-yellow-400">Interrupted.</div>
-            break;
+        </div>
     }
 </div>
 
 @code {
+    private bool _showMissionProgress = true;
+
     private AppState? DisplayState => Fetch.TerminalState ?? Fetch.Progress?.State;
 
-    protected override void OnInitialized() {
+    private int FailedCount => Fetch.Progress?.Failed ?? 0;
+
+    private int RetriedCount => Fetch.Progress?.Retried ?? 0;
+
+    private bool MissionsPulsing => Fetch.MissionsStage == StageStatus.Active && Fetch.Percent == 0;
+
+    private int MissionsWidth => Fetch.MissionsStage == StageStatus.Active ? Math.Max(Fetch.Percent, 3) : 100;
+
+    private static RenderFragment StageBar(StageStatus status, string stage, int activeWidth, bool pulsing) => __builder => {
+        var width = status switch {
+            StageStatus.Pending => 0,
+            StageStatus.Active => activeWidth,
+            _ => 100
+        };
+        var fill = status switch {
+            StageStatus.Pending => "",
+            StageStatus.Failed => "bg-stage-failed",
+            StageStatus.Skipped => stage == "missions" ? "stage-hatch-missions" : "stage-hatch-export",
+            _ => BgClass(stage)
+        };
+        <div class="flex-1 h-3 bg-dark rounded-sm overflow-hidden">
+            <div class="h-full transition-all duration-300 rounded-sm @fill @(pulsing ? "animate-pulse" : "")" style="width: @(width)%"></div>
+        </div>
+    };
+
+    private static RenderFragment StageLabel(StageStatus status, string stage, string label, bool pulsing) => __builder => {
+        var color = status switch {
+            StageStatus.Pending => "",
+            StageStatus.Failed => "text-stage-failed",
+            _ => TextClass(stage)
+        };
+        <div class="flex-1 text-center @color @(pulsing ? "animate-pulse" : "")">@label</div>
+    };
+
+    private static string BgClass(string stage) => stage switch {
+        "save" => "bg-stage-save",
+        "missions" => "bg-stage-missions",
+        _ => "bg-stage-export"
+    };
+
+    private static string TextClass(string stage) => stage switch {
+        "save" => "text-stage-save",
+        "missions" => "text-stage-missions",
+        _ => "text-stage-export"
+    };
+
+    private static string FormatEta(TimeSpan eta) =>
+        eta.TotalHours >= 1 ? $"{(int)eta.TotalHours}:{eta:mm\\:ss}" : eta.ToString(@"m\:ss");
+
+    private string FormatClock(DateTimeOffset at) =>
+        TimeZoneInfo.ConvertTime(at, TzProvider.TimeZone).ToString("HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture);
+
+    protected override async Task OnInitializedAsync() {
         Fetch.Changed += OnChanged;
+        ScreenshotSafety.Changed += OnChanged;
+        var setting = PersistedSetting.Bool(Settings, SettingsModel.KeyShowMissionProgress, true);
+        await setting.LoadAsync();
+        _showMissionProgress = setting.Value;
     }
 
     private void OnChanged() {
@@ -78,6 +177,6 @@
 
     public void Dispose() {
         Fetch.Changed -= OnChanged;
+        ScreenshotSafety.Changed -= OnChanged;
     }
-
 }

@@ -34,7 +34,7 @@ public sealed record FuelRowData {
     public double Amount { get; init; }
 }
 
-public sealed class InMemoryReportRunner(IWeightData weights) {
+public sealed class InMemoryReportRunner(IWeightData weights, TimeProvider? time = null) {
     private readonly IWeightData _weights = weights ?? throw new ArgumentNullException(nameof(weights));
 
     public ReportResult Run(
@@ -42,7 +42,7 @@ public sealed class InMemoryReportRunner(IWeightData weights) {
         IReadOnlyList<MissionRowData> missions,
         IReadOnlyList<ArtifactDropRowData> drops,
         IReadOnlyList<FuelRowData> fuel) {
-        var db = new InMemoryMissionDb(def, missions, drops, fuel, _weights);
+        var db = new InMemoryMissionDb(def, missions, drops, fuel, _weights, time);
         var executor = new ReportExecutor(db, _weights);
         return executor.ExecuteReport(def);
     }

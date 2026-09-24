@@ -10,7 +10,7 @@ public class QualityTests {
         var parameters = EiafxConfig.Config.artifact_parameters;
         Assert.NotEmpty(parameters);
 
-        var sample = parameters.FirstOrDefault(p => p.BaseQuality > 0);
+        var sample = parameters.Find(p => p.BaseQuality > 0);
         Assert.NotNull(sample);
 
         var s = sample!.Spec;

@@ -7,7 +7,7 @@ namespace EggLedger.Web.Server.Sync.Menno;
 public sealed record MennoRequest(
     [property: JsonPropertyName("eid")] string Eid);
 
-public sealed partial class MennoEndpoint(HttpClient client, string functionKey, string upstreamUrl) {
+public sealed partial class MennoEndpoint(HttpClient client, string functionKey, string upstreamUrl, ILogger<MennoEndpoint> logger) {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
     private static readonly IpRateLimiter Limiter = new(maxPerWindow: 10, window: TimeSpan.FromMinutes(1));
     [GeneratedRegex(@"^EI\d{16}$")]
@@ -21,7 +21,8 @@ public sealed partial class MennoEndpoint(HttpClient client, string functionKey,
         }
 
         MennoRequest? body;
-        try { body = await JsonSerializer.DeserializeAsync<MennoRequest>(ctx.Request.Body, Json, ctx.RequestAborted); } catch (JsonException) {
+        try { body = await JsonSerializer.DeserializeAsync<MennoRequest>(ctx.Request.Body, Json, ctx.RequestAborted); } catch (JsonException ex) {
+            logger.LogDebug(ex, "menno: malformed submit body");
             ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
             await ctx.Response.WriteAsync("invalid request body: eid is required\n", ctx.RequestAborted);
             return;
@@ -38,7 +39,8 @@ public sealed partial class MennoEndpoint(HttpClient client, string functionKey,
         try {
             using var resp = await client.SendAsync(req, ctx.RequestAborted);
             ctx.Response.StatusCode = (int)resp.StatusCode;
-        } catch (HttpRequestException) {
+        } catch (HttpRequestException ex) {
+            logger.LogDebug(ex, "menno: upstream submit failed");
             ctx.Response.StatusCode = StatusCodes.Status502BadGateway;
         }
     }

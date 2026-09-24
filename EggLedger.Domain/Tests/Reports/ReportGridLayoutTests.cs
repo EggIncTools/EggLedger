@@ -72,16 +72,14 @@ public class ReportGridLayoutTests {
     }
 
     [Fact]
-    public void ComputeEmptyZones_EmptyForNoDefs() {
-        Assert.Empty(ReportGridLayout.ComputeEmptyZones(Array.Empty<ReportDefinition>()));
-    }
+    public void ComputeEmptyZones_EmptyForNoDefs() =>
+        Assert.Empty(ReportGridLayout.ComputeEmptyZones([]));
 
     [Theory]
     [InlineData(800, 89)]
     [InlineData(1600, 189)]
     [InlineData(100, 80)]
     [InlineData(0, 80)]
-    public void ComputeRowHeightPx_MatchesGoFormula(double containerWidthPx, int expected) {
+    public void ComputeRowHeightPx_MatchesGoFormula(double containerWidthPx, int expected) =>
         Assert.Equal(expected, ReportGridLayout.ComputeRowHeightPx(containerWidthPx));
-    }
 }

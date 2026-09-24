@@ -22,7 +22,10 @@ internal static class Program {
 
         var appBuilder = PhotinoBlazorAppBuilder.CreateDefault(args);
 
-        appBuilder.Services.AddEggLedgerWeb(CloudSyncBaseAddress());
+        appBuilder.Services.AddEggLedgerWeb(
+            CloudSyncBaseAddress(),
+            Environment.GetEnvironmentVariable(EggLedger.Web.Services.GameEventsService.BaseUrlVariable),
+            Environment.GetEnvironmentVariable(EggLedger.Web.Services.GameEventsService.ApiKeyVariable));
 
         var dataRootDir = StoragePaths.ResolveDataRootDir(StoragePaths.DefaultRootDir());
         appBuilder.Services.AddDesktopSqliteStorage(dataRootDir);
@@ -92,12 +95,13 @@ internal static class Program {
                 var model = new SettingsModel();
                 model.LoadFrom(await settings.GetAllSettingsAsync().ConfigureAwait(false));
                 if (!model.AutoRefreshMenno) return;
-                if (model.LastMennoRefreshAt is { } last && DateTimeOffset.UtcNow - last < TimeSpan.FromDays(5)) return;
+                var clock = scope.ServiceProvider.GetRequiredService<TimeProvider>();
+                if (model.LastMennoRefreshAt is { } last && clock.GetUtcNow() - last < TimeSpan.FromDays(5)) return;
                 var menno = scope.ServiceProvider.GetRequiredService<EggLedger.Web.Services.MennoService>();
                 await menno.RefreshAsync().ConfigureAwait(false);
                 await settings.SetSettingAsync(
                     SettingsModel.KeyLastMennoRefresh,
-                    DateTimeOffset.UtcNow.ToString("O")).ConfigureAwait(false);
+                    clock.GetUtcNow().ToString("O")).ConfigureAwait(false);
             } catch (Exception ex) {
                 Log("menno auto-refresh failed: " + ex.Message);
             }
@@ -152,6 +156,7 @@ internal static class Program {
             var settings = scope.ServiceProvider.GetRequiredService<IndexedDbSettings>();
             model.LoadFrom(settings.GetAllSettingsAsync().GetAwaiter().GetResult());
         } catch (Exception ex) when (ex is Microsoft.Data.Sqlite.SqliteException or System.Text.Json.JsonException or IOException) {
+            Log("load desktop settings failed: " + ex.Message);
         }
         return model;
     }
@@ -184,19 +189,23 @@ internal static class Program {
             try {
                 Directory.Delete(staleDir, recursive: true);
             } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) {
+                Log("delete stale wwwroot failed: " + ex.Message);
             }
         }
     }
 
     private static bool MoveDirectoryWithRetry(string src, string dst) {
+        string? lastError = null;
         for (var i = 0; i < 10; i++) {
             try {
                 Directory.Move(src, dst);
                 return true;
             } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) {
+                lastError = ex.Message;
                 Thread.Sleep(300);
             }
         }
+        Log("move wwwroot dir failed after retries: " + lastError);
         return false;
     }
 
@@ -208,12 +217,14 @@ internal static class Program {
         try {
             matches = Directory.GetDirectories(exeDir, wwwrootName + ".*");
         } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or DirectoryNotFoundException) {
+            Log("list wwwroot swap dirs failed: " + ex.Message);
             return;
         }
         foreach (var match in matches) {
             try {
                 Directory.Delete(match, recursive: true);
             } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) {
+                Log("delete leftover wwwroot dir failed: " + ex.Message);
             }
         }
     }

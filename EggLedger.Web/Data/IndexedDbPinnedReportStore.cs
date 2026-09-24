@@ -1,13 +1,12 @@
 namespace EggLedger.Web.Data;
 
-public sealed class IndexedDbPinnedReportStore(IIndexedDb db, Func<long>? now = null) {
+public sealed class IndexedDbPinnedReportStore(IIndexedDb db, TimeProvider time) {
     private readonly IIndexedDb _db = db;
-    private readonly Func<long> _now = now ?? (() => DateTimeOffset.UtcNow.ToUnixTimeSeconds());
 
     public async Task InsertAsync(PinnedReportRow r) {
         var row = r with {
             Id = string.IsNullOrEmpty(r.Id) ? Guid.NewGuid().ToString("D") : r.Id,
-            CreatedAt = _now(),
+            CreatedAt = time.GetUtcNow().ToUnixTimeSeconds(),
         };
         await _db.PutAsync(IndexedDbStores.PinnedReports, row);
     }

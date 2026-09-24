@@ -53,8 +53,6 @@ public class AppErrorBoundaryTests {
             }
         }
 
-        protected override void BuildRenderTree(RenderTreeBuilder builder) {
-            builder.AddContent(0, "recovered");
-        }
+        protected override void BuildRenderTree(RenderTreeBuilder builder) => builder.AddContent(0, "recovered");
     }
 }

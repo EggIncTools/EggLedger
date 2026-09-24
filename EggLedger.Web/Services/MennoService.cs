@@ -6,6 +6,7 @@ using EggLedger.Domain.Eiafx;
 using EggLedger.Domain.Reports;
 using EggLedger.Domain.Util;
 using Ei;
+using Microsoft.Extensions.Logging;
 
 namespace EggLedger.Web.Services;
 
@@ -61,7 +62,7 @@ public interface IMennoDataStore {
     Task SaveAsync(byte[] utf8Json, CancellationToken cancellationToken = default);
 }
 
-public sealed class MennoService(HttpClient http, IMennoDataStore? store = null) {
+public sealed class MennoService(HttpClient http, IMennoDataStore? store = null, ILogger<MennoService>? logger = null) {
     public const string DataUrl =
         "https://eggincdatacollectionsa.blob.core.windows.net/mission-data/all-data.json.gz";
 
@@ -103,11 +104,8 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null)
 
     private async Task<IReadOnlyList<ConfigurationItem>> LoadOnceAsync(CancellationToken cancellationToken) {
         try {
-            var stored = await TryLoadStoredAsync(cancellationToken).ConfigureAwait(false);
-            if (stored is not null) {
-                return stored;
-            }
-            return await RefreshAsync(cancellationToken).ConfigureAwait(false);
+            return await TryLoadStoredAsync(cancellationToken).ConfigureAwait(false)
+                ?? await RefreshAsync(cancellationToken).ConfigureAwait(false);
         } finally {
             lock (_gate) {
                 _inFlight = null;
@@ -130,6 +128,7 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null)
             _cache = items;
             return items;
         } catch (Exception ex) when (ex is MennoSchemaException or IOException) {
+            logger?.LogDebug(ex, "stored menno data unreadable, refetching from {Url}", DataUrl);
             return null;
         }
     }
@@ -426,10 +425,7 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null)
         if (c.Op is not ("=" or "!=" or ">" or "<" or ">=" or "<=")) {
             return true;
         }
-        if (!TryInt(c.Val, out var target)) {
-            return true;
-        }
-        return c.Op switch {
+        return !TryInt(c.Val, out var target) || c.Op switch {
             "=" => actual == target,
             "!=" => actual != target,
             ">" => actual > target,
@@ -458,10 +454,7 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null)
         if (familyWeight == "") {
             return null;
         }
-        if (!EiafxData.FamilyAfxIds.TryGetValue(familyWeight, out var ids)) {
-            return null;
-        }
-        return [.. ids];
+        return EiafxData.FamilyAfxIds.TryGetValue(familyWeight, out var ids) ? [.. ids] : null;
     }
 
     private static double LevelAdjustedCapacityFor(int shipId, int durationId, int level) {

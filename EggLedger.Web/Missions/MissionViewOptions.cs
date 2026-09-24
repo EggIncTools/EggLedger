@@ -54,12 +54,10 @@ public sealed class MissionViewOptions {
 
     public static IReadOnlyList<DatabaseMission>? TabFilteredMissions(
         IReadOnlyList<DatabaseMission>? filteredMissions,
-        int? missionTypeTab) {
-        if (missionTypeTab is null || filteredMissions is null) {
-            return filteredMissions;
-        }
-        return [.. filteredMissions.Where(m => m.MissionType == missionTypeTab.Value)];
-    }
+        int? missionTypeTab) =>
+        missionTypeTab is null || filteredMissions is null
+            ? filteredMissions
+            : [.. filteredMissions.Where(m => m.MissionType == missionTypeTab.Value)];
 
     public static MultiViewMode ParseMultiViewMode(string? raw) => raw switch {
         "row" => MultiViewMode.Row,

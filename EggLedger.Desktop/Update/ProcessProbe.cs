@@ -24,13 +24,14 @@ public sealed class ProcessProbe : IProcessProbe {
 }
 
 public static class ProcessWait {
-    public static bool WaitForExit(IProcessProbe probe, int pid, TimeSpan timeout) {
-        var deadline = DateTime.UtcNow + timeout;
+    public static bool WaitForExit(IProcessProbe probe, int pid, TimeSpan timeout, TimeProvider? time = null) {
+        var clock = time ?? TimeProvider.System;
+        var start = clock.GetTimestamp();
         while (true) {
             if (!probe.Exists(pid)) {
                 return true;
             }
-            if (DateTime.UtcNow >= deadline) {
+            if (clock.GetElapsedTime(start) >= timeout) {
                 return false;
             }
             Thread.Sleep(50);

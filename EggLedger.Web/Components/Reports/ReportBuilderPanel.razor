@@ -5,6 +5,8 @@
 @inject IndexedDbReportStore Store
 @inject MissionConfigProvider Config
 @inject IReportRunner MissionDb
+@inject ILogger<ReportBuilderPanel> Logger
+@inject TimeProvider Time
 
 @* Report builder modal. Blazor-controlled overlay (full-screen fixed backdrop + centered
    panel). NOT a native <dialog>.showModal(): top-layer promotion desyncs the Blazor Server
@@ -401,7 +403,8 @@
         try {
             var result = await MissionDb.RunReportAsync(def, def.AccountId);
             _editingResultLabels = result.Is2D ? Array.Empty<string>() : result.Labels;
-        } catch {
+        } catch (Exception ex) {
+            Logger.LogDebug(ex, "report run for editing labels failed");
             _editingResultLabels = Array.Empty<string>();
         }
 
@@ -474,7 +477,7 @@
         }
 
         var def = BuildDefinition(_form);
-        def.Weight = Weight.ClassifyWeight(def);
+        def.Weight = Weight.ClassifyWeight(def, Time);
 
         var row = ReportMapping.ToRow(def);
         if (_editingId is null) {

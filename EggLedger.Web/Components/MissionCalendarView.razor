@@ -1,6 +1,7 @@
 @inject IUserTimeZoneProvider TzProvider
 @inject IJSRuntime JS
 @inject GameEventsService GameEvents
+@inject TimeProvider Time
 @using System.Globalization
 @using EggIdentity.UI
 
@@ -92,7 +93,7 @@
     [Parameter] public RenderFragment? LeadingControls { get; set; }
 
     private TimelineZoom _zoom = TimelineZoom.Month;
-    private DateTimeOffset _center = DateTimeOffset.UtcNow;
+    private DateTimeOffset _center;
     private DateTimeOffset _visibleStart;
     private DateTimeOffset _visibleEnd;
     private List<PeriodSlot<object>> _periods = [];
@@ -133,6 +134,7 @@
     private IReadOnlyList<TimelineTick> CurrentHourTicks => _centerHourTicks;
 
     protected override void OnInitialized() {
+        _center = Time.GetUtcNow();
         _laneGroups = [
             new LaneGroupDef<object>(EventItemTemplate, LaneMinRem: 2.3, LaneGapRem: 0.15, HeaderRem: 0),
             new LaneGroupDef<object>(MissionItemTemplate, LaneMinRem: 1.65, LaneGapRem: 0.15, HeaderRem: 0),
@@ -189,7 +191,7 @@
             .Where(e => OverlayEventTypes.Contains(e.Type, StringComparer.OrdinalIgnoreCase))
             .ToList();
 
-        var now = DateTimeOffset.UtcNow;
+        var now = Time.GetUtcNow();
         var statsStart = _zoom == TimelineZoom.Month ? _visibleStart.AddDays(-7 * (VisibleSlots - 1)) : _visibleStart;
         _flightSlices = TimelineFlightRatio.ComputeByFarm(_merged, statsStart, _visibleEnd, now);
         _occupancyHours = TimelineFlightRatio.OccupancyHours(_merged, statsStart, _visibleEnd, now);
@@ -365,7 +367,7 @@
     }
 
     private void UpdatePanBounds(TimeZoneInfo tz) {
-        var nowWindow = TimelineWindow.Compute(DateTimeOffset.UtcNow, _zoom, tz);
+        var nowWindow = TimelineWindow.Compute(Time.GetUtcNow(), _zoom, tz);
         _canPanNext = _visibleStart < nowWindow.Start;
 
         if (EarliestLaunchUnixSeconds() is { } earliest) {
@@ -407,7 +409,7 @@
     }
 
     private void JumpToNow() {
-        _center = DateTimeOffset.UtcNow;
+        _center = Time.GetUtcNow();
         Recompute();
         _resetScrollPending = true;
     }

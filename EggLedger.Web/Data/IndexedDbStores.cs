@@ -1,3 +1,5 @@
+using System.Collections.Frozen;
+
 namespace EggLedger.Web.Data;
 
 public static class IndexedDbStores {
@@ -13,7 +15,7 @@ public static class IndexedDbStores {
     public const string PlayerIdIndex = "player_id";
     public const string AccountIdIndex = "account_id";
 
-    private static readonly HashSet<string> Indexes = [PlayerIdIndex, AccountIdIndex];
+    private static readonly FrozenSet<string> Indexes = FrozenSet.Create(PlayerIdIndex, AccountIdIndex);
 
     public static string ValidIndex(string index) =>
         Indexes.Contains(index) ? index

@@ -77,10 +77,7 @@ public static partial class ChartGeometry {
         if (ym.Success) {
             int n = int.Parse(ym.Groups[2].Value, CultureInfo.InvariantCulture);
             string yr = ym.Groups[1].Value[2..];
-            if (n is >= 1 and <= 12) {
-                return $"{Months[n - 1]} '{yr}";
-            }
-            return $"W{ym.Groups[2].Value} '{yr}";
+            return n is >= 1 and <= 12 ? $"{Months[n - 1]} '{yr}" : $"W{ym.Groups[2].Value} '{yr}";
         }
         var ymd = YearMonthDayRegex().Match(s);
         if (ymd.Success) {
@@ -133,11 +130,10 @@ public static partial class ChartGeometry {
         return result;
     }
 
-    public static List<double> SeriesValues(IReadOnlyList<double> matrix, int rowCount, int colCount, int seriesIdx) {
-        return [.. Enumerable.Range(0, rowCount)
+    public static List<double> SeriesValues(IReadOnlyList<double> matrix, int rowCount, int colCount, int seriesIdx) =>
+        [.. Enumerable.Range(0, rowCount)
             .Select(r => r * colCount + seriesIdx)
             .Select(flat => flat < matrix.Count ? matrix[flat] : 0)];
-    }
 
     public static string EscapeText(string s) =>
         s.Replace("&", "&amp;")

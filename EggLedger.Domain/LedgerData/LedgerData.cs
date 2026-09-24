@@ -5,8 +5,8 @@ namespace EggLedger.Domain.LedgerData;
 
 public static class LedgerData {
     private const string ResourceName = "EggLedger.Domain.Resources.ledger-display-data-min.json";
-    private static readonly Lazy<LedgerDisplayData> _config = new(LoadEmbedded);
-    public static LedgerDisplayData Config => _config.Value;
+    private static readonly Lazy<LedgerDisplayData> LazyConfig = new(LoadEmbedded);
+    public static LedgerDisplayData Config => LazyConfig.Value;
 
     private static LedgerDisplayData LoadEmbedded() {
         var asm = typeof(LedgerData).Assembly;

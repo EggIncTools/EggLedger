@@ -175,12 +175,12 @@ public class QueryTests {
             TimeBucket = "month",
         };
         Assert.Throws<InvalidOperationException>(() =>
-            QueryBuilder.BuildTimePivotQuery(def, "1=1", new List<object?>()));
+            QueryBuilder.BuildTimePivotQuery(def, "1=1", []));
     }
 
     [Fact]
     public void FamilyWeightClause_Empty() {
-        var (clause, args) = QueryBuilder.FamilyWeightClause(Array.Empty<int>());
+        var (clause, args) = QueryBuilder.FamilyWeightClause([]);
         Assert.Equal("", clause);
         Assert.Empty(args);
     }

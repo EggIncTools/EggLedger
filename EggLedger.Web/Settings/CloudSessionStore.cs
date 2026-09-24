@@ -17,14 +17,13 @@ public sealed class CloudSessionStore(IndexedDbSettings settings) {
 
     public async Task<CloudSession?> GetSessionAsync() {
         var all = await settings.GetAllSettingsAsync();
-        if (!all.TryGetValue(KeyToken, out var token) || string.IsNullOrEmpty(token)) {
-            return null;
-        }
-        return new CloudSession(
-            token,
-            all.GetValueOrDefault(KeyUsername, ""),
-            all.GetValueOrDefault(KeyAvatarUrl, ""),
-            all.GetValueOrDefault(KeyEncryptionKey, ""));
+        return !all.TryGetValue(KeyToken, out var token) || string.IsNullOrEmpty(token)
+            ? null
+            : new CloudSession(
+                token,
+                all.GetValueOrDefault(KeyUsername, ""),
+                all.GetValueOrDefault(KeyAvatarUrl, ""),
+                all.GetValueOrDefault(KeyEncryptionKey, ""));
     }
 
     public async Task SaveSessionAsync(CloudSession session) {

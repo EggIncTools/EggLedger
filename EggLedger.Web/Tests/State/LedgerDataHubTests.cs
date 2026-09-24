@@ -1,6 +1,7 @@
 using EggLedger.Domain.MissionPacking;
 using EggLedger.Domain.MissionQuery;
 using EggLedger.Web.State;
+using EggLedger.Web.Tests.Data;
 
 namespace EggLedger.Web.Tests.State;
 
@@ -17,12 +18,12 @@ public sealed class LedgerDataHubTests {
         Func<string, Task<IReadOnlyList<DatabaseMission>?>>? missions = null,
         Func<string, Task<Dictionary<string, List<MissionDrop>>?>>? drops = null,
         TimeSpan? ttl = null,
-        Func<DateTime>? clock = null,
+        ManualClock? clock = null,
         Func<string, Task<IReadOnlyList<DatabaseMission>?>>? inFlight = null) =>
         new(missions ?? MissionsOf,
             drops ?? (_ => Task.FromResult<Dictionary<string, List<MissionDrop>>?>(null)),
             ttl ?? Ttl,
-            clock,
+            clock ?? new ManualClock(),
             inFlight);
 
     [Fact]
@@ -106,19 +107,19 @@ public sealed class LedgerDataHubTests {
 
     [Fact]
     public async Task Missions_ReloadOnlyAfterTtlExpires() {
-        var now = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var clock = new ManualClock(new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
         var calls = 0;
         var hub = NewHub(id => {
             calls++;
             return MissionsOf(id);
-        }, clock: () => now);
+        }, clock: clock);
 
         await hub.GetMissionsAsync("a");
-        now = now.AddMinutes(4);
+        clock.Advance(TimeSpan.FromMinutes(4));
         await hub.GetMissionsAsync("a");
         Assert.Equal(1, calls);
 
-        now = now.AddMinutes(2);
+        clock.Advance(TimeSpan.FromMinutes(2));
         await hub.GetMissionsAsync("a");
 
         Assert.Equal(2, calls);
@@ -184,9 +185,9 @@ public sealed class LedgerDataHubTests {
 
     [Fact]
     public async Task InFlight_IsCachedPerAccount_UntilTtlExpires() {
-        var now = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var clock = new ManualClock(new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
         var calls = new Dictionary<string, int>(StringComparer.Ordinal);
-        var hub = NewHub(clock: () => now, inFlight: id => {
+        var hub = NewHub(clock: clock, inFlight: id => {
             calls[id] = calls.GetValueOrDefault(id) + 1;
             return Task.FromResult<IReadOnlyList<DatabaseMission>?>([new DatabaseMission { MissiondId = id + "-f1" }]);
         });
@@ -199,7 +200,7 @@ public sealed class LedgerDataHubTests {
         Assert.Equal(1, calls["a"]);
         Assert.Equal(1, calls["b"]);
 
-        now = now.AddMinutes(6);
+        clock.Advance(TimeSpan.FromMinutes(6));
         await hub.GetInFlightAsync("a");
 
         Assert.Equal(2, calls["a"]);

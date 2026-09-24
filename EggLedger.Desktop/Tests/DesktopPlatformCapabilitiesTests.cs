@@ -36,10 +36,10 @@ public sealed class DesktopPlatformCapabilitiesTests {
         var path = OperatingSystem.IsWindows() ? @"C:\data\file.json" : "/data/file.json";
         await caps.OpenFileAsync(path);
 
-        var call = Assert.Single(runner.Calls);
-        var expected = DesktopCommandBuilder.BuildOpenCommand(CurrentPlatform(), path);
-        Assert.Equal(expected.Exe, call.Exe);
-        Assert.Equal(expected.Args, call.Args);
+        var (exe, args) = Assert.Single(runner.Calls);
+        var (expectedExe, expectedArgs) = DesktopCommandBuilder.BuildOpenCommand(CurrentPlatform(), path);
+        Assert.Equal(expectedExe, exe);
+        Assert.Equal(expectedArgs, args);
     }
 
     [Fact]
@@ -50,10 +50,10 @@ public sealed class DesktopPlatformCapabilitiesTests {
         var path = OperatingSystem.IsWindows() ? @"C:\data\file.json" : "/data/file.json";
         await caps.OpenFileInFolderAsync(path);
 
-        var call = Assert.Single(runner.Calls);
-        var expected = DesktopCommandBuilder.BuildOpenInFolderCommand(CurrentPlatform(), path);
-        Assert.Equal(expected.Exe, call.Exe);
-        Assert.Equal(expected.Args, call.Args);
+        var (exe, args) = Assert.Single(runner.Calls);
+        var (expectedExe, expectedArgs) = DesktopCommandBuilder.BuildOpenInFolderCommand(CurrentPlatform(), path);
+        Assert.Equal(expectedExe, exe);
+        Assert.Equal(expectedArgs, args);
     }
 
     [Fact]
@@ -88,9 +88,9 @@ public sealed class DesktopPlatformCapabilitiesTests {
 
         await caps.RestartAppAsync();
 
-        var call = Assert.Single(runner.Calls);
-        Assert.Equal(Environment.ProcessPath, call.Exe);
-        Assert.Empty(call.Args);
+        var (exe, args) = Assert.Single(runner.Calls);
+        Assert.Equal(Environment.ProcessPath, exe);
+        Assert.Empty(args);
         Assert.Equal(1, window.ExitCalls);
     }
 
@@ -103,10 +103,10 @@ public sealed class DesktopPlatformCapabilitiesTests {
 
         await caps.OpenUrlAsync(url);
 
-        var call = Assert.Single(runner.Calls);
-        var expected = DesktopCommandBuilder.BuildOpenCommand(CurrentPlatform(), url);
-        Assert.Equal(expected.Exe, call.Exe);
-        Assert.Equal(expected.Args, call.Args);
+        var (exe, args) = Assert.Single(runner.Calls);
+        var (expectedExe, expectedArgs) = DesktopCommandBuilder.BuildOpenCommand(CurrentPlatform(), url);
+        Assert.Equal(expectedExe, exe);
+        Assert.Equal(expectedArgs, args);
     }
 
     [Theory]
@@ -127,9 +127,6 @@ public sealed class DesktopPlatformCapabilitiesTests {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
             return OSPlatform.Windows;
         }
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
-            return OSPlatform.OSX;
-        }
-        return OSPlatform.Linux;
+        return RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? OSPlatform.OSX : OSPlatform.Linux;
     }
 }

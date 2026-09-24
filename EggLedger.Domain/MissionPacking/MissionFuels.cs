@@ -8,9 +8,8 @@ public static class MissionFuels {
     public static List<FuelEntry> Build(CompleteMissionResponse resp) {
         ArgumentNullException.ThrowIfNull(resp);
         var fuels = resp.Info?.Fuels;
-        if (fuels is null || fuels.Count == 0) {
-            return [];
-        }
-        return [.. fuels.Select((f, i) => new FuelEntry(i, (int)f.Egg, f.Amount))];
+        return fuels is null or { Count: 0 }
+            ? []
+            : [.. fuels.Select((f, i) => new FuelEntry(i, (int)f.Egg, f.Amount))];
     }
 }

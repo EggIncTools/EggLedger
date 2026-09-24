@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.InteropServices;
 using EggLedger.Domain.MissionPacking;
 
 namespace EggLedger.Domain.Reports;
@@ -21,6 +22,7 @@ internal sealed class InMemoryMissionDb : IMissionDb {
     private readonly List<ArtifactDropRowData> _drops;
     private readonly List<FuelRowData> _fuel;
     private readonly IWeightData _weights;
+    private readonly TimeProvider _time;
 
 
     private readonly ILookup<(string Player, string Mission), ArtifactDropRowData> _dropsByMission;
@@ -33,8 +35,10 @@ internal sealed class InMemoryMissionDb : IMissionDb {
         IReadOnlyList<MissionRowData> missions,
         IReadOnlyList<ArtifactDropRowData> drops,
         IReadOnlyList<FuelRowData> fuel,
-        IWeightData weights) {
+        IWeightData weights,
+        TimeProvider? time = null) {
         _def = def;
+        _time = time ?? TimeProvider.System;
         _missions = [.. missions];
         _drops = [.. drops];
         _fuel = [.. fuel];
@@ -63,10 +67,7 @@ internal sealed class InMemoryMissionDb : IMissionDb {
             if (hasBucket) {
                 return WeightedTimeSeries();
             }
-            if (_def.SecondaryGroupBy != "") {
-                return WeightedPivot();
-            }
-            return WeightedAggregate();
+            return _def.SecondaryGroupBy != "" ? WeightedPivot() : WeightedAggregate();
         }
 
         if (hasBucket && hasGrp) {
@@ -128,11 +129,11 @@ internal sealed class InMemoryMissionDb : IMissionDb {
         var counts = new Dictionary<string, long>(StringComparer.Ordinal);
         var order = new List<string>();
         foreach (var key in GroupKeys1D(col, joinDrops)) {
-            if (!counts.ContainsKey(key)) {
+            ref var cur = ref CollectionsMarshal.GetValueRefOrAddDefault(counts, key, out var exists);
+            if (!exists) {
                 order.Add(key);
             }
-            counts.TryGetValue(key, out var cur);
-            counts[key] = cur + 1;
+            cur++;
         }
 
         var rows = order
@@ -153,11 +154,11 @@ internal sealed class InMemoryMissionDb : IMissionDb {
                 continue;
             }
             var key = ColValue(m, col);
-            if (!sums.ContainsKey(key)) {
+            ref var cur = ref CollectionsMarshal.GetValueRefOrAddDefault(sums, key, out var exists);
+            if (!exists) {
                 order.Add(key);
             }
-            sums.TryGetValue(key, out var cur);
-            sums[key] = cur + amount;
+            cur += amount;
         }
         return [.. order
             .Select((k, i) => (k, i, s: sums[k]))
@@ -178,20 +179,20 @@ internal sealed class InMemoryMissionDb : IMissionDb {
     private List<object?[]> Count2D(bool joinDrops) {
         var col1 = QueryBuilder.GroupByColumn(_def.GroupBy);
         var col2 = QueryBuilder.GroupByColumn(_def.SecondaryGroupBy);
-        var counts = new Dictionary<(string, string), long>();
-        var order = new List<(string, string)>();
+        var counts = new Dictionary<(string K1, string K2), long>();
+        var order = new List<(string K1, string K2)>();
         foreach (var (k1, k2) in GroupKeys2D(col1, col2, joinDrops)) {
             var key = (k1, k2);
-            if (!counts.ContainsKey(key)) {
+            ref var cur = ref CollectionsMarshal.GetValueRefOrAddDefault(counts, key, out var exists);
+            if (!exists) {
                 order.Add(key);
             }
-            counts.TryGetValue(key, out var cur);
-            counts[key] = cur + 1;
+            cur++;
         }
 
         var rows = order
             .OrderBy(k => k, KeyPairComparer(col1, col2))
-            .Select(k => new object?[] { k.Item1, k.Item2, counts[k] })
+            .Select(k => new object?[] { k.K1, k.K2, counts[k] })
             .ToList();
         return rows;
     }
@@ -202,11 +203,11 @@ internal sealed class InMemoryMissionDb : IMissionDb {
         var order = new List<string>();
         foreach (var m in AirtimeRows(joinDrops, col, null)) {
             var key = ColValue(m, col);
-            if (!sums.ContainsKey(key)) {
+            ref var cur = ref CollectionsMarshal.GetValueRefOrAddDefault(sums, key, out var exists);
+            if (!exists) {
                 order.Add(key);
             }
-            sums.TryGetValue(key, out var cur);
-            sums[key] = cur + ((m.ReturnTimestamp - m.StartTimestamp) / 3600.0);
+            cur += (m.ReturnTimestamp - m.StartTimestamp) / 3600.0;
         }
         return [.. order.Select(k => new object?[] { k, sums[k] })];
     }
@@ -214,34 +215,31 @@ internal sealed class InMemoryMissionDb : IMissionDb {
     private List<object?[]> Airtime2D(bool joinDrops) {
         var col1 = QueryBuilder.GroupByColumn(_def.GroupBy);
         var col2 = QueryBuilder.GroupByColumn(_def.SecondaryGroupBy);
-        var sums = new Dictionary<(string, string), double>();
-        var order = new List<(string, string)>();
+        var sums = new Dictionary<(string K1, string K2), double>();
+        var order = new List<(string K1, string K2)>();
         foreach (var m in AirtimeRows(joinDrops, col1, col2)) {
             var key = (ColValue(m, col1), ColValue(m, col2));
-            if (!sums.ContainsKey(key)) {
+            ref var cur = ref CollectionsMarshal.GetValueRefOrAddDefault(sums, key, out var exists);
+            if (!exists) {
                 order.Add(key);
             }
-            sums.TryGetValue(key, out var cur);
-            sums[key] = cur + ((m.ReturnTimestamp - m.StartTimestamp) / 3600.0);
+            cur += (m.ReturnTimestamp - m.StartTimestamp) / 3600.0;
         }
-        return [.. order.Select(k => new object?[] { k.Item1, k.Item2, sums[k] })];
+        return [.. order.Select(k => new object?[] { k.K1, k.K2, sums[k] })];
     }
 
-    private IEnumerable<MissionRowData> AirtimeRows(bool joinDrops, string col1, string? col2) {
-        if (joinDrops
+    private IEnumerable<MissionRowData> AirtimeRows(bool joinDrops, string col1, string? col2) =>
+        joinDrops
             || col1.StartsWith("d.", StringComparison.Ordinal)
-            || (col2 != null && col2.StartsWith("d.", StringComparison.Ordinal))) {
-            return FilteredJoin().Select(p => p.M);
-        }
-        return FilteredMissions();
-    }
+            || (col2 is not null && col2.StartsWith("d.", StringComparison.Ordinal))
+            ? FilteredJoin().Select(p => p.M)
+            : FilteredMissions();
 
     private List<object?[]> TimeSeriesCount(bool joinDrops) {
         var counts = new Dictionary<string, long>(StringComparer.Ordinal);
         foreach (var m in FilteredBucketRows(joinDrops)) {
             var bucket = BucketLabel(m.StartTimestamp);
-            counts.TryGetValue(bucket, out var cur);
-            counts[bucket] = cur + 1;
+            CollectionsMarshal.GetValueRefOrAddDefault(counts, bucket, out _)++;
         }
         return [.. counts
             .OrderBy(kv => kv.Key, StringComparer.Ordinal)
@@ -250,36 +248,34 @@ internal sealed class InMemoryMissionDb : IMissionDb {
 
     private List<object?[]> TimePivotCount(bool joinDrops) {
         var col2 = QueryBuilder.GroupByColumn(_def.SecondaryGroupBy);
-        var counts = new Dictionary<(string, string), long>();
+        var counts = new Dictionary<(string Bucket, string Grp), long>();
         foreach (var (m, d) in FilteredBucketJoin(col2, joinDrops)) {
             var bucket = BucketLabel(m.StartTimestamp);
             var grp = col2.StartsWith("d.", StringComparison.Ordinal) ? ColValueDrop(d!, col2) : ColValue(m, col2);
-            var key = (bucket, grp);
-            counts.TryGetValue(key, out var cur);
-            counts[key] = cur + 1;
+            CollectionsMarshal.GetValueRefOrAddDefault(counts, (bucket, grp), out _)++;
         }
         return [.. counts
-            .OrderBy(kv => kv.Key.Item1, StringComparer.Ordinal)
-            .ThenBy(kv => kv.Key.Item2, StringComparer.Ordinal)
-            .Select(kv => new object?[] { kv.Key.Item1, kv.Key.Item2, kv.Value })];
+            .OrderBy(kv => kv.Key.Bucket, StringComparer.Ordinal)
+            .ThenBy(kv => kv.Key.Grp, StringComparer.Ordinal)
+            .Select(kv => new object?[] { kv.Key.Bucket, kv.Key.Grp, kv.Value })];
     }
 
     private List<object?[]> WeightedAggregate() {
         var col = QueryBuilder.GroupByColumn(_def.GroupBy);
-        var groups = new Dictionary<(string, long, long), double>();
-        var order = new List<(string, long, long)>();
+        var groups = new Dictionary<(string Key, long ArtifactId, long Level), double>();
+        var order = new List<(string Key, long ArtifactId, long Level)>();
         foreach (var (m, d) in WeightedJoin()) {
             var key = (col.StartsWith("d.", StringComparison.Ordinal) ? ColValueDrop(d, col) : ColValue(m, col), d.ArtifactId, d.Level);
-            if (!groups.ContainsKey(key)) {
+            ref var cur = ref CollectionsMarshal.GetValueRefOrAddDefault(groups, key, out var exists);
+            if (!exists) {
                 order.Add(key);
             }
-            groups.TryGetValue(key, out var cur);
-            groups[key] = cur + CapWeight(m);
+            cur += CapWeight(m);
         }
         var rows = order
             .Select(k => (k, cap: groups[k]))
             .OrderByDescending(x => x.cap)
-            .Select(x => new object?[] { x.k.Item1, x.k.Item2, x.k.Item3, x.cap })
+            .Select(x => new object?[] { x.k.Key, x.k.ArtifactId, x.k.Level, x.cap })
             .ToList();
         return rows;
     }
@@ -287,61 +283,61 @@ internal sealed class InMemoryMissionDb : IMissionDb {
     private List<object?[]> WeightedPivot() {
         var col1 = QueryBuilder.GroupByColumn(_def.GroupBy);
         var col2 = QueryBuilder.GroupByColumn(_def.SecondaryGroupBy);
-        var groups = new Dictionary<(string, string, long, long), double>();
-        var order = new List<(string, string, long, long)>();
+        var groups = new Dictionary<(string K1, string K2, long ArtifactId, long Level), double>();
+        var order = new List<(string K1, string K2, long ArtifactId, long Level)>();
         foreach (var (m, d) in WeightedJoin()) {
             var k1 = col1.StartsWith("d.", StringComparison.Ordinal) ? ColValueDrop(d, col1) : ColValue(m, col1);
             var k2 = col2.StartsWith("d.", StringComparison.Ordinal) ? ColValueDrop(d, col2) : ColValue(m, col2);
             var key = (k1, k2, d.ArtifactId, d.Level);
-            if (!groups.ContainsKey(key)) {
+            ref var cur = ref CollectionsMarshal.GetValueRefOrAddDefault(groups, key, out var exists);
+            if (!exists) {
                 order.Add(key);
             }
-            groups.TryGetValue(key, out var cur);
-            groups[key] = cur + CapWeight(m);
+            cur += CapWeight(m);
         }
 
         var rows = order
-            .Select(k => new object?[] { k.Item1, k.Item2, k.Item3, k.Item4, groups[k] })
+            .Select(k => new object?[] { k.K1, k.K2, k.ArtifactId, k.Level, groups[k] })
             .ToList();
         return rows;
     }
 
     private List<object?[]> WeightedTimeSeries() {
-        var groups = new Dictionary<(string, long, long), double>();
-        var order = new List<(string, long, long)>();
+        var groups = new Dictionary<(string Bucket, long ArtifactId, long Level), double>();
+        var order = new List<(string Bucket, long ArtifactId, long Level)>();
         foreach (var (m, d) in WeightedBucketJoin()) {
             var key = (BucketLabel(m.StartTimestamp), d.ArtifactId, d.Level);
-            if (!groups.ContainsKey(key)) {
+            ref var cur = ref CollectionsMarshal.GetValueRefOrAddDefault(groups, key, out var exists);
+            if (!exists) {
                 order.Add(key);
             }
-            groups.TryGetValue(key, out var cur);
-            groups[key] = cur + CapWeight(m);
+            cur += CapWeight(m);
         }
 
         var rows = order
-            .OrderBy(k => k.Item1, StringComparer.Ordinal)
-            .Select(k => new object?[] { k.Item1, k.Item2, k.Item3, groups[k] })
+            .OrderBy(k => k.Bucket, StringComparer.Ordinal)
+            .Select(k => new object?[] { k.Bucket, k.ArtifactId, k.Level, groups[k] })
             .ToList();
         return rows;
     }
 
     private List<object?[]> WeightedTimePivot() {
         var col2 = QueryBuilder.GroupByColumn(_def.SecondaryGroupBy);
-        var groups = new Dictionary<(string, string, long, long), double>();
-        var order = new List<(string, string, long, long)>();
+        var groups = new Dictionary<(string Bucket, string Grp, long ArtifactId, long Level), double>();
+        var order = new List<(string Bucket, string Grp, long ArtifactId, long Level)>();
         foreach (var (m, d) in WeightedBucketJoin()) {
             var grp = col2.StartsWith("d.", StringComparison.Ordinal) ? ColValueDrop(d, col2) : ColValue(m, col2);
             var key = (BucketLabel(m.StartTimestamp), grp, d.ArtifactId, d.Level);
-            if (!groups.ContainsKey(key)) {
+            ref var cur = ref CollectionsMarshal.GetValueRefOrAddDefault(groups, key, out var exists);
+            if (!exists) {
                 order.Add(key);
             }
-            groups.TryGetValue(key, out var cur);
-            groups[key] = cur + CapWeight(m);
+            cur += CapWeight(m);
         }
         var rows = order
-            .OrderBy(k => k.Item1, StringComparer.Ordinal)
-            .ThenBy(k => k.Item2, StringComparer.Ordinal)
-            .Select(k => new object?[] { k.Item1, k.Item2, k.Item3, k.Item4, groups[k] })
+            .OrderBy(k => k.Bucket, StringComparer.Ordinal)
+            .ThenBy(k => k.Grp, StringComparer.Ordinal)
+            .Select(k => new object?[] { k.Bucket, k.Grp, k.ArtifactId, k.Level, groups[k] })
             .ToList();
         return rows;
     }
@@ -377,12 +373,10 @@ internal sealed class InMemoryMissionDb : IMissionDb {
     }
 
 
-    private IEnumerable<MissionRowData> FilteredBucketRows(bool joinDrops) {
-        if (joinDrops) {
-            return FilteredJoin().Where(p => InCustomWindow(p.M)).Select(p => p.M);
-        }
-        return FilteredMissions().Where(InCustomWindow);
-    }
+    private IEnumerable<MissionRowData> FilteredBucketRows(bool joinDrops) =>
+        joinDrops
+            ? FilteredJoin().Where(p => InCustomWindow(p.M)).Select(p => p.M)
+            : FilteredMissions().Where(InCustomWindow);
 
     private IEnumerable<(MissionRowData M, ArtifactDropRowData? D)> FilteredBucketJoin(string col2, bool joinDrops) {
         var needJoin = joinDrops || col2.StartsWith("d.", StringComparison.Ordinal);
@@ -424,14 +418,12 @@ internal sealed class InMemoryMissionDb : IMissionDb {
         });
 
 
-    private static int CompareCol(string col, string a, string b) {
-        if (!col.EndsWith("spec_type", StringComparison.Ordinal)
+    private static int CompareCol(string col, string a, string b) =>
+        !col.EndsWith("spec_type", StringComparison.Ordinal)
             && long.TryParse(a, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var ia)
-            && long.TryParse(b, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var ib)) {
-            return ia.CompareTo(ib);
-        }
-        return string.CompareOrdinal(a, b);
-    }
+            && long.TryParse(b, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var ib)
+            ? ia.CompareTo(ib)
+            : string.CompareOrdinal(a, b);
 
     private string BucketLabel(long unixSeconds) =>
         TimeBucket.Format(_def.TimeBucket, _def.CustomBucketUnit, unixSeconds);
@@ -444,7 +436,7 @@ internal sealed class InMemoryMissionDb : IMissionDb {
         if (cond == "" || modifier is not string mod) {
             return true;
         }
-        var cutoff = TimeBucket.NowMinus(mod);
+        var cutoff = TimeBucket.NowMinus(mod, _time);
         return m.StartTimestamp >= cutoff;
     }
 

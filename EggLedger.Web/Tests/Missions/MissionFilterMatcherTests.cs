@@ -33,12 +33,11 @@ public sealed class MissionFilterMatcherTests {
     private static MissionFilterMatcher Matcher(
         ShipDropsFetcher? fetcher = null,
         IReadOnlyList<PossibleMission>? configs = null) =>
-        new(configs ?? Array.Empty<PossibleMission>(), "acct", fetcher ?? ((_, _) => Task.FromResult<IReadOnlyList<MissionDrop>?>(null)), TimeZoneInfo.Local);
+        new(configs ?? [], "acct", fetcher ?? ((_, _) => Task.FromResult<IReadOnlyList<MissionDrop>?>(null)), TimeZoneInfo.Local);
 
     private static FilterCondition C(string top, string op, string val) => new(top, op, val);
 
-    private static IReadOnlyList<IReadOnlyList<FilterCondition>?> NoOr() =>
-        Array.Empty<IReadOnlyList<FilterCondition>?>();
+    private static IReadOnlyList<IReadOnlyList<FilterCondition>?> NoOr() => [];
 
 
     [Theory]
@@ -156,14 +155,14 @@ public sealed class MissionFilterMatcherTests {
     }
 
 
-    private static IReadOnlyList<PossibleMission> DropConfigs() => new[] {
+    private static IReadOnlyList<PossibleMission> DropConfigs() => [
         new PossibleMission {
             Ship = MissionInfo.Spaceship.ChickenOne,
             Durations = [
                 new() { DurationType = MissionInfo.DurationType.Short, MinQuality = 0, MaxQuality = 5, LevelQualityBump = 1 },
             ],
         },
-    };
+    ];
 
     private static MissionDrop Drop(int id, int level, int rarity) =>
         new() { Id = id, Level = level, Rarity = rarity };
@@ -206,8 +205,7 @@ public sealed class MissionFilterMatcherTests {
 
     [Fact]
     public async Task Drops_MissingShipConfig_Fails() {
-        var matcher = Matcher((_, _) => Task.FromResult<IReadOnlyList<MissionDrop>?>(new List<MissionDrop>()),
-            Array.Empty<PossibleMission>());
+        var matcher = Matcher((_, _) => Task.FromResult<IReadOnlyList<MissionDrop>?>([]), []);
         Assert.False(await matcher.TestMissionAgainstFilterAsync(Mission(), C("drops", "c", "40_2_1_3")));
     }
 
@@ -229,8 +227,7 @@ public sealed class MissionFilterMatcherTests {
 
     [Fact]
     public async Task CountMatchingDrops_MissingShipConfig_ReturnsZero() {
-        var matcher = Matcher((_, _) => Task.FromResult<IReadOnlyList<MissionDrop>?>(new List<MissionDrop>()),
-            Array.Empty<PossibleMission>());
+        var matcher = Matcher((_, _) => Task.FromResult<IReadOnlyList<MissionDrop>?>([]), []);
         var count = await matcher.CountMatchingDropsAsync(Mission(), FilterCodec.DecodeDropGlob("40_2_1_3"));
         Assert.Equal(0, count);
     }
@@ -273,7 +270,6 @@ public sealed class MissionFilterMatcherTests {
     }
 
     [Fact]
-    public async Task MissionMatches_EmptyFilters_AlwaysPasses() {
-        Assert.True(await Matcher().MissionMatchesFilterAsync(Mission(), Array.Empty<FilterCondition>(), NoOr()));
-    }
+    public async Task MissionMatches_EmptyFilters_AlwaysPasses() =>
+        Assert.True(await Matcher().MissionMatchesFilterAsync(Mission(), [], NoOr()));
 }

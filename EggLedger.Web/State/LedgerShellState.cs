@@ -73,9 +73,8 @@ public sealed class LedgerShellState {
         SupportOpen = false;
     }
 
-    public void RequestAccountPopover() {
+    public void RequestAccountPopover() =>
         AccountPopoverRequested?.Invoke();
-    }
 
     public void SetView(LedgerView view) {
         if (View == view) {

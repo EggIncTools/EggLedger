@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Logging;
 
 namespace EggLedger.Desktop.Update;
 
@@ -34,24 +35,28 @@ public static class UpdateStatusFile {
         File.WriteAllText(PathFor(dir), data);
     }
 
-    public static UpdateStatus? ReadAndClear(string dir) {
+    public static UpdateStatus? ReadAndClear(string dir, ILogger? logger = null) {
         var path = PathFor(dir);
         string data;
         try {
             data = File.ReadAllText(path);
-        } catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException or IOException or UnauthorizedAccessException) {
+        } catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException) {
+            return null;
+        } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) {
+            logger?.LogDebug(ex, "update: status file read failed");
             return null;
         }
 
         try {
             File.Delete(path);
         } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) {
-
+            logger?.LogDebug(ex, "update: status file delete failed");
         }
 
         try {
             return JsonSerializer.Deserialize<UpdateStatus>(data, JsonOptions);
-        } catch (JsonException) {
+        } catch (JsonException ex) {
+            logger?.LogDebug(ex, "update: status file is not valid JSON");
             return null;
         }
     }

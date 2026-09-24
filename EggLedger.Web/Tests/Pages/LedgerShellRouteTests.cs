@@ -119,7 +119,6 @@ public sealed class LedgerShellRouteTests {
     }
 
     [Fact]
-    public void UnknownRootReturnsNull() {
+    public void UnknownRootReturnsNull() =>
         Assert.Null(LedgerShell.RouteTarget("/nowhere"));
-    }
 }

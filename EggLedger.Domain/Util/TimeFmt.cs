@@ -16,8 +16,8 @@ public static class TimeFmt {
         return DateTimeOffset.FromUnixTimeSeconds((long)sec).AddTicks(nanos / 100L);
     }
 
-    public static string HumanizeTime(DateTimeOffset t, DateTimeOffset? now = null) {
-        var reference = now ?? DateTimeOffset.UtcNow;
+    public static string HumanizeTime(DateTimeOffset t, DateTimeOffset? now = null, TimeProvider? time = null) {
+        var reference = now ?? (time ?? TimeProvider.System).GetUtcNow();
         var delta = reference - t;
         if (delta < TimeSpan.FromMinutes(1)) {
             return "just now";
@@ -31,9 +31,8 @@ public static class TimeFmt {
         if (delta < TimeSpan.FromHours(30 * 24)) {
             return string.Format(CultureInfo.InvariantCulture, "{0} days ago", (int)(delta.TotalHours / 24));
         }
-        if (delta < TimeSpan.FromHours(365 * 24)) {
-            return string.Format(CultureInfo.InvariantCulture, "{0} months ago", (int)(delta.TotalHours / (24 * 30)));
-        }
-        return string.Format(CultureInfo.InvariantCulture, "{0} years ago", (int)(delta.TotalHours / (24 * 365)));
+        return delta < TimeSpan.FromHours(365 * 24)
+            ? string.Format(CultureInfo.InvariantCulture, "{0} months ago", (int)(delta.TotalHours / (24 * 30)))
+            : string.Format(CultureInfo.InvariantCulture, "{0} years ago", (int)(delta.TotalHours / (24 * 365)));
     }
 }

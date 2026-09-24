@@ -6,6 +6,8 @@
 @inject IndexedDbAccountStore Accounts
 @inject IndexedDbReportStore Reports
 @inject IPlatformCapabilities Platform
+@inject TimeProvider Time
+@inject ILogger<CloudSyncPanel> Logger
 
 @* Owns the 2s/5min auth poll loop around CloudSyncService.PollOnceAsync with cancellation so navigating away cannot leak it. *@
 
@@ -208,7 +210,8 @@
             try {
                 var session = await Cloud.ConnectViaLoginAsync();
                 await OnAuthCompleteAsync(session);
-            } catch (CloudSyncException) {
+            } catch (CloudSyncException ex) {
+                Logger.LogDebug(ex, "cloud sync auto-connect via login failed");
             }
         }
     }
@@ -216,7 +219,8 @@
     private async Task<bool> CheckReachableAsync() {
         try {
             return await Cloud.CheckReachableAsync();
-        } catch {
+        } catch (Exception ex) {
+            Logger.LogDebug(ex, "cloud sync reachability check failed");
             return false;
         }
     }
@@ -266,7 +270,8 @@
                 PollResult result;
                 try {
                     result = await Cloud.PollOnceAsync(state, ct);
-                } catch (CloudSyncException) {
+                } catch (CloudSyncException ex) {
+                    Logger.LogDebug(ex, "cloud sync auth poll attempt failed");
                     continue;
                 }
 
@@ -305,7 +310,8 @@
             if (_session is not null) {
                 try {
                     await Cloud.DisconnectAsync(_session.Token);
-                } catch {
+                } catch (Exception ex) {
+                    Logger.LogDebug(ex, "cloud sync server logout failed");
                     /* server logout is best-effort */
                 }
             }
@@ -343,7 +349,7 @@
             await Cloud.PutBlobAsync(_session, CloudSyncBlobs.SettingsBlob, CloudSyncBlobs.PackSettings(all));
             await Cloud.PutBlobAsync(_session, CloudSyncBlobs.ReportsBlob, await BuildReportsBlobAsync(accounts));
 
-            _lastPushAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            _lastPushAt = Time.GetUtcNow().ToUnixTimeSeconds();
             await SessionStore.SetLastPushAtAsync(_lastPushAt);
         } catch (Exception ex) {
             _syncError = ex.Message;
@@ -360,7 +366,7 @@
             groups.AddRange(await Reports.RetrieveAccountGroupsAsync(acct.Id));
         }
 
-        return CloudReportsBlob.Pack(reports, groups);
+        return CloudReportsBlob.Pack(reports, groups, Logger);
     }
 
     private async Task RestoreNowAsync() {
@@ -377,10 +383,11 @@
                 foreach (var acct in remoteAccounts ?? []) {
                     await Accounts.AddKnownAccountAsync(acct);
                 }
-            } catch (CloudSyncException) {
+            } catch (CloudSyncException ex) {
+                Logger.LogDebug(ex, "cloud sync restore found no accounts blob");
                 /* nothing synced yet */
             } catch (Exception ex) {
-                throw new CloudSyncException($"restore accounts: {ex.Message}", ex);
+                throw new CloudSyncException($"restore accounts:{ex.Message}", ex);
             }
 
             try {
@@ -388,10 +395,11 @@
                 if (remoteSettings is not null) {
                     await Settings.SetSettingsAsync(CloudSyncBlobs.UnpackSettings(remoteSettings));
                 }
-            } catch (CloudSyncException) {
+            } catch (CloudSyncException ex) {
+                Logger.LogDebug(ex, "cloud sync restore found no settings blob");
                 /* nothing synced yet */
             } catch (Exception ex) {
-                throw new CloudSyncException($"restore settings: {ex.Message}", ex);
+                throw new CloudSyncException($"restore settings:{ex.Message}", ex);
             }
 
             try {
@@ -399,13 +407,14 @@
                 if (remoteReports is not null) {
                     await ImportReportsAsync(remoteReports);
                 }
-            } catch (CloudSyncException) {
+            } catch (CloudSyncException ex) {
+                Logger.LogDebug(ex, "cloud sync restore found no reports blob");
                 /* nothing synced yet */
             } catch (Exception ex) {
-                throw new CloudSyncException($"restore reports: {ex.Message}", ex);
+                throw new CloudSyncException($"restore reports:{ex.Message}", ex);
             }
 
-            _lastPullAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            _lastPullAt = Time.GetUtcNow().ToUnixTimeSeconds();
             await SessionStore.SetLastPullAtAsync(_lastPullAt);
             _restoreSuccess = true;
         } catch (Exception ex) {

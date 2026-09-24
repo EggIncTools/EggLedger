@@ -30,7 +30,7 @@ public sealed class AdminEndpointsTests {
     }
 
     private static AdminEndpoints Endpoints(NpgsqlDataSource src, bool isAdmin, Guid adminUserId) =>
-        new(new AdminDataService(src, FakeIdentity(adminUserId)), new FakeCurrentUser(isAdmin));
+        new(new AdminDataService(src, FakeIdentity(adminUserId), TimeProvider.System), new FakeCurrentUser(isAdmin));
 
     private static DefaultHttpContext Ctx() {
         var ctx = new DefaultHttpContext();

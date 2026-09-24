@@ -39,8 +39,8 @@ internal static class TimeBucket {
         return true;
     }
 
-    public static long NowMinus(string modifier) {
-        var now = DateTime.UtcNow;
+    public static long NowMinus(string modifier, TimeProvider? time = null) {
+        var now = (time ?? TimeProvider.System).GetUtcNow().UtcDateTime;
         var parts = modifier.Split(' ');
         if (parts.Length == 2 && int.TryParse(parts[0], NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var n)) {
             now = parts[1] switch {

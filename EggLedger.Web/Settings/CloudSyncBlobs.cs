@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using EggLedger.Domain.Reports;
 using EggLedger.Web.Data;
+using Microsoft.Extensions.Logging;
 
 namespace EggLedger.Web.Settings;
 
@@ -73,8 +74,8 @@ public sealed record CloudReportsBlob {
     public IReadOnlyList<CloudReportGroup> Groups { get; init; } = [];
 
     public static CloudReportsBlob Pack(
-        IReadOnlyList<ReportRow> reports, IReadOnlyList<ReportGroupRow> groups) => new() {
-            Reports = reports.Select(ReportMapping.ToDefinition).ToList(),
+        IReadOnlyList<ReportRow> reports, IReadOnlyList<ReportGroupRow> groups, ILogger? logger = null) => new() {
+            Reports = reports.Select(r => ReportMapping.ToDefinition(r, logger)).ToList(),
             Groups = groups.Select(CloudReportGroup.FromRow).ToList(),
         };
 }

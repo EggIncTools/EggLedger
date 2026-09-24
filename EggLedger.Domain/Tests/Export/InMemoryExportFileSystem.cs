@@ -5,16 +5,14 @@ namespace EggLedger.Domain.Tests.Export;
 internal sealed class InMemoryExportFileSystem : IExportFileSystem {
     private readonly Dictionary<string, long> _files = [with(StringComparer.Ordinal)];
 
-    public void AddFile(string dir, string name, long size) {
-        _files[Path.Combine(dir, name)] = size;
-    }
+    public void AddFile(string dir, string name, long size) => _files[Path.Combine(dir, name)] = size;
 
     public bool Exists(string path) => _files.ContainsKey(path);
 
     public IReadOnlyList<ExportFileEntry>? ListFiles(string dir) {
 
         var prefix = dir.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
-        var entries = new List<ExportFileEntry>();
+        List<ExportFileEntry> entries = [];
         bool dirSeen = false;
         foreach (var (path, size) in _files) {
             if (!path.StartsWith(prefix, StringComparison.Ordinal)) {

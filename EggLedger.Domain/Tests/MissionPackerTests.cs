@@ -58,29 +58,19 @@ public class MissionPackerTests {
     }
 
     [Fact]
-    public void IsBuggedCap_InsideRange() {
-        Assert.True(Packer.IsBuggedCap(MakeTimestampMission(1712900000)));
-    }
+    public void IsBuggedCap_InsideRange() => Assert.True(MissionPacker.IsBuggedCap(MakeTimestampMission(1712900000)));
 
     [Fact]
-    public void IsBuggedCap_BeforeRange() {
-        Assert.False(Packer.IsBuggedCap(MakeTimestampMission(1712721599)));
-    }
+    public void IsBuggedCap_BeforeRange() => Assert.False(MissionPacker.IsBuggedCap(MakeTimestampMission(1712721599)));
 
     [Fact]
-    public void IsBuggedCap_AfterRange() {
-        Assert.False(Packer.IsBuggedCap(MakeTimestampMission(1713286801)));
-    }
+    public void IsBuggedCap_AfterRange() => Assert.False(MissionPacker.IsBuggedCap(MakeTimestampMission(1713286801)));
 
     [Fact]
-    public void IsBuggedCap_AtLowerBound() {
-        Assert.False(Packer.IsBuggedCap(MakeTimestampMission(1712721600)));
-    }
+    public void IsBuggedCap_AtLowerBound() => Assert.False(MissionPacker.IsBuggedCap(MakeTimestampMission(1712721600)));
 
     [Fact]
-    public void IsBuggedCap_AtUpperBound() {
-        Assert.False(Packer.IsBuggedCap(MakeTimestampMission(1713286800)));
-    }
+    public void IsBuggedCap_AtUpperBound() => Assert.False(MissionPacker.IsBuggedCap(MakeTimestampMission(1713286800)));
 
     private static CompleteMissionResponse MakeDubCapMission(
         MissionInfo.Spaceship ship, MissionInfo.DurationType dur, uint level, uint capacity) =>
@@ -123,9 +113,7 @@ public class MissionPackerTests {
     [InlineData(90, "1m")]
     [InlineData((3 * 3600) + (30 * 60), "3h30m")]
     [InlineData((2 * 86400) + (6 * 3600) + (45 * 60), "2d6h45m")]
-    public void DurationStringFromSecs(double secs, string want) {
-        Assert.Equal(want, MissionPacker.DurationStringFromSecs(secs));
-    }
+    public void DurationStringFromSecs(double secs, string want) => Assert.Equal(want, MissionPacker.DurationStringFromSecs(secs));
 
     private static CompleteMissionResponse MakeFullMissionResponse(
         MissionInfo.Spaceship ship, MissionInfo.DurationType dur, uint level, uint capacity, double durSecs) =>
@@ -141,9 +129,7 @@ public class MissionPackerTests {
         };
 
     [Fact]
-    public void ComputeMissionFilterCols_NilInfo() {
-        Assert.False(Packer.TryComputeMissionFilterCols(1000000, new CompleteMissionResponse(), out _));
-    }
+    public void ComputeMissionFilterCols_NilInfo() => Assert.False(Packer.TryComputeMissionFilterCols(1000000, new CompleteMissionResponse(), out _));
 
     [Fact]
     public void ComputeMissionFilterCols_Normal() {

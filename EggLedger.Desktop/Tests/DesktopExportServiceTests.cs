@@ -127,7 +127,7 @@ public sealed class DesktopExportServiceTests {
         var missing = Path.Combine(md, "EI999.20990101_000000.csv");
 
         var svc = new DesktopExportService(root, fs);
-        await svc.DeleteAsync(new[] { csv, missing });
+        await svc.DeleteAsync([csv, missing]);
 
         Assert.False(fs.Exists(csv));
         Assert.True(fs.Exists(Path.Combine(md, "EI123.20240311_221737.xlsx")));

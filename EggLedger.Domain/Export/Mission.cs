@@ -27,21 +27,15 @@ public sealed class Mission {
 
     private const string Rfc3339 = "yyyy-MM-ddTHH:mm:ssK";
 
-    public static ArtifactSpec.Name CustomGetTargetArtifact(MissionInfo? mission) {
-        if (mission != null
+    public static ArtifactSpec.Name CustomGetTargetArtifact(MissionInfo? mission) =>
+        mission is not null
             && mission.ShouldSerializeTargetArtifact()
-            && mission.StartTimeDerived >= 1686260700d) {
-            return mission.TargetArtifact;
-        }
-        return ArtifactSpec.Name.Unknown;
-    }
+            && mission.StartTimeDerived >= 1686260700d
+            ? mission.TargetArtifact
+            : ArtifactSpec.Name.Unknown;
 
-    public static string GetNamedTarget(ArtifactSpec.Name name) {
-        if (name != ArtifactSpec.Name.Unknown) {
-            return name.CasedName();
-        }
-        return "";
-    }
+    public static string GetNamedTarget(ArtifactSpec.Name name) =>
+        name != ArtifactSpec.Name.Unknown ? name.CasedName() : "";
 
     public static string MissionTypeName(int t) => t switch {
         0 => "Standard",
@@ -59,8 +53,8 @@ public sealed class Mission {
         var returnedAt = launchedAt + duration;
         var target = CustomGetTargetArtifact(info);
 
-        var artifacts = new List<ArtifactSpec>();
-        var artifactNames = new List<string>();
+        List<ArtifactSpec> artifacts = [];
+        List<string> artifactNames = [];
         foreach (var a in r.Artifacts) {
             artifacts.Add(a.Spec);
             artifactNames.Add(a.Spec.Display());

@@ -1,6 +1,7 @@
 @using System.Globalization
 @implements IAsyncDisposable
 @inject IJSRuntime Js
+@inject ILogger<JsResizeObserver> ResizeLogger
 @* Multi-series line chart over a 2D result (rows = buckets, cols = series); geometry
    from ChartGeometry. viewBox tracks the container's actual rendered size via
    ResizeObserver (resizeObserver.js), same as ReportLineChart.
@@ -94,7 +95,7 @@
     protected override async Task OnAfterRenderAsync(bool firstRender) {
         if (firstRender) {
             _selfRef = DotNetObjectReference.Create(this);
-            _resizeObserver = new JsResizeObserver(Js);
+            _resizeObserver = new JsResizeObserver(Js, ResizeLogger);
             await _resizeObserver.ObserveAsync(_containerRef, _selfRef, nameof(OnChartResized));
         }
     }
@@ -136,7 +137,7 @@
 
     private List<YTick> BuildTicks(double max) {
         if (max == 0) {
-            return new List<YTick>();
+            return [];
         }
 
         var yRange = _h - ChartGeometry.PadTop - ChartGeometry.PadBottom;

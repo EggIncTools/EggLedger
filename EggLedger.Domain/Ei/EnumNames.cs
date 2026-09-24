@@ -5,8 +5,8 @@ using ProtoBuf;
 namespace EggLedger.Domain.Ei;
 
 internal static class EnumNames {
-    private static readonly ConcurrentDictionary<Type, Dictionary<long, string>> _valueToName = new();
-    private static readonly ConcurrentDictionary<Type, Dictionary<string, long>> _nameToValue = new();
+    private static readonly ConcurrentDictionary<Type, Dictionary<long, string>> ValueToName = new();
+    private static readonly ConcurrentDictionary<Type, Dictionary<string, long>> NameToValue = new();
 
     public static string ProtoName<TEnum>(TEnum value) where TEnum : struct, Enum {
         var map = ValueMap(typeof(TEnum));
@@ -25,10 +25,10 @@ internal static class EnumNames {
     }
 
     private static Dictionary<long, string> ValueMap(Type enumType) =>
-        _valueToName.GetOrAdd(enumType, Build);
+        ValueToName.GetOrAdd(enumType, Build);
 
     private static Dictionary<string, long> NameMap(Type enumType) =>
-        _nameToValue.GetOrAdd(enumType, t => {
+        NameToValue.GetOrAdd(enumType, t => {
             var result = new Dictionary<string, long>();
             foreach (var kv in Build(t)) {
                 result[kv.Value] = kv.Key;

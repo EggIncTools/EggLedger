@@ -18,7 +18,6 @@ public sealed class ReportTemplatesTests {
     }
 
     [Fact]
-    public void Find_UnknownId_ReturnsNull() {
+    public void Find_UnknownId_ReturnsNull() =>
         Assert.Null(ReportTemplates.Find("tmpl_does_not_exist"));
-    }
 }

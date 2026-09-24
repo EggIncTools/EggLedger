@@ -22,8 +22,7 @@ public sealed class FirstLoginBackfill(
     private readonly IDataProtector _keyProtector = dataProtection.CreateProtector("EggLedger.EncryptionKey");
 
     public async Task RunIfNeededAsync(CancellationToken ct = default) {
-        var userId = await user.GetUserIdAsync().ConfigureAwait(false);
-        if (userId is null) {
+        if (await user.GetUserIdAsync().ConfigureAwait(false) is not { } userId) {
             return;
         }
 
@@ -32,14 +31,14 @@ public sealed class FirstLoginBackfill(
             return;
         }
 
-        var encKey = await EncryptionKeyAsync(userId.Value, ct).ConfigureAwait(false);
+        var encKey = await EncryptionKeyAsync(userId, ct).ConfigureAwait(false);
         if (string.IsNullOrEmpty(encKey)) {
             return;
         }
 
-        await RestoreAccountsAsync(userId.Value, encKey, ct).ConfigureAwait(false);
-        await RestoreSettingsAsync(userId.Value, encKey, ct).ConfigureAwait(false);
-        await RestoreReportsAsync(userId.Value, encKey, ct).ConfigureAwait(false);
+        await RestoreAccountsAsync(userId, encKey, ct).ConfigureAwait(false);
+        await RestoreSettingsAsync(userId, encKey, ct).ConfigureAwait(false);
+        await RestoreReportsAsync(userId, encKey, ct).ConfigureAwait(false);
     }
 
     private async Task RestoreAccountsAsync(Guid userId, string encKey, CancellationToken ct) {
@@ -88,7 +87,8 @@ public sealed class FirstLoginBackfill(
 
         try {
             return _keyProtector.Unprotect(stored);
-        } catch (CryptographicException) {
+        } catch (CryptographicException ex) {
+            logger.LogDebug(ex, "backfill: encryption_key not protected for {UserId}, using stored value", userId);
             return stored;
         }
     }

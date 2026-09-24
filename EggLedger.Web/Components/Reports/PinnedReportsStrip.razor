@@ -1,5 +1,6 @@
 @inject IndexedDbPinnedReportStore PinStore
 @inject IndexedDbReportStore ReportStore
+@inject ILogger<PinnedReportsStrip> Logger
 
 <div class="pinned-reports-strip">
     <div class="pinned-reports-header flex items-center justify-end mb-2">
@@ -92,7 +93,7 @@
             } else {
                 var row = await ReportStore.RetrieveReportAsync(pin.RefId);
                 if (row is not null) {
-                    def = ReportMapping.ToDefinition(row);
+                    def = ReportMapping.ToDefinition(row, Logger);
                 }
             }
             if (def is null) {
@@ -123,7 +124,7 @@
 
         var kind = parts[0] == "template" ? PinnedReportKinds.Template : PinnedReportKinds.User;
         var refId = parts[1];
-        if (_pins.Any(p => p.Kind == kind && p.RefId == refId)) {
+        if (_pins.Exists(p => p.Kind == kind && p.RefId == refId)) {
             return;
         }
 

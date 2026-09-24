@@ -121,10 +121,7 @@ public sealed class ReportResult : IEquatable<ReportResult> {
         if (other is null) {
             return false;
         }
-        if (ReferenceEquals(this, other)) {
-            return true;
-        }
-        return IsFloat == other.IsFloat
+        return ReferenceEquals(this, other) || IsFloat == other.IsFloat
             && Is2D == other.Is2D
             && Weight == other.Weight
             && SeqEqual(Labels, other.Labels)
@@ -162,10 +159,7 @@ public sealed class ReportResult : IEquatable<ReportResult> {
         if (a is null) {
             return b is null;
         }
-        if (b is null) {
-            return false;
-        }
-        return a.Count == b.Count && a.SequenceEqual(b);
+        return b is not null && a.Count == b.Count && a.SequenceEqual(b);
     }
 }
 

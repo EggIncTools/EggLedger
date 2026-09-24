@@ -19,13 +19,14 @@ public static class Api {
         var identity = app.Services.GetRequiredService<EggIdentity.Client.IdentityApiClient>();
         var currentUser = app.Services.GetRequiredService<EggLedger.Web.Server.Sync.Auth.ICurrentUser>();
         var auth = app.Services.GetRequiredService<AuthEndpoints>();
-        var blobs = new BlobEndpoints(source, loggerFactory.CreateLogger<BlobEndpoints>());
-        var menno = new MennoEndpoint(new HttpClient(), cfg.MennoFunctionKey, AppConfig.MennoUpstreamUrl);
+        var time = app.Services.GetRequiredService<TimeProvider>();
+        var blobs = new BlobEndpoints(source, time, loggerFactory.CreateLogger<BlobEndpoints>());
+        var menno = new MennoEndpoint(new HttpClient(), cfg.MennoFunctionKey, AppConfig.MennoUpstreamUrl, loggerFactory.CreateLogger<MennoEndpoint>());
         var store = new SessionStore(
             source,
             identity,
             app.Services.GetRequiredService<SessionRevocationCache>(),
-            app.Services.GetRequiredService<TimeProvider>());
+            time);
         var admin = new Admin.AdminEndpoints(app.Services.GetRequiredService<EggLedger.Web.Components.Admin.IAdminData>(), currentUser);
 
         app.UseEggIdentityRequestMetrics();

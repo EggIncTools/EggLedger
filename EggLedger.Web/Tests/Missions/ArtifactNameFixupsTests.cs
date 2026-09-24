@@ -8,7 +8,6 @@ public sealed class ArtifactNameFixupsTests {
     [InlineData("VIAL_MARTIAN_DUST", "VIAL_OF_MARTIAN_DUST")]
     [InlineData("ORNATE_GUSSET_FRAGMENT", "GUSSET_FRAGMENT")]
     [InlineData("LUNAR_TOTEM", "LUNAR_TOTEM")]
-    public void ApplyDisplayNameOverrides_RewritesKnownNames(string input, string expected) {
+    public void ApplyDisplayNameOverrides_RewritesKnownNames(string input, string expected) =>
         Assert.Equal(expected, ArtifactNameFixups.ApplyDisplayNameOverrides(input));
-    }
 }

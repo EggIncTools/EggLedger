@@ -48,10 +48,6 @@ public sealed class SqliteMissionDb : IMissionDb {
         if (type == typeof(double)) {
             return reader.GetDouble(i);
         }
-        if (type == typeof(byte[])) {
-            return reader.GetValue(i);
-        }
-
-        return reader.GetString(i);
+        return type == typeof(byte[]) ? reader.GetValue(i) : reader.GetString(i);
     }
 }

@@ -9,7 +9,7 @@ public static class TimeFill {
             return (rawLabels, values);
         }
         var allBuckets = ExpandBucketRange(EffectiveBucketUnit(timeBucket, customBucketUnit), rawLabels[0], rawLabels[^1]);
-        if (allBuckets == null || allBuckets.Count == rawLabels.Count) {
+        if (allBuckets is null || allBuckets.Count == rawLabels.Count) {
             return (rawLabels, values);
         }
         var lookup = rawLabels
@@ -26,7 +26,7 @@ public static class TimeFill {
             return (rawLabels, values);
         }
         var allBuckets = ExpandBucketRange(EffectiveBucketUnit(timeBucket, customBucketUnit), rawLabels[0], rawLabels[^1]);
-        if (allBuckets == null || allBuckets.Count == rawLabels.Count) {
+        if (allBuckets is null || allBuckets.Count == rawLabels.Count) {
             return (rawLabels, values);
         }
         var lookup = rawLabels
@@ -43,7 +43,7 @@ public static class TimeFill {
             return (bucketLabels, matrixValues);
         }
         var allBuckets = ExpandBucketRange(EffectiveBucketUnit(timeBucket, customBucketUnit), bucketLabels[0], bucketLabels[^1]);
-        if (allBuckets == null || allBuckets.Count == bucketLabels.Count) {
+        if (allBuckets is null || allBuckets.Count == bucketLabels.Count) {
             return (bucketLabels, matrixValues);
         }
         var rowIndex = bucketLabels
@@ -74,7 +74,7 @@ public static class TimeFill {
         if (!TryParseExact(first, "yyyy-MM-dd", out var t) || !TryParseExact(last, "yyyy-MM-dd", out var end)) {
             return null;
         }
-        var outList = new List<string>();
+        List<string> outList = [];
         while (t <= end) {
             outList.Add(t.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
             t = t.AddDays(1);
@@ -86,7 +86,7 @@ public static class TimeFill {
         if (!TryParseSQLiteWeekLabel(first, out var start) || !TryParseSQLiteWeekLabel(last, out var end)) {
             return null;
         }
-        var outList = new List<string>();
+        List<string> outList = [];
         for (var t = start; t <= end; t = t.AddDays(7)) {
             outList.Add(FormatSQLiteWeekLabel(t));
         }
@@ -97,7 +97,7 @@ public static class TimeFill {
         if (!TryParseExact(first, "yyyy-MM", out var t) || !TryParseExact(last, "yyyy-MM", out var end)) {
             return null;
         }
-        var outList = new List<string>();
+        List<string> outList = [];
         while (t <= end) {
             outList.Add(t.ToString("yyyy-MM", CultureInfo.InvariantCulture));
             t = t.AddMonths(1);
@@ -105,13 +105,11 @@ public static class TimeFill {
         return outList;
     }
 
-    private static List<string>? ExpandYearBuckets(string first, string last) {
-        if (!int.TryParse(first, NumberStyles.Integer, CultureInfo.InvariantCulture, out var y0)
-            || !int.TryParse(last, NumberStyles.Integer, CultureInfo.InvariantCulture, out var y1)) {
-            return null;
-        }
-        return [.. Enumerable.Range(y0, Math.Max(y1 - y0 + 1, 0)).Select(y => y.ToString("D4", CultureInfo.InvariantCulture))];
-    }
+    private static List<string>? ExpandYearBuckets(string first, string last) =>
+        int.TryParse(first, NumberStyles.Integer, CultureInfo.InvariantCulture, out var y0)
+            && int.TryParse(last, NumberStyles.Integer, CultureInfo.InvariantCulture, out var y1)
+            ? [.. Enumerable.Range(y0, Math.Max(y1 - y0 + 1, 0)).Select(y => y.ToString("D4", CultureInfo.InvariantCulture))]
+            : null;
 
     private static bool TryParseSQLiteWeekLabel(string label, out DateTime result) {
         result = default;

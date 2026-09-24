@@ -27,10 +27,6 @@ public static class DesktopCommandBuilder {
     public static (string Exe, string[] Args) BuildRestartCommand(string exePath)
         => (exePath, []);
 
-    public static (string Exe, string[] Args)? BuildSetHiddenCommand(OSPlatform platform, string path, bool hidden) {
-        if (platform != OSPlatform.OSX) {
-            return null;
-        }
-        return ("chflags", [hidden ? "hidden" : "nohidden", path]);
-    }
+    public static (string Exe, string[] Args)? BuildSetHiddenCommand(OSPlatform platform, string path, bool hidden)
+        => platform != OSPlatform.OSX ? null : ("chflags", [hidden ? "hidden" : "nohidden", path]);
 }

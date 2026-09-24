@@ -9,12 +9,11 @@ public sealed class ReportParityTests {
 
     private sealed class NoWeights : IWeightData {
         public double CraftingWeight(long artifactId, long level) => 1;
-        public IReadOnlyList<int> FamilyAfxIds(string familyId) => Array.Empty<int>();
+        public IReadOnlyList<int> FamilyAfxIds(string familyId) => [];
     }
 
-    private sealed class FixedFamily : IWeightData {
-        private readonly int[] _ids;
-        public FixedFamily(params int[] ids) => _ids = ids;
+    private sealed class FixedFamily(params int[] ids) : IWeightData {
+        private readonly int[] _ids = ids;
         public double CraftingWeight(long artifactId, long level) => 1;
         public IReadOnlyList<int> FamilyAfxIds(string familyId) => _ids;
     }
@@ -426,19 +425,13 @@ public sealed class ReportParityTests {
     }
 
     [Fact]
-    public void Parity_Pivot2D_RowPct() {
-        AssertParity(Pivot2D("row_pct"), new NoWeights());
-    }
+    public void Parity_Pivot2D_RowPct() => AssertParity(Pivot2D("row_pct"), new NoWeights());
 
     [Fact]
-    public void Parity_Pivot2D_ColPct() {
-        AssertParity(Pivot2D("col_pct"), new NoWeights());
-    }
+    public void Parity_Pivot2D_ColPct() => AssertParity(Pivot2D("col_pct"), new NoWeights());
 
     [Fact]
-    public void Parity_Pivot2D_GlobalPct() {
-        AssertParity(Pivot2D("global_pct"), new NoWeights());
-    }
+    public void Parity_Pivot2D_GlobalPct() => AssertParity(Pivot2D("global_pct"), new NoWeights());
 
     [Fact]
     public void Parity_FamilyWeighted_Pivot() {

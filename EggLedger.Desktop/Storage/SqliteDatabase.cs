@@ -60,7 +60,5 @@ public sealed class SqliteDatabase : IDisposable {
         cmd.ExecuteNonQuery();
     }
 
-    public void Dispose() {
-        Connection.Dispose();
-    }
+    public void Dispose() => Connection.Dispose();
 }

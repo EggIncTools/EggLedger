@@ -9,11 +9,7 @@ public static class FilterCodec {
 
     public static Condition? ParseCondition(string topLevel, string op, string val) {
         var c = new WebCondition(topLevel, op, val);
-        if (string.IsNullOrEmpty(c.TopLevel)) {
-            return null;
-        }
-
-        return c.TopLevel switch {
+        return string.IsNullOrEmpty(c.TopLevel) ? null : c.TopLevel switch {
             "buggedcap" => new Condition(FilterField.BuggedCap, BoolOp(c.Val), new FilterValue.Flag(c.Val == "true")),
             "dubcap" => new Condition(FilterField.DubCap, BoolOp(c.Val), new FilterValue.Flag(c.Val == "true")),
             "ship" => EnumCond(FilterField.Ship, c),
@@ -29,26 +25,20 @@ public static class FilterCodec {
         };
     }
 
-    private static Condition? EnumCond(FilterField field, WebCondition c) {
-        if (!int.TryParse(c.Val, NumberStyles.Integer, CultureInfo.InvariantCulture, out var code)) {
-            return null;
-        }
-        return new Condition(field, ParseOp(c.Op), new FilterValue.EnumValue(code));
-    }
+    private static Condition? EnumCond(FilterField field, WebCondition c) =>
+        int.TryParse(c.Val, NumberStyles.Integer, CultureInfo.InvariantCulture, out var code)
+            ? new Condition(field, ParseOp(c.Op), new FilterValue.EnumValue(code))
+            : null;
 
-    private static Condition? NumberCond(FilterField field, WebCondition c) {
-        if (!double.TryParse(c.Val, NumberStyles.Float, CultureInfo.InvariantCulture, out var n)) {
-            return null;
-        }
-        return new Condition(field, ParseOp(c.Op), new FilterValue.Number(n));
-    }
+    private static Condition? NumberCond(FilterField field, WebCondition c) =>
+        double.TryParse(c.Val, NumberStyles.Float, CultureInfo.InvariantCulture, out var n)
+            ? new Condition(field, ParseOp(c.Op), new FilterValue.Number(n))
+            : null;
 
-    private static Condition? DateCond(FilterField field, WebCondition c) {
-        if (!TryParseDay(c.Val, out var day)) {
-            return null;
-        }
-        return new Condition(field, ParseDateOp(c.Op), new FilterValue.Day(day));
-    }
+    private static Condition? DateCond(FilterField field, WebCondition c) =>
+        TryParseDay(c.Val, out var day)
+            ? new Condition(field, ParseDateOp(c.Op), new FilterValue.Day(day))
+            : null;
 
     private static Condition DropCond(WebCondition c) {
         var op = c.Op == "dnc" ? FilterOperator.NotContains : FilterOperator.Contains;
@@ -84,19 +74,13 @@ public static class FilterCodec {
         double? quality = SegD(segs, 3);
         return new DropMatch(name, level, rarity, quality);
 
-        static int? Seg(string[] s, int i) {
-            if (i >= s.Length || s[i] == "%" || s[i].Length == 0) {
-                return null;
-            }
-            return int.TryParse(s[i], NumberStyles.Integer, CultureInfo.InvariantCulture, out var v) ? v : null;
-        }
+        static int? Seg(string[] s, int i) =>
+            i < s.Length && s[i] != "%" && s[i].Length != 0
+                && int.TryParse(s[i], NumberStyles.Integer, CultureInfo.InvariantCulture, out var v) ? v : null;
 
-        static double? SegD(string[] s, int i) {
-            if (i >= s.Length || s[i] == "%" || s[i].Length == 0) {
-                return null;
-            }
-            return double.TryParse(s[i], NumberStyles.Float, CultureInfo.InvariantCulture, out var v) ? v : null;
-        }
+        static double? SegD(string[] s, int i) =>
+            i < s.Length && s[i] != "%" && s[i].Length != 0
+                && double.TryParse(s[i], NumberStyles.Float, CultureInfo.InvariantCulture, out var v) ? v : null;
     }
 
     public static string EncodeDropGlob(DropMatch m) {

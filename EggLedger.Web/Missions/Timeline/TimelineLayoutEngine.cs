@@ -122,9 +122,6 @@ public static class TimelineLayoutEngine {
         }
         long clipStart = Math.Max(launchDt, windowStart);
         long clipEnd = Math.Min(returnDt, windowEnd);
-        if (clipEnd <= clipStart) {
-            return 0;
-        }
-        return Math.Clamp((double)(nowUnix - clipStart) / (clipEnd - clipStart), 0, 1);
+        return clipEnd <= clipStart ? 0 : Math.Clamp((double)(nowUnix - clipStart) / (clipEnd - clipStart), 0, 1);
     }
 }

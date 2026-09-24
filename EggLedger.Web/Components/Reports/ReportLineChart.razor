@@ -1,6 +1,7 @@
 @using System.Globalization
 @implements IAsyncDisposable
 @inject IJSRuntime Js
+@inject ILogger<JsResizeObserver> ResizeLogger
 @* Line / area chart; geometry from ChartGeometry. viewBox tracks the container's actual
    rendered size via ResizeObserver (resizeObserver.js) so geometry is never CSS-distorted.
    SVG <text> is emitted via MarkupString helpers because Razor reserves the bare
@@ -87,7 +88,7 @@
     protected override async Task OnAfterRenderAsync(bool firstRender) {
         if (firstRender) {
             _selfRef = DotNetObjectReference.Create(this);
-            _resizeObserver = new JsResizeObserver(Js);
+            _resizeObserver = new JsResizeObserver(Js, ResizeLogger);
             await _resizeObserver.ObserveAsync(_containerRef, _selfRef, nameof(OnChartResized));
         }
     }

@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.InteropServices;
 using EggLedger.Domain.Util;
 
 namespace EggLedger.Domain.Reports;
@@ -27,21 +28,18 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
                 if (def.SecondaryGroupBy != "") {
                     return ExecuteWeightedPivot(def, baseWhere, args, baseArgs, fwClause, fwArgs);
                 }
-                if (def.Mode == "time_series") {
-                    return ExecuteWeightedTimeSeries(def, baseWhere, args, fwClause, fwArgs);
-                }
-                return ExecuteWeightedAggregate(def, baseWhere, args, baseArgs, fwClause, fwArgs);
+                return def.Mode == "time_series"
+                    ? ExecuteWeightedTimeSeries(def, baseWhere, args, fwClause, fwArgs)
+                    : ExecuteWeightedAggregate(def, baseWhere, args, baseArgs, fwClause, fwArgs);
             }
         }
 
         if (def.SecondaryGroupBy != "" && def.Mode == "time_series") {
             return ExecuteTimePivotReport(def, baseWhere, args);
         }
-        if (def.SecondaryGroupBy != "") {
-            return ExecutePivotReport(def, baseWhere, args, baseArgs);
-        }
-
-        return ExecuteSimpleReport(def, baseWhere, args, baseArgs);
+        return def.SecondaryGroupBy != ""
+            ? ExecutePivotReport(def, baseWhere, args, baseArgs)
+            : ExecuteSimpleReport(def, baseWhere, args, baseArgs);
     }
 
     private ReportResult ExecuteSimpleReport(ReportDefinition def, string baseWhere, List<object?> args, List<object?> baseArgs) {
@@ -54,8 +52,8 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
         var rows = _db.Query(query, args);
 
         if (def.Subject == "fuel_eggs" && def.Mode == "aggregate") {
-            var fuelLabels = new List<string>();
-            var fuelValues = new List<double>();
+            List<string> fuelLabels = [];
+            List<double> fuelValues = [];
             foreach (var row in rows) {
                 fuelLabels.Add(Labels.FormatLabel(def.GroupBy, AsString(row[0])));
                 fuelValues.Add(AsDouble(row[1]));
@@ -63,9 +61,9 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
             return new ReportResult { Labels = fuelLabels, FloatValues = fuelValues, IsFloat = true, Weight = def.Weight };
         }
 
-        var rawLabels = new List<string>();
-        var labels = new List<string>();
-        var values = new List<long>();
+        List<string> rawLabels = [];
+        List<string> labels = [];
+        List<long> values = [];
         foreach (var row in rows) {
             var rawLabel = AsString(row[0]);
             var count = AsLong(row[1]);
@@ -198,9 +196,9 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
         var (query, queryArgs) = QueryBuilder.BuildWeightedAggregateQuery(def, baseWhere, args, fwClause, fwArgs);
         var rows = _db.Query(query, queryArgs);
 
-        var accum = new Dictionary<string, double>(StringComparer.Ordinal);
-        var rawOrder = new List<string>();
-        var seen = new HashSet<string>(StringComparer.Ordinal);
+        Dictionary<string, double> accum = [with(StringComparer.Ordinal)];
+        List<string> rawOrder = [];
+        HashSet<string> seen = [with(StringComparer.Ordinal)];
 
         foreach (var row in rows) {
             var rawLabel = AsString(row[0]);
@@ -211,8 +209,7 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
             if (seen.Add(rawLabel)) {
                 rawOrder.Add(rawLabel);
             }
-            accum.TryGetValue(rawLabel, out var cur);
-            accum[rawLabel] = cur + (capWeight * w);
+            CollectionsMarshal.GetValueRefOrAddDefault(accum, rawLabel, out _) += capWeight * w;
         }
 
         var labels = new List<string>(rawOrder.Count);
@@ -306,19 +303,16 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
                 var cnt = AsDouble(row[2]);
                 var k1 = Labels.FormatLabel(def.GroupBy, rawKey1);
                 var k2 = Labels.FormatLabel(def.SecondaryGroupBy, rawKey2);
-                if (!mcMap.TryGetValue(k1, out var inner)) {
-                    inner = [with(StringComparer.Ordinal)];
-                    mcMap[k1] = inner;
-                }
+                ref var inner = ref CollectionsMarshal.GetValueRefOrAddDefault(mcMap, k1, out _);
+                inner ??= [with(StringComparer.Ordinal)];
                 inner[k2] = cnt;
             }
         }
         return mcMap;
     }
 
-    private static List<long> BuildMissionCountMatrix(Dictionary<string, Dictionary<string, double>> mcMap, List<string> rowLabels, List<string> colLabels) {
-        return [.. rowLabels.SelectMany(r => colLabels.Select(c => (long)Denom(mcMap, r, c)))];
-    }
+    private static List<long> BuildMissionCountMatrix(Dictionary<string, Dictionary<string, double>> mcMap, List<string> rowLabels, List<string> colLabels) =>
+        [.. rowLabels.SelectMany(r => colLabels.Select(c => (long)Denom(mcMap, r, c)))];
 
 
     private List<double>? ApplyWeightedPivotNormalization(ReportDefinition def, double[] matrixValues, List<string> rowLabels, List<string> colLabels, Dictionary<string, Dictionary<string, double>> mcMap, string baseWhere, List<object?> baseArgs) {
@@ -364,9 +358,9 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
         var (query, queryArgs) = QueryBuilder.BuildWeightedTimeSeriesQuery(def, baseWhere, args, fwClause, fwArgs);
         var rows = _db.Query(query, queryArgs);
 
-        var accum = new Dictionary<string, double>(StringComparer.Ordinal);
-        var buckets = new List<string>();
-        var seen = new HashSet<string>(StringComparer.Ordinal);
+        Dictionary<string, double> accum = [with(StringComparer.Ordinal)];
+        List<string> buckets = [];
+        HashSet<string> seen = [with(StringComparer.Ordinal)];
 
         foreach (var row in rows) {
             var rawBucket = AsString(row[0]);
@@ -377,8 +371,7 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
             if (seen.Add(rawBucket)) {
                 buckets.Add(rawBucket);
             }
-            accum.TryGetValue(rawBucket, out var cur);
-            accum[rawBucket] = cur + (capWeight * w);
+            CollectionsMarshal.GetValueRefOrAddDefault(accum, rawBucket, out _) += capWeight * w;
         }
 
         List<double> floatValues = [.. buckets.Select(b => accum[b])];
@@ -468,10 +461,8 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
             var denom = AsDouble(row[2]);
             var k1 = Labels.FormatLabel(def.GroupBy, rawKey1);
             var k2 = Labels.FormatLabel(def.SecondaryGroupBy, rawKey2);
-            if (!denomMap.TryGetValue(k1, out var inner)) {
-                inner = [with(StringComparer.Ordinal)];
-                denomMap[k1] = inner;
-            }
+            ref var inner = ref CollectionsMarshal.GetValueRefOrAddDefault(denomMap, k1, out _);
+            inner ??= [with(StringComparer.Ordinal)];
             inner[k2] = denom;
         }
         return denomMap;

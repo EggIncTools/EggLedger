@@ -47,7 +47,7 @@ public class ExportTests {
     }
 
     private static string[] SplitCsvLine(string line) {
-        var fields = new List<string>();
+        List<string> fields = [];
         var sb = new StringBuilder();
         bool inQuotes = false;
         for (int i = 0; i < line.Length; i++) {
@@ -80,7 +80,7 @@ public class ExportTests {
         using var ms = new MemoryStream(data);
         using var zip = new ZipArchive(ms, ZipArchiveMode.Read);
         var entry = zip.GetEntry(name);
-        if (entry == null) {
+        if (entry is null) {
             return "";
         }
         using var s = entry.Open();
@@ -118,9 +118,8 @@ public class ExportTests {
     [InlineData(1, "Virtue")]
     [InlineData(-1, "Unknown")]
     [InlineData(99, "Unknown")]
-    public void MissionTypeName_Cases(int input, string want) {
+    public void MissionTypeName_Cases(int input, string want) =>
         Assert.Equal(want, Mission.MissionTypeName(input));
-    }
 
     [Fact]
     public void ExportMissionsToCsv_UnknownMissionType() {

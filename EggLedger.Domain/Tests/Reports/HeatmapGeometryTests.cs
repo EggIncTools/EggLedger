@@ -5,14 +5,12 @@ namespace EggLedger.Domain.Tests.Reports;
 
 public class HeatmapGeometryTests {
     [Fact]
-    public void CellIntensity_DefaultIsValueOverMax() {
+    public void CellIntensity_DefaultIsValueOverMax() =>
         Assert.Equal(0.5, HeatmapGeometry.CellIntensity(5, 10, "none", null), 5);
-    }
 
     [Fact]
-    public void CellIntensity_FloorsAtTwelvePercent() {
+    public void CellIntensity_FloorsAtTwelvePercent() =>
         Assert.Equal(0.12, HeatmapGeometry.CellIntensity(0.5, 100, "none", null), 5);
-    }
 
     [Fact]
     public void CellIntensity_RatioAndPctModes() {
@@ -41,9 +39,8 @@ public class HeatmapGeometryTests {
     }
 
     [Fact]
-    public void RelativeLuminance_WhiteIsOne() {
+    public void RelativeLuminance_WhiteIsOne() =>
         Assert.Equal(1.0, HeatmapGeometry.RelativeLuminance(255, 255, 255), 5);
-    }
 
     [Theory]
     [InlineData(5, "none", false, "5")]

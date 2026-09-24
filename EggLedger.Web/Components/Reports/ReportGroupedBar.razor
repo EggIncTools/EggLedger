@@ -1,3 +1,4 @@
+@using System.Collections.Frozen
 @using System.Globalization
 @* Grouped horizontal bars over a 2D result: each row heads a stack of per-column bars,
    with an "Other" rollup once columns exceed MaxCols. Legend drag-reorder deferred. *@
@@ -102,7 +103,7 @@
 
     private List<string> ColColors(List<string> cols) {
         if (RawColCount == 0) {
-            return new List<string>();
+            return [];
         }
 
         return ChartGeometry.SeriesColors(
@@ -113,5 +114,5 @@
             ("Other", "#6b7280"));
     }
 
-    private static readonly Dictionary<string, string> EmptyOverrides = new();
+    private static readonly FrozenDictionary<string, string> EmptyOverrides = FrozenDictionary<string, string>.Empty;
 }

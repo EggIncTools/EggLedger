@@ -6,10 +6,7 @@ public sealed class FileGameEventStore(string internalDir) : IGameEventStore {
     private readonly string _path = Path.Combine(internalDir, "events.json");
 
     public async Task<byte[]?> LoadAsync(CancellationToken cancellationToken = default) {
-        if (!File.Exists(_path)) {
-            return null;
-        }
-        return await File.ReadAllBytesAsync(_path, cancellationToken).ConfigureAwait(false);
+        return File.Exists(_path) ? await File.ReadAllBytesAsync(_path, cancellationToken).ConfigureAwait(false) : null;
     }
 
     public async Task SaveAsync(byte[] utf8Json, CancellationToken cancellationToken = default) {

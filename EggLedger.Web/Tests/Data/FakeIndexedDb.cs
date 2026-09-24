@@ -83,10 +83,7 @@ public sealed class FakeIndexedDb : IIndexedDb {
 
     public ValueTask<T[]> GetAllAsync<T>(string store) {
         lock (_gate) {
-            if (!_stores.TryGetValue(store, out var list)) {
-                return new ValueTask<T[]>([]);
-            }
-            return new ValueTask<T[]>([.. list.OfType<T>()]);
+            return new ValueTask<T[]>(_stores.TryGetValue(store, out var list) ? [.. list.OfType<T>()] : []);
         }
     }
 

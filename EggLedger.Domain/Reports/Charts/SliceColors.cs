@@ -39,7 +39,7 @@ public static class SliceColors {
 
     public static IReadOnlyList<string> AutoSliceColors(string baseColor, int count) {
         var (h, s, l) = HexToHsl(baseColor);
-        return Enumerable.Range(0, Math.Max(count, 0)).Select(i => HslToHex(Mod(h + (double)i * 360 / count, 360), s, l)).ToList();
+        return [.. Enumerable.Range(0, Math.Max(count, 0)).Select(i => HslToHex(Mod(h + (double)i * 360 / count, 360), s, l))];
     }
 
     public static Dictionary<string, string> ParseLabelColors(string? raw) {
@@ -64,10 +64,7 @@ public static class SliceColors {
         }
         int idx = IndexOf(chartLabels, label);
         var colors = AutoSliceColors(baseColor, chartLabels.Count);
-        if (idx >= 0 && idx < colors.Count) {
-            return colors[idx];
-        }
-        return baseColor;
+        return idx >= 0 && idx < colors.Count ? colors[idx] : baseColor;
     }
 
     private static int IndexOf(IReadOnlyList<string> list, string value) {

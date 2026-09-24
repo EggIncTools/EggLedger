@@ -6,16 +6,10 @@ using NpgsqlTypes;
 
 namespace EggLedger.Web.Server.Storage;
 
-public sealed class PostgresIndexedDb : IIndexedDb {
-    private readonly NpgsqlDataSource _source;
-    private readonly CurrentUser _user;
-    private readonly Dictionary<string, StoreMeta> _stores;
-
-    public PostgresIndexedDb(NpgsqlDataSource source, CurrentUser user) {
-        _source = source ?? throw new ArgumentNullException(nameof(source));
-        _user = user ?? throw new ArgumentNullException(nameof(user));
-        _stores = BuildStoreMeta();
-    }
+public sealed class PostgresIndexedDb(NpgsqlDataSource source, CurrentUser user) : IIndexedDb {
+    private readonly NpgsqlDataSource _source = source ?? throw new ArgumentNullException(nameof(source));
+    private readonly CurrentUser _user = user ?? throw new ArgumentNullException(nameof(user));
+    private readonly Dictionary<string, StoreMeta> _stores = BuildStoreMeta();
 
     private Task<Guid> UserAsync() => _user.RequireUserIdAsync();
     private Task<Guid?> TryUserAsync() => _user.GetUserIdAsync();
@@ -51,10 +45,7 @@ public sealed class PostgresIndexedDb : IIndexedDb {
         cmd.Parameters.AddWithValue("user", user);
         BindKeyArgs(cmd, keyArgs);
         await using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-        if (!await reader.ReadAsync().ConfigureAwait(false)) {
-            return default;
-        }
-        return Materialize<T>(meta, reader);
+        return await reader.ReadAsync().ConfigureAwait(false) ? Materialize<T>(meta, reader) : default;
     }
 
     public async ValueTask<T[]> GetAllAsync<T>(string store) {
@@ -206,12 +197,10 @@ public sealed class PostgresIndexedDb : IIndexedDb {
     private static (string where, object[] args) KeyPredicate(StoreMeta meta, object key) =>
         JsonRowCodec.KeyPredicate(meta.Table, meta.KeyColumns, key, Ident, JsonRowCodec.Postgres);
 
-    private static string Ident(string name) {
-        if (name.Contains('"', StringComparison.Ordinal)) {
-            throw new ArgumentException($"illegal identifier {name}", nameof(name));
-        }
-        return "\"" + name + "\"";
-    }
+    private static string Ident(string name) =>
+        name.Contains('"', StringComparison.Ordinal)
+            ? throw new ArgumentException($"illegal identifier {name}", nameof(name))
+            : "\"" + name + "\"";
 
     private StoreMeta Meta(string store) =>
         _stores.TryGetValue(store, out var meta)
@@ -239,20 +228,12 @@ public sealed class PostgresIndexedDb : IIndexedDb {
             blobColumns: [], epochColumns: ["created_at"]),
     };
 
-    private sealed class StoreMeta {
-        public StoreMeta(string table, string[] keyColumns, string? autoIncrementColumn, string[] blobColumns,
-            string[]? epochColumns = null) {
-            Table = table;
-            KeyColumns = keyColumns;
-            AutoIncrementColumn = autoIncrementColumn;
-            BlobColumns = new HashSet<string>(blobColumns, StringComparer.Ordinal);
-            EpochColumns = new HashSet<string>(epochColumns ?? [], StringComparer.Ordinal);
-        }
-
-        public string Table { get; }
-        public string[] KeyColumns { get; }
-        public string? AutoIncrementColumn { get; }
-        public HashSet<string> BlobColumns { get; }
-        public HashSet<string> EpochColumns { get; }
+    private sealed class StoreMeta(string table, string[] keyColumns, string? autoIncrementColumn, string[] blobColumns,
+        string[]? epochColumns = null) {
+        public string Table { get; } = table;
+        public string[] KeyColumns { get; } = keyColumns;
+        public string? AutoIncrementColumn { get; } = autoIncrementColumn;
+        public HashSet<string> BlobColumns { get; } = new(blobColumns, StringComparer.Ordinal);
+        public HashSet<string> EpochColumns { get; } = new(epochColumns ?? [], StringComparer.Ordinal);
     }
 }

@@ -13,18 +13,16 @@ public sealed class LifetimeSorterTests {
     [InlineData("random", LifetimeSortMethod.Random)]
     [InlineData("nonsense", LifetimeSortMethod.Default)]
     [InlineData(null, LifetimeSortMethod.Default)]
-    public void ParseMethod_MatchesVueSwitch(string? value, LifetimeSortMethod expected) {
+    public void ParseMethod_MatchesVueSwitch(string? value, LifetimeSortMethod expected) =>
         Assert.Equal(expected, LifetimeSorter.ParseMethod(value));
-    }
 
     [Theory]
     [InlineData(LifetimeSortMethod.Default, "default")]
     [InlineData(LifetimeSortMethod.Iv, "iv")]
     [InlineData(LifetimeSortMethod.Count, "count")]
     [InlineData(LifetimeSortMethod.Random, "random")]
-    public void MethodString_RoundTrips(LifetimeSortMethod method, string expected) {
+    public void MethodString_RoundTrips(LifetimeSortMethod method, string expected) =>
         Assert.Equal(expected, LifetimeSorter.MethodString(method));
-    }
 
     [Fact]
     public void SortGroupByCount_OrdersByCountDesc() {

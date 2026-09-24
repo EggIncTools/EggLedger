@@ -47,14 +47,12 @@ public static class ReportGridLayout {
     }
 
     public static (int Col, int Row, HashSet<(int, int)> Occupied) SimulatePlacement(IReadOnlyList<ReportDefinition> defs) {
-        var occupied = new HashSet<(int, int)>();
+        HashSet<(int, int)> occupied = [];
         int col = 1;
         int row = 1;
         foreach (var def in defs) {
             var (w, h) = ClampDims(def.GridW, def.GridH);
-            var pos = FindPlacement(occupied, w, h, col, row);
-            col = pos.Col;
-            row = pos.Row;
+            (col, row) = FindPlacement(occupied, w, h, col, row);
             MarkOccupied(occupied, col, row, w, h);
             col += w;
         }
@@ -63,16 +61,14 @@ public static class ReportGridLayout {
 
     public static (List<GridCardPos> CardPositions, HashSet<(int, int)> Occupied) BuildOccupancyFromLayout(
         IReadOnlyList<ReportDefinition> defs) {
-        var cardPositions = new List<GridCardPos>();
-        var occupied = new HashSet<(int, int)>();
+        List<GridCardPos> cardPositions = [];
+        HashSet<(int, int)> occupied = [];
         int col = 1;
         int row = 1;
         for (int idx = 0; idx < defs.Count; idx++) {
             var def = defs[idx];
             var (w, h) = ClampDims(def.GridW, def.GridH);
-            var pos = FindPlacement(occupied, w, h, col, row);
-            col = pos.Col;
-            row = pos.Row;
+            (col, row) = FindPlacement(occupied, w, h, col, row);
             cardPositions.Add(new GridCardPos(col, row, w, h, idx));
             MarkOccupied(occupied, col, row, w, h);
             col += w;
@@ -101,9 +97,9 @@ public static class ReportGridLayout {
         var (dw, dh) = ClampDims(draggedDef.GridW, draggedDef.GridH);
 
         for (int insertPos = 0; insertPos <= withoutDragged.Count; insertPos++) {
-            var (col, row, occupied) = SimulatePlacement(withoutDragged.Take(insertPos).ToList());
-            var pos = FindPlacement(occupied, dw, dh, col, row);
-            if (pos.Col == zone.ColStart && pos.Row == zone.RowStart) {
+            var (col, row, occupied) = SimulatePlacement([.. withoutDragged.Take(insertPos)]);
+            var (placedCol, placedRow) = FindPlacement(occupied, dw, dh, col, row);
+            if (placedCol == zone.ColStart && placedRow == zone.RowStart) {
                 return insertPos;
             }
         }
@@ -116,7 +112,7 @@ public static class ReportGridLayout {
     }
 
     public static List<EmptyZone> RowEmptyZones(int r, HashSet<(int, int)> occupied, IReadOnlyList<GridCardPos> cardPositions) {
-        var zones = new List<EmptyZone>();
+        List<EmptyZone> zones = [];
         int? runStart = null;
         for (int c = 1; c <= GridCols + 1; c++) {
             bool isEmpty = c <= GridCols && !occupied.Contains((c, r));

@@ -121,7 +121,6 @@ public class XlsxWriterTests {
     [InlineData(0.25, "0.25")]
     [InlineData(7.0, "7")]
     [InlineData(45061.604166666664, "45061.604166666664")]
-    public void GoFloat_FormatF_Matches(double v, string want) {
+    public void GoFloat_FormatF_Matches(double v, string want) =>
         Assert.Equal(want, Domain.Export.GoFloat.FormatF(v));
-    }
 }

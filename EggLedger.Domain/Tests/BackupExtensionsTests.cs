@@ -7,9 +7,8 @@ public class BackupExtensionsTests {
     [Theory]
     [InlineData(new[] { 1, 2, 3, 4 }, 10.0)]
     [InlineData(new int[0], 0.0)]
-    public void Sum(int[] values, double want) {
+    public void Sum(int[] values, double want) =>
         Assert.Equal(want, BackupExtensions.Sum(values, v => (double)v));
-    }
 
     [Fact]
     public void Validate_ErrorCode() {

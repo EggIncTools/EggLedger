@@ -1,5 +1,6 @@
 using EggLedger.Domain.Reports;
 using EggLedger.Web.Data;
+using Microsoft.Extensions.Logging;
 
 namespace EggLedger.Web.State;
 
@@ -11,7 +12,7 @@ public interface IReportsViewActions {
     Task ImportAsync();
 }
 
-public sealed class ReportsViewState(ActiveAccount active, IndexedDbReportStore store) : IDisposable {
+public sealed class ReportsViewState(ActiveAccount active, IndexedDbReportStore store, ILogger<ReportsViewState> logger) : IDisposable {
     private Func<Func<Task>, Task>? _dispatch;
     private bool _initialized;
     private string _loadedAccount = "";
@@ -40,17 +41,14 @@ public sealed class ReportsViewState(ActiveAccount active, IndexedDbReportStore 
 
     public IReportsViewActions? Actions { get; set; }
 
-    public Task RequestNewReportAsync() {
-        return Actions?.NewReportAsync() ?? Task.CompletedTask;
-    }
+    public Task RequestNewReportAsync() =>
+        Actions?.NewReportAsync() ?? Task.CompletedTask;
 
-    public Task RequestExportAllAsync() {
-        return Actions?.ExportAllAsync() ?? Task.CompletedTask;
-    }
+    public Task RequestExportAllAsync() =>
+        Actions?.ExportAllAsync() ?? Task.CompletedTask;
 
-    public Task RequestImportAsync() {
-        return Actions?.ImportAsync() ?? Task.CompletedTask;
-    }
+    public Task RequestImportAsync() =>
+        Actions?.ImportAsync() ?? Task.CompletedTask;
 
     public async Task EnsureInitializedAsync(Func<Func<Task>, Task> dispatch) {
         if (_initialized) {
@@ -86,7 +84,7 @@ public sealed class ReportsViewState(ActiveAccount active, IndexedDbReportStore 
             return false;
         }
 
-        Reports = rows.Select(ReportMapping.ToDefinition).ToList();
+        Reports = [.. rows.Select(r => ReportMapping.ToDefinition(r, logger))];
         Changed?.Invoke();
         return true;
     }
@@ -185,9 +183,8 @@ public sealed class ReportsViewState(ActiveAccount active, IndexedDbReportStore 
         await LoadGroupsAsync();
     }
 
-    public void Dispose() {
+    public void Dispose() =>
         active.Changed -= OnActiveChanged;
-    }
 
     private void OnActiveChanged() {
         Changed?.Invoke();

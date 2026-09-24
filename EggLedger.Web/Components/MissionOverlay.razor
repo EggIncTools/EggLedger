@@ -3,6 +3,7 @@
 @inject MissionQueryHandlers Queries
 @inject MennoService Menno
 @inject IUserTimeZoneProvider TzProvider
+@inject ILogger<MissionOverlay> Logger
 
 @* Mission overlay: single mode (prev/next nav) or multi mode (a grid of ship cards).
    Blazor-controlled overlay (full-screen fixed backdrop + centered panel). NOT a native
@@ -63,7 +64,9 @@
             <div class="flex justify-center mb-3 shrink-0">
                 <div class="flex bg-darkerer border border-gray-700 rounded-md p-0.5 text-sm gap-0.5">
                     <button type="button"
-                            class="px-3 py-1 rounded focus:outline-none transition-colors @(_displayMode == "separate" ? "bg-dark text-blue-400" : "text-gray-500 hover:text-gray-300")"
+                            disabled="@(_multi.Count > MaxSeparate)"
+                            title="@(_multi.Count > MaxSeparate ? $"Separate view is limited to {MaxSeparate} missions" : null)"
+                            class="px-3 py-1 rounded focus:outline-none transition-colors @(_displayMode == "separate" ? "bg-dark text-blue-400" : _multi.Count > MaxSeparate ? "text-gray-600 cursor-not-allowed" : "text-gray-500 hover:text-gray-300")"
                             @onclick="@(() => _displayMode = "separate")">
                         Separate
                     </button>
@@ -75,7 +78,7 @@
                 </div>
             </div>
 
-            @if (_displayMode == "separate") {
+            @if (_displayMode == "separate" && _multi.Count <= MaxSeparate) {
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-2 flex-1 min-h-0 overflow-y-auto mb-3">
                     @foreach (var d in _multi) {
                         <div class="bg-darkerer rounded-lg py-2">
@@ -146,6 +149,7 @@
 
     [Parameter] public MissionSortMethod SortMethod { get; set; } = MissionSortMethod.Default;
     [Parameter] public bool ShowExpectedDrops { get; set; }
+    private const int MaxSeparate = 20;
     private bool _open;
     private ViewMissionData? _data;
     private List<ViewMissionData>? _multi;
@@ -192,12 +196,12 @@
     public async Task OpenMultiAsync(IReadOnlyList<string> missionIds) {
         _open = true;
         _data = null;
-        _multi = new List<ViewMissionData>();
+        _multi = [];
         _isLoading = true;
         _loadedCount = 0;
         _totalToLoad = missionIds.Count;
         _shipHeaderExpanded = false;
-        _displayMode = "separate";
+        _displayMode = _totalToLoad > MaxSeparate ? "combined" : "separate";
         StateHasChanged();
         foreach (var id in missionIds) {
             var data = await BuildAsync(id);
@@ -310,7 +314,8 @@
 
         try {
             await Menno.EnsureLoadedAsync();
-        } catch {
+        } catch (Exception ex) {
+            Logger.LogDebug(ex, "menno data load for expected drops failed");
             return;
         }
 

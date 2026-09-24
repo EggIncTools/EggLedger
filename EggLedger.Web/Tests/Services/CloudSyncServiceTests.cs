@@ -4,6 +4,7 @@ using EggIdentity.Resilience;
 using EggLedger.Domain.Crypto;
 using EggLedger.Web.Platform;
 using EggLedger.Web.Services;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EggLedger.Web.Tests.Services;
 
@@ -67,10 +68,7 @@ public sealed class CloudSyncServiceTests {
             }
 
             if (method == HttpMethod.Get && path == "/api/v1/auth/poll") {
-                if (PollPayload is null) {
-                    return new HttpResponseMessage(HttpStatusCode.Accepted);
-                }
-                return Json200(PollPayload);
+                return PollPayload is null ? new HttpResponseMessage(HttpStatusCode.Accepted) : Json200(PollPayload);
             }
 
             if (method == HttpMethod.Delete && path == "/api/v1/auth/session") {
@@ -78,10 +76,9 @@ public sealed class CloudSyncServiceTests {
             }
 
             if (method == HttpMethod.Post && path == "/api/v1/auth/session-from-login") {
-                if (RejectLogin) {
-                    return new HttpResponseMessage(HttpStatusCode.Unauthorized);
-                }
-                return Json200(LoginPayload ?? new PollResponse(Token, "user#1", "https://cdn/a.png", HexKey));
+                return RejectLogin
+                    ? new HttpResponseMessage(HttpStatusCode.Unauthorized)
+                    : Json200(LoginPayload ?? new PollResponse(Token, "user#1", "https://cdn/a.png", HexKey));
             }
 
             var auth = request.Headers.Authorization;
@@ -104,10 +101,9 @@ public sealed class CloudSyncServiceTests {
                 }
                 if (method == HttpMethod.Get) {
                     GetHits++;
-                    if (!_blobs.TryGetValue(name, out var ct)) {
-                        return new HttpResponseMessage(HttpStatusCode.NotFound);
-                    }
-                    return Json200(new GetBlobResponse(ct, 123));
+                    return _blobs.TryGetValue(name, out var ct)
+                        ? Json200(new GetBlobResponse(ct, 123))
+                        : new HttpResponseMessage(HttpStatusCode.NotFound);
                 }
                 if (method == HttpMethod.Delete) {
                     _blobs.Remove(name);
@@ -132,7 +128,7 @@ public sealed class CloudSyncServiceTests {
         var http = new HttpClient(server) { BaseAddress = Origin };
         var breaker = new CircuitBreaker(failureThreshold: 3, openDuration: TimeSpan.FromSeconds(30));
         return new CloudSyncService(
-            http, nav ?? new FakeNavigation(), new LocalBlobCipher(), platform ?? new FakePlatformCapabilities(), breaker);
+            http, nav ?? new FakeNavigation(), new LocalBlobCipher(), platform ?? new FakePlatformCapabilities(), breaker, NullLogger<CloudSyncService>.Instance);
     }
 
     [Fact]
@@ -334,13 +330,11 @@ public sealed class CloudSyncServiceTests {
         Assert.False(await svc.CheckReachableAsync());
     }
 
-    private sealed class VerifyServer : HttpMessageHandler {
-        private readonly HttpStatusCode _code;
-        public VerifyServer(HttpStatusCode code) => _code = code;
+    private sealed class VerifyServer(HttpStatusCode code) : HttpMessageHandler {
         protected override Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request, CancellationToken cancellationToken) {
             Assert.Equal("/api/v1/verify", request.RequestUri!.AbsolutePath);
-            return Task.FromResult(new HttpResponseMessage(_code));
+            return Task.FromResult(new HttpResponseMessage(code));
         }
     }
 

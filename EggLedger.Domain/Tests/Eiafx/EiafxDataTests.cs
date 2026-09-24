@@ -5,19 +5,16 @@ namespace EggLedger.Domain.Tests.Eiafx;
 
 public class EiafxDataTests {
     [Fact]
-    public void CraftingWeights_BaseItem_IsOne() {
+    public void CraftingWeights_BaseItem_IsOne() =>
         Assert.Equal(1.0, EiafxData.CraftingWeights[(2, 0)]);
-    }
 
     [Fact]
-    public void CraftingWeights_SelfContained_Is20() {
+    public void CraftingWeights_SelfContained_Is20() =>
         Assert.Equal(20.0, EiafxData.CraftingWeights[(1, 0)]);
-    }
 
     [Fact]
-    public void CraftingWeights_CrossFamily_Is23() {
+    public void CraftingWeights_CrossFamily_Is23() =>
         Assert.Equal(23.0, EiafxData.CraftingWeights[(23, 2)]);
-    }
 
     [Fact]
     public void CraftingWeights_SolarTitaniumChain() {
@@ -26,9 +23,8 @@ public class EiafxDataTests {
     }
 
     [Fact]
-    public void CraftingWeights_LunarTotemT3_Is118() {
+    public void CraftingWeights_LunarTotemT3_Is118() =>
         Assert.Equal(118.0, EiafxData.CraftingWeights[(0, 3)]);
-    }
 
 
     [Fact]

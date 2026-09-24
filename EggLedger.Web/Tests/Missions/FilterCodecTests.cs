@@ -19,9 +19,8 @@ public class FilterCodecTests {
     [InlineData("", "=", "1")]
     [InlineData("nonsense", "=", "1")]
     [InlineData("ship", "=", "notanint")]
-    public void FromLegacyCondition_ReturnsNull_ForUnknownOrUnparsable(string topLevel, string op, string val) {
+    public void FromLegacyCondition_ReturnsNull_ForUnknownOrUnparsable(string topLevel, string op, string val) =>
         Assert.Null(FilterCodec.FromLegacyCondition(new WebCondition(topLevel, op, val)));
-    }
 
     [Theory]
     [InlineData("%_%_3_%")]

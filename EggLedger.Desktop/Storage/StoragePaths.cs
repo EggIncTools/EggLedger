@@ -23,10 +23,7 @@ public static class StoragePaths {
         if (cfg.DataRootDir != "") {
             return Path.Combine(cfg.DataRootDir, "internal");
         }
-        if (cfg.InternalDir != "") {
-            return cfg.InternalDir;
-        }
-        return Path.Combine(rootDir, "internal");
+        return cfg.InternalDir != "" ? cfg.InternalDir : Path.Combine(rootDir, "internal");
     }
 
     public static string ResolveExportsDir(string rootDir) {

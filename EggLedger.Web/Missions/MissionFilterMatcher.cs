@@ -73,10 +73,7 @@ public sealed class MissionFilterMatcher {
         if (m.Level is { } level && level != drop.Level) {
             return false;
         }
-        if (m.Rarity is { } rarity && rarity != drop.Rarity) {
-            return false;
-        }
-        return true;
+        return m.Rarity is not { } rarity || rarity == drop.Rarity;
     }
 
     private async Task<bool> MatchesDropAsync(DatabaseMission mission, FilterOperator op, DropMatch m) {
@@ -142,11 +139,7 @@ public sealed class MissionFilterMatcher {
             return false;
         }
         var typed = FilterCodec.FromLegacyCondition(filter);
-        if (typed is null) {
-
-            return true;
-        }
-        return await MatchesAsync(mission, typed).ConfigureAwait(false);
+        return typed is null || await MatchesAsync(mission, typed).ConfigureAwait(false);
     }
 
 

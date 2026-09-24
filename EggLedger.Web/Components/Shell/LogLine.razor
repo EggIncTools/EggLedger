@@ -1,0 +1,17 @@
+@foreach (var run in _runs) {
+    @switch (run.Kind) {
+        case LogRunKind.Image:
+            <img src="@ContentPaths.Asset("images/" + run.Text)" alt="" class="inline h-[1em] align-middle"/>
+            break;
+        case LogRunKind.EidBar:
+            <span class="inline-block rounded-sm select-none" style="width:16ch;height:0.8em;vertical-align:-0.05em;background-color:currentColor"></span>
+            break;
+        default:
+            if (run.Color is { } color) {
+                <span style="color:@color">@run.Text</span>
+            } else {
+                <span class="@(IsError ? "text-red-700" : DefaultClass)">@run.Text</span>
+            }
+            break;
+    }
+}

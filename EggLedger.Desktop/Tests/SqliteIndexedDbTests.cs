@@ -79,10 +79,10 @@ public sealed class SqliteIndexedDbTests : IDisposable {
 
     [Fact]
     public async Task ArtifactDrops_AutoIncrementInsert() {
-        await _db.PutManyAsync("artifact_drops", new object[] {
+        await _db.PutManyAsync("artifact_drops", [
             new ArtifactDropRow { MissionId = "m1", PlayerId = "EI1", DropIndex = 0, ArtifactId = 12, SpecType = "Artifact", Level = 1, Rarity = 0, Quality = 1.5 },
             new ArtifactDropRow { MissionId = "m1", PlayerId = "EI1", DropIndex = 1, ArtifactId = 13, SpecType = "Stone", Level = 2, Rarity = 1, Quality = 2.0 },
-        });
+        ]);
 
         var all = await _db.GetAllAsync<ArtifactDropRow>("artifact_drops");
         Assert.Equal(2, all.Length);
@@ -135,7 +135,7 @@ public sealed class SqliteIndexedDbTests : IDisposable {
     [Fact]
     public async Task ReportStore_OverSqlite_CrudWorks() {
 
-        var store = new IndexedDbReportStore(_db, now: () => 1234);
+        var store = new IndexedDbReportStore(_db, TimeProvider.System);
         await store.InsertReportAsync(new ReportRow {
             Id = "r1",
             AccountId = "EI1",

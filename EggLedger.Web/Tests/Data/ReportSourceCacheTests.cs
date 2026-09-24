@@ -24,13 +24,14 @@ public sealed class ReportSourceCacheTests {
     private static ReportSourceCache NewCache(
         Func<string, Task<ReportSource>>? loader = null,
         TimeSpan? ttl = null,
-        Func<DateTime>? clock = null) =>
-        new(loader ?? SourceOf, ttl ?? Ttl, clock);
+        ManualClock? clock = null) =>
+        new(loader ?? SourceOf, ttl ?? Ttl, clock ?? new ManualClock());
 
     private static LedgerDataHub NewHub() =>
         new(_ => Task.FromResult<IReadOnlyList<DatabaseMission>?>(null),
             _ => Task.FromResult<Dictionary<string, List<MissionDrop>>?>(null),
-            Ttl);
+            Ttl,
+            new ManualClock());
 
     [Fact]
     public async Task SecondGet_ForTheSameAccount_DoesNotRescan() {
@@ -161,19 +162,19 @@ public sealed class ReportSourceCacheTests {
 
     [Fact]
     public async Task Source_RescansOnlyAfterTtlExpires() {
-        var now = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var clock = new ManualClock(new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
         var calls = 0;
         var cache = NewCache(id => {
             calls++;
             return SourceOf(id);
-        }, clock: () => now);
+        }, clock: clock);
 
         await cache.GetAsync("a");
-        now = now.AddMinutes(4);
+        clock.Advance(TimeSpan.FromMinutes(4));
         await cache.GetAsync("a");
         Assert.Equal(1, calls);
 
-        now = now.AddMinutes(2);
+        clock.Advance(TimeSpan.FromMinutes(2));
         await cache.GetAsync("a");
 
         Assert.Equal(2, calls);

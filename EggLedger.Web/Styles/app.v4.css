@@ -1017,6 +1017,14 @@
   @apply text-gray-500 text-[0.65rem];
 }
 
+.stage-hatch-missions {
+  background-image: repeating-linear-gradient(45deg, transparent, transparent 3px, color-mix(in srgb, var(--color-stage-missions) 30%, transparent) 3px, color-mix(in srgb, var(--color-stage-missions) 30%, transparent) 5px);
+}
+
+.stage-hatch-export {
+  background-image: repeating-linear-gradient(45deg, transparent, transparent 3px, color-mix(in srgb, var(--color-stage-export) 30%, transparent) 3px, color-mix(in srgb, var(--color-stage-export) 30%, transparent) 5px);
+}
+
 .gh-markdown-content a {
   color: #006bff;
   text-decoration: none;

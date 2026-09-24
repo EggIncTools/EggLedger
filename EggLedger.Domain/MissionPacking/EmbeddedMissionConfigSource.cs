@@ -6,9 +6,9 @@ namespace EggLedger.Domain.MissionPacking;
 public sealed class EmbeddedMissionConfigSource : IMissionConfigSource {
     private const string ResourceName = "EggLedger.Domain.Resources.eiafx-config.bin";
 
-    private static readonly Lazy<ArtifactsConfigurationResponse> _config = new(Load);
+    private static readonly Lazy<ArtifactsConfigurationResponse> LazyConfig = new(Load);
 
-    public ArtifactsConfigurationResponse Config => _config.Value;
+    public ArtifactsConfigurationResponse Config => LazyConfig.Value;
 
     private static ArtifactsConfigurationResponse Load() {
         var asm = typeof(EmbeddedMissionConfigSource).Assembly;

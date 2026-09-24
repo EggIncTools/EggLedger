@@ -1,18 +1,22 @@
 using System.Net;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EggLedger.Desktop.Update;
 
 public sealed class HandshakeListener : IDisposable {
     private readonly HttpListener _listener;
     private readonly string _token;
+    private readonly ILogger _logger;
     private readonly TaskCompletionSource _served =
         new(TaskCreationOptions.RunContinuationsAsynchronously);
     private int _handoffDone;
     private CancellationTokenSource? _cts;
 
-    private HandshakeListener(HttpListener listener, string token, string address) {
+    private HandshakeListener(HttpListener listener, string token, string address, ILogger logger) {
         _listener = listener;
         _token = token;
+        _logger = logger;
         Address = address;
     }
 
@@ -20,14 +24,14 @@ public sealed class HandshakeListener : IDisposable {
 
     public Task Served => _served.Task;
 
-    public static HandshakeListener Start(string token) {
+    public static HandshakeListener Start(string token, ILogger? logger = null) {
         var port = FindFreeLoopbackPort();
         var listener = new HttpListener();
         var address = $"127.0.0.1:{port}";
         listener.Prefixes.Add($"http://{address}/");
         listener.Start();
 
-        var self = new HandshakeListener(listener, token, address) {
+        var self = new HandshakeListener(listener, token, address, logger ?? NullLogger<HandshakeListener>.Instance) {
             _cts = new CancellationTokenSource()
         };
         _ = self.ServeLoopAsync(self._cts.Token);
@@ -48,6 +52,7 @@ public sealed class HandshakeListener : IDisposable {
             try {
                 ctx = await _listener.GetContextAsync().ConfigureAwait(false);
             } catch (Exception ex) when (ex is HttpListenerException or ObjectDisposedException or InvalidOperationException) {
+                _logger.LogDebug(ex, "update: handshake listener stopped");
                 return;
             }
 
@@ -78,6 +83,7 @@ public sealed class HandshakeListener : IDisposable {
             try {
                 response.Close();
             } catch (Exception ex) when (ex is ObjectDisposedException or InvalidOperationException) {
+                _logger.LogDebug(ex, "update: handshake response close failed");
             }
         }
     }
@@ -87,7 +93,8 @@ public sealed class HandshakeListener : IDisposable {
         _cts?.Dispose();
         try {
             _listener.Close();
-        } catch (HttpListenerException) {
+        } catch (HttpListenerException ex) {
+            _logger.LogDebug(ex, "update: handshake listener close failed");
         }
     }
 }

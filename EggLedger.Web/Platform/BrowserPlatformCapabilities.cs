@@ -1,10 +1,10 @@
+using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 
 namespace EggLedger.Web.Platform;
 
-public sealed class BrowserPlatformCapabilities(IJSRuntime js) : IPlatformCapabilities, IAsyncDisposable {
+public sealed class BrowserPlatformCapabilities(IJSRuntime js, ILogger<BrowserPlatformCapabilities> logger) : IPlatformCapabilities, IAsyncDisposable {
     private const string ModulePath = "./_content/EggLedger.Web/js/platform.js";
-    private readonly IJSRuntime _js = js;
     private IJSObjectReference? _module;
 
     public bool IsDesktop => false;
@@ -17,18 +17,20 @@ public sealed class BrowserPlatformCapabilities(IJSRuntime js) : IPlatformCapabi
 
     public async Task RestartAppAsync() {
         try {
-            _module ??= await _js.InvokeAsync<IJSObjectReference>("import", ModulePath);
+            _module ??= await js.InvokeAsync<IJSObjectReference>("import", ModulePath);
             await _module.InvokeVoidAsync("reload");
         } catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or TaskCanceledException) {
+            logger.LogDebug(ex, "app reload failed for {Module}", ModulePath);
         }
     }
 
     public async Task<(int w, int h)> GetWindowSizeAsync() {
         try {
-            _module ??= await _js.InvokeAsync<IJSObjectReference>("import", ModulePath);
+            _module ??= await js.InvokeAsync<IJSObjectReference>("import", ModulePath);
             var dims = await _module.InvokeAsync<int[]>("windowSize");
             return (dims[0], dims[1]);
         } catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or TaskCanceledException) {
+            logger.LogDebug(ex, "window size read failed for {Module}", ModulePath);
             return (0, 0);
         }
     }

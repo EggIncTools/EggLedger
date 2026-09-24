@@ -36,9 +36,8 @@ public class ApiClientTests {
         };
 
         byte[] payload = Serialize(fc);
-        var client = new ApiClient();
 
-        var got = client.DecodeApiResponse<EggIncFirstContactResponse>(
+        var got = ApiClient.DecodeApiResponse<EggIncFirstContactResponse>(
             "https://example/test", payload, authenticated: false);
 
         Assert.Equal("EI1234567890123456", got.EiUserId);
@@ -62,9 +61,8 @@ public class ApiClientTests {
         };
 
         byte[] payload = Serialize(resp);
-        var client = new ApiClient();
 
-        var got = client.DecodeApiResponse<CompleteMissionResponse>(
+        var got = ApiClient.DecodeApiResponse<CompleteMissionResponse>(
             "https://example/test", payload, authenticated: false);
 
         Assert.True(got.Success);
@@ -87,8 +85,7 @@ public class ApiClientTests {
         };
         byte[] payload = Serialize(auth);
 
-        var client = new ApiClient();
-        var got = client.DecodeApiResponse<CompleteMissionResponse>(
+        var got = ApiClient.DecodeApiResponse<CompleteMissionResponse>(
             "https://example/test", payload, authenticated: true);
 
         Assert.True(got.Success);
@@ -107,8 +104,7 @@ public class ApiClientTests {
         };
         byte[] payload = Serialize(auth);
 
-        var client = new ApiClient();
-        var got = client.DecodeApiResponse<CompleteMissionResponse>(
+        var got = ApiClient.DecodeApiResponse<CompleteMissionResponse>(
             "https://example/test", payload, authenticated: true);
 
         Assert.True(got.Success);
@@ -140,7 +136,7 @@ public class ApiClientTests {
         Assert.Equal("data=" + Uri.EscapeDataString(expectedReqBase64), handler.RequestBody);
 
         Assert.Equal(respBin, decoded);
-        var got = client.DecodeApiResponse<CompleteMissionResponse>(
+        var got = ApiClient.DecodeApiResponse<CompleteMissionResponse>(
             "https://example/test", decoded, authenticated: false);
         Assert.True(got.Success);
     }
@@ -168,15 +164,7 @@ public class ApiClientTests {
         Assert.Equal("IOS", rinfo.Platform);
     }
 
-    private sealed class CapturingHandler : HttpMessageHandler {
-        private readonly string _responseBody;
-        private readonly HttpStatusCode _status;
-
-        public CapturingHandler(string responseBody, HttpStatusCode status = HttpStatusCode.OK) {
-            _responseBody = responseBody;
-            _status = status;
-        }
-
+    private sealed class CapturingHandler(string responseBody, HttpStatusCode status = HttpStatusCode.OK) : HttpMessageHandler {
         public HttpRequestMessage? LastRequest { get; private set; }
         public string? RequestBody { get; private set; }
         public string? ContentType { get; private set; }
@@ -184,13 +172,13 @@ public class ApiClientTests {
         protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request, CancellationToken cancellationToken) {
             LastRequest = request;
-            if (request.Content != null) {
+            if (request.Content is not null) {
                 RequestBody = await request.Content.ReadAsStringAsync(cancellationToken)
                     .ConfigureAwait(false);
                 ContentType = request.Content.Headers.ContentType?.MediaType;
             }
-            return new HttpResponseMessage(_status) {
-                Content = new StringContent(_responseBody),
+            return new HttpResponseMessage(status) {
+                Content = new StringContent(responseBody),
             };
         }
     }

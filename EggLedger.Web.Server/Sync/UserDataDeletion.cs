@@ -58,11 +58,8 @@ public static class UserDataDeletion {
         return [.. StoredDataTables.Where(live.Contains)];
     }
 
-    private static string Ident(string name) {
-        if (!StoredDataTables.Contains(name, StringComparer.Ordinal)) {
-            throw new ArgumentException($"unknown table {name}", nameof(name));
-        }
-
-        return "\"" + name + "\"";
-    }
+    private static string Ident(string name) =>
+        StoredDataTables.Contains(name, StringComparer.Ordinal)
+            ? "\"" + name + "\""
+            : throw new ArgumentException($"unknown table {name}", nameof(name));
 }

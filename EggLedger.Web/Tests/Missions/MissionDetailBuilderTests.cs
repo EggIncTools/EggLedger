@@ -33,7 +33,7 @@ public sealed class MissionDetailBuilderTests {
             Drop("Ingredient"),
             Drop("Artifact"),
         };
-        var data = MissionDetailBuilder.BuildBase(M("m1"), drops, Array.Empty<DatabaseMission>(), extendedInfo: false, TimeZoneInfo.Utc);
+        var data = MissionDetailBuilder.BuildBase(M("m1"), drops, [], extendedInfo: false, TimeZoneInfo.Utc);
         Assert.Single(data.Artifacts);
         Assert.Equal(2, data.Artifacts[0].Count);
         Assert.Single(data.Stones);
@@ -44,25 +44,25 @@ public sealed class MissionDetailBuilderTests {
     [Fact]
     public void BuildBase_CapacityModifierClampedToTwo() {
         var huge = M("m1", capacity: 100, nominal: 4);
-        var d = MissionDetailBuilder.BuildBase(huge, Array.Empty<MissionDrop>(), Array.Empty<DatabaseMission>(), false, TimeZoneInfo.Utc);
+        var d = MissionDetailBuilder.BuildBase(huge, [], [], false, TimeZoneInfo.Utc);
         Assert.Equal(2, d.CapacityModifier);
 
         var normal = M("m1", capacity: 6, nominal: 4);
-        var d2 = MissionDetailBuilder.BuildBase(normal, Array.Empty<MissionDrop>(), Array.Empty<DatabaseMission>(), false, TimeZoneInfo.Utc);
+        var d2 = MissionDetailBuilder.BuildBase(normal, [], [], false, TimeZoneInfo.Utc);
         Assert.Equal(1.5, d2.CapacityModifier);
     }
 
     [Fact]
     public void BuildBase_NominalZeroTreatedAsOne() {
         var m = M("m1", capacity: 1, nominal: 0);
-        var d = MissionDetailBuilder.BuildBase(m, Array.Empty<MissionDrop>(), Array.Empty<DatabaseMission>(), false, TimeZoneInfo.Utc);
+        var d = MissionDetailBuilder.BuildBase(m, [], [], false, TimeZoneInfo.Utc);
         Assert.Equal(1, d.CapacityModifier);
     }
 
     [Fact]
     public void BuildBase_PrevNextFromFilteredList() {
         var list = new[] { M("a"), M("b"), M("c") };
-        var d = MissionDetailBuilder.BuildBase(list[1], Array.Empty<MissionDrop>(), list, extendedInfo: true, TimeZoneInfo.Utc);
+        var d = MissionDetailBuilder.BuildBase(list[1], [], list, extendedInfo: true, TimeZoneInfo.Utc);
         Assert.Equal("a", d.PrevMission);
         Assert.Equal("c", d.NextMission);
     }
@@ -70,11 +70,11 @@ public sealed class MissionDetailBuilderTests {
     [Fact]
     public void BuildBase_PrevNull_NextNull_AtEdges() {
         var list = new[] { M("a"), M("b") };
-        var first = MissionDetailBuilder.BuildBase(list[0], Array.Empty<MissionDrop>(), list, true, TimeZoneInfo.Utc);
+        var first = MissionDetailBuilder.BuildBase(list[0], [], list, true, TimeZoneInfo.Utc);
         Assert.Null(first.PrevMission);
         Assert.Equal("b", first.NextMission);
 
-        var last = MissionDetailBuilder.BuildBase(list[1], Array.Empty<MissionDrop>(), list, true, TimeZoneInfo.Utc);
+        var last = MissionDetailBuilder.BuildBase(list[1], [], list, true, TimeZoneInfo.Utc);
         Assert.Equal("a", last.PrevMission);
         Assert.Null(last.NextMission);
     }
@@ -82,7 +82,7 @@ public sealed class MissionDetailBuilderTests {
     [Fact]
     public void BuildBase_NoExtendedInfo_NoPrevNext() {
         var list = new[] { M("a"), M("b") };
-        var d = MissionDetailBuilder.BuildBase(list[1], Array.Empty<MissionDrop>(), list, extendedInfo: false, TimeZoneInfo.Utc);
+        var d = MissionDetailBuilder.BuildBase(list[1], [], list, extendedInfo: false, TimeZoneInfo.Utc);
         Assert.Null(d.PrevMission);
         Assert.Null(d.NextMission);
     }
@@ -105,7 +105,7 @@ public sealed class MissionDetailBuilderTests {
             Drop("Artifact", id: 1, level: 0, rarity: 0),
             Drop("Artifact", id: 2, level: 1, rarity: 0),
         };
-        var data = MissionDetailBuilder.BuildBase(M("m1"), drops, Array.Empty<DatabaseMission>(), false, TimeZoneInfo.Utc);
+        var data = MissionDetailBuilder.BuildBase(M("m1"), drops, [], false, TimeZoneInfo.Utc);
         MissionDetailBuilder.ApplySortMethod(data, MissionSortMethod.Default);
 
         Assert.Equal(0, data.Artifacts[0].Level);

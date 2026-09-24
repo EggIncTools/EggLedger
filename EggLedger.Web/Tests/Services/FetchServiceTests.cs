@@ -5,6 +5,7 @@ using EggLedger.Web.Data;
 using EggLedger.Web.Services;
 using EggLedger.Web.Tests.Data;
 using Ei;
+using Microsoft.Extensions.Logging.Abstractions;
 using ProtoBuf;
 
 namespace EggLedger.Web.Tests.Services;
@@ -12,20 +13,21 @@ namespace EggLedger.Web.Tests.Services;
 public sealed class FetchServiceTests {
     private const string Eid = "EI1234567890123456";
 
-    private static FetchService Make(
+    private static async Task<FetchService> MakeAsync(
         FakeIndexedDb db,
         HttpMessageHandler handler,
         int workerCount = 4,
-        IndexedDbSettings? settings = null) {
+        IndexedDbSettings? settings = null,
+        IAutoExporter? exporter = null) {
         var http = new HttpClient(handler) { BaseAddress = new Uri("https://example.test") };
         var api = new ApiClient(http);
         settings ??= new IndexedDbSettings(db);
         if (workerCount != 1) {
-            settings.SetSettingAsync("worker_count", workerCount.ToString()).GetAwaiter().GetResult();
+            await settings.SetSettingAsync("worker_count", workerCount.ToString());
         }
         var store = new IndexedDbMissionStore(db, new LocalApiPayloadDecoder(new ApiClient()));
         var accounts = new IndexedDbAccountStore(settings);
-        return new FetchService(api, store, settings, accounts, new LocalApiPayloadDecoder(api));
+        return new FetchService(api, store, settings, accounts, new LocalApiPayloadDecoder(api), NullLogger<FetchService>.Instance, autoExporter: exporter);
     }
 
     private static string ToApiBody<T>(T msg) {
@@ -109,16 +111,9 @@ public sealed class FetchServiceTests {
     }
 
 
-    private sealed class RoutingHandler : HttpMessageHandler {
-        private readonly Func<string, string?>? _firstContact;
-        private readonly Func<string, string?> _completeMission;
+    private sealed class RoutingHandler(string firstContactBody, Func<string, string?> completeMission) : HttpMessageHandler {
         public int FirstContactHits;
         public readonly List<string> CompleteMissionRequests = [];
-
-        public RoutingHandler(string firstContactBody, Func<string, string?> completeMission) {
-            _firstContact = _ => firstContactBody;
-            _completeMission = completeMission;
-        }
 
         protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request, CancellationToken cancellationToken) {
@@ -127,20 +122,16 @@ public sealed class FetchServiceTests {
 
             if (path.EndsWith(ApiClient.FirstContactEndpoint, StringComparison.Ordinal)) {
                 Interlocked.Increment(ref FirstContactHits);
-                return Ok(_firstContact!(form));
+                return Ok(firstContactBody);
             }
             if (path.EndsWith(ApiClient.CompleteMissionEndpoint, StringComparison.Ordinal)) {
                 string id = ExtractMissionId(form);
                 lock (CompleteMissionRequests) {
                     CompleteMissionRequests.Add(id);
                 }
-                string? body = _completeMission(id);
-                if (body is null) {
-                    return new HttpResponseMessage(System.Net.HttpStatusCode.InternalServerError) {
-                        Content = new StringContent(""),
-                    };
-                }
-                return Ok(body);
+                return completeMission(id) is { } body
+                    ? Ok(body)
+                    : new HttpResponseMessage(System.Net.HttpStatusCode.InternalServerError) { Content = new StringContent("") };
             }
             return new HttpResponseMessage(System.Net.HttpStatusCode.NotFound);
         }
@@ -164,7 +155,7 @@ public sealed class FetchServiceTests {
     public async Task FetchPlayerData_InvalidEid_Throws_DoubleCheckYourId() {
         var db = new FakeIndexedDb();
         var handler = new RoutingHandler(InvalidFirstContactBody(), _ => CompleteMissionBody("x"));
-        var service = Make(db, handler);
+        var service = await MakeAsync(db, handler);
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
             () => service.FetchPlayerDataAsync(Eid, null, CancellationToken.None));
@@ -175,8 +166,8 @@ public sealed class FetchServiceTests {
     [Fact]
     public async Task FetchPlayerData_StoresFreshMission_RoundTripsViaStore() {
         var db = new FakeIndexedDb();
-        var handler = new RoutingHandler(FirstContactBody(new[] { "m1" }), CompleteMissionBody);
-        var service = Make(db, handler);
+        var handler = new RoutingHandler(FirstContactBody(["m1"]), CompleteMissionBody);
+        var service = await MakeAsync(db, handler);
 
         var final = await service.FetchPlayerDataAsync(Eid, null, CancellationToken.None);
 
@@ -199,7 +190,7 @@ public sealed class FetchServiceTests {
                 ("flying", MissionInfo.Status.Exploring),
                 ("fueling", MissionInfo.Status.Fueling)),
             CompleteMissionBody);
-        var service = Make(db, handler);
+        var service = await MakeAsync(db, handler);
 
         var final = await service.FetchPlayerDataAsync(Eid, null, CancellationToken.None);
 
@@ -219,7 +210,8 @@ public sealed class FetchServiceTests {
 
         var handler = new RoutingHandler(
             InProgressFirstContactBody(("flying", MissionInfo.Status.Exploring)), CompleteMissionBody);
-        await Make(db, handler).FetchPlayerDataAsync(Eid, null, CancellationToken.None);
+        var service = await MakeAsync(db, handler);
+        await service.FetchPlayerDataAsync(Eid, null, CancellationToken.None);
 
         var inFlight = await store.GetInFlightMissionsAsync(Eid);
         Assert.Equal("flying", Assert.Single(inFlight).MissiondId);
@@ -228,8 +220,8 @@ public sealed class FetchServiceTests {
     [Fact]
     public async Task FetchPlayerData_WritesArtifactDropRows() {
         var db = new FakeIndexedDb();
-        var handler = new RoutingHandler(FirstContactBody(new[] { "m1" }), CompleteMissionBody);
-        var service = Make(db, handler);
+        var handler = new RoutingHandler(FirstContactBody(["m1"]), CompleteMissionBody);
+        var service = await MakeAsync(db, handler);
 
         await service.FetchPlayerDataAsync(Eid, null, CancellationToken.None);
 
@@ -247,8 +239,8 @@ public sealed class FetchServiceTests {
         var db = new FakeIndexedDb();
 
         db.Seed("mission", SeededMission("m1"));
-        var handler = new RoutingHandler(FirstContactBody(new[] { "m1" }), CompleteMissionBody);
-        var service = Make(db, handler);
+        var handler = new RoutingHandler(FirstContactBody(["m1"]), CompleteMissionBody);
+        var service = await MakeAsync(db, handler);
 
         var final = await service.FetchPlayerDataAsync(Eid, null, CancellationToken.None);
 
@@ -269,8 +261,8 @@ public sealed class FetchServiceTests {
             SeString = "0",
         });
 
-        var handler = new RoutingHandler(FirstContactBody(Array.Empty<string>(), soulEggs: 10_800_000_000_000), CompleteMissionBody);
-        var service = Make(db, handler, settings: settings);
+        var handler = new RoutingHandler(FirstContactBody([], soulEggs: 10_800_000_000_000), CompleteMissionBody);
+        var service = await MakeAsync(db, handler, settings: settings);
 
         await service.FetchPlayerDataAsync(Eid, null, CancellationToken.None);
 
@@ -281,8 +273,8 @@ public sealed class FetchServiceTests {
     [Fact]
     public async Task FetchPlayerData_InsertsBackup() {
         var db = new FakeIndexedDb();
-        var handler = new RoutingHandler(FirstContactBody(Array.Empty<string>(), lastBackupTime: 5000), CompleteMissionBody);
-        var service = Make(db, handler);
+        var handler = new RoutingHandler(FirstContactBody([], lastBackupTime: 5000), CompleteMissionBody);
+        var service = await MakeAsync(db, handler);
 
         await service.FetchPlayerDataAsync(Eid, null, CancellationToken.None);
 
@@ -298,7 +290,7 @@ public sealed class FetchServiceTests {
         var db = new FakeIndexedDb();
         var ids = Enumerable.Range(0, 25).Select(i => $"m{i}").ToArray();
         var handler = new RoutingHandler(FirstContactBody(ids), CompleteMissionBody);
-        var service = Make(db, handler, workerCount: 5);
+        var service = await MakeAsync(db, handler, workerCount: 5);
 
         var final = await service.FetchPlayerDataAsync(Eid, null, CancellationToken.None);
 
@@ -312,8 +304,8 @@ public sealed class FetchServiceTests {
     [Fact]
     public async Task FetchPlayerData_ReportsStateAndSegmentSequence() {
         var db = new FakeIndexedDb();
-        var handler = new RoutingHandler(FirstContactBody(new[] { "m1" }), CompleteMissionBody);
-        var service = Make(db, handler, workerCount: 1);
+        var handler = new RoutingHandler(FirstContactBody(["m1"]), CompleteMissionBody);
+        var service = await MakeAsync(db, handler, workerCount: 1);
 
         var events = new List<FetchProgress>();
         var progress = new SynchronousProgress<FetchProgress>(events.Add);
@@ -341,9 +333,9 @@ public sealed class FetchServiceTests {
         var db = new FakeIndexedDb();
 
         var handler = new RoutingHandler(
-            FirstContactBody(new[] { "bad" }),
+            FirstContactBody(["bad"]),
             id => id == "bad" ? null : CompleteMissionBody(id));
-        var service = Make(db, handler);
+        var service = await MakeAsync(db, handler);
 
         var events = new List<FetchProgress>();
         var progress = new SynchronousProgress<FetchProgress>(events.Add);
@@ -364,14 +356,9 @@ public sealed class FetchServiceTests {
         var db = new FakeIndexedDb();
         int attempts = 0;
         var handler = new RoutingHandler(
-            FirstContactBody(new[] { "flaky" }),
-            id => {
-                if (id == "flaky" && Interlocked.Increment(ref attempts) == 1) {
-                    return null;
-                }
-                return CompleteMissionBody(id);
-            });
-        var service = Make(db, handler);
+            FirstContactBody(["flaky"]),
+            id => id == "flaky" && Interlocked.Increment(ref attempts) == 1 ? null : CompleteMissionBody(id));
+        var service = await MakeAsync(db, handler);
 
         var final = await service.FetchPlayerDataAsync(Eid, null, CancellationToken.None);
 
@@ -398,7 +385,7 @@ public sealed class FetchServiceTests {
             cts.Cancel();
             return CompleteMissionBody(id);
         });
-        var service = Make(db, handler, workerCount: 2);
+        var service = await MakeAsync(db, handler, workerCount: 2);
 
         var final = await service.FetchPlayerDataAsync(Eid, null, cts.Token);
 
@@ -426,9 +413,122 @@ public sealed class FetchServiceTests {
     }
 
 
-    private sealed class SynchronousProgress<T> : IProgress<T> {
-        private readonly Action<T> _handler;
-        public SynchronousProgress(Action<T> handler) => _handler = handler;
-        public void Report(T value) => _handler(value);
+    private sealed class SynchronousProgress<T>(Action<T> handler) : IProgress<T> {
+        public void Report(T value) => handler(value);
+    }
+
+    private sealed class StubExporter(Func<IReadOnlyList<string>> run) : IAutoExporter {
+        public Task<IReadOnlyList<string>> RunAfterFetchAsync(string accountId, CancellationToken cancellationToken = default) =>
+            Task.FromResult(run());
+    }
+
+    private static List<string> GlobalLog(List<FetchProgress> events) =>
+        [.. events.Where(e => e.LogText is not null && !e.LogRowOnly).Select(e => e.LogText!)];
+
+    [Fact]
+    public async Task FetchPlayerData_EmitsSaveAndFoundAndDoneLines() {
+        var db = new FakeIndexedDb();
+        var handler = new RoutingHandler(FirstContactBody(["m1", "m2"]), CompleteMissionBody);
+        var service = await MakeAsync(db, handler);
+        var events = new List<FetchProgress>();
+
+        await service.FetchPlayerDataAsync(Eid, new SynchronousProgress<FetchProgress>(events.Add), CancellationToken.None);
+
+        var log = GlobalLog(events);
+        Assert.StartsWith($"successfully fetched backup for &7a7a7a<{Eid}> (&", log[0]);
+        Assert.EndsWith("<tester>)", log[0]);
+        Assert.DoesNotContain("TE>", log[1]);
+        Assert.Contains("[img:soul_egg.png]", log[1]);
+        Assert.StartsWith("updated local database EB to &", log[2]);
+        Assert.StartsWith("backup is from &7a7a7a<", log[3]);
+        Assert.Contains("found &148c32<2 completed> missions, &148c32<0 in-progress> missions, &148c32<2 to fetch>", log);
+        Assert.Contains("successfully fetched &148c32<2 missions>", log);
+        Assert.Equal("done.", log[^1]);
+    }
+
+    [Fact]
+    public async Task FetchPlayerData_SegmentReportsCarryMissionLabel() {
+        var db = new FakeIndexedDb();
+        var handler = new RoutingHandler(FirstContactBody(["m1"]), CompleteMissionBody);
+        var service = await MakeAsync(db, handler, workerCount: 1);
+        var events = new List<FetchProgress>();
+
+        await service.FetchPlayerDataAsync(Eid, new SynchronousProgress<FetchProgress>(events.Add), CancellationToken.None);
+
+        var segments = events.Where(e => e.Segment is not null).ToList();
+        Assert.NotEmpty(segments);
+        var expected = FetchService.MissionLabel(new MissionInfo { StartTimeDerived = 500 });
+        Assert.EndsWith(", 1970-01-01", expected);
+        Assert.All(segments, e => Assert.Equal(expected, e.MissionLabel));
+    }
+
+    [Fact]
+    public async Task FetchPlayerData_MissionFails_RoutesRetriesRowOnlyAndFinalErrorGlobally() {
+        var db = new FakeIndexedDb();
+        var handler = new RoutingHandler(FirstContactBody(["bad"]), _ => null);
+        var service = await MakeAsync(db, handler);
+        var events = new List<FetchProgress>();
+
+        await service.FetchPlayerDataAsync(Eid, new SynchronousProgress<FetchProgress>(events.Add), CancellationToken.None);
+
+        var retries = events.Where(e => e.LogRowOnly).ToList();
+        Assert.Equal(5, retries.Count);
+        Assert.All(retries, e => Assert.Equal("bad", e.MissionId));
+        Assert.StartsWith("attempt 1 failed: ", retries[0].LogText);
+        Assert.EndsWith("retrying in 0.5s", retries[0].LogText);
+
+        var finalError = Assert.Single(events, e => e is { LogIsError: true, LogRowOnly: false, MissionId: "bad" });
+        Assert.NotEmpty(finalError.LogText!);
+
+        var log = GlobalLog(events);
+        Assert.Contains("1 of 1 missions failed to fetch", log);
+        Assert.Equal("(performing another &7a7a7a<fetch> will fetch the failed missions most of the time)", log[^1]);
+    }
+
+    [Fact]
+    public async Task FetchPlayerData_RunsExporterBeforeSuccess_AndReportsFiles() {
+        var db = new FakeIndexedDb();
+        var handler = new RoutingHandler(FirstContactBody(["m1"]), CompleteMissionBody);
+        var events = new List<FetchProgress>();
+        AppState? stateAtExport = null;
+        var exporter = new StubExporter(() => {
+            stateAtExport = events[^1].State;
+            return ["a.csv"];
+        });
+        var service = await MakeAsync(db, handler, exporter: exporter);
+
+        var final = await service.FetchPlayerDataAsync(Eid, new SynchronousProgress<FetchProgress>(events.Add), CancellationToken.None);
+
+        Assert.Equal(AppState.Success, final);
+        Assert.Equal(AppState.ExportingData, stateAtExport);
+        Assert.Equal(["a.csv"], events[^1].ExportedFiles);
+    }
+
+    [Fact]
+    public async Task FetchPlayerData_ExporterThrows_YieldsFailedWithError() {
+        var db = new FakeIndexedDb();
+        var handler = new RoutingHandler(FirstContactBody(["m1"]), CompleteMissionBody);
+        var exporter = new StubExporter(() => throw new IOException("disk full"));
+        var service = await MakeAsync(db, handler, exporter: exporter);
+        var events = new List<FetchProgress>();
+
+        var final = await service.FetchPlayerDataAsync(Eid, new SynchronousProgress<FetchProgress>(events.Add), CancellationToken.None);
+
+        Assert.Equal(AppState.Failed, final);
+        Assert.Contains(events, e => e is { LogText: "disk full", LogIsError: true });
+        Assert.DoesNotContain("done.", GlobalLog(events));
+    }
+
+    [Fact]
+    public async Task FetchPlayerData_InvalidEid_EmitsErrorLine() {
+        var db = new FakeIndexedDb();
+        var handler = new RoutingHandler(InvalidFirstContactBody(), CompleteMissionBody);
+        var service = await MakeAsync(db, handler);
+        var events = new List<FetchProgress>();
+
+        await Assert.ThrowsAnyAsync<Exception>(() =>
+            service.FetchPlayerDataAsync(Eid, new SynchronousProgress<FetchProgress>(events.Add), CancellationToken.None));
+
+        Assert.Contains(events, e => e.LogIsError && e.LogText!.Contains("please double check your ID", StringComparison.Ordinal));
     }
 }

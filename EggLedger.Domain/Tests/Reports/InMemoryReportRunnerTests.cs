@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.InteropServices;
 using EggLedger.Domain.Reports;
 using Ei;
 
@@ -9,14 +10,12 @@ public class InMemoryReportRunnerTests {
 
     private sealed class NoWeights : IWeightData {
         public double CraftingWeight(long artifactId, long level) => 1;
-        public IReadOnlyList<int> FamilyAfxIds(string familyId) => Array.Empty<int>();
+        public IReadOnlyList<int> FamilyAfxIds(string familyId) => [];
     }
 
-    private sealed class FixedFamily : IWeightData {
-        private readonly int[] _ids;
-        public FixedFamily(params int[] ids) => _ids = ids;
+    private sealed class FixedFamily(params int[] ids) : IWeightData {
         public double CraftingWeight(long artifactId, long level) => 1;
-        public IReadOnlyList<int> FamilyAfxIds(string familyId) => _ids;
+        public IReadOnlyList<int> FamilyAfxIds(string familyId) => ids;
     }
 
 
@@ -34,7 +33,7 @@ public class InMemoryReportRunnerTests {
                     return rows;
                 }
             }
-            return Array.Empty<object?[]>();
+            return [];
         }
     }
 
@@ -72,15 +71,15 @@ public class InMemoryReportRunnerTests {
 
 
     private static object?[][] Group1D(IEnumerable<MissionRowData> rows, Func<MissionRowData, string> key) {
-        var counts = new Dictionary<string, long>(StringComparer.Ordinal);
-        var order = new List<string>();
+        Dictionary<string, long> counts = [with(StringComparer.Ordinal)];
+        List<string> order = [];
         foreach (var r in rows) {
             var k = key(r);
-            if (!counts.ContainsKey(k)) {
+            ref var cur = ref CollectionsMarshal.GetValueRefOrAddDefault(counts, k, out var exists);
+            if (!exists) {
                 order.Add(k);
             }
-            counts.TryGetValue(k, out var cur);
-            counts[k] = cur + 1;
+            cur++;
         }
         return [.. order
             .Select((k, i) => (k, i, c: counts[k]))
@@ -92,16 +91,14 @@ public class InMemoryReportRunnerTests {
 
     private static object?[][] Group2D(
         IEnumerable<MissionRowData> rows, Func<MissionRowData, string> k1, Func<MissionRowData, string> k2) {
-        var counts = new Dictionary<(string, string), long>();
+        Dictionary<(string K1, string K2), long> counts = [];
         foreach (var r in rows) {
-            var key = (k1(r), k2(r));
-            counts.TryGetValue(key, out var cur);
-            counts[key] = cur + 1;
+            CollectionsMarshal.GetValueRefOrAddDefault(counts, (k1(r), k2(r)), out _)++;
         }
         return [.. counts
-            .OrderBy(kv => long.Parse(kv.Key.Item1, CultureInfo.InvariantCulture))
-            .ThenBy(kv => long.Parse(kv.Key.Item2, CultureInfo.InvariantCulture))
-            .Select(kv => new object?[] { kv.Key.Item1, kv.Key.Item2, kv.Value })];
+            .OrderBy(kv => long.Parse(kv.Key.K1, CultureInfo.InvariantCulture))
+            .ThenBy(kv => long.Parse(kv.Key.K2, CultureInfo.InvariantCulture))
+            .Select(kv => new object?[] { kv.Key.K1, kv.Key.K2, kv.Value })];
     }
 
     private static string Ship(MissionRowData m) => m.Ship.ToString(CultureInfo.InvariantCulture);
@@ -118,7 +115,7 @@ public class InMemoryReportRunnerTests {
 
         var sqlDb = new FakeDb().On("GROUP BY m.ship", Group1D(missions, Ship));
         var sqlResult = new ReportExecutor(sqlDb, new NoWeights()).ExecuteReport(def);
-        var memResult = new InMemoryReportRunner(new NoWeights()).Run(def, missions, Array.Empty<ArtifactDropRowData>(), Array.Empty<FuelRowData>());
+        var memResult = new InMemoryReportRunner(new NoWeights()).Run(def, missions, [], []);
 
         Assert.Equal(sqlResult, memResult);
         Assert.Equal([2, 1], memResult.Values);
@@ -146,7 +143,7 @@ public class InMemoryReportRunnerTests {
         var kept = missions.Where(m => m.DurationType == 0);
         var sqlDb = new FakeDb().On("GROUP BY m.ship", Group1D(kept, Ship));
         var sqlResult = new ReportExecutor(sqlDb, new NoWeights()).ExecuteReport(def);
-        var memResult = new InMemoryReportRunner(new NoWeights()).Run(def, missions, Array.Empty<ArtifactDropRowData>(), Array.Empty<FuelRowData>());
+        var memResult = new InMemoryReportRunner(new NoWeights()).Run(def, missions, [], []);
 
         Assert.Equal(sqlResult, memResult);
 
@@ -171,7 +168,7 @@ public class InMemoryReportRunnerTests {
 
         var sqlDb = new FakeDb().On("GROUP BY m.ship, m.duration_type", Group2D(missions, Ship, Dur));
         var sqlResult = new ReportExecutor(sqlDb, new NoWeights()).ExecuteReport(def);
-        var memResult = new InMemoryReportRunner(new NoWeights()).Run(def, missions, Array.Empty<ArtifactDropRowData>(), Array.Empty<FuelRowData>());
+        var memResult = new InMemoryReportRunner(new NoWeights()).Run(def, missions, [], []);
 
         Assert.Equal(sqlResult, memResult);
         Assert.True(memResult.Is2D);
@@ -201,7 +198,7 @@ public class InMemoryReportRunnerTests {
         var rarityRows = Group1DRaw(keptDrops.Select(d => d.Rarity.ToString(CultureInfo.InvariantCulture)));
         var sqlDb = new FakeDb().On("GROUP BY d.rarity", rarityRows);
         var sqlResult = new ReportExecutor(sqlDb, new NoWeights()).ExecuteReport(def);
-        var memResult = new InMemoryReportRunner(new NoWeights()).Run(def, missions, drops, Array.Empty<FuelRowData>());
+        var memResult = new InMemoryReportRunner(new NoWeights()).Run(def, missions, drops, []);
 
         Assert.Equal(sqlResult, memResult);
 
@@ -231,7 +228,7 @@ public class InMemoryReportRunnerTests {
 
         var sqlDb = new FakeDb().On("GROUP BY m.ship", Group1D(missions.Where(m => m.MissionId == "a"), Ship));
         var sqlResult = new ReportExecutor(sqlDb, new NoWeights()).ExecuteReport(def);
-        var memResult = new InMemoryReportRunner(new NoWeights()).Run(def, missions, drops, Array.Empty<FuelRowData>());
+        var memResult = new InMemoryReportRunner(new NoWeights()).Run(def, missions, drops, []);
 
         Assert.Equal(sqlResult, memResult);
         Assert.Single(memResult.Values);
@@ -261,7 +258,7 @@ public class InMemoryReportRunnerTests {
         var ordered = bucketRows.OrderBy(r => (string)r[0]!, StringComparer.Ordinal).ToArray();
         var sqlDb = new FakeDb().On("GROUP BY bucket", ordered);
         var sqlResult = new ReportExecutor(sqlDb, new NoWeights()).ExecuteReport(def);
-        var memResult = new InMemoryReportRunner(new NoWeights()).Run(def, missions, Array.Empty<ArtifactDropRowData>(), Array.Empty<FuelRowData>());
+        var memResult = new InMemoryReportRunner(new NoWeights()).Run(def, missions, [], []);
 
         Assert.Equal(sqlResult, memResult);
 
@@ -290,7 +287,7 @@ public class InMemoryReportRunnerTests {
             .On("GROUP BY m.ship\n", grouped)
             .On("GROUP BY m.ship", grouped);
         var sqlResult = new ReportExecutor(sqlDb, new NoWeights()).ExecuteReport(def);
-        var memResult = new InMemoryReportRunner(new NoWeights()).Run(def, missions, Array.Empty<ArtifactDropRowData>(), Array.Empty<FuelRowData>());
+        var memResult = new InMemoryReportRunner(new NoWeights()).Run(def, missions, [], []);
 
         Assert.Equal(sqlResult, memResult);
         Assert.True(memResult.IsFloat);
@@ -324,7 +321,7 @@ public class InMemoryReportRunnerTests {
             ["3", 13L, 0L, 1.0],
         });
         var sqlResult = new ReportExecutor(sqlDb, weights).ExecuteReport(def);
-        var memResult = new InMemoryReportRunner(weights).Run(def, missions, drops, Array.Empty<FuelRowData>());
+        var memResult = new InMemoryReportRunner(weights).Run(def, missions, drops, []);
 
         Assert.Equal(sqlResult, memResult);
         Assert.True(memResult.IsFloat);
@@ -367,7 +364,7 @@ public class InMemoryReportRunnerTests {
             .On("cap_weight", capRows)
             .On("FROM mission m", missionCountRows);
         var sqlResult = new ReportExecutor(sqlDb, weights).ExecuteReport(def);
-        var memResult = new InMemoryReportRunner(weights).Run(def, missions, drops, Array.Empty<FuelRowData>());
+        var memResult = new InMemoryReportRunner(weights).Run(def, missions, drops, []);
 
         Assert.Equal(sqlResult, memResult);
         Assert.True(memResult.Is2D);
@@ -449,14 +446,14 @@ public class InMemoryReportRunnerTests {
 
 
     private static object?[][] Group1DRaw(IEnumerable<string> keys) {
-        var counts = new Dictionary<string, long>(StringComparer.Ordinal);
-        var order = new List<string>();
+        Dictionary<string, long> counts = [with(StringComparer.Ordinal)];
+        List<string> order = [];
         foreach (var k in keys) {
-            if (!counts.ContainsKey(k)) {
+            ref var cur = ref CollectionsMarshal.GetValueRefOrAddDefault(counts, k, out var exists);
+            if (!exists) {
                 order.Add(k);
             }
-            counts.TryGetValue(k, out var cur);
-            counts[k] = cur + 1;
+            cur++;
         }
         return [.. order
             .Select((k, i) => (k, i, c: counts[k]))

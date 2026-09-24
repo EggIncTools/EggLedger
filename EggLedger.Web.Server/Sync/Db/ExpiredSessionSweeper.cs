@@ -2,13 +2,15 @@ using Npgsql;
 
 namespace EggLedger.Web.Server.Sync.Db;
 
-public sealed class ExpiredSessionSweeper(NpgsqlDataSource source, TimeSpan interval) {
+public sealed class ExpiredSessionSweeper(NpgsqlDataSource source, TimeSpan interval, ILogger<ExpiredSessionSweeper> logger) {
     public async Task RunAsync(CancellationToken ct) {
         using var timer = new PeriodicTimer(interval);
         try {
             while (await timer.WaitForNextTickAsync(ct))
                 await SweepAsync(ct);
-        } catch (OperationCanceledException) { }
+        } catch (OperationCanceledException ex) {
+            logger.LogDebug(ex, "sessions: expired-session sweeper stopped on shutdown");
+        }
     }
 
     public async Task SweepAsync(CancellationToken ct) {

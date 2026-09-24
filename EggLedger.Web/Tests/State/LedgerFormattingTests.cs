@@ -37,14 +37,12 @@ public sealed class LedgerFormattingTests {
     [InlineData(0, 1000, "")]
     [InlineData(2000, 1000, "")]
     [InlineData(1000, 1000, "")]
-    public void FormatTimeSinceEmptyCases(double ret, double now, string expected) {
+    public void FormatTimeSinceEmptyCases(double ret, double now, string expected) =>
         Assert.Equal(expected, LedgerFormatting.FormatTimeSince(ret, now));
-    }
 
     [Fact]
-    public void FormatTimeSinceMinutesOnly() {
+    public void FormatTimeSinceMinutesOnly() =>
         Assert.Equal("5m ago", LedgerFormatting.FormatTimeSince(0 + 1, 1 + 5 * 60));
-    }
 
     [Fact]
     public void FormatTimeSinceHoursAndMinutes() {
@@ -96,9 +94,8 @@ public sealed class LedgerFormattingTests {
     [InlineData("  ei1234567890123456 ", "EI1234567890123456")]
     [InlineData("ei1", "EI1")]
     [InlineData("", "")]
-    public void NormalizeEidTrimsAndUppercases(string raw, string expected) {
+    public void NormalizeEidTrimsAndUppercases(string raw, string expected) =>
         Assert.Equal(expected, LedgerFormatting.NormalizeEid(raw));
-    }
 
     [Theory]
     [InlineData("", "")]
@@ -107,15 +104,13 @@ public sealed class LedgerFormattingTests {
     [InlineData("EI12345678901234567890", "Player ID is too long (expected EI + 16 digits)")]
     [InlineData("EI123456789012345X", "Player ID must be EI followed by exactly 16 digits")]
     [InlineData("EI1234567890123456", "")]
-    public void EidProblemMatchesVueRules(string normalized, string expected) {
+    public void EidProblemMatchesVueRules(string normalized, string expected) =>
         Assert.Equal(expected, LedgerFormatting.EidProblem(normalized));
-    }
 
     [Theory]
     [InlineData("EI1234567890123456", true)]
     [InlineData("", false)]
     [InlineData("EI123", false)]
-    public void IsEidValidMatchesVue(string normalized, bool valid) {
+    public void IsEidValidMatchesVue(string normalized, bool valid) =>
         Assert.Equal(valid, LedgerFormatting.IsEidValid(normalized));
-    }
 }

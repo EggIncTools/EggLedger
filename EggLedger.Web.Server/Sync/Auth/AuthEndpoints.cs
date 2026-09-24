@@ -26,7 +26,9 @@ public sealed record PollResponse(
     [property: JsonPropertyName("avatarUrl")] string AvatarUrl,
     [property: JsonPropertyName("encryptionKey")] string EncryptionKey);
 
-public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvider dataProtection, IdentityApiClient identity, ILogger<AuthEndpoints> logger, AppConfig cfg, SessionCookieOptions? eggIdentitySession = null, SettingsCache? settings = null) {
+public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvider dataProtection, IdentityApiClient identity, ILogger<AuthEndpoints> logger, AppConfig cfg, SessionCookieOptions? eggIdentitySession = null, SettingsCache? settings = null, TimeProvider? time = null) {
+    private readonly TimeProvider _time = time ?? TimeProvider.System;
+
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
     private static readonly RetryOptions DbRetry = new() {
@@ -61,7 +63,8 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
     private string UnprotectKey(string stored) {
         try {
             return _keyProtector.Unprotect(stored);
-        } catch (CryptographicException) {
+        } catch (CryptographicException ex) {
+            logger.LogDebug(ex, "auth: encryption_key not protected, using stored value");
             return stored;
         }
     }
@@ -125,7 +128,7 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
                 "INSERT INTO users (user_id, created_at, username, avatar) VALUES ($1,$2,$3,$4) " +
                 "ON CONFLICT (user_id) DO UPDATE SET username = EXCLUDED.username, avatar = EXCLUDED.avatar");
             u.Parameters.AddWithValue(userId);
-            u.Parameters.AddWithValue(DateTimeOffset.UtcNow);
+            u.Parameters.AddWithValue(_time.GetUtcNow());
             u.Parameters.AddWithValue(username ?? "");
             u.Parameters.AddWithValue(avatar ?? "");
             await u.ExecuteNonQueryAsync(rct);
@@ -192,7 +195,7 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
             logger.LogWarning(ex, "auth: poll query failed for state {State}", state);
         }
 
-        if (!found || DateTimeOffset.UtcNow > expiresAt) {
+        if (!found || _time.GetUtcNow() > expiresAt) {
             await WriteTextAsync(ctx, StatusCodes.Status404NotFound, "not found\n");
             return;
         }
@@ -242,7 +245,7 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
                 "INSERT INTO sessions (token_hash, user_id, expires_at) VALUES ($1, $2, $3)");
             ins.Parameters.AddWithValue(TokenHash.Of(token));
             ins.Parameters.AddWithValue(userId);
-            ins.Parameters.AddWithValue(DateTimeOffset.UtcNow + SessionTokens.Lifetime);
+            ins.Parameters.AddWithValue(_time.GetUtcNow() + SessionTokens.Lifetime);
             await ins.ExecuteNonQueryAsync(rct);
         }, DbRetry, ct: ct);
 
@@ -255,7 +258,7 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
         await using var cmd = source.CreateCommand(
             "INSERT INTO pending_auth (state, expires_at) VALUES ($1, $2) ON CONFLICT (state) DO UPDATE SET expires_at = EXCLUDED.expires_at");
         cmd.Parameters.AddWithValue(state);
-        cmd.Parameters.AddWithValue(DateTimeOffset.UtcNow + SessionTokens.PendingLifetime);
+        cmd.Parameters.AddWithValue(_time.GetUtcNow() + SessionTokens.PendingLifetime);
         try { await cmd.ExecuteNonQueryAsync(ctx.RequestAborted); } catch (Exception ex) { logger.LogWarning(ex, "auth: failed to seed pending_auth row"); }
 
         var baseUrl = await PublicBaseUrlAsync(ctx.RequestAborted);
@@ -291,8 +294,12 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
         await using var cmd = source.CreateCommand("SELECT avatar FROM users WHERE user_id = $1");
         cmd.Parameters.AddWithValue(userId);
         try {
-            var result = await cmd.ExecuteScalarAsync(ct);
-            return result as string ?? "";
+            var avatar = await cmd.ExecuteScalarAsync(ct) as string;
+            if (string.IsNullOrEmpty(avatar) || avatar.StartsWith("http", StringComparison.Ordinal)) {
+                return avatar ?? "";
+            }
+            var host = await IdentityWidgetUrlAsync(ct);
+            return $"{host.TrimEnd('/')}/{avatar.TrimStart('/')}";
         } catch (Exception ex) {
             logger.LogWarning(ex, "auth: failed to read avatar for {UserId}", userId);
             return "";

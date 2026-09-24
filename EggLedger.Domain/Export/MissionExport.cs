@@ -64,9 +64,8 @@ public static class MissionExport {
         return Encoding.UTF8.GetBytes(sb.ToString());
     }
 
-    public static void MissionsToCsv(IReadOnlyList<Mission> missions, string path) {
+    public static void MissionsToCsv(IReadOnlyList<Mission> missions, string path) =>
         File.WriteAllBytes(path, MissionsToCsvBytes(missions));
-    }
 
     public static byte[] MissionsToXlsxBytes(IReadOnlyList<Mission> missions) {
         int mac = MaxArtifactCount(missions);
@@ -118,9 +117,8 @@ public static class MissionExport {
         return ms.ToArray();
     }
 
-    public static void MissionsToXlsx(IReadOnlyList<Mission> missions, string path) {
+    public static void MissionsToXlsx(IReadOnlyList<Mission> missions, string path) =>
         File.WriteAllBytes(path, MissionsToXlsxBytes(missions));
-    }
 
     public static string FilenameWithoutExt(string f) => Path.GetFileNameWithoutExtension(f);
 
@@ -151,14 +149,6 @@ public static class MissionExport {
         return sb.ToString();
     }
 
-    private static bool NeedsQuoting(string field) {
-        if (field.Length == 0) {
-            return false;
-        }
-        if (field.IndexOfAny(['"', ',', '\r', '\n']) >= 0) {
-            return true;
-        }
-
-        return false;
-    }
+    private static bool NeedsQuoting(string field) =>
+        field.Length != 0 && field.IndexOfAny(['"', ',', '\r', '\n']) >= 0;
 }

@@ -10,9 +10,8 @@ public sealed class ShipAssetKeyTests {
     [InlineData(MissionInfo.Spaceship.MilleniumChicken, "MilleniumChicken")]
     [InlineData(MissionInfo.Spaceship.Henerprise, "Henerprise")]
     [InlineData(MissionInfo.Spaceship.Atreggies, "Atreggies")]
-    public void For_ReturnsEnumMemberName(MissionInfo.Spaceship ship, string expected) {
+    public void For_ReturnsEnumMemberName(MissionInfo.Spaceship ship, string expected) =>
         Assert.Equal(expected, ShipAssetKey.For(ship));
-    }
 
     [Fact]
     public void AllKeys_CoversAllElevenMembers() {
@@ -26,7 +25,6 @@ public sealed class ShipAssetKeyTests {
     [InlineData("CHICKEN_ONE", false)]
     [InlineData("../etc/passwd", false)]
     [InlineData("", false)]
-    public void IsKnown_AcceptsOnlyDefinedMemberNames(string key, bool expected) {
+    public void IsKnown_AcceptsOnlyDefinedMemberNames(string key, bool expected) =>
         Assert.Equal(expected, ShipAssetKey.IsKnown(key));
-    }
 }

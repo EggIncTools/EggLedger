@@ -8,19 +8,13 @@ public enum StoragePart {
     Logs,
 }
 
-public sealed class DesktopStorageService : IStorageManagement {
-    private readonly string _rootDir;
-    private readonly IPlatformCapabilities _platform;
-    private readonly Action<string> _writeBootstrap;
+public sealed class DesktopStorageService(string rootDir, IPlatformCapabilities platform, Action<string> writeBootstrap) : IStorageManagement {
+    private readonly string _rootDir = rootDir;
+    private readonly IPlatformCapabilities _platform = platform;
+    private readonly Action<string> _writeBootstrap = writeBootstrap;
 
     public DesktopStorageService(string rootDir, IPlatformCapabilities platform)
         : this(rootDir, platform, StoragePaths.WriteBootstrapConfig) {
-    }
-
-    public DesktopStorageService(string rootDir, IPlatformCapabilities platform, Action<string> writeBootstrap) {
-        _rootDir = rootDir;
-        _platform = platform;
-        _writeBootstrap = writeBootstrap;
     }
 
     public string GetDataRootDir() => StoragePaths.ResolveDataRootDir(_rootDir);

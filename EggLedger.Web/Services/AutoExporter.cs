@@ -6,32 +6,32 @@ using EggLedger.Web.Settings;
 namespace EggLedger.Web.Services;
 
 public interface IAutoExporter {
-    Task RunAfterFetchAsync(string accountId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<string>> RunAfterFetchAsync(string accountId, CancellationToken cancellationToken = default);
 }
 
 public abstract class AutoExporterBase(
     IndexedDbSettings settings, IMissionStore store, MissionQueryHandlers queries) : IAutoExporter {
 
-    public async Task RunAfterFetchAsync(string accountId, CancellationToken cancellationToken = default) {
+    public async Task<IReadOnlyList<string>> RunAfterFetchAsync(string accountId, CancellationToken cancellationToken = default) {
         var all = await settings.GetAllSettingsAsync().ConfigureAwait(false);
         var model = new SettingsModel();
         model.LoadFrom(all);
         if (!model.AutoExportCsv && !model.AutoExportXlsx) {
-            return;
+            return [];
         }
 
         var responses = await store.GetPlayerCompleteMissionsAsync(accountId).ConfigureAwait(false);
         if (responses is null || responses.Count == 0) {
-            return;
+            return [];
         }
 
-        var missions = responses.Select(Mission.FromResponse).ToList();
+        List<Mission> missions = [.. responses.Select(Mission.FromResponse)];
         var accounts = await queries.GetExistingDataAsync().ConfigureAwait(false);
-        var nickname = accounts.FirstOrDefault(a => a.Id == accountId)?.Nickname ?? "";
-        await DeliverAsync(accountId, nickname, missions, model, cancellationToken).ConfigureAwait(false);
+        var nickname = accounts.Find(a => a.Id == accountId)?.Nickname ?? "";
+        return await DeliverAsync(accountId, nickname, missions, model, cancellationToken).ConfigureAwait(false);
     }
 
-    protected abstract Task DeliverAsync(
+    protected abstract Task<IReadOnlyList<string>> DeliverAsync(
         string accountId,
         string nickname,
         IReadOnlyList<Mission> missions,
@@ -52,19 +52,23 @@ public sealed class BrowserAutoExporter(
     IndexedDbSettings settings, IMissionStore store, MissionQueryHandlers queries, IDownloadService downloads)
     : AutoExporterBase(settings, store, queries) {
 
-    protected override async Task DeliverAsync(
+    protected override async Task<IReadOnlyList<string>> DeliverAsync(
         string accountId,
         string nickname,
         IReadOnlyList<Mission> missions,
         SettingsModel model,
         CancellationToken cancellationToken) {
         var baseName = $"{SanitizeName(nickname)}_{accountId}";
+        List<string> delivered = [];
         if (model.AutoExportCsv) {
             await downloads.DownloadCsvAsync(missions, baseName + ".csv").ConfigureAwait(false);
+            delivered.Add(baseName + ".csv");
         }
 
         if (model.AutoExportXlsx) {
             await downloads.DownloadXlsxAsync(missions, baseName + ".xlsx").ConfigureAwait(false);
+            delivered.Add(baseName + ".xlsx");
         }
+        return delivered;
     }
 }

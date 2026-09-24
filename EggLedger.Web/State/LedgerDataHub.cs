@@ -17,18 +17,19 @@ public sealed class LedgerDataHub : IDisposable {
     private readonly Func<string, Task<Dictionary<string, List<MissionDrop>>?>> _dropsLoader;
     private readonly Func<string, Task<IReadOnlyList<DatabaseMission>?>> _inFlightLoader;
     private readonly TimeSpan _ttl;
-    private readonly Func<DateTime> _clock;
+    private readonly TimeProvider _time;
     private readonly Lock _gate = new();
     private readonly Dictionary<string, AccountEntry> _entries = [with(StringComparer.Ordinal)];
     private readonly List<string> _order = [];
     private Action? _detachFetch;
 
-    public LedgerDataHub(MissionQueryHandlers queries, IndexedDbMissionStore missions)
+    public LedgerDataHub(MissionQueryHandlers queries, IndexedDbMissionStore missions, TimeProvider time)
         : this(
             async accountId => (await queries.ViewMissionsOfEidAsync(accountId).ConfigureAwait(false))
                 ?.Cast<DatabaseMission>().ToList(),
             queries.GetAllPlayerDropsAsync,
             DefaultTtl,
+            time,
             inFlightLoader: async accountId =>
                 await missions.GetInFlightMissionsAsync(accountId).ConfigureAwait(false)) {
     }
@@ -37,13 +38,13 @@ public sealed class LedgerDataHub : IDisposable {
         Func<string, Task<IReadOnlyList<DatabaseMission>?>> missionsLoader,
         Func<string, Task<Dictionary<string, List<MissionDrop>>?>> dropsLoader,
         TimeSpan ttl,
-        Func<DateTime>? clock = null,
+        TimeProvider time,
         Func<string, Task<IReadOnlyList<DatabaseMission>?>>? inFlightLoader = null) {
         _missionsLoader = missionsLoader;
         _dropsLoader = dropsLoader;
         _inFlightLoader = inFlightLoader ?? (_ => Task.FromResult<IReadOnlyList<DatabaseMission>?>([]));
         _ttl = ttl;
-        _clock = clock ?? (() => DateTime.UtcNow);
+        _time = time ?? throw new ArgumentNullException(nameof(time));
     }
 
     public event Action<string>? AccountInvalidated;
@@ -121,7 +122,7 @@ public sealed class LedgerDataHub : IDisposable {
         TaskCompletionSource<T?> completion;
         lock (_gate) {
             slot = pick(Touch(accountId));
-            if (slot.HasValue && _clock() - slot.LoadedAt < _ttl) {
+            if (slot.HasValue && _time.GetUtcNow().UtcDateTime - slot.LoadedAt < _ttl) {
                 return Task.FromResult(slot.Value);
             }
 
@@ -146,7 +147,7 @@ public sealed class LedgerDataHub : IDisposable {
             lock (_gate) {
                 if (value is not null) {
                     slot.Value = value;
-                    slot.LoadedAt = _clock();
+                    slot.LoadedAt = _time.GetUtcNow().UtcDateTime;
                     slot.HasValue = true;
                 }
 

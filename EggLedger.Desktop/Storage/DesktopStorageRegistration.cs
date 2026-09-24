@@ -43,10 +43,11 @@ public static class DesktopStorageRegistration {
             dataRootDir,
             sp.GetRequiredService<IndexedDbSettings>(),
             sp.GetRequiredService<IMissionStore>(),
-            sp.GetRequiredService<MissionQueryHandlers>()));
+            sp.GetRequiredService<MissionQueryHandlers>(),
+            time: sp.GetRequiredService<TimeProvider>()));
 
         services.RemoveAll<MennoService>();
-        services.AddSingleton(_ => new MennoService(new HttpClient(), new FileMennoDataStore(internalDir)));
+        services.AddSingleton(sp => new MennoService(new HttpClient(), new FileMennoDataStore(internalDir), sp.GetService<ILogger<MennoService>>()));
 
         services.RemoveAll<GameEventsService>();
         services.AddSingleton(sp => new GameEventsService(
@@ -77,14 +78,16 @@ public static class DesktopStorageRegistration {
         services.RemoveAll<IReportRunner>();
         services.RemoveAll<IReportSourceCache>();
         services.AddScoped<IReportSourceCache>(sp => {
-            var cache = new ReportSourceCache(SqliteReportSource.Loader(
-                sp.GetRequiredService<SqliteMissionDb>(), sp.GetRequiredService<IMissionStore>()));
+            var cache = new ReportSourceCache(
+                SqliteReportSource.Loader(sp.GetRequiredService<SqliteMissionDb>(), sp.GetRequiredService<IMissionStore>()),
+                sp.GetRequiredService<TimeProvider>());
             cache.AttachHub(sp.GetRequiredService<LedgerDataHub>());
             return cache;
         });
         services.AddScoped<IReportRunner>(sp => new SqliteReportRunner(
             sp.GetRequiredService<IReportSourceCache>(),
-            sp.GetRequiredService<IWeightData>()));
+            sp.GetRequiredService<IWeightData>(),
+            sp.GetRequiredService<TimeProvider>()));
 
         return services;
     }

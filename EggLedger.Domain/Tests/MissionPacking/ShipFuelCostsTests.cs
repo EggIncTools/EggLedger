@@ -46,14 +46,12 @@ public sealed class ShipFuelCostsTests {
     }
 
     [Fact]
-    public void For_Tutorial_ReturnsEmpty() {
+    public void For_Tutorial_ReturnsEmpty() =>
         Assert.Empty(ShipFuelCosts.For(MissionInfo.Spaceship.ChickenOne, MissionInfo.DurationType.Tutorial));
-    }
 
     [Fact]
-    public void For_UnknownShip_ReturnsEmpty() {
+    public void For_UnknownShip_ReturnsEmpty() =>
         Assert.Empty(ShipFuelCosts.For(999, (long)MissionInfo.DurationType.Short));
-    }
 
     [Fact]
     public void TotalFor_SumsAllEggTypes() {

@@ -19,11 +19,9 @@ public sealed class FakeJsObjectReference : IJSObjectReference {
     public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) {
         Calls.Add((identifier, args ?? []));
 
-        if (_canned.TryGetValue(identifier, out var queue) && queue.Count > 0) {
-            return new ValueTask<TValue>((TValue)queue.Dequeue()!);
-        }
-
-        return new ValueTask<TValue>(default(TValue)!);
+        return _canned.TryGetValue(identifier, out var queue) && queue.Count > 0
+            ? new ValueTask<TValue>((TValue)queue.Dequeue()!)
+            : new ValueTask<TValue>(default(TValue)!);
     }
 
     public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args)

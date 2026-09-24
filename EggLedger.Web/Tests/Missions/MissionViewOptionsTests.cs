@@ -20,10 +20,10 @@ public sealed class MissionViewOptionsTests {
     [Fact]
     public void HasBothMissionTypes_NeedsBothHomeAndVirtue() {
         Assert.False(MissionViewOptions.HasBothMissionTypes(null));
-        Assert.False(MissionViewOptions.HasBothMissionTypes(Array.Empty<DatabaseMission>()));
-        Assert.False(MissionViewOptions.HasBothMissionTypes(new[] { M(0, "a"), M(0, "b") }));
-        Assert.False(MissionViewOptions.HasBothMissionTypes(new[] { M(1, "a") }));
-        Assert.True(MissionViewOptions.HasBothMissionTypes(new[] { M(0, "a"), M(1, "b") }));
+        Assert.False(MissionViewOptions.HasBothMissionTypes([]));
+        Assert.False(MissionViewOptions.HasBothMissionTypes([M(0, "a"), M(0, "b")]));
+        Assert.False(MissionViewOptions.HasBothMissionTypes([M(1, "a")]));
+        Assert.True(MissionViewOptions.HasBothMissionTypes([M(0, "a"), M(1, "b")]));
     }
 
     [Fact]
@@ -36,16 +36,15 @@ public sealed class MissionViewOptionsTests {
     public void TabFilteredMissions_FiltersByType() {
         var missions = new[] { M(0, "a"), M(1, "b"), M(0, "c") };
         var home = MissionViewOptions.TabFilteredMissions(missions, 0)!;
-        Assert.Equal(new[] { "a", "c" }, home.Select(m => m.MissiondId).ToArray());
+        Assert.Equal(["a", "c"], [.. home.Select(m => m.MissiondId)]);
         var virtue = MissionViewOptions.TabFilteredMissions(missions, 1)!;
         Assert.Single(virtue);
         Assert.Equal("b", virtue[0].MissiondId);
     }
 
     [Fact]
-    public void TabFilteredMissions_NullInputReturnsNull() {
+    public void TabFilteredMissions_NullInputReturnsNull() =>
         Assert.Null(MissionViewOptions.TabFilteredMissions(null, 0));
-    }
 
     [Theory]
     [InlineData("row", MultiViewMode.Row)]

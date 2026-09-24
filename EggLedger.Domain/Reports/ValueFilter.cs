@@ -16,9 +16,9 @@ public static class ValueFilter {
             _ => _ => true,
         };
 
-        var labels = new List<string>();
+        List<string> labels = [];
         if (result.IsFloat) {
-            var floats = new List<double>();
+            List<double> floats = [];
             for (int i = 0; i < result.Labels.Count; i++) {
                 double v = i < result.FloatValues.Count ? result.FloatValues[i] : 0;
                 if (keep(v)) {
@@ -29,7 +29,7 @@ public static class ValueFilter {
             return new ReportResult { Labels = labels, FloatValues = floats, IsFloat = true, Weight = result.Weight };
         }
 
-        var values = new List<long>();
+        List<long> values = [];
         for (int i = 0; i < result.Labels.Count; i++) {
             long v = i < result.Values.Count ? result.Values[i] : 0;
             if (keep(v)) {

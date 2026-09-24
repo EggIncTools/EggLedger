@@ -30,14 +30,12 @@ public interface IExportFileSystem {
 }
 
 public sealed class PhysicalExportFileSystem : IExportFileSystem {
-    public IReadOnlyList<ExportFileEntry>? ListFiles(string dir) {
-        if (!Directory.Exists(dir)) {
-            return null;
-        }
-        return [.. Directory.EnumerateFiles(dir)
-            .Select(path => new FileInfo(path))
-            .Select(info => new ExportFileEntry(info.Name, info.Length))];
-    }
+    public IReadOnlyList<ExportFileEntry>? ListFiles(string dir) =>
+        Directory.Exists(dir)
+            ? [.. Directory.EnumerateFiles(dir)
+                .Select(path => new FileInfo(path))
+                .Select(info => new ExportFileEntry(info.Name, info.Length))]
+            : null;
 
     public long? Size(string path) => File.Exists(path) ? new FileInfo(path).Length : null;
 
@@ -55,13 +53,12 @@ public static class ExportManagement {
     public static List<ExportGroup> ListGroups(string exportsDir, IExportFileSystem? fs = null) {
         fs ??= new PhysicalExportFileSystem();
         string missionsDir = Path.Combine(exportsDir, "missions");
-        var entries = fs.ListFiles(missionsDir);
-        if (entries == null) {
+        if (fs.ListFiles(missionsDir) is not { } entries) {
             return [];
         }
 
         var pairsByEid = new Dictionary<string, Dictionary<string, FilePair>>(StringComparer.Ordinal);
-        var eidOrder = new List<string>();
+        List<string> eidOrder = [];
 
         foreach (var entry in entries) {
             var m = ExportFileRe.Match(entry.Name);
@@ -104,17 +101,15 @@ public static class ExportManagement {
         })];
     }
 
-    private static string FormatExportTimestamp(string ts) {
-        if (DateTime.TryParseExact(
-                ts,
-                "yyyyMMdd_HHmmss",
-                CultureInfo.InvariantCulture,
-                DateTimeStyles.None,
-                out var t)) {
-            return t.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
-        }
-        return ts;
-    }
+    private static string FormatExportTimestamp(string ts) =>
+        DateTime.TryParseExact(
+            ts,
+            "yyyyMMdd_HHmmss",
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.None,
+            out var t)
+            ? t.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)
+            : ts;
 
     public static (int DeletedCount, long FreedBytes) PruneForPlayer(
         string exportsDir,

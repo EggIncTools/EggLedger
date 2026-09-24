@@ -108,10 +108,7 @@ public sealed partial class SemVersion : IComparable<SemVersion>, IEquatable<Sem
             if (preSelf.Length == 0) {
                 return 1;
             }
-            if (preOther.Length == 0) {
-                return -1;
-            }
-            return ComparePrereleases(preSelf, preOther);
+            return preOther.Length == 0 ? -1 : ComparePrereleases(preSelf, preOther);
         }
 
         var lenSelf = self.Length;
@@ -228,9 +225,6 @@ public sealed partial class SemVersion : IComparable<SemVersion>, IEquatable<Sem
         if (!selfNumeric && !otherNumeric && string.CompareOrdinal(preSelf, preOther) > 0) {
             return 1;
         }
-        if (selfNumeric && otherNumeric && selfInt > otherInt) {
-            return 1;
-        }
-        return -1;
+        return selfNumeric && otherNumeric && selfInt > otherInt ? 1 : -1;
     }
 }

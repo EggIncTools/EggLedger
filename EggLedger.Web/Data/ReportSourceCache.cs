@@ -20,23 +20,23 @@ public sealed class ReportSourceCache : IReportSourceCache, IDisposable {
 
     private readonly Func<string, Task<ReportSource>> _loader;
     private readonly TimeSpan _ttl;
-    private readonly Func<DateTime> _clock;
+    private readonly TimeProvider _time;
     private readonly Lock _gate = new();
     private readonly Dictionary<string, SourceSlot> _slots = [with(StringComparer.Ordinal)];
     private readonly List<string> _order = [];
     private Action? _detachHub;
 
-    public ReportSourceCache(Func<string, Task<ReportSource>> loader)
-        : this(loader, DefaultTtl) {
+    public ReportSourceCache(Func<string, Task<ReportSource>> loader, TimeProvider time)
+        : this(loader, DefaultTtl, time) {
     }
 
     internal ReportSourceCache(
         Func<string, Task<ReportSource>> loader,
         TimeSpan ttl,
-        Func<DateTime>? clock = null) {
+        TimeProvider time) {
         _loader = loader ?? throw new ArgumentNullException(nameof(loader));
         _ttl = ttl;
-        _clock = clock ?? (() => DateTime.UtcNow);
+        _time = time ?? throw new ArgumentNullException(nameof(time));
     }
 
     public Task<ReportSource> GetAsync(string accountId) {
@@ -44,7 +44,7 @@ public sealed class ReportSourceCache : IReportSourceCache, IDisposable {
         TaskCompletionSource<ReportSource> completion;
         lock (_gate) {
             slot = Touch(accountId);
-            if (slot.Value is { } cached && _clock() - slot.LoadedAt < _ttl) {
+            if (slot.Value is { } cached && _time.GetUtcNow().UtcDateTime - slot.LoadedAt < _ttl) {
                 return Task.FromResult(cached);
             }
 
@@ -90,7 +90,7 @@ public sealed class ReportSourceCache : IReportSourceCache, IDisposable {
             var source = await _loader(accountId).ConfigureAwait(false) ?? ReportSource.Empty;
             lock (_gate) {
                 slot.Value = source;
-                slot.LoadedAt = _clock();
+                slot.LoadedAt = _time.GetUtcNow().UtcDateTime;
                 ClearInFlight(slot, completion);
             }
 

@@ -1,12 +1,13 @@
 using System.Text.Json;
 using EggLedger.Domain.Reports;
+using Microsoft.Extensions.Logging;
 
 namespace EggLedger.Web.Data;
 
 public static class ReportMapping {
     private static readonly JsonSerializerOptions FilterOptions = new(JsonSerializerDefaults.Web);
 
-    public static ReportDefinition ToDefinition(ReportRow r) => new() {
+    public static ReportDefinition ToDefinition(ReportRow r, ILogger? logger = null) => new() {
         Id = r.Id,
         AccountId = r.AccountId,
         Name = r.Name,
@@ -18,7 +19,7 @@ public static class ReportMapping {
         TimeBucket = r.TimeBucket ?? "",
         CustomBucketN = r.CustomBucketN ?? 0,
         CustomBucketUnit = r.CustomBucketUnit ?? "",
-        Filters = ParseFilters(r.Filters),
+        Filters = ParseFilters(r.Filters, logger),
         GridX = r.GridX,
         GridY = r.GridY,
         GridW = r.GridW,
@@ -78,13 +79,14 @@ public static class ReportMapping {
         MinSampleSize = d.MinSampleSize,
     };
 
-    public static ReportFilters ParseFilters(string? json) {
+    public static ReportFilters ParseFilters(string? json, ILogger? logger = null) {
         if (string.IsNullOrWhiteSpace(json)) {
             return new ReportFilters();
         }
         try {
             return JsonSerializer.Deserialize<ReportFilters>(json, FilterOptions) ?? new ReportFilters();
-        } catch (JsonException) {
+        } catch (JsonException ex) {
+            logger?.LogDebug(ex, "report filters JSON unreadable, using empty filters");
             return new ReportFilters();
         }
     }

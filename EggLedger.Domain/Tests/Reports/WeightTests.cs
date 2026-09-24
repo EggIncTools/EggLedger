@@ -141,4 +141,20 @@ public class WeightTests {
         };
         Assert.Equal("MEDIUM", Weight.ClassifyWeight(def));
     }
+
+    [Theory]
+    [InlineData("2025-12-01", "MEDIUM")]
+    [InlineData("2025-06-01", "HEAVY")]
+    public void DateWindow_UsesInjectedClock(string launchedAfter, string expected) {
+        var clock = new FixedClock(new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
+        var def = new ReportDefinition {
+            Mode = "time_series",
+            GroupBy = "time_bucket",
+            TimeBucket = "month",
+            Filters = new ReportFilters {
+                And = [new FilterCondition { TopLevel = "launchDT", Op = ">=", Val = launchedAfter }],
+            },
+        };
+        Assert.Equal(expected, Weight.ClassifyWeight(def, clock));
+    }
 }

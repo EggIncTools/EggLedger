@@ -16,9 +16,8 @@ public sealed class ColorPickerMathTests {
         Assert.Equal(expected, ColorPickerMath.IsValidHex(input));
 
     [Fact]
-    public void NormalizeToHex_LowersValidHex() {
+    public void NormalizeToHex_LowersValidHex() =>
         Assert.Equal("#abcdef", ColorPickerMath.NormalizeToHex("#ABCDEF"));
-    }
 
     [Fact]
     public void NormalizeToHex_BadInput_ReturnsFallback() {

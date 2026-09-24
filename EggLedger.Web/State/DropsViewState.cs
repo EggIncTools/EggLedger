@@ -9,6 +9,7 @@ using EggLedger.Web.Platform;
 using EggLedger.Web.Services;
 using EggLedger.Web.Settings;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 
 namespace EggLedger.Web.State;
 
@@ -18,7 +19,8 @@ public sealed class DropsViewState(
     IndexedDbSettings settings,
     LedgerDataHub hub,
     IUserTimeZoneProvider timeZones,
-    MennoService menno) : IDisposable {
+    MennoService menno,
+    ILogger<DropsViewState> logger) : IDisposable {
     public const string KeySortMethod = "lifetime_sort_method";
     public const string KeyShowPerShip = "lifetime_show_drops_per_ship";
     public const string KeyShowExpectedTotals = "lifetime_show_expected_totals";
@@ -192,7 +194,8 @@ public sealed class DropsViewState(
             ResultText = $"Filtered in {sw.Elapsed.TotalSeconds:0.###}s ({shown} shown, {filteredOut} filtered out)";
             Applying = false;
             Changed?.Invoke();
-        } catch (Exception) {
+        } catch (Exception ex) {
+            logger.LogDebug(ex, "drops filter failed for generation {Generation}", generation);
             if (generation != _filterGeneration) {
                 return;
             }
@@ -248,9 +251,8 @@ public sealed class DropsViewState(
         return cfg;
     }
 
-    private void OnAccountChanged() {
+    private void OnAccountChanged() =>
         _ = _dispatch?.Invoke(LoadAsync);
-    }
 
     private void OnAccountInvalidated(string accountId) {
         if (accountId == active.ActiveAccountId) {
@@ -275,7 +277,8 @@ public sealed class DropsViewState(
     private async Task<MissionMennoData?> LoadMennoAsync((int Ship, int Duration, int Level, int Target) cfg) {
         try {
             await menno.EnsureLoadedAsync();
-        } catch (Exception) {
+        } catch (Exception ex) {
+            logger.LogDebug(ex, "menno load failed for ship {Ship}", cfg.Ship);
             return null;
         }
 

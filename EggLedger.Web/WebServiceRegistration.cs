@@ -9,12 +9,15 @@ using EggLedger.Web.Platform;
 using EggLedger.Web.Services;
 using EggLedger.Web.State;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 
 namespace EggLedger.Web;
 
 public static class WebServiceRegistration {
-    public static IServiceCollection AddEggLedgerWeb(this IServiceCollection services, Uri httpBaseAddress) {
+    public static IServiceCollection AddEggLedgerWeb(
+        this IServiceCollection services, Uri httpBaseAddress, string? egiBaseUrl = null, string? egiApiKey = null) {
+        services.TryAddSingleton(TimeProvider.System);
         services.AddScoped(_ => new HttpClient { BaseAddress = httpBaseAddress });
 
         services.AddScoped<IndexedDbSettings>();
@@ -25,11 +28,13 @@ public static class WebServiceRegistration {
             sp.GetRequiredService<IIndexedDb>(),
             sp.GetRequiredService<IApiPayloadDecoder>(),
             accounts: sp.GetRequiredService<IndexedDbAccountStore>(),
-            logger: sp.GetService<ILogger<IndexedDbMissionStore>>()));
+            logger: sp.GetService<ILogger<IndexedDbMissionStore>>(),
+            time: sp.GetRequiredService<TimeProvider>()));
         services.AddScoped<IMissionStore>(sp => sp.GetRequiredService<IndexedDbMissionStore>());
         services.AddScoped<IReportSourceCache>(sp => {
-            var cache = new ReportSourceCache(IndexedDbReportSource.Loader(
-                sp.GetRequiredService<IIndexedDb>(), sp.GetRequiredService<IMissionStore>()));
+            var cache = new ReportSourceCache(
+                IndexedDbReportSource.Loader(sp.GetRequiredService<IIndexedDb>(), sp.GetRequiredService<IMissionStore>()),
+                sp.GetRequiredService<TimeProvider>());
             cache.AttachHub(sp.GetRequiredService<LedgerDataHub>());
             return cache;
         });
@@ -56,19 +61,19 @@ public static class WebServiceRegistration {
 
         services.AddSingleton<IWeightData>(_ => EiafxWeightData.Instance);
 
-        services.AddSingleton(_ => new MennoService(new HttpClient()));
+        services.AddSingleton(sp => new MennoService(new HttpClient(), logger: sp.GetService<ILogger<MennoService>>()));
 
         services.AddSingleton(sp => new GameEventsService(
             new HttpClient { Timeout = GameEventsService.RequestTimeout },
-            Environment.GetEnvironmentVariable(GameEventsService.BaseUrlVariable),
-            Environment.GetEnvironmentVariable(GameEventsService.ApiKeyVariable),
+            egiBaseUrl,
+            egiApiKey,
             store: null,
             logger: sp.GetService<ILogger<GameEventsService>>()));
 
         services.AddSingleton(sp => new EventIconCache(
             new HttpClient { Timeout = GameEventsService.RequestTimeout },
-            Environment.GetEnvironmentVariable(GameEventsService.BaseUrlVariable),
-            Environment.GetEnvironmentVariable(GameEventsService.ApiKeyVariable),
+            egiBaseUrl,
+            egiApiKey,
             logger: sp.GetService<ILogger<EventIconCache>>()));
 
         services.AddScoped<EggIdentity.UI.OutsideClickInterop>();
@@ -89,7 +94,8 @@ public static class WebServiceRegistration {
         services.AddScoped(sp => {
             var hub = new LedgerDataHub(
                 sp.GetRequiredService<MissionQueryHandlers>(),
-                sp.GetRequiredService<IndexedDbMissionStore>());
+                sp.GetRequiredService<IndexedDbMissionStore>(),
+                sp.GetRequiredService<TimeProvider>());
             hub.AttachFetch(sp.GetRequiredService<FetchOrchestrator>());
             return hub;
         });

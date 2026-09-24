@@ -36,16 +36,10 @@ public sealed class AddAccountServiceTests {
     }
 
     private sealed class FirstContactHandler(string body, bool fail = false) : HttpMessageHandler {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) {
-            if (fail) {
-                return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.InternalServerError) {
-                    Content = new StringContent(""),
-                });
-            }
-            return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK) {
-                Content = new StringContent(body),
-            });
-        }
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+            Task.FromResult(fail
+                ? new HttpResponseMessage(System.Net.HttpStatusCode.InternalServerError) { Content = new StringContent("") }
+                : new HttpResponseMessage(System.Net.HttpStatusCode.OK) { Content = new StringContent(body) });
     }
 
     [Fact]

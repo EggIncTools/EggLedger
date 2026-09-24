@@ -1,24 +1,24 @@
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EggLedger.Desktop.Update;
 
-public sealed class GithubReleaseClient(HttpClient httpClient) {
+public sealed class GithubReleaseClient(HttpClient httpClient, ILogger<GithubReleaseClient>? logger = null) {
     public const string GithubRepo = "DavidArthurCole/EggLedger";
 
     private const int DownloadChunkBytes = 64 * 1024;
 
     private readonly HttpClient _httpClient = httpClient;
+    private readonly ILogger<GithubReleaseClient> _logger = logger ?? NullLogger<GithubReleaseClient>.Instance;
 
     public readonly record struct Release(string Tag, string Body);
 
     public async Task<Release?> GetLatestTagAsync(CancellationToken cancel = default) {
         var url = $"https://api.github.com/repos/{GithubRepo}/releases/latest";
         var json = await GetStringAsync(url, cancel).ConfigureAwait(false);
-        if (json is null) {
-            return null;
-        }
-        return TryParseJson(json, root => {
+        return json is null ? null : TryParseJson(json, root => {
             var tag = root.TryGetProperty("tag_name", out var t) ? t.GetString() : null;
             if (string.IsNullOrEmpty(tag)) {
                 return (Release?)null;
@@ -31,11 +31,7 @@ public sealed class GithubReleaseClient(HttpClient httpClient) {
     public async Task<Release?> GetLatestTagIncludingPreReleasesAsync(CancellationToken cancel = default) {
         var url = $"https://api.github.com/repos/{GithubRepo}/releases?per_page=10";
         var json = await GetStringAsync(url, cancel).ConfigureAwait(false);
-        if (json is null) {
-            return null;
-        }
-
-        return TryParseJson(json, root => {
+        return json is null ? null : TryParseJson(json, root => {
             if (root.ValueKind != JsonValueKind.Array) {
                 return null;
             }
@@ -77,11 +73,7 @@ public sealed class GithubReleaseClient(HttpClient httpClient) {
     public async Task<string?> GetUpdateAssetUrlAsync(string tag, CancellationToken cancel = default) {
         var url = $"https://api.github.com/repos/{GithubRepo}/releases/tags/{tag}";
         var json = await GetStringAsync(url, cancel).ConfigureAwait(false);
-        if (json is null) {
-            return null;
-        }
-
-        return TryParseJson(json, root => {
+        return json is null ? null : TryParseJson(json, root => {
             if (!root.TryGetProperty("assets", out var assets) || assets.ValueKind != JsonValueKind.Array) {
                 return null;
             }
@@ -168,11 +160,12 @@ public sealed class GithubReleaseClient(HttpClient httpClient) {
         }
     }
 
-    private static T? TryParseJson<T>(string json, Func<JsonElement, T?> extract) {
+    private T? TryParseJson<T>(string json, Func<JsonElement, T?> extract) {
         try {
             using var doc = JsonDocument.Parse(json);
             return extract(doc.RootElement);
-        } catch (JsonException) {
+        } catch (JsonException ex) {
+            _logger.LogDebug(ex, "update: github response is not valid JSON");
             return default;
         }
     }
@@ -185,11 +178,9 @@ public sealed class GithubReleaseClient(HttpClient httpClient) {
                 req.Headers.UserAgent.ParseAdd("EggLedger");
             }
             using var resp = await _httpClient.SendAsync(req, cancel).ConfigureAwait(false);
-            if (!resp.IsSuccessStatusCode) {
-                return null;
-            }
-            return await resp.Content.ReadAsStringAsync(cancel).ConfigureAwait(false);
+            return resp.IsSuccessStatusCode ? await resp.Content.ReadAsStringAsync(cancel).ConfigureAwait(false) : null;
         } catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException) {
+            _logger.LogDebug(ex, "update: github request failed for {Url}", url);
             return null;
         }
     }

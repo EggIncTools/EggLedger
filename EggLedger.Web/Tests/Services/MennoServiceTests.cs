@@ -22,10 +22,9 @@ public sealed class MennoServiceTests {
     }
 
 
-    private sealed class GzipHandler : HttpMessageHandler {
-        private readonly byte[] _gzipped;
+    private sealed class GzipHandler(byte[] rawBody) : HttpMessageHandler {
+        private readonly byte[] _gzipped = Gzip(rawBody);
         public int Hits;
-        public GzipHandler(byte[] rawBody) => _gzipped = Gzip(rawBody);
 
         protected override Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request, CancellationToken cancellationToken) {
@@ -103,7 +102,7 @@ public sealed class MennoServiceTests {
     public void Decode_NotAnArray_ThrowsLoudly() {
 
         Assert.Throws<MennoSchemaException>(
-            () => MennoDecode.Decode(Encoding.UTF8.GetBytes("{\"configurationItems\":[]}")));
+            () => MennoDecode.Decode(Encoding.UTF8.GetBytes("""{"configurationItems":[]}""")));
     }
 
     [Fact]
@@ -135,7 +134,7 @@ public sealed class MennoServiceTests {
 
         var def = ShipDurationDef();
         var result = MennoService.ExecuteComparison(
-            def, items, new[] { "9", "10" }, new[] { "0", "1" });
+            def, items, ["9", "10"], ["0", "1"]);
 
         Assert.NotNull(result);
         Assert.True(result!.Is2D);
@@ -164,7 +163,7 @@ public sealed class MennoServiceTests {
 
         var def = ShipDurationDef(normalizeBy: "row_pct");
         var result = MennoService.ExecuteComparison(
-            def, items, new[] { "9", "10" }, new[] { "0", "1" });
+            def, items, ["9", "10"], ["0", "1"]);
 
         Assert.NotNull(result);
 
@@ -185,7 +184,7 @@ public sealed class MennoServiceTests {
         var items = await service.RefreshAsync();
 
         var result = MennoService.ExecuteComparison(
-            ShipDurationDef(), items, new[] { "9", "10" }, new[] { "0", "1" });
+            ShipDurationDef(), items, ["9", "10"], ["0", "1"]);
 
         Assert.NotNull(result);
 
@@ -211,7 +210,7 @@ public sealed class MennoServiceTests {
             SecondaryGroupBy = secondary,
         };
         var result = MennoService.ExecuteComparison(
-            def, items, new[] { "9", "10" }, new[] { "0", "1" });
+            def, items, ["9", "10"], ["0", "1"]);
 
         Assert.Null(result);
     }
@@ -220,7 +219,7 @@ public sealed class MennoServiceTests {
     public void ExecuteComparison_EmptyInputs_ReturnsNull() {
         var def = ShipDurationDef();
         Assert.Null(MennoService.ExecuteComparison(
-            def, Array.Empty<ConfigurationItem>(), new[] { "9" }, new[] { "0" }));
+            def, [], ["9"], ["0"]));
     }
 
     [Fact]
@@ -229,7 +228,7 @@ public sealed class MennoServiceTests {
         var items = await service.RefreshAsync();
 
         var baseline = MennoService.ExecuteComparison(
-            ShipDurationDef(), items, new[] { "9" }, new[] { "0" });
+            ShipDurationDef(), items, ["9"], ["0"]);
         Assert.NotEqual(0.0, baseline!.MatrixValues[0]);
 
         var def = ShipDurationDef();
@@ -238,7 +237,7 @@ public sealed class MennoServiceTests {
         };
 
         var result = MennoService.ExecuteComparison(
-            def, items, new[] { "9" }, new[] { "0" });
+            def, items, ["9"], ["0"]);
 
         Assert.NotNull(result);
         Assert.Equal(0.0, result!.MatrixValues[0], 9);
@@ -261,7 +260,7 @@ public sealed class MennoServiceTests {
         };
 
         var result = MennoService.ExecuteComparison(
-            def, items, new[] { "1" }, new[] { "0" });
+            def, items, ["1"], ["0"]);
 
         Assert.NotNull(result);
         Assert.Equal(0.0, result!.MatrixValues[0], 9);

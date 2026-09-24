@@ -1,5 +1,6 @@
 @using System.Globalization
 @inject GameEventsService GameEvents
+@inject IUserTimeZoneProvider TzProvider
 
 <div class="admin-panel">
     <div class="admin-panel-head">
@@ -12,7 +13,7 @@
         <p class="text-xs text-gray-500 italic">EGI_BASE_URL not set - events disabled.</p>
     } else {
         <div class="text-xs text-gray-500 mb-2">
-            Next refresh eligible: @GameEvents.NextAllowedRefresh.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)
+            Next refresh eligible: @FormatLocal(GameEvents.NextAllowedRefresh)
         </div>
         @if (GameEvents.Count == 0) {
             <p class="text-xs text-gray-500 italic">No events loaded.</p>
@@ -35,8 +36,8 @@
                             <td class="font-mono text-gray-400">@e.Id</td>
                             <td>@e.Type @(e.Ultra ? "(ultra)" : "")</td>
                             <td class="text-right">@e.Multiplier.ToString("0.##", CultureInfo.InvariantCulture)x</td>
-                            <td class="text-gray-500">@e.StartsAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)</td>
-                            <td class="text-gray-500">@e.EndsAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)</td>
+                            <td class="text-gray-500">@FormatLocal(e.StartsAt)</td>
+                            <td class="text-gray-500">@FormatLocal(e.EndsAt)</td>
                             <td class="text-gray-600">@(e.Source ?? "none")</td>
                         </tr>
                     }
@@ -51,6 +52,9 @@
     private bool _refreshing;
 
     private IReadOnlyList<GameEvent> Snapshot => GameEvents.Snapshot();
+
+    private string FormatLocal(DateTimeOffset t) =>
+        TimeZoneInfo.ConvertTime(t, TzProvider.TimeZone).ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
 
     protected override void OnInitialized() {
         GameEvents.EnsureLoadedAsync().ContinueWith(_ => InvokeAsync(StateHasChanged), TaskScheduler.Default);

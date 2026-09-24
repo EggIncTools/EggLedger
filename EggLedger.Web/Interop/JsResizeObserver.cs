@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 
 namespace EggLedger.Web.Interop;
 
-public sealed class JsResizeObserver(IJSRuntime js) : IAsyncDisposable {
+public sealed class JsResizeObserver(IJSRuntime js, ILogger<JsResizeObserver>? logger = null) : IAsyncDisposable {
     private const string ModulePath = "./_content/EggLedger.Web/js/resizeObserver.js";
     private IJSObjectReference? _module;
     private IJSObjectReference? _handle;
@@ -13,6 +14,7 @@ public sealed class JsResizeObserver(IJSRuntime js) : IAsyncDisposable {
             _module = await js.InvokeAsync<IJSObjectReference>("import", ModulePath);
             _handle = await _module.InvokeAsync<IJSObjectReference>("observe", element, dotNetRef, methodName);
         } catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or TaskCanceledException) {
+            logger?.LogDebug(ex, "resize observe failed for {Method}", methodName);
         }
     }
 
@@ -27,6 +29,7 @@ public sealed class JsResizeObserver(IJSRuntime js) : IAsyncDisposable {
                 await _module.DisposeAsync();
             }
         } catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or TaskCanceledException) {
+            logger?.LogDebug(ex, "resize unobserve failed for {Module}", ModulePath);
         }
     }
 }

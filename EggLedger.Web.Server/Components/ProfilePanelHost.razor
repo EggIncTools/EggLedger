@@ -6,6 +6,7 @@
 @inject SessionCookieOptions EggIdentitySession
 @inject AppConfig Cfg
 @inject IdentityApiClient Identity
+@inject ILogger<ProfilePanelHost> Logger
 
 @if (!string.IsNullOrEmpty(_sessionToken)) {
     <div class="px-2 py-2 text-sm text-gray-400 bg-darker rounded-md tabular-nums overflow-auto">
@@ -13,9 +14,9 @@
             <AvatarTemplate Context="ctx">
                 <div class="mt-0_5rem flex items-center gap-3">
                     @if (!string.IsNullOrEmpty(ctx.AvatarUrl)) {
-                        <img class="w-14 h-14 rounded-full border border-gray-600" src="@ctx.AvatarUrl" alt="Profile picture"/>
+                        <img class="w-14 h-14 rounded-full border border-gray-600 bg-darkest object-cover shrink-0" src="@Abs(ctx.AvatarUrl!)" alt="Profile picture"/>
                     } else {
-                        <div class="w-14 h-14 rounded-full border border-gray-600 bg-darkest"></div>
+                        <div class="w-14 h-14 rounded-full border border-gray-600 bg-darkest shrink-0"></div>
                     }
                     <div class="flex flex-col gap-1">
                         <label class="ledger-btn apply-filter-button !mt-0 !mr-0 !ml-0 self-start cursor-pointer">
@@ -50,7 +51,7 @@
                                         @if (!string.IsNullOrEmpty(id.Avatar)) {
                                             <button type="button" class="w-5 h-5 rounded-full shrink-0 overflow-hidden border border-transparent hover:border-gray-500"
                                                     data-tt="Use this picture" aria-label="Use this picture" @onclick="item.OnSelectAvatar">
-                                                <img class="w-full h-full object-cover" src="@id.Avatar" alt=""/>
+                                                <img class="w-full h-full object-cover" src="@Abs(id.Avatar!)" alt=""/>
                                             </button>
                                         }
                                         <span class="truncate text-gray-400">@(id.Username ?? id.Subject)</span>
@@ -138,6 +139,7 @@
                 _prefsError = "Could not save preferences.";
             }
         } catch (Exception ex) {
+            Logger.LogDebug(ex, "profile: failed to save preferences");
             _prefsError = ex.Message;
         } finally {
             _prefsSaving = false;

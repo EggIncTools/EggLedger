@@ -3,11 +3,12 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using EggIdentity.Resilience;
 using EggLedger.Web.Platform;
+using Microsoft.Extensions.Logging;
 
 namespace EggLedger.Web.Services;
 
 public sealed class CloudSyncService(
-    HttpClient http, INavigation nav, IBlobCipher cipher, IPlatformCapabilities platform, CircuitBreaker breaker) {
+    HttpClient http, INavigation nav, IBlobCipher cipher, IPlatformCapabilities platform, CircuitBreaker breaker, ILogger<CloudSyncService> logger) {
 
     public const string ApiPrefix = "api/v1";
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
@@ -51,9 +52,8 @@ public sealed class CloudSyncService(
         try {
             using var resp = await http.GetAsync($"{ApiPrefix}/verify", cancellationToken).ConfigureAwait(false);
             return resp.StatusCode == HttpStatusCode.OK;
-        } catch (HttpRequestException) {
-            return false;
-        } catch (TaskCanceledException) {
+        } catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException) {
+            logger.LogDebug(ex, "cloud sync reachability check failed for {Endpoint}", $"{ApiPrefix}/verify");
             return false;
         }
     }
@@ -61,10 +61,9 @@ public sealed class CloudSyncService(
     public async Task<string> BeginAuthAsync(CancellationToken cancellationToken = default) {
         var init = await ResilientAsync("cloud-sync-auth-begin", async ct => {
             using var resp = await http.GetAsync($"{ApiPrefix}/auth/pair/begin", ct).ConfigureAwait(false);
-            if (!resp.IsSuccessStatusCode) {
-                throw new CloudSyncException($"auth init: server returned {(int)resp.StatusCode}");
-            }
-            return await resp.Content.ReadFromJsonAsync<AuthInitResponse>(Json, ct).ConfigureAwait(false);
+            return resp.IsSuccessStatusCode
+                ? await resp.Content.ReadFromJsonAsync<AuthInitResponse>(Json, ct).ConfigureAwait(false)
+                : throw new CloudSyncException($"auth init: server returned {(int)resp.StatusCode}");
         }, cancellationToken).ConfigureAwait(false);
 
         if (init is null || string.IsNullOrEmpty(init.Url) || string.IsNullOrEmpty(init.State)) {
@@ -159,12 +158,10 @@ public sealed class CloudSyncService(
             if (resp.StatusCode == HttpStatusCode.NotFound) {
                 throw new CloudSyncException($"getBlob {name}: not found (nothing synced yet?)");
             }
-            if (!resp.IsSuccessStatusCode) {
-                throw new CloudSyncException($"getBlob {name}: server error {(int)resp.StatusCode}");
-            }
-
-            return await resp.Content.ReadFromJsonAsync<GetBlobResponse>(Json, ct).ConfigureAwait(false)
-                ?? throw new CloudSyncException($"getBlob {name}: malformed response");
+            return resp.IsSuccessStatusCode
+                ? await resp.Content.ReadFromJsonAsync<GetBlobResponse>(Json, ct).ConfigureAwait(false)
+                    ?? throw new CloudSyncException($"getBlob {name}: malformed response")
+                : throw new CloudSyncException($"getBlob {name}: server error {(int)resp.StatusCode}");
         }, cancellationToken).ConfigureAwait(false);
 
         byte[] plaintext;
@@ -183,11 +180,9 @@ public sealed class CloudSyncService(
             using var req = new HttpRequestMessage(HttpMethod.Get, $"{ApiPrefix}/blobs");
 
             using var resp = await SendAuthedAsync(session, req, "listBlobs: session expired - please reconnect", ct).ConfigureAwait(false);
-            if (!resp.IsSuccessStatusCode) {
-                throw new CloudSyncException($"listBlobs: server error {(int)resp.StatusCode}");
-            }
-            return await resp.Content.ReadFromJsonAsync<List<BlobListEntry>>(Json, ct).ConfigureAwait(false)
-                ?? [];
+            return resp.IsSuccessStatusCode
+                ? await resp.Content.ReadFromJsonAsync<List<BlobListEntry>>(Json, ct).ConfigureAwait(false) ?? []
+                : throw new CloudSyncException($"listBlobs: server error {(int)resp.StatusCode}");
         }, cancellationToken).ConfigureAwait(false);
     }
 

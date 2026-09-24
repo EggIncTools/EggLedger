@@ -1,25 +1,21 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using EggLedger.Domain.MissionQuery;
+using Microsoft.Extensions.Logging;
 
 namespace EggLedger.Web.Data;
 
-public sealed class IndexedDbAccountStore {
+public sealed class IndexedDbAccountStore(IndexedDbSettings settings, ILogger<IndexedDbAccountStore>? logger = null) {
     internal const string KnownAccountsKey = "known_accounts";
     internal const string ActiveAccountKey = "active_account_id";
-    private readonly IndexedDbSettings _settings;
-
-    public IndexedDbAccountStore(IndexedDbSettings settings) {
-        _settings = settings;
-    }
 
     public async Task<List<AccountInfo>> GetKnownAccountsAsync() {
-        var all = await _settings.GetAllSettingsAsync();
+        var all = await settings.GetAllSettingsAsync();
         return Deserialize(all);
     }
 
     public async Task AddKnownAccountAsync(AccountInfo account) {
-        var all = await _settings.GetAllSettingsAsync();
+        var all = await settings.GetAllSettingsAsync();
         var list = Deserialize(all);
         int i = list.FindIndex(a => a.Id == account.Id);
         if (i >= 0) {
@@ -27,31 +23,28 @@ public sealed class IndexedDbAccountStore {
         } else {
             list.Add(account);
         }
-        await _settings.SetSettingAsync(KnownAccountsKey, Serialize(list));
+        await settings.SetSettingAsync(KnownAccountsKey, Serialize(list));
     }
 
     public async Task RemoveKnownAccountAsync(string id) {
-        var all = await _settings.GetAllSettingsAsync();
+        var all = await settings.GetAllSettingsAsync();
         var list = Deserialize(all);
         int removed = list.RemoveAll(a => a.Id == id);
         if (removed > 0) {
-            await _settings.SetSettingAsync(KnownAccountsKey, Serialize(list));
+            await settings.SetSettingAsync(KnownAccountsKey, Serialize(list));
         }
     }
 
     public async Task<string?> GetActiveAccountIdAsync() {
-        var all = await _settings.GetAllSettingsAsync();
-        if (all.TryGetValue(ActiveAccountKey, out var id) && !string.IsNullOrEmpty(id)) {
-            return id;
-        }
-        return null;
+        var all = await settings.GetAllSettingsAsync();
+        return all.TryGetValue(ActiveAccountKey, out var id) && !string.IsNullOrEmpty(id) ? id : null;
     }
 
     public async Task SetActiveAccountIdAsync(string id) =>
-        await _settings.SetSettingAsync(ActiveAccountKey, id ?? "");
+        await settings.SetSettingAsync(ActiveAccountKey, id ?? "");
 
-    private static List<AccountInfo> Deserialize(Dictionary<string, string> settings) {
-        if (!settings.TryGetValue(KnownAccountsKey, out var raw) || string.IsNullOrEmpty(raw)) {
+    private List<AccountInfo> Deserialize(Dictionary<string, string> all) {
+        if (!all.TryGetValue(KnownAccountsKey, out var raw) || string.IsNullOrEmpty(raw)) {
             return [];
         }
         try {
@@ -59,8 +52,8 @@ public sealed class IndexedDbAccountStore {
             return rows is null
                 ? []
                 : rows.ConvertAll(AccountInfoRow.ToAccount);
-        } catch (JsonException) {
-
+        } catch (JsonException ex) {
+            logger?.LogDebug(ex, "known accounts JSON unreadable, treating as empty");
             return [];
         }
     }

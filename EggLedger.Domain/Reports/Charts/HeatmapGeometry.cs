@@ -41,12 +41,8 @@ public static class HeatmapGeometry {
         return Math.Max(0.12, globalMax > 0 ? value / globalMax : 0);
     }
 
-    public static bool IsBelowThreshold(int? missionCount, int minSampleSize) {
-        if (minSampleSize <= 0 || missionCount is null) {
-            return false;
-        }
-        return missionCount.Value < minSampleSize;
-    }
+    public static bool IsBelowThreshold(int? missionCount, int minSampleSize) =>
+        minSampleSize > 0 && missionCount is { } count && count < minSampleSize;
 
     public static HeatmapCellStyle CellStyle(
         double value,
@@ -82,10 +78,7 @@ public static class HeatmapGeometry {
             return "-";
         }
         if (normalizeBy == "ratio") {
-            if (value == 0) {
-                return "-";
-            }
-            return "x" + value.ToString("0.00", CultureInfo.InvariantCulture);
+            return value == 0 ? "-" : "x" + value.ToString("0.00", CultureInfo.InvariantCulture);
         }
         if (value == 0) {
             return "0";

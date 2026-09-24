@@ -24,19 +24,18 @@ public static class MissionExtensions {
         if (seconds < 3600) {
             return $"{(int)(seconds / 60)}m";
         }
-        if (seconds < 86400) {
-            return string.Format(
+        return seconds < 86400
+            ? string.Format(
                 CultureInfo.InvariantCulture,
                 "{0}h{1}m",
                 (int)(seconds / 3600),
+                (int)(seconds / 60) % 60)
+            : string.Format(
+                CultureInfo.InvariantCulture,
+                "{0}d{1}h{2}m",
+                (int)(seconds / 86400),
+                (int)(seconds / 3600) % 24,
                 (int)(seconds / 60) % 60);
-        }
-        return string.Format(
-            CultureInfo.InvariantCulture,
-            "{0}d{1}h{2}m",
-            (int)(seconds / 86400),
-            (int)(seconds / 3600) % 24,
-            (int)(seconds / 60) % 60);
     }
 
     public static string Display(this MissionInfo.DurationType d) {
@@ -59,13 +58,13 @@ public static class MissionExtensions {
 
     public static List<MissionInfo> GetCompletedMissions(this EggIncFirstContactResponse fc) {
         var afxdb = fc.Backup?.ArtifactsDb;
-        var allMissions = new List<MissionInfo>();
-        if (afxdb != null) {
+        List<MissionInfo> allMissions = [];
+        if (afxdb is not null) {
             allMissions.AddRange(afxdb.MissionArchives);
             allMissions.AddRange(afxdb.MissionInfos);
         }
 
-        var completed = new List<MissionInfo>();
+        List<MissionInfo> completed = [];
 
         var seen = new HashSet<string>(StringComparer.Ordinal);
         foreach (var mission in allMissions) {
@@ -83,7 +82,7 @@ public static class MissionExtensions {
 
     public static List<MissionInfo> GetInProgressMissions(this EggIncFirstContactResponse fc) {
         var afxdb = fc.Backup?.ArtifactsDb;
-        List<MissionInfo> inProgress = afxdb == null
+        List<MissionInfo> inProgress = afxdb is null
             ? []
             : [.. afxdb.MissionInfos.Where(m => m.status is MissionInfo.Status.Exploring
                 or MissionInfo.Status.Fueling

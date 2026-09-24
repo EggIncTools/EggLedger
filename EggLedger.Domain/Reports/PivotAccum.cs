@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+
 namespace EggLedger.Domain.Reports;
 
 internal sealed class PivotAccum {
@@ -22,12 +24,9 @@ internal sealed class PivotAccum {
     public void Add(string rowDisplay, string rowRaw, string colDisplay, string colRaw, double val) {
         _rows.Add(rowDisplay, rowRaw);
         _cols.Add(colDisplay, colRaw);
-        if (!_cells.TryGetValue(rowDisplay, out var rowCells)) {
-            rowCells = [with(StringComparer.Ordinal)];
-            _cells[rowDisplay] = rowCells;
-        }
-        rowCells.TryGetValue(colDisplay, out var cur);
-        rowCells[colDisplay] = cur + val;
+        ref var rowCells = ref CollectionsMarshal.GetValueRefOrAddDefault(_cells, rowDisplay, out _);
+        rowCells ??= [with(StringComparer.Ordinal)];
+        CollectionsMarshal.GetValueRefOrAddDefault(rowCells, colDisplay, out _) += val;
     }
 
     public readonly record struct Finalized(
@@ -84,10 +83,7 @@ internal sealed class PivotAccum {
                 if (Labels.LabelSortLess(groupBy, a.e.RawVal, b.e.RawVal)) {
                     return -1;
                 }
-                if (Labels.LabelSortLess(groupBy, b.e.RawVal, a.e.RawVal)) {
-                    return 1;
-                }
-                return a.i.CompareTo(b.i);
+                return Labels.LabelSortLess(groupBy, b.e.RawVal, a.e.RawVal) ? 1 : a.i.CompareTo(b.i);
             }))
             .Select(x => x.e)
             .ToList();

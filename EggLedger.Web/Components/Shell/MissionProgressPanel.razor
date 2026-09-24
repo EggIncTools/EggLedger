@@ -1,0 +1,115 @@
+@inject TimeProvider Time
+@inject ScreenshotSafetyState ScreenshotSafety
+@implements IDisposable
+
+@if (Processes.Count > 0) {
+    <div class="flex flex-col gap-1 shrink-0 @(Processes.Count >= 3 ? "overflow-y-auto max-h-48" : "")">
+        @foreach (var proc in Processes) {
+            var expanded = _expanded.Contains(proc.Id);
+            <div @key="proc.Id" class="bg-darkest rounded-md overflow-hidden text-xs font-mono">
+                <button type="button" class="w-full flex items-center gap-2 px-2 py-1 text-gray-400 hover:text-gray-300 text-left"
+                        aria-expanded="@(expanded ? "true" : "false")" @onclick="() => Toggle(proc.Id)">
+                    <span class="w-2 h-2 rounded-full shrink-0 @StatusDotClass(proc.Status)"></span>
+                    <span class="flex-1 min-w-0 truncate">@proc.Label</span>
+                    <span class="flex gap-1 shrink-0">
+                        @foreach (var seg in proc.Segments) {
+                            <span title="@seg.Name" class="w-2 h-2 rounded-full @SegmentDotClass(seg.Status)"></span>
+                        }
+                    </span>
+                    <span class="text-gray-600 shrink-0 ml-1">@RelativeTime(proc.StartedAt)</span>
+                    <span class="text-gray-600 shrink-0 ml-1">@(expanded ? "▼" : "▶")</span>
+                </button>
+                @if (expanded) {
+                    <div class="px-2 pb-1 max-h-32 overflow-y-auto border-t border-dark">
+                        @if (proc.Logs.Count == 0) {
+                            <div class="text-gray-600 italic py-0.5">No logs yet.</div>
+                        } else {
+                            @foreach (var entry in proc.Logs) {
+                                <div class="whitespace-pre">
+                                    <LogLine Text="@entry.Text" IsError="entry.IsError" Masked="ScreenshotSafety.Enabled"/>
+                                </div>
+                            }
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] [EditorRequired] public IReadOnlyList<MissionProcess> Processes { get; set; } = [];
+
+    private static readonly TimeSpan TickInterval = TimeSpan.FromSeconds(1);
+
+    private readonly HashSet<string> _expanded = [];
+    private readonly HashSet<string> _autoExpanded = [];
+    private PeriodicTimer? _ticker;
+    private bool _disposed;
+
+    protected override void OnParametersSet() {
+        var ids = Processes.Select(p => p.Id).ToHashSet();
+        _expanded.IntersectWith(ids);
+        _autoExpanded.IntersectWith(ids);
+
+        if (Processes.Count < 3) {
+            foreach (var proc in Processes) {
+                if (proc.Status == ProcessStatus.Running && _autoExpanded.Add(proc.Id)) {
+                    _expanded.Add(proc.Id);
+                }
+            }
+        }
+
+        if (Processes.Count == 0) {
+            StopTicker();
+        } else if (_ticker is null) {
+            _ticker = new PeriodicTimer(TickInterval);
+            _ = TickAsync(_ticker);
+        }
+    }
+
+    private async Task TickAsync(PeriodicTimer ticker) {
+        while (await ticker.WaitForNextTickAsync()) {
+            if (_disposed) {
+                return;
+            }
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void StopTicker() {
+        _ticker?.Dispose();
+        _ticker = null;
+    }
+
+    private void Toggle(string id) {
+        if (!_expanded.Remove(id)) {
+            _expanded.Add(id);
+        }
+    }
+
+    private string RelativeTime(DateTimeOffset startedAt) {
+        var seconds = Math.Max(0, (long)(Time.GetUtcNow() - startedAt).TotalSeconds);
+        return seconds < 60 ? $"{seconds}s ago"
+            : seconds < 3600 ? $"{seconds / 60}m ago"
+            : $"{seconds / 3600}h ago";
+    }
+
+    private static string StatusDotClass(ProcessStatus status) => status switch {
+        ProcessStatus.Running => "bg-yellow-400 animate-pulse",
+        ProcessStatus.Done => "bg-green-500",
+        _ => "bg-red-500"
+    };
+
+    private static string SegmentDotClass(SegmentStatus? status) => status switch {
+        SegmentStatus.Active => "bg-blue-400 animate-pulse",
+        SegmentStatus.Done => "bg-green-500",
+        SegmentStatus.Failed => "bg-red-500",
+        _ => "bg-gray-600"
+    };
+
+    public void Dispose() {
+        _disposed = true;
+        StopTicker();
+    }
+}

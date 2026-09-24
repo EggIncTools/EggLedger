@@ -6,7 +6,7 @@ namespace EggLedger.Domain.Tests.Reports;
 public class ReportDimensionsTests {
     [Fact]
     public void Mission_HasExpectedValuesAndLabels() {
-        var expected = new (string, string)[] {
+        var expected = new (string Value, string Label)[] {
             ("ship_type", "Ship Type"),
             ("duration_type", "Duration Type"),
             ("level", "Level"),
@@ -15,15 +15,15 @@ public class ReportDimensionsTests {
         };
         Assert.Equal(expected.Length, ReportDimensions.Mission.Count);
         for (int i = 0; i < expected.Length; i++) {
-            Assert.Equal(expected[i].Item1, ReportDimensions.Mission[i].Value);
-            Assert.Equal(expected[i].Item2, ReportDimensions.Mission[i].Label);
+            Assert.Equal(expected[i].Value, ReportDimensions.Mission[i].Value);
+            Assert.Equal(expected[i].Label, ReportDimensions.Mission[i].Label);
             Assert.Equal(DimensionScope.Mission, ReportDimensions.Mission[i].Scope);
         }
     }
 
     [Fact]
     public void Artifact_HasExpectedValuesAndLabels() {
-        var expected = new (string, string)[] {
+        var expected = new (string Value, string Label)[] {
             ("artifact_name", "Artifact Name"),
             ("rarity", "Rarity"),
             ("tier", "Tier"),
@@ -31,8 +31,8 @@ public class ReportDimensionsTests {
         };
         Assert.Equal(expected.Length, ReportDimensions.Artifact.Count);
         for (int i = 0; i < expected.Length; i++) {
-            Assert.Equal(expected[i].Item1, ReportDimensions.Artifact[i].Value);
-            Assert.Equal(expected[i].Item2, ReportDimensions.Artifact[i].Label);
+            Assert.Equal(expected[i].Value, ReportDimensions.Artifact[i].Value);
+            Assert.Equal(expected[i].Label, ReportDimensions.Artifact[i].Label);
             Assert.Equal(DimensionScope.Artifact, ReportDimensions.Artifact[i].Scope);
         }
     }

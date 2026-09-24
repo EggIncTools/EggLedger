@@ -20,16 +20,14 @@ public class MissionExtensionsTests {
     [InlineData(MissionInfo.DurationType.Short, "Short")]
     [InlineData(MissionInfo.DurationType.Long, "Standard")]
     [InlineData(MissionInfo.DurationType.Epic, "Extended")]
-    public void DurationTypeDisplay(MissionInfo.DurationType d, string want) {
+    public void DurationTypeDisplay(MissionInfo.DurationType d, string want) =>
         Assert.Equal(want, d.Display());
-    }
 
     [Theory]
     [InlineData(MissionInfo.MissionType.Standard, "Home")]
     [InlineData(MissionInfo.MissionType.Virtue, "Virtue")]
-    public void MissionTypeDisplay(MissionInfo.MissionType m, string want) {
+    public void MissionTypeDisplay(MissionInfo.MissionType m, string want) =>
         Assert.Equal(want, m.Display());
-    }
 
     [Fact]
     public void GetCompletedMissions_Deduplication() {
@@ -78,9 +76,8 @@ public class MissionExtensionsTests {
     }
 
     [Fact]
-    public void SpaceshipName_KnownShip() {
+    public void SpaceshipName_KnownShip() =>
         Assert.Equal("Chicken One", MissionInfo.Spaceship.ChickenOne.Name());
-    }
 
     [Fact]
     public void SpaceshipName_UnknownShip() {

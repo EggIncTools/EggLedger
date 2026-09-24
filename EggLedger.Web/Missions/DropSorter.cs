@@ -39,9 +39,8 @@ public static class DropSorter {
     public static List<DropLike> SortedGroupedSpecType(IEnumerable<DropLike> collection) =>
         SortGroupAlreadyCombed(GroupedSpecType(collection));
 
-    public static List<DropLike> InventoryVisualizerSort(IEnumerable<DropLike> collection) {
-        return StableSort(collection, IvComparer);
-    }
+    public static List<DropLike> InventoryVisualizerSort(IEnumerable<DropLike> collection) =>
+        StableSort(collection, IvComparer);
 
 
     internal static List<DropLike> StableSort(IEnumerable<DropLike> collection, Comparison<DropLike> cmp) {

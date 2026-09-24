@@ -21,18 +21,18 @@ public class ExecuteTests {
                     return rows;
                 }
             }
-            return Array.Empty<object?[]>();
+            return [];
         }
     }
 
     private sealed class NoWeights : IWeightData {
         public double CraftingWeight(long artifactId, long level) => 1;
-        public IReadOnlyList<int> FamilyAfxIds(string familyId) => Array.Empty<int>();
+        public IReadOnlyList<int> FamilyAfxIds(string familyId) => [];
     }
 
     private sealed class FixedWeights : IWeightData {
         public double CraftingWeight(long artifactId, long level) => 1;
-        public IReadOnlyList<int> FamilyAfxIds(string familyId) => new[] { 1, 2 };
+        public IReadOnlyList<int> FamilyAfxIds(string familyId) => [1, 2];
     }
 
     [Fact]

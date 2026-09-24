@@ -23,9 +23,8 @@ public class ChartGeometryTests {
     }
 
     [Fact]
-    public void Points_EmptyWhenFewerThanTwo() {
-        Assert.Empty(ChartGeometry.Points(new double[] { 5 }, new[] { "a" }, 300, 130));
-    }
+    public void Points_EmptyWhenFewerThanTwo() =>
+        Assert.Empty(ChartGeometry.Points([5], ["a"], 300, 130));
 
     [Fact]
     public void AreaPath_ClosesToBaseline() {

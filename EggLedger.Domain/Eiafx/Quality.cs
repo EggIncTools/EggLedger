@@ -8,7 +8,7 @@ public static class Quality {
         ArtifactSpec.Level Level,
         ArtifactSpec.Rarity Rarity);
 
-    private static readonly Lock _gate = new();
+    private static readonly Lock Gate = new();
     private static Dictionary<SpecKey, double>? _baseQuality;
 
     public static double BaseQualityFor(ArtifactSpec spec) {
@@ -18,27 +18,25 @@ public static class Quality {
     }
 
     internal static void ResetCache() {
-        lock (_gate) {
+        lock (Gate) {
             _baseQuality = null;
         }
     }
 
     private static Dictionary<SpecKey, double> Map() {
-        var existing = _baseQuality;
-        if (existing != null) {
+        if (_baseQuality is { } existing) {
             return existing;
         }
 
-        lock (_gate) {
-            if (_baseQuality != null) {
-                return _baseQuality;
+        lock (Gate) {
+            if (_baseQuality is { } locked) {
+                return locked;
             }
 
             var parameters = EiafxConfig.Config.artifact_parameters;
             var m = new Dictionary<SpecKey, double>(parameters.Count);
             foreach (var art in parameters) {
-                var s = art.Spec;
-                if (s == null) {
+                if (art.Spec is not { } s) {
                     continue;
                 }
                 m[new SpecKey(s.name, s.level, s.rarity)] = art.BaseQuality;
