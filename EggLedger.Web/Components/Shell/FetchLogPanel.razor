@@ -96,9 +96,9 @@
         <div class="flex flex-col-reverse max-h-60 overflow-auto px-2 py-1 text-xs font-mono text-gray-400 bg-darkest rounded-md">
             <div>
                 @foreach (var entry in Fetch.Log) {
-                    <div class="whitespace-pre">
-                        <span class="@(entry.IsError ? "text-red-700" : "text-green-700")">@FormatClock(entry.At)|</span>
-                        <LogLine Text="@entry.Text" IsError="entry.IsError" Masked="ScreenshotSafety.Enabled"/>
+                    <div class="flex gap-1">
+                        <span class="shrink-0 @(entry.IsError ? "text-red-700" : "text-green-700")">@FormatClock(entry.At)|</span>
+                        <span class="min-w-0 whitespace-pre-wrap break-all"><LogLine Text="@entry.Text" IsError="entry.IsError" Masked="ScreenshotSafety.Enabled"/></span>
                     </div>
                 }
             </div>

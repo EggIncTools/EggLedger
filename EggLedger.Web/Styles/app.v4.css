@@ -1436,6 +1436,7 @@ input[type=number] {
 .ledger-sidebar {
   display: grid;
   grid-template-rows: auto minmax(6rem, 1fr) minmax(6rem, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.5rem;
   width: clamp(19rem, 23vw, 30rem);
   flex-shrink: 0;

@@ -1,6 +1,8 @@
+@using System.Diagnostics
 @using System.Globalization
 @using EggIdentity.UI
 @inject MissionQueryHandlers Queries
+@inject LedgerDataHub Hub
 @inject MennoService Menno
 @inject IUserTimeZoneProvider TzProvider
 @inject ILogger<MissionOverlay> Logger
@@ -48,10 +50,16 @@
             <hr class="mt-1rem mb-1rem w-full"/>
             <img src="@ContentPaths.Asset("images/loading.gif")" alt="Loading..." class="xl-ico"/>
             <div class="mt-3 text-sm text-gray-400">
-                Loading mission
-                <span class="text-gray-200 font-semibold">@(_loadedCount + 1)</span>
-                of
-                <span class="text-gray-200 font-semibold">@_totalToLoad</span>
+                @if (_loadedCount == 0) {
+                    <span>Loading drops...</span>
+                } else if (_loadedCount >= _totalToLoad) {
+                    <span>Combining drops...</span>
+                } else {
+                    <span>Loading mission</span>
+                    <span class="text-gray-200 font-semibold">@_loadedCount</span>
+                    <span>of</span>
+                    <span class="text-gray-200 font-semibold">@_totalToLoad</span>
+                }
             </div>
             <div class="mt-2 w-full bg-darker rounded-full h-1.5 overflow-hidden">
                 <div class="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
@@ -164,7 +172,9 @@
     private List<DropLike> _combinedStoneFragments = [];
 
     private int LoadingPercent =>
-        _totalToLoad > 0 ? Math.Min(100, (int)((_loadedCount + 1) / (double)_totalToLoad * 100)) : 0;
+        _totalToLoad > 0 ? Math.Min(100, (int)(_loadedCount / (double)_totalToLoad * 100)) : 0;
+
+    private static readonly TimeSpan ProgressInterval = TimeSpan.FromMilliseconds(100);
 
     private string ContainerCssClass =>
         $"mission-overlay focus:outline-none {(_multi is null ? "w-[92vw] md:w-60vw" : _isLoading ? "min-w-[92vw] max-w-[92vw] md:min-w-40vw md:max-w-40vw" : "min-w-[92vw] max-w-[92vw] md:min-w-60vw md:max-w-85vw")} max-h-95vh bg-dark rounded-lg relative flex flex-col";
@@ -194,37 +204,62 @@
     }
 
     public async Task OpenMultiAsync(IReadOnlyList<string> missionIds) {
+        List<ViewMissionData> multi = [];
         _open = true;
         _data = null;
-        _multi = [];
+        _multi = multi;
         _isLoading = true;
         _loadedCount = 0;
         _totalToLoad = missionIds.Count;
         _shipHeaderExpanded = false;
         _displayMode = _totalToLoad > MaxSeparate ? "combined" : "separate";
         StateHasChanged();
+        await Task.Yield();
+
+        var byId = new Dictionary<string, DatabaseMission>(FilteredMissions.Count, StringComparer.Ordinal);
+        foreach (var m in FilteredMissions) {
+            byId.TryAdd(m.MissiondId, m);
+        }
+        var bulk = AccountId is null ? null : await Hub.GetDropsAsync(AccountId);
+        long lastRender = Stopwatch.GetTimestamp();
+
         foreach (var id in missionIds) {
-            var data = await BuildAsync(id);
-            if (data is not null) {
-                _multi.Add(data);
+            if (_multi != multi) {
+                return;
+            }
+            if (byId.TryGetValue(id, out var mission)) {
+                var drops = bulk is not null && bulk.TryGetValue(id, out var cached) && cached.Count > 0
+                    ? cached
+                    : AccountId is null ? null : await Queries.GetShipDropsAsync(AccountId, id);
+                var data = MissionDetailBuilder.BuildBase(mission, drops ?? [], FilteredMissions, false, TzProvider.TimeZone);
+                MissionDetailBuilder.ApplySortMethod(data, SortMethod);
+                multi.Add(data);
             }
 
             _loadedCount++;
-            StateHasChanged();
+            if (Stopwatch.GetElapsedTime(lastRender) >= ProgressInterval) {
+                StateHasChanged();
+                await Task.Yield();
+                lastRender = Stopwatch.GetTimestamp();
+            }
         }
+
+        if (_multi != multi) {
+            return;
+        }
+        StateHasChanged();
+        await Task.Yield();
 
         RebuildCombined();
         _isLoading = false;
         StateHasChanged();
 
-        foreach (var data in _multi) {
-            var mission = FindMission(data.MissionInfo.MissiondId);
-            if (mission is not null) {
-                await PopulateMennoAsync(mission, data);
-            }
+        if (multi.Count > MaxSeparate) {
+            return;
         }
-
-        RebuildCombined();
+        foreach (var data in multi) {
+            await PopulateMennoAsync(data.MissionInfo, data);
+        }
         StateHasChanged();
     }
 
