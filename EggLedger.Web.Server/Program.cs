@@ -190,8 +190,6 @@ if (hasDb) {
             GuildId = cfg.GuildId,
             RepoUrl = "https://github.com/EggIncTools/EggLedger",
             Build = build,
-            DeployAgentUrl = cfg.DeployAgentUrl,
-            DeployAgentSecret = cfg.DeployAgentSecret,
             SharedRoleId = cfg.SharedRoleId,
             DashboardChannelId = cfg.DashboardChannelId,
             PostgresConnectionString = cfg.DatabaseUrl,
@@ -212,9 +210,10 @@ if (hasDb) {
 
 builder.Services.AddSingleton(cfg);
 
-if (eggIdentitySession is not null && !string.IsNullOrEmpty(cfg.DeployAgentUrl)) {
-    builder.Services.AddEggIdentityDeploy(
-        new DeployOptions(cfg.DeployAgentUrl, "eggledger") { CallerName = "eggledger" }, eggIdentitySession);
+var deployGateOpen = !isSubProd
+    || LedgerClonePlan.Fence.Gates.Any(g => g.Name == "DEPLOY" && SubProdFence.IsOpen(g, Environment.GetEnvironmentVariable));
+if (deployGateOpen && !string.IsNullOrEmpty(cfg.IdentityApiUrl) && !string.IsNullOrEmpty(cfg.IdentityApiSecret)) {
+    builder.Services.AddEggIdentityDeploy(new DeployOptions(cfg.IdentityApiUrl, "eggledger", cfg.IdentityApiSecret));
     builder.Services.AddScoped<EggLedger.Web.Components.Admin.IDeployPanelSlot, EggLedger.Web.Server.Deploy.DeployPanelSlot>();
     builder.Services.AddEggIdentityDeployToasts();
     builder.Services.AddScoped<EggLedger.Web.Components.IDeployToastSlot, EggLedger.Web.Server.Deploy.DeployToastSlot>();
@@ -421,7 +420,10 @@ if (hasDb) {
 }
 
 if (!string.IsNullOrEmpty(cfg.AdminApiSecret)) {
-    var adminApi = app.MapAdminApi(new AdminApiOptions("eggledger", cfg.AdminApiSecret));
+    var adminApi = app.MapAdminApi(new AdminApiOptions("eggledger", cfg.AdminApiSecret) {
+        Version = build.Version,
+        Revision = string.IsNullOrEmpty(cfg.GitSha) ? null : cfg.GitSha,
+    });
     if (hasDb) {
         adminApi.MapEggIdentityVisitsAdminApi();
         adminApi.MapCloneAdminApi(LedgerClonePlan.Plan);

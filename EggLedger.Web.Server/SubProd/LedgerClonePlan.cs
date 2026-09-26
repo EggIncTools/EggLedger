@@ -39,7 +39,7 @@ public static class LedgerClonePlan {
 
     public static EggIdentity.DbClone.SubProdFence Fence { get; } = new([
         new FenceGate("DISCORD", ["DISCORD_BOT_TOKEN", "DISCORD_CLIENT_ID"]),
-        new FenceGate("DEPLOY", ["DEPLOY_AGENT_URL", "DEPLOY_AGENT_SECRET"]),
+        new FenceGate("DEPLOY", []),
         new FenceGate("AUTH", ["IDENTITY_API_SECRET", "IDENTITY_API_URL"]),
         new FenceGate("MENNO", ["MENNO_FUNCTION_KEY"]),
     ]);

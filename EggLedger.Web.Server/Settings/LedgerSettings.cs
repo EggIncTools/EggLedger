@@ -13,8 +13,6 @@ public static class LedgerSettings {
     public const string AspNetCoreUrls = "deploy.aspnetcore_urls";
     public const string PublicBaseUrl = "deploy.public_base_url";
     public const string TrustedProxyNetworks = "deploy.trusted_proxy_networks";
-    public const string DeployAgentUrl = "deploy.agent_url";
-    public const string DeployAgentSecret = "deploy.agent_secret";
     public const string DataProtectionCertPath = "deploy.data_protection_cert_path";
     public const string DataProtectionCertPassword = "deploy.data_protection_cert_password";
     public const string SessionSweepIntervalMinutes = "deploy.session_sweep_interval_minutes";
@@ -62,12 +60,6 @@ public static class LedgerSettings {
             SettingKind.CidrList, ApplyTier.RestartRequired, Sensitivity.Plain) {
             Description = "Falls back to the loopback and private ranges when unset.",
         },
-        new SettingDescriptor(
-            DeployAgentUrl, "DEPLOY_AGENT_URL", "Deploy agent URL", Deploy,
-            SettingKind.Url, ApplyTier.RestartRequired, Sensitivity.Plain),
-        new SettingDescriptor(
-            DeployAgentSecret, "DEPLOY_AGENT_SECRET", "Deploy agent secret", Deploy,
-            SettingKind.Secret, ApplyTier.RestartRequired, Sensitivity.Secret),
         new SettingDescriptor(
             DataProtectionCertPath, "DATA_PROTECTION_CERT_PATH", "Data protection cert path", Deploy,
             SettingKind.Path, ApplyTier.Bootstrap, Sensitivity.Plain) {
