@@ -384,6 +384,14 @@ if (hasDb) {
     app.Lifetime.ApplicationStarted.Register(() =>
         _ = Task.Run(() => constraintValidator.RunAsync(app.Lifetime.ApplicationStopping)));
 
+    var mergeRemapper = new EggLedger.Web.Server.Sync.Db.AccountMergeRemapper(
+        app.Services.GetRequiredService<NpgsqlDataSource>(),
+        app.Services.GetRequiredService<EggIdentity.Client.IdentityApiClient>(),
+        app.Services.GetRequiredService<Microsoft.AspNetCore.DataProtection.IDataProtectionProvider>(),
+        app.Services.GetRequiredService<ILogger<EggLedger.Web.Server.Sync.Db.AccountMergeRemapper>>());
+    app.Lifetime.ApplicationStarted.Register(() =>
+        _ = Task.Run(() => mergeRemapper.RunAsync(app.Lifetime.ApplicationStopping)));
+
     if (settingsCache is not null && settingsDataSource is not null) {
         _ = new SettingsChangeListener(settingsDataSource, settingsCache).RunAsync(app.Lifetime.ApplicationStopping);
     }

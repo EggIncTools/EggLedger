@@ -28,6 +28,7 @@ public static class LedgerClonePlan {
         new TablePolicy("blobs", ClonePolicy.SchemaOnly),
         new TablePolicy("el_backup", ClonePolicy.SchemaOnly),
         new TablePolicy("el_api_spam", ClonePolicy.SchemaOnly),
+        new TablePolicy("identity_merge_watermark", ClonePolicy.SchemaOnly),
         new TablePolicy("site_visits_daily", ClonePolicy.SchemaOnly),
         new TablePolicy("site_visit_paths_daily", ClonePolicy.SchemaOnly),
         new TablePolicy("app_settings", ClonePolicy.Skip),
