@@ -150,10 +150,10 @@ jobs:
 
   notify-app:
     needs: docker
-    uses: EggIncTools/EggIdentity/.github/workflows/notify-agent.yml@main
+    uses: EggIncTools/EggIdentity/.github/workflows/notify-deploy.yml@main
     with:
       app: eggledger
-      agent-url: https://egghook.egginc.tools/agent
+      hook-url: https://id.egginc.tools
       digest: ${{ needs.docker.outputs.digest }}
       revision: ${{ github.sha }}
       version: ${{ github.ref_name }}
