@@ -74,6 +74,7 @@ public sealed class DropsViewState(
         _dispatch = dispatch;
         active.Changed += OnAccountChanged;
         hub.AccountInvalidated += OnAccountInvalidated;
+        timeZones.Changed += OnAccountChanged;
         await _sortMethod.LoadAsync();
         await _showPerShip.LoadAsync();
         await _showExpectedTotals.LoadAsync();
@@ -231,6 +232,7 @@ public sealed class DropsViewState(
     public void Dispose() {
         active.Changed -= OnAccountChanged;
         hub.AccountInvalidated -= OnAccountInvalidated;
+        timeZones.Changed -= OnAccountChanged;
     }
 
     private static (int Ship, int Duration, int Level, int Target)? SingleConfig(IReadOnlyList<DatabaseMission>? missions) {

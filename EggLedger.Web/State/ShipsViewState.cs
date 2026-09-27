@@ -93,6 +93,7 @@ public sealed class ShipsViewState(
         _dispatch = dispatch;
         active.Changed += OnAccountChanged;
         hub.AccountInvalidated += OnAccountInvalidated;
+        timeZones.Changed += OnAccountChanged;
         var stored = await settings.GetAllSettingsAsync();
         Opts.LoadFrom(stored);
         CardPresets = stored.TryGetValue(MissionViewOptions.KeyCardPresets, out var json) && !string.IsNullOrEmpty(json)
@@ -319,6 +320,7 @@ public sealed class ShipsViewState(
     public void Dispose() {
         active.Changed -= OnAccountChanged;
         hub.AccountInvalidated -= OnAccountInvalidated;
+        timeZones.Changed -= OnAccountChanged;
     }
 
     private void OnAccountChanged() =>

@@ -12,6 +12,7 @@ using EggIdentity.Settings;
 using EggIdentity.Settings.Api;
 using EggIdentity.Settings.Store;
 using EggIdentity.Styles;
+using EggIdentity.UI;
 using EggIdentity.Visits;
 using EggLedger.Web;
 using EggLedger.Web.Data;
@@ -222,6 +223,7 @@ if (deployGateOpen && !string.IsNullOrEmpty(cfg.IdentityApiUrl) && !string.IsNul
 var selfBase = new Uri(builder.Configuration["SelfBaseAddress"] ?? SelfBaseFromUrls());
 builder.Services.AddEggLedgerWeb(selfBase, cfg.EgiBaseUrl, cfg.EgiApiKey);
 builder.Services.AddHostedService<EggLedger.Web.Server.Ships.EventIconWarmupHostedService>();
+builder.Services.AddEggIdentityBrowserTimeZone();
 builder.Services.AddScoped<EggLedger.Web.Platform.IUserTimeZoneProvider, EggLedger.Web.Server.Platform.BrowserTimeZoneProvider>();
 
 builder.Services.AddScoped(sp => {

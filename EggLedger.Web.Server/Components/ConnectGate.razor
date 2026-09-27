@@ -8,6 +8,9 @@
 @inject IdentityApiClient Identity
 @inject IJSRuntime JS
 @inject ILogger<ConnectGate> Logger
+@inject ConsentReader Consent
+@inject ConsentOptions ConsentConfig
+@using EggIdentity.Consent
 @using EggLedger.Web.State
 @implements IAsyncDisposable
 <div class="flex flex-col items-center justify-center gap-4 py-16 text-center">
@@ -20,7 +23,7 @@
         <div class="flex flex-row items-center justify-center gap-3">
             @if (!string.IsNullOrEmpty(Cfg.IdentityWidgetUrl)) {
                 <div class="auth-source-anchor">
-                    <button type="button" class="discord-btn disabled:opacity-60" disabled="@_loading" @onclick="Toggle" @ref="_button">
+                    <button type="button" class="discord-btn disabled:opacity-60" disabled="@(_loading || !FunctionalAllowed)" @onclick="Toggle" @ref="_button">
                         @(_loading ? "Loading..." : "Login")
                     </button>
                     @if (_sources is not null) {
@@ -42,6 +45,16 @@
                 </div>
             }
         </div>
+        @if (!FunctionalAllowed) {
+            <p class="max-w-md text-xs text-gray-400">
+                @if (Consent.Current is null) {
+                    <span>Choose "Accept all" or enable Functional cookies in the banner to log in.</span>
+                } else {
+                    <span>Logging in needs functional cookies.</span>
+                    <button type="button" class="underline text-blue-400 hover:text-blue-300" @onclick="AllowFunctionalAsync">Allow functional cookies</button>
+                }
+            </p>
+        }
     </div>
 </div>
 
@@ -53,6 +66,24 @@
     private List<LoginSourceResponse>? _sources;
     private bool _loading;
     private string? _error;
+
+    private bool FunctionalAllowed => Consent.Allows(ConsentCategory.Functional);
+
+    protected override void OnInitialized() => Consent.Changed += OnConsentChanged;
+
+    private void OnConsentChanged(object? sender, EventArgs e) => _ = InvokeAsync(StateHasChanged);
+
+    private async Task AllowFunctionalAsync() {
+        var now = DateTimeOffset.FromUnixTimeSeconds(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+        var state = new ConsentState(true, Consent.Current?.Analytics ?? false, ConsentConfig.PolicyVersion, now);
+        try {
+            await JS.InvokeVoidAsync("eggConsentWrite", ConsentCookie.Format(state), ConsentConfig.CookieDomain, (int)ConsentConfig.CookieLifetime.TotalDays);
+        } catch (Exception ex) when (ex is JSException or JSDisconnectedException or TaskCanceledException) {
+            Logger.LogDebug(ex, "login: failed to write functional consent");
+            return;
+        }
+        Consent.Set(state);
+    }
 
     private async Task Toggle() {
         if (_sources is not null || _error is not null) {
@@ -113,6 +144,7 @@
     }
 
     public async ValueTask DisposeAsync() {
+        Consent.Changed -= OnConsentChanged;
         if (_mod is not null) {
             try {
                 await _mod.InvokeVoidAsync("close");
