@@ -5,6 +5,10 @@ internal static class StylePaths {
 
     public static string WebDir => Path.Combine(RepoRoot, "EggLedger.Web");
 
+    public static string AppSheet => File.ReadAllText(Path.Combine(WebDir, "wwwroot", "app.css"));
+
+    public static string SharedSheet => File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "SharedStyles", "shared.css"));
+
     public static IEnumerable<string> ScopedCssFiles() =>
         new[] { "EggLedger.Web", "EggLedger.Web.Server", "EggLedger.Desktop" }
             .Select(p => Path.Combine(RepoRoot, p))

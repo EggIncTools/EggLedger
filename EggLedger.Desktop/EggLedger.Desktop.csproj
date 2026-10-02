@@ -39,6 +39,7 @@
     <_WwwrootZipInput Include="..\EggLedger.Web\wwwroot\**\*" />
     <_WwwrootZipInput Include="..\EggLedger.Web\bin\$(Configuration)\$(TargetFramework)\EggLedger.Web.dll" />
     <_WwwrootZipInput Include="$(MSBuildProjectFullPath)" />
+    <_WwwrootZipInput Include="$(ProjectAssetsFile)" Condition="Exists('$(ProjectAssetsFile)')" />
   </ItemGroup>
 
   <Target Name="ComposeWwwrootZip" BeforeTargets="PrepareResourceNames;CoreCompile" Condition="'$(_EggLedgerEmbedWwwroot)' != 'false' And '$(DesignTimeBuild)' != 'true'" Inputs="@(_WwwrootZipInput)" Outputs="$(IntermediateOutputPath)wwwroot.zip">
@@ -49,7 +50,7 @@
       <_InnerRid Condition="'$(_InnerRid)' == ''">$(NETCoreSdkRuntimeIdentifier)</_InnerRid>
     </PropertyGroup>
     <RemoveDir Directories="$(_WwwrootStageRoot)" />
-    <Exec Command="dotnet publish &quot;$(MSBuildProjectFullPath)&quot; -c $(Configuration) -r $(_InnerRid) --self-contained --no-restore -p:PublishSingleFile=false -p:_EggLedgerEmbedWwwroot=false -p:BuildStylesCss=false -o &quot;$(_WwwrootStageRoot)&quot;" />
+    <Exec Command="dotnet publish &quot;$(MSBuildProjectFullPath)&quot; -c $(Configuration) -r $(_InnerRid) --self-contained --no-restore -p:PublishSingleFile=false -p:_EggLedgerEmbedWwwroot=false -o &quot;$(_WwwrootStageRoot)&quot;" />
     <ItemGroup>
       <_WwwrootRawFile Include="$(_WwwrootStageRoot)wwwroot\**\*" Exclude="$(_WwwrootStageRoot)wwwroot\**\*.br;$(_WwwrootStageRoot)wwwroot\**\*.gz" />
     </ItemGroup>

@@ -12,12 +12,15 @@
 
   <ItemGroup>
     <PackageReference Include="bunit" />
+    <PackageReference Include="EggIdentity.Styles" GeneratePathProperty="true" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\EggLedger.Web.csproj" />
-    <ProjectReference Include="..\..\EggLedger.CssBuild\EggLedger.CssBuild.csproj" />
+    <Content Include="$(PkgEggIdentity_Styles)\staticwebassets\shared.css" Link="SharedStyles\shared.css" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EggLedger.Web.csproj" />  </ItemGroup>
 
   <ItemGroup>
     <Content Include="Fixtures\**\*" CopyToOutputDirectory="PreserveNewest" />

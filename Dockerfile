@@ -3,8 +3,7 @@ FROM mcr.microsoft.com/dotnet/sdk:11.0.100-rc.1 AS build
 WORKDIR /src
 COPY global.json nuget.config Directory.Build.props Directory.Packages.props .editorconfig EggLedger.slnx ./
 COPY .config/ .config/
-COPY --parents EggLedger.Domain/*.csproj EggLedger.Web/*.csproj EggLedger.Web.Server/*.csproj EggLedger.Desktop/*.csproj EggLedger.CssBuild/*.csproj ./
-COPY EggLedger.Web/Styles/ EggLedger.Web/Styles/
+COPY --parents EggLedger.Domain/*.csproj EggLedger.Web/*.csproj EggLedger.Web.Server/*.csproj EggLedger.Desktop/*.csproj ./
 RUN --mount=type=secret,id=github_token \
     --mount=type=cache,target=/root/.nuget/packages \
     dotnet nuget update source github \
@@ -17,7 +16,6 @@ COPY EggLedger.Domain/ EggLedger.Domain/
 COPY EggLedger.Web/ EggLedger.Web/
 COPY EggLedger.Web.Server/ EggLedger.Web.Server/
 COPY EggLedger.Desktop/ EggLedger.Desktop/
-COPY EggLedger.CssBuild/ EggLedger.CssBuild/
 ARG EGGLEDGER_VERSION
 RUN --mount=type=cache,target=/root/.nuget/packages \
     dotnet publish EggLedger.Web.Server/EggLedger.Web.Server.csproj -c Release -o /app \

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Razor" InitialTargets="BuildStyles">
+<Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
     <Description>EggLedger shared Blazor UI (Razor class library): all 6 tabs, components, services, and the platform capability seam. Referenced by the Blazor Server host (EggLedger.Web.Server) and the Photino desktop host (EggLedger.Desktop). Host-agnostic over HttpClient / JSInterop.</Description>
@@ -21,18 +21,5 @@
   <ItemGroup>
     <InternalsVisibleTo Include="EggLedger.Web.Tests" />
   </ItemGroup>
-
-  <ItemGroup>
-    <_StylesInput Include="Styles\app.v4.css" />
-    <_StylesInput Include="..\EggLedger.CssBuild\**\*.cs" Exclude="..\EggLedger.CssBuild\bin\**;..\EggLedger.CssBuild\obj\**" />
-  </ItemGroup>
-
-  <Target Name="BuildStyles"
-          Condition="'$(BuildStylesCss)' != 'false' And Exists('$(MSBuildProjectDirectory)/../EggLedger.CssBuild/Program.cs')"
-          Inputs="@(_StylesInput)"
-          Outputs="$(MSBuildProjectDirectory)\wwwroot\styles.css"
-          Returns="">
-    <Exec Command="dotnet run --project &quot;$(MSBuildProjectDirectory)/../EggLedger.CssBuild&quot; --configuration Release -- &quot;$(MSBuildProjectDirectory)&quot;" />
-  </Target>
 
 </Project>

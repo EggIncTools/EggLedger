@@ -1,23 +1,19 @@
-using EggLedger.CssBuild;
-
 namespace EggLedger.Web.Tests.Styles;
 
 public class TooltipAtomTests {
-    private static readonly Lazy<string> Sheet = new(() => CssBuilder.Build(StylePaths.WebDir));
-
     private static string Script =>
         File.ReadAllText(Path.Combine(StylePaths.WebDir, "wwwroot", "js", "reportChartTooltip.js"));
 
     [Theory]
     [InlineData(".tooltip-line")]
     [InlineData(".tooltip-line-head")]
-    public void Shared_layer_emits_tooltip_line_classes(string selector) {
-        Assert.Contains(selector, Sheet.Value);
+    public void Shared_sheet_ships_tooltip_line_classes(string selector) {
+        Assert.Contains(selector, StylePaths.SharedSheet);
     }
 
     [Fact]
     public void Interim_tooltip_atoms_are_gone() {
-        Assert.DoesNotContain("ledger-tt-line", Sheet.Value);
+        Assert.DoesNotContain("ledger-tt-line", StylePaths.AppSheet);
         Assert.DoesNotContain("ledger-tt-line", Script);
     }
 

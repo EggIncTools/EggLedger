@@ -1,10 +1,9 @@
 using System.Text.RegularExpressions;
-using EggLedger.CssBuild;
 
 namespace EggLedger.Web.Tests.Styles;
 
 public partial class ClassResolutionTests {
-    private static readonly Lazy<string> Sheet = new(() => CssBuilder.Build(StylePaths.WebDir));
+    private static readonly Lazy<string> Sheet = new(() => StylePaths.SharedSheet + StylePaths.AppSheet);
 
     private static readonly HashSet<string> DynamicAllowlist = [
         "tooltip-host",
