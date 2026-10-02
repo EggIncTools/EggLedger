@@ -81,7 +81,7 @@
     font-weight: 600;
     color: var(--color-white);
     background-color: var(--color-ledger-login);
-    transition: background-color 0.15s ease;
+    transition: background-color var(--motion-base) var(--ease-standard);
     cursor: pointer;
 }
 
@@ -129,7 +129,7 @@
     font-size: 13px;
     font-weight: 600;
     text-decoration: none;
-    transition: background-color 0.15s ease;
+    transition: background-color var(--motion-base) var(--ease-standard);
 }
 
 .auth-source-btn:hover {

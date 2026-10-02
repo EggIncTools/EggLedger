@@ -40,7 +40,6 @@
 
 .acd-card-fetching {
     border-color: color-mix(in srgb, var(--color-yellow-700) 60%, transparent);
-    animation: acd-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 .acd-head {
@@ -103,10 +102,4 @@
     margin: 0.5rem 0 0;
     font-size: 0.75rem;
     color: var(--color-err);
-}
-
-@keyframes acd-pulse {
-    50% {
-        opacity: 0.5;
-    }
 }

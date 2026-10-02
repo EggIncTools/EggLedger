@@ -15,7 +15,7 @@
 
 .rpie-slice {
     cursor: pointer;
-    transition: opacity 0.12s, filter 0.12s;
+    transition: opacity var(--motion-fast) var(--ease-standard), filter var(--motion-fast) var(--ease-standard);
 }
 
 .rpie:hover .rpie-slice {

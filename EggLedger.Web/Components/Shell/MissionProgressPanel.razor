@@ -96,13 +96,13 @@
     }
 
     private static string StatusDotClass(ProcessStatus status) => status switch {
-        ProcessStatus.Running => "mprog-dot-running",
+        ProcessStatus.Running => "mprog-dot-running pulse",
         ProcessStatus.Done => "mprog-dot-done",
         _ => "mprog-dot-failed"
     };
 
     private static string SegmentDotClass(SegmentStatus? status) => status switch {
-        SegmentStatus.Active => "mprog-dot-active",
+        SegmentStatus.Active => "mprog-dot-active pulse",
         SegmentStatus.Done => "mprog-dot-done",
         SegmentStatus.Failed => "mprog-dot-failed",
         _ => "mprog-dot-pending"

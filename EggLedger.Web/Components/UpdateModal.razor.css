@@ -46,7 +46,7 @@
 .upd-notes ::deep a {
     color: var(--color-accent);
     text-decoration: none;
-    transition: all 0.3s;
+    transition: color var(--motion-base) var(--ease-standard);
 }
 
 .upd-notes ::deep a:hover {

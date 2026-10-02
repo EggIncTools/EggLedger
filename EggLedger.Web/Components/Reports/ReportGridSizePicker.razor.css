@@ -24,7 +24,7 @@
     border: 1px solid var(--color-border);
     border-radius: 0.25rem;
     cursor: pointer;
-    transition: color, background-color, border-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition: color var(--motion-base) var(--ease-standard), background-color var(--motion-base) var(--ease-standard), border-color var(--motion-base) var(--ease-standard);
 }
 
 .gsize-cell:hover {

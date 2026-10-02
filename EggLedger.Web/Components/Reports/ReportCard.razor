@@ -24,7 +24,7 @@
         @if (_error is not null) {
             <div class="rcard-msg rcard-msg-err">@_error</div>
         } else if (_result is null) {
-            <div class="rcard-msg rcard-msg-running">Running...</div>
+            <div class="rcard-msg rcard-msg-running pulse">Running...</div>
         } else if (ShowMennoComparison) {
             @switch (Def.MennoCompareMode) {
                 case MennoComparison.SideBySide:

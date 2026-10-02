@@ -14,7 +14,6 @@
     font-size: 0.75rem;
     line-height: calc(1 / 0.75);
     color: var(--color-muted);
-    animation: rline-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 .rline-empty {
@@ -41,7 +40,7 @@
 
 .rline-hit {
     cursor: pointer;
-    transition: opacity 0.12s, filter 0.12s;
+    transition: opacity var(--motion-fast) var(--ease-standard), filter var(--motion-fast) var(--ease-standard);
 }
 
 .rline:hover .rline-hit {
@@ -50,10 +49,4 @@
 
 .rline .rline-hit:hover {
     opacity: 1;
-}
-
-@keyframes rline-pulse {
-    50% {
-        opacity: 0.5;
-    }
 }

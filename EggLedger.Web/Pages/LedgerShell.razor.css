@@ -40,6 +40,13 @@
     overflow: hidden;
 }
 
+.ledger-surface ::deep .ledger-pane {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
 @media (max-width: 47.9375rem) {
     .ledger-shell {
         flex-direction: column;

@@ -94,7 +94,6 @@
 
 .rcard-msg-running {
     color: var(--color-muted);
-    animation: rcard-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 .rcard-split {
@@ -220,10 +219,4 @@
 
 .rcard-chip-primary {
     color: var(--color-ledger-primary);
-}
-
-@keyframes rcard-pulse {
-    50% {
-        opacity: 0.5;
-    }
 }

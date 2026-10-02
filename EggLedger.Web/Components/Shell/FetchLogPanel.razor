@@ -131,13 +131,13 @@
             StageStatus.Skipped => "flog-fill-skipped",
             _ => "flog-fill"
         };
-        <div class="flog-stage @StageClass(status, stage)">
-            <div class="flog-stage-fill @fill @(pulsing ? "flog-pulse" : "")" style="--flog-w: @(width)%"></div>
+        <div class="flog-stage progress @StageClass(status, stage)">
+            <div class="flog-stage-fill progress-fill @fill @(pulsing ? "pulse" : "")" style="--progress: @(width)%"></div>
         </div>
     };
 
     private static RenderFragment StageLabel(StageStatus status, string stage, string label, bool pulsing) => __builder => {
-        <div class="flog-stage-label @StageClass(status, stage) @(status == StageStatus.Pending ? "" : "flog-stage-label-on") @(pulsing ? "flog-pulse" : "")">@label</div>
+        <div class="flog-stage-label @StageClass(status, stage) @(status == StageStatus.Pending ? "" : "flog-stage-label-on") @(pulsing ? "pulse" : "")">@label</div>
     };
 
     private static string StageClass(StageStatus status, string stage) =>

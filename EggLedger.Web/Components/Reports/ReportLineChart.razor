@@ -10,7 +10,7 @@
 <div class="rline" @ref="_containerRef">
     @if (!_measured) {
         <div class="rline-msg">
-            <span class="rline-loading">Loading chart...</span>
+            <span class="rline-loading pulse">Loading chart...</span>
         </div>
     } else if (Points().Count >= 2) {
         var pts = Points();

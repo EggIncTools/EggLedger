@@ -46,12 +46,10 @@
 
 .mprog-dot-running {
     background-color: var(--color-ledger-egg-yellow);
-    animation: mprog-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 .mprog-dot-active {
     background-color: var(--color-blue-400);
-    animation: mprog-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 .mprog-dot-done {
@@ -101,10 +99,4 @@
 
 .mprog-line {
     white-space: pre;
-}
-
-@keyframes mprog-pulse {
-    50% {
-        opacity: 0.5;
-    }
 }

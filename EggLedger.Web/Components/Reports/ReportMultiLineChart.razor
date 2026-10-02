@@ -11,7 +11,7 @@
     <div class="rml-plot" @ref="_containerRef">
         @if (!_measured) {
             <div class="rml-msg">
-                <span class="rml-loading">Loading chart...</span>
+                <span class="rml-loading pulse">Loading chart...</span>
             </div>
         } else if (SeriesCount >= 1 && BucketCount >= 2) {
             var max = GlobalMax();

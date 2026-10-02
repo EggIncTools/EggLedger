@@ -82,8 +82,8 @@
                 <button type="button" class="fetch-log-header"
                         aria-label="@(Fetch.LogExpanded ? "Hide fetch log" : "Show fetch log")"
                         aria-expanded="@(Fetch.LogExpanded ? "true" : "false")" @onclick="Fetch.ToggleLog">
-                    <span class="fetch-log-meter">
-                        <span class="fetch-log-meter-fill" style="--fetch-pct: @(Fetch.Percent)%"></span>
+                    <span class="fetch-log-meter progress">
+                        <span class="fetch-log-meter-fill progress-fill" style="--progress: @(Fetch.Percent)%"></span>
                     </span>
                     <span>@(Fetch.Percent)%</span>
                     <span class="fetch-log-caret">@(Fetch.LogExpanded ? "▾" : "▸")</span>

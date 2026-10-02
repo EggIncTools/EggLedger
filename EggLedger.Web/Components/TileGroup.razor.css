@@ -14,7 +14,7 @@
     color: var(--color-muted);
     font-weight: 500;
     cursor: pointer;
-    transition: color, background-color, border-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition: color var(--motion-base) var(--ease-standard), background-color var(--motion-base) var(--ease-standard), border-color var(--motion-base) var(--ease-standard);
 }
 
 .tiles-item:first-child {

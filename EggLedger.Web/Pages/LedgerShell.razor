@@ -27,13 +27,15 @@
         </div>
 
         <div class="ledger-surface @(Shell.View == LedgerView.Reports ? "ledger-surface-clip" : "")">
-            @if (Shell.View == LedgerView.Drops) {
-                <DropsView/>
-            } else if (Shell.View == LedgerView.Reports) {
-                <ReportsView/>
-            } else {
-                <ShipsView/>
-            }
+            <PaneSwap Key="Shell.View" Direction="_viewDirection" Class="ledger-pane">
+                @if (Shell.View == LedgerView.Drops) {
+                    <DropsView/>
+                } else if (Shell.View == LedgerView.Reports) {
+                    <ReportsView/>
+                } else {
+                    <ShipsView/>
+                }
+            </PaneSwap>
         </div>
     </div>
 </div>
@@ -62,6 +64,8 @@
     private bool _routeSyncStarted;
     private bool _applyingRoute;
     private string _routePath = "/";
+    private LedgerView _shownView;
+    private PaneDirection _viewDirection = PaneDirection.None;
 
     protected override void OnInitialized() {
         Shell.Changed += OnShellChanged;
@@ -71,6 +75,7 @@
         _routeSync.Changed += OnRouteChanged;
         _routePath = "/" + Nav.ToBaseRelativePath(Nav.Uri).Split('?', '#')[0].Trim('/').ToLowerInvariant();
         ApplyRoute();
+        _shownView = Shell.View;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender) {
@@ -287,6 +292,10 @@
     }
 
     private void OnShellChanged() {
+        if (Shell.View != _shownView) {
+            _viewDirection = Shell.View > _shownView ? PaneDirection.Forward : PaneDirection.Back;
+            _shownView = Shell.View;
+        }
         InvokeAsync(StateHasChanged);
     }
 

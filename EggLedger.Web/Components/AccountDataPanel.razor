@@ -17,7 +17,7 @@
     } else {
         <ul class="acd-list">
             @if (Fetching is { } f && !Accounts.Any(a => a.Id == f.Id)) {
-                <li class="acd-card acd-card-fetching">
+                <li class="acd-card acd-card-fetching pulse">
                     <div class="acd-head">
                         <span class="acd-nick" style="--acct-color: #@f.Color">@f.Nickname</span>
                         <span class="acd-eid">

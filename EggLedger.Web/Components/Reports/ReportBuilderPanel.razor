@@ -17,9 +17,9 @@
 <ModalHost Open="_open" OnClose="Close" Title="@(_editingId is null ? "Add Report" : "Edit Report")" Width="ModalWidth.Regular">
     <HeadTools>
         @if (_editingId is null && _builderMode == "basic") {
-            <div class="rb-mode">
-                <button type="button" class="rb-mode-btn rb-mode-btn-on">Basic</button>
-                <button type="button" class="rb-mode-btn" @onclick="SwitchToAdvanced">Advanced</button>
+            <div class="segmented rb-mode" role="group" aria-label="Builder mode">
+                <button type="button" class="segmented-opt active">Basic</button>
+                <button type="button" class="segmented-opt" @onclick="SwitchToAdvanced">Advanced</button>
             </div>
         }
     </HeadTools>
@@ -27,14 +27,15 @@
         @if (_form is not null) {
             <form method="dialog" class="rb" @onsubmit="SaveAsync" @onsubmit:preventDefault>
                 <div class="rb-body">
+                    <PaneSwap Key="_builderMode" Direction="@(_builderMode == "basic" ? PaneDirection.Back : PaneDirection.Forward)" Class="rb-pane">
                     @if (_builderMode == "basic") {
                         <ReportBuilderGuided OnApply="OnGuidedApplyAsync"/>
                     } else {
                         @if (_editingId is null) {
                             <div class="rb-row">
-                                <div class="rb-mode">
-                                    <button type="button" class="rb-mode-btn" @onclick="SwitchToBasic">Basic</button>
-                                    <button type="button" class="rb-mode-btn rb-mode-btn-on">Advanced</button>
+                                <div class="segmented rb-mode" role="group" aria-label="Builder mode">
+                                    <button type="button" class="segmented-opt" @onclick="SwitchToBasic">Basic</button>
+                                    <button type="button" class="segmented-opt active">Advanced</button>
                                 </div>
                             </div>
                         }
@@ -284,6 +285,7 @@
                             }
                         </div>
                     }
+                    </PaneSwap>
                 </div>
 
                 <div class="rb-foot">

@@ -45,7 +45,7 @@
     color: var(--color-muted);
     background-color: var(--color-darkerer);
     cursor: pointer;
-    transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1), background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition: color var(--motion-base) var(--ease-standard), background-color var(--motion-base) var(--ease-standard);
 }
 
 .rv-pill:hover {

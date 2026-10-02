@@ -49,7 +49,7 @@
     color: var(--color-fg);
     font-size: 0.8rem;
     cursor: pointer;
-    transition: border-color 0.12s ease, color 0.12s ease;
+    transition: border-color var(--motion-fast) var(--ease-standard), color var(--motion-fast) var(--ease-standard);
 }
 
 .sopt-dialog-btn:hover {

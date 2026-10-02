@@ -18,14 +18,14 @@
     @if (_multi is null) {
         <button class="mov-nav mov-nav-prev" type="button" aria-label="Previous mission"
                 disabled="@(_data?.PrevMission is null)"
-                @onclick="@(() => NavigateAsync(_data?.PrevMission))">
+                @onclick="@(() => NavigateAsync(_data?.PrevMission, PaneDirection.Back))">
             <svg class="mov-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
             </svg>
         </button>
         <button class="mov-nav mov-nav-next" type="button" aria-label="Next mission"
                 disabled="@(_data?.NextMission is null)"
-                @onclick="@(() => NavigateAsync(_data?.NextMission))">
+                @onclick="@(() => NavigateAsync(_data?.NextMission, PaneDirection.Forward))">
             <svg class="mov-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
@@ -36,7 +36,9 @@
         <div class="mov-body mov-body-scroll">
             <div class="mov-panel">
                 @if (_data is not null) {
-                    <ShipDisplay Data="_data" ShowExpectedDrops="ShowExpectedDrops"/>
+                    <PaneSwap Key="_data.MissionInfo.MissiondId" Direction="_paneDirection">
+                        <ShipDisplay Data="_data" ShowExpectedDrops="ShowExpectedDrops"/>
+                    </PaneSwap>
                 } else if (_isLoading) {
                     <div class="mov-loading">
                         <img src="@ContentPaths.Asset("images/loading.gif")" alt="Loading..." class="xl-ico"/>
@@ -62,29 +64,30 @@
                     <span class="mov-strong">@_totalToLoad</span>
                 }
             </div>
-            <div class="mov-progress">
-                <div class="mov-progress-fill" style="--mov-pct: @(LoadingPercent)%;"></div>
+            <div class="progress mov-progress">
+                <div class="progress-fill" style="--progress: @(LoadingPercent)%;"></div>
             </div>
         </div>
     } else {
         <div class="mov-body">
             <div class="mov-mode-wrap">
-                <div class="mov-mode">
+                <div class="segmented" role="group" aria-label="Display mode">
                     <button type="button"
                             disabled="@(_multi.Count > MaxSeparate)"
                             title="@(_multi.Count > MaxSeparate ? $"Separate view is limited to {MaxSeparate} missions" : null)"
-                            class="mov-mode-btn @(_displayMode == "separate" ? "mov-mode-btn-on" : "")"
+                            class="segmented-opt @(_displayMode == "separate" ? "active" : "")"
                             @onclick="@(() => _displayMode = "separate")">
                         Separate
                     </button>
                     <button type="button"
-                            class="mov-mode-btn @(_displayMode == "combined" ? "mov-mode-btn-on" : "")"
+                            class="segmented-opt @(_displayMode == "combined" ? "active" : "")"
                             @onclick="@(() => _displayMode = "combined")">
                         Combined
                     </button>
                 </div>
             </div>
 
+            <PaneSwap Key="_displayMode" Direction="@(_displayMode == "separate" ? PaneDirection.Back : PaneDirection.Forward)" Class="mov-swap">
             @if (_displayMode == "separate" && _multi.Count <= MaxSeparate) {
                 <div class="mov-grid">
                     @foreach (var d in _multi) {
@@ -135,6 +138,7 @@
                                           ShowExpectedDrops="false"/>
                 </div>
             }
+            </PaneSwap>
 
             <div class="mov-tip">
                 Hover mouse over an item to show details.<br/>
@@ -163,6 +167,7 @@
     private int _totalToLoad;
     private string _displayMode = "separate";
     private bool _shipHeaderExpanded;
+    private PaneDirection _paneDirection = PaneDirection.None;
     private List<DropLike> _combinedArtifacts = [];
     private List<DropLike> _combinedStones = [];
     private List<DropLike> _combinedIngredients = [];
@@ -179,6 +184,7 @@
     public async Task OpenAsync(string missionId) {
         _multi = null;
         _isLoading = false;
+        _paneDirection = PaneDirection.None;
         _data = await BuildAsync(missionId);
         if (_data is null) {
             return;
@@ -192,10 +198,10 @@
     private async Task OnKeyDown(KeyboardEventArgs e) {
         switch (e.Key) {
             case "ArrowLeft" when _multi is null:
-                await NavigateAsync(_data?.PrevMission);
+                await NavigateAsync(_data?.PrevMission, PaneDirection.Back);
                 break;
             case "ArrowRight" when _multi is null:
-                await NavigateAsync(_data?.NextMission);
+                await NavigateAsync(_data?.NextMission, PaneDirection.Forward);
                 break;
         }
     }
@@ -371,8 +377,9 @@
         return null;
     }
 
-    private async Task NavigateAsync(string? missionId) {
+    private async Task NavigateAsync(string? missionId, PaneDirection direction) {
         if (missionId is not null) {
+            _paneDirection = direction;
             await LoadAsync(missionId);
         }
     }

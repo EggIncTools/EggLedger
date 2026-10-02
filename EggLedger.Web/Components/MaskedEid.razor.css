@@ -1,7 +1,7 @@
 .masked-eid {
     cursor: pointer;
     filter: blur(4px);
-    transition: filter 0.15s ease;
+    transition: filter var(--motion-base) var(--ease-standard);
     user-select: none;
 }
 

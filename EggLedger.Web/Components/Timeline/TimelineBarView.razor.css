@@ -85,7 +85,7 @@
     border-left: 1px dashed rgba(255, 255, 255, 0.55);
     pointer-events: none;
     opacity: 0;
-    transition: opacity 0.12s ease;
+    transition: opacity var(--motion-fast) var(--ease-standard);
 }
 
 .timeline-bar:hover .timeline-bar-edge {

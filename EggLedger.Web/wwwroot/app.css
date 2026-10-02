@@ -106,6 +106,20 @@
   --color-ledger-scrollbar: #555555;
   --color-ledger-scrollbar-hover: #888888;
   --color-ledger-tooltip-border: #cccccc;
+  --motion-fast: 120ms;
+  --motion-base: 150ms;
+  --motion-morph: 220ms;
+  --ease-standard: cubic-bezier(.2, 0, 0, 1);
+  --ease-pulse: cubic-bezier(.4, 0, .6, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    transition-duration: 0s !important;
+    animation: none !important;
+  }
 }
 
 *,
