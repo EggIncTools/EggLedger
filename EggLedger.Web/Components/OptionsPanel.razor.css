@@ -1,0 +1,30 @@
+.opts-group {
+    padding: 0.5rem;
+    overflow: auto;
+    font-size: 0.875rem;
+    line-height: calc(1.25 / 0.875);
+    font-variant-numeric: tabular-nums;
+    color: var(--color-muted);
+    background-color: var(--color-bg);
+    border-radius: 0.375rem;
+}
+
+.opts-title {
+    margin-right: 0.5rem;
+    font-size: 1.125rem;
+    line-height: calc(1.75 / 1.125);
+    font-weight: 700;
+}
+
+.opts-item {
+    margin-top: 0.5rem;
+}
+
+.opts-check {
+    margin-right: 0.5rem;
+}
+
+.opts-rule {
+    margin: 1rem 0;
+    width: 100%;
+}

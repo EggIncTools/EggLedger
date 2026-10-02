@@ -3,45 +3,41 @@
 @* Window sizing for the desktop shell. Pending width/height/fullscreen apply on restart;
    the Restart Now button shows only when they differ from the loaded values. *@
 
-<div class="px-2 py-2 text-sm text-gray-400 bg-darker rounded-md tabular-nums overflow-auto">
+<div class="win">
     @if (ShowHeading) {
-        <span class="mr-0_5rem font-bold text-lg text-gray-400 ledger-underline">Window &amp; Browser</span>
+        <span class="win-title ledger-underline">Window &amp; Browser</span>
     }
-    <span class="text-gray-500 text-xs italic ml-1">(effective on restart)</span><br/>
+    <span class="win-note">(effective on restart)</span><br/>
 
-    <div class="mt-0_5rem">
+    <div class="win-section">
         <span class="section-heading">App Resolution</span><br/>
-        <div class="flex flex-row items-center pl-0_5rem">
-            <div class="flex flex-col w-full max-w-10rem text-center mt-0_5rem">
-                <input type="number" id="resPrefX" class="number-input text-sm bg-darkest"
+        <div class="win-res">
+            <div class="win-dim">
+                <input type="number" id="resPrefX" class="number-input win-num"
                        value="@_width" @onchange="OnWidthChangeAsync"/>
-                <span class="text-sm text-gray-400 mt-0_5rem">Width<br/>(<span class="text-gray-300">X</span>)</span>
+                <span class="win-dim-label">Width<br/>(<span class="win-axis">X</span>)</span>
             </div>
-            <span class="text-xl font-bold ml-0_5rem mr-0_5rem mb-2_5rem">x</span>
-            <div class="flex flex-col w-full max-w-10rem text-center mt-0_5rem">
-                <input type="number" id="resPrefY" class="number-input text-sm bg-darkest"
+            <span class="win-x">x</span>
+            <div class="win-dim">
+                <input type="number" id="resPrefY" class="number-input win-num"
                        value="@_height" @onchange="OnHeightChangeAsync"/>
-                <span class="text-sm text-gray-400 mt-0_5rem">Height<br/>(<span class="text-gray-300">Y</span>)</span>
+                <span class="win-dim-label">Height<br/>(<span class="win-axis">Y</span>)</span>
             </div>
-            <button type="button"
-                    class="apply-filter-button !bg-blue-700 !text-white hover:!bg-blue-600 !border-blue-500 !ml-1rem mb-2_5rem !mt-0 !mr-0"
-                    @onclick="CaptureFromCurrentAsync">
+            <button type="button" class="btn-primary win-capture" @onclick="CaptureFromCurrentAsync">
                 Capture from Current
             </button>
         </div>
-        <div class="mt-0_5rem pl-0_5rem">
-            <input id="startInFullscreenCheckbox" type="checkbox" class="ext-opt-check mr-0_5rem"
+        <div class="win-row">
+            <input id="startInFullscreenCheckbox" type="checkbox" class="ext-opt-check win-check"
                    checked="@_fullscreen" @onchange="OnFullscreenChangeAsync"/>
             <label for="startInFullscreenCheckbox" class="ext-opt-label">Launch app in fullscreen</label>
         </div>
         @if (NeedsRestart) {
-            <div class="mt-0_5rem pl-0_5rem">
-                <button type="button"
-                        class="apply-filter-button !bg-orange-700 !text-white hover:!bg-orange-600 !border-orange-500 !mt-0 !mr-0 !ml-0"
-                        @onclick="Platform.RestartAppAsync">
+            <div class="win-row">
+                <button type="button" class="btn-secondary ledger-btn-warn" @onclick="Platform.RestartAppAsync">
                     Restart Now
                 </button>
-                <span class="ml-0_5rem text-gray-400 text-xs">Resolution change takes effect after restart</span>
+                <span class="win-restart-note">Resolution change takes effect after restart</span>
             </div>
         }
     </div>

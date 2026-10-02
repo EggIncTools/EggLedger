@@ -1,13 +1,18 @@
-<button type="button" class="@Class" @onclick="OnClick" aria-label="@Title">
-    <svg class="@IconClass" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<button type="button" class="close-button @VariantClass" @onclick="OnClick" aria-label="@Title">
+    <svg class="close-button-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
     </svg>
 </button>
 
 @code {
+    public enum CloseButtonVariant {
+        Corner,
+        Inline
+    }
+
     [Parameter] public EventCallback OnClick { get; set; }
-    [Parameter] public string Class { get; set; } = "close-button";
-    [Parameter] public string IconClass { get; set; } = "w-5 h-5";
+    [Parameter] public CloseButtonVariant Variant { get; set; } = CloseButtonVariant.Corner;
     [Parameter] public string Title { get; set; } = "Close";
 
+    private string VariantClass => Variant == CloseButtonVariant.Inline ? "close-button-inline" : "close-button-corner";
 }

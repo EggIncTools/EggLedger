@@ -1,0 +1,74 @@
+.usradm-summary {
+    font-size: 0.75rem;
+    line-height: calc(1 / 0.75);
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.usradm-note {
+    margin: 0;
+    font-size: 0.75rem;
+    line-height: calc(1 / 0.75);
+    color: var(--color-muted);
+    font-style: italic;
+}
+
+.usradm-scroll {
+    overflow: auto;
+    max-height: 24rem;
+}
+
+.usradm-table {
+    width: auto;
+}
+
+.usradm-num {
+    text-align: right;
+}
+
+.usradm-name {
+    font-weight: 500;
+    color: var(--color-fg);
+}
+
+.usradm-id {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    color: var(--color-ledger-dim);
+}
+
+.usradm-dim {
+    color: var(--color-ledger-dim);
+}
+
+.usradm-sort {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.usradm-sort:hover {
+    color: var(--color-fg);
+}
+
+.usradm-delete {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-err);
+    cursor: pointer;
+}
+
+.usradm-delete:hover {
+    filter: brightness(1.25);
+}
+
+.usradm-error {
+    margin: 0.5rem 0 0;
+    font-size: 0.75rem;
+    line-height: calc(1 / 0.75);
+    color: var(--color-err);
+}

@@ -1,0 +1,99 @@
+.rgb {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    overflow: auto;
+}
+
+.rgb-row {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-width: 0;
+    flex: 1;
+}
+
+.rgb-row-label {
+    width: 6rem;
+    flex-shrink: 0;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.75rem;
+    line-height: calc(1 / 0.75);
+    color: var(--color-muted);
+}
+
+.rgb-bars {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.rgb-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.rgb-bar {
+    height: 0.75rem;
+    width: var(--rgb-w);
+    min-width: 2px;
+    background-color: var(--rgb-color);
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: opacity 0.12s, filter 0.12s;
+}
+
+.rgb:hover .rgb-bar {
+    opacity: 0.4;
+}
+
+.rgb .rgb-bar:hover {
+    opacity: 1;
+}
+
+.rgb-bar-value {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    line-height: calc(1 / 0.75);
+    color: var(--color-muted);
+}
+
+.rgb-legend {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 0.75rem;
+    row-gap: 0.125rem;
+    margin-top: 0.25rem;
+    padding: 0 0.25rem;
+}
+
+.rgb-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    user-select: none;
+}
+
+.rgb-swatch {
+    width: 0.5rem;
+    height: 0.5rem;
+    flex-shrink: 0;
+    border-radius: 0.25rem;
+    background-color: var(--rgb-color);
+}
+
+.rgb-legend-label {
+    max-width: 7rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.75rem;
+    line-height: calc(1 / 0.75);
+    color: var(--color-muted);
+}

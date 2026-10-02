@@ -1,6 +1,6 @@
 @using EggIdentity.UI
-<ModalHost Open="true" OnClose="Close" Title="@Title" CardClass="w-[92vw] max-w-[60rem] max-h-[88vh] flex flex-col">
-    <div class="flex-1 min-h-0 overflow-y-auto px-6 py-5">
+<ModalHost Open="true" OnClose="Close" Title="@Title" Width="ModalWidth.Large">
+    <div class="legal-modal">
         <div class="prose-legal">
             @if (Kind == LegalDocument.Terms) {
                 <TermsContent OnCrossLink="OnKindChange"/>

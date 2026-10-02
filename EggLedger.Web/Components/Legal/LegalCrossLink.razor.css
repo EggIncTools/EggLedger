@@ -1,0 +1,13 @@
+.legal-xlink {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    cursor: pointer;
+    color: var(--color-accent);
+    text-decoration: none;
+}
+
+.legal-xlink:hover {
+    text-decoration: underline;
+}

@@ -1,26 +1,26 @@
 @using System.Globalization
 @inject IUserTimeZoneProvider TzProvider
 @if (Config.Layout == CardLayout.Grid) {
-    <div @key="Mission.MissiondId" class="panel-muted rounded-md px-4 py-2 flex flex-col items-center gap-1 text-center @CustomClass" style="@InlineStyle()" data-missionid="@Mission.MissiondId">
+    <div @key="Mission.MissiondId" class="panel-muted mission-card-grid @CustomClass" style="@InlineStyle()" data-missionid="@Mission.MissiondId">
         @if (MultiViewMode == MultiViewMode.Free) {
-            <input type="checkbox" class="self-start"
+            <input type="checkbox" class="mission-card-grid-check"
                    checked="@IsSelected"
                    @onclick="@(e => OnToggleSelected.InvokeAsync((Mission.MissiondId, e.ShiftKey)))"/>
         }
-        <button type="button" class="flex flex-col items-center gap-1" @onclick="@(() => OnView.InvokeAsync(Mission.MissiondId))">
+        <button type="button" class="mission-card-grid-btn" @onclick="@(() => OnView.InvokeAsync(Mission.MissiondId))">
             @foreach (var slot in EnabledFieldsInOrder) {
                 @RenderField(slot)
             }
         </button>
     </div>
 } else {
-    <div @key="Mission.MissiondId" class="text-sm mission-item-3 flex items-center @CustomClass" style="@InlineStyle()" data-missionid="@Mission.MissiondId">
+    <div @key="Mission.MissiondId" class="mission-item-3 @CustomClass" style="@InlineStyle()" data-missionid="@Mission.MissiondId">
         @if (MultiViewMode == MultiViewMode.Free) {
-            <input type="checkbox" class="mr-0_5rem shrink-0"
+            <input type="checkbox" class="mission-item-check"
                    checked="@IsSelected"
                    @onclick="@(e => OnToggleSelected.InvokeAsync((Mission.MissiondId, e.ShiftKey)))"/>
         }
-        <button type="button" class="text-sm mr-5 font-bold btn btn-outline-dark bg-transparent" @onclick="@(() => OnView.InvokeAsync(Mission.MissiondId))">
+        <button type="button" class="mission-item-btn" @onclick="@(() => OnView.InvokeAsync(Mission.MissiondId))">
             @foreach (var slot in EnabledFieldsInOrder) {
                 @RenderField(slot)
             }
@@ -70,7 +70,7 @@
             CardField.LaunchDate => RowColorClass(false),
             CardField.LaunchTime => RowColorClass(true),
             CardField.DropCount => "",
-            _ => "text-gray-400 ml-0_5rem"
+            _ => "mission-item-field"
         };
     }
 
@@ -127,7 +127,7 @@
             return altMode ? "text-dubcapdarker" : "text-dubcap";
         }
 
-        return altMode ? "text-gray-500" : "text-gray-400";
+        return "mission-item-date";
     }
 
     private string DurationClass() {

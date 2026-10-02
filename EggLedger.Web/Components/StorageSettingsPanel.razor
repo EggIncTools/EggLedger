@@ -4,25 +4,23 @@
 @* Desktop storage location, backup, and move. Backup copies selected parts; move copies
    everything then restarts. Source files are never deleted. *@
 
-<div class="px-2 py-2 text-sm text-gray-400 bg-darker rounded-md tabular-nums overflow-auto">
+<div class="stor">
     @if (ShowHeading) {
-        <span class="mr-0_5rem font-bold text-lg text-gray-400 ledger-underline">Storage</span>
+        <span class="stor-title ledger-underline">Storage</span>
         <br/>
     }
 
-    <div class="mt-0_5rem">
+    <div class="stor-section stor-section-first">
         <span class="section-heading">Storage Location</span><br/>
-        <div class="mt-0_5rem pl-0_5rem">
-            <div class="flex flex-row items-center gap-2">
+        <div class="stor-body">
+            <div class="stor-row">
                 <input type="text" readonly value="@(_storagePath.Length > 0 ? _storagePath : "Loading...")"
-                       class="block rounded-md text-sm bg-darkest font-mono text-gray-300 cursor-default border border-gray-600 px-2 py-1 focus:outline-none focus:ring-0 shrink min-w-0"/>
-                <button type="button"
-                        class="apply-filter-button !mt-0 !mr-0 !ml-0 !bg-blue-700 !text-white hover:!bg-blue-600 !border-blue-500 shrink-0"
-                        @onclick="OpenStorageFolderAsync">
+                       class="stor-path"/>
+                <button type="button" class="btn-primary stor-btn" @onclick="OpenStorageFolderAsync">
                     Open folder
                 </button>
                 <button type="button"
-                        class="apply-filter-button !mt-0 !mr-0 !ml-0 shrink-0 @(Model.StorageFolderHidden ? "!bg-green-700 !text-white hover:!bg-green-600 !border-green-500" : "!bg-orange-700 !text-white hover:!bg-orange-600 !border-orange-500")"
+                        class="btn-secondary stor-btn @(Model.StorageFolderHidden ? "ledger-btn-ok" : "ledger-btn-warn")"
                         @onclick="ToggleStorageVisibleAsync">
                     @(Model.StorageFolderHidden ? "Show folder" : "Hide folder")
                 </button>
@@ -30,72 +28,64 @@
         </div>
     </div>
 
-    <div class="mt-1rem">
+    <div class="stor-section">
         <span class="section-heading">Backup Storage</span><br/>
-        <div class="mt-0_25rem pl-0_5rem text-xs text-gray-500">
+        <div class="stor-note">
             Copies selected data into the chosen folder. The original files are not modified.
         </div>
-        <div class="mt-0_5rem pl-0_5rem">
-            <div class="flex flex-row items-center gap-2 max-w-[50%]">
-                <input type="text" class="drop-select-full text-sm bg-darkest" placeholder="Destination path..."
+        <div class="stor-body">
+            <div class="stor-row stor-row-half">
+                <input type="text" class="stor-input" placeholder="Destination path..."
                        value="@_backupDestPath" @onchange="OnBackupDestChangeAsync"/>
-                <button type="button"
-                        class="apply-filter-button !mt-0 !mr-0 !ml-0 !bg-gray-700 !text-gray-200 hover:!bg-gray-600 !border-gray-500 shrink-0"
-                        @onclick="ChooseBackupDestAsync">
+                <button type="button" class="btn-secondary stor-btn" @onclick="ChooseBackupDestAsync">
                     Choose...
                 </button>
-                <button type="button"
-                        class="apply-filter-button !mt-0 !mr-0 !ml-0 !bg-blue-700 !text-white hover:!bg-blue-600 !border-blue-500 shrink-0"
-                        disabled="@BackupDisabled" @onclick="RunBackupAsync">
+                <button type="button" class="btn-primary stor-btn" disabled="@BackupDisabled" @onclick="RunBackupAsync">
                     @(_backupInProgress ? "Backing up..." : "Backup storage")
                 </button>
             </div>
-            <div class="mt-0_5rem flex items-center gap-4 max-w-[50%]">
-                <label class="flex items-center gap-1 cursor-pointer select-none text-xs text-gray-400">
+            <div class="stor-checks">
+                <label class="stor-check">
                     <input type="checkbox" class="ext-opt-check" checked="@_backupDb" @onchange="e => _backupDb = ToBool(e)"/>
                     Database
                 </label>
-                <label class="flex items-center gap-1 cursor-pointer select-none text-xs text-gray-400">
+                <label class="stor-check">
                     <input type="checkbox" class="ext-opt-check" checked="@_backupExports" @onchange="e => _backupExports = ToBool(e)"/>
                     Exports
                 </label>
-                <label class="flex items-center gap-1 cursor-pointer select-none text-xs text-gray-400">
+                <label class="stor-check">
                     <input type="checkbox" class="ext-opt-check" checked="@_backupLogs" @onchange="e => _backupLogs = ToBool(e)"/>
                     Logs
                 </label>
             </div>
-            <div class="mt-0_5rem space-y-1">
+            <div class="stor-status">
                 @if (_backupSuccess) {
-                    <div class="text-green-400 text-xs">Backup complete.</div>
+                    <div class="stor-ok">Backup complete.</div>
                 }
                 @if (_backupError.Length > 0) {
-                    <div class="text-red-400 text-xs">Backup failed: @_backupError</div>
+                    <div class="stor-err">Backup failed: @_backupError</div>
                 }
             </div>
         </div>
     </div>
 
-    <div class="mt-1rem">
+    <div class="stor-section">
         <span class="section-heading">Move Storage</span><br/>
-        <div class="mt-0_25rem pl-0_5rem text-xs text-gray-500">
+        <div class="stor-note">
             Copies all app data into the chosen folder, then restarts. Old files are not deleted.
         </div>
-        <div class="mt-0_5rem pl-0_5rem">
-            <div class="flex flex-row items-center gap-2 max-w-[50%]">
-                <input type="text" class="drop-select-full text-sm bg-darkest" placeholder="Destination path..."
+        <div class="stor-body">
+            <div class="stor-row stor-row-half">
+                <input type="text" class="stor-input" placeholder="Destination path..."
                        value="@_moveDestPath" @onchange="OnMoveDestChangeAsync"/>
-                <button type="button"
-                        class="apply-filter-button !mt-0 !mr-0 !ml-0 !bg-gray-700 !text-gray-200 hover:!bg-gray-600 !border-gray-500 shrink-0"
-                        @onclick="ChooseMoveDestAsync">
+                <button type="button" class="btn-secondary stor-btn" @onclick="ChooseMoveDestAsync">
                     Choose...
                 </button>
-                <button type="button"
-                        class="apply-filter-button !mt-0 !mr-0 !ml-0 !bg-orange-700 !text-white hover:!bg-orange-600 !border-orange-500 shrink-0"
-                        disabled="@MoveDisabled" @onclick="RunMoveAsync">
+                <button type="button" class="btn-secondary ledger-btn-warn stor-btn" disabled="@MoveDisabled" @onclick="RunMoveAsync">
                     @(_moveInProgress ? "Moving..." : "Move storage")
                 </button>
                 @if (_moveError.Length > 0) {
-                    <span class="text-red-400 text-xs shrink-0">@_moveError</span>
+                    <span class="stor-err stor-btn">@_moveError</span>
                 }
             </div>
         </div>

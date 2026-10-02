@@ -1,62 +1,67 @@
 @inject IUserTimeZoneProvider TzProvider
 @inject TimeProvider Time
 
-<div class="admin-panel">
-    <div class="admin-panel-head">
-        <span class="admin-panel-title">Users (@(Users is null ? "..." : Users.Count.ToString()))</span>
+<AdminPanel Title="@PanelTitle">
+    <HeadTools>
         @if (Users is { Count: > 0 }) {
-            <span class="text-xs text-gray-500 tabular-nums">@Users.Sum(u => u.MissionCount) missions - @LedgerFormatting.FormatBytes(Users.Sum(u => u.StorageBytes)) total</span>
+            <span class="usradm-summary">@Users.Sum(u => u.MissionCount) missions - @LedgerFormatting.FormatBytes(Users.Sum(u => u.StorageBytes)) total</span>
         }
-    </div>
-    @if (Users is null) {
-        <p class="text-xs text-gray-500 italic">Loading...</p>
-    } else {
-        <div class="overflow-auto max-h-96">
-            <table class="data-table w-auto">
-                <thead>
-                <tr>
-                    <th>@SortHeader("User", "username")</th>
-                    <th>@SortHeader("Linked Discord", "discord")</th>
-                    <th class="text-right">@SortHeader("Missions", "missions")</th>
-                    <th class="text-right">@SortHeader("Reports", "reports")</th>
-                    <th class="text-right">@SortHeader("Backups", "backups")</th>
-                    <th class="text-right">@SortHeader("Storage", "storage")</th>
-                    <th class="text-right" data-tt="Last time the Desktop app paired via Discord. Not tracked for web-only logins.">@SortHeader("Last Pairing", "lastLogin")</th>
-                    <th></th>
-                </tr>
-                </thead>
-                <tbody>
-                @foreach (var u in SortedUsers()) {
-                    <tr>
-                        <td class="font-medium text-gray-300">@u.Username @(u.IsAdmin ? "(admin)" : "")</td>
-                        <td class="font-mono text-gray-600">@(u.DiscordId ?? "none")</td>
-                        <td class="text-right">@u.MissionCount</td>
-                        <td class="text-right">@u.ReportCount</td>
-                        <td class="text-right">@u.BackupCount</td>
-                        <td class="text-right">@LedgerFormatting.FormatBytes(u.StorageBytes)</td>
-                        <td class="text-right text-gray-600" data-tt="@LastLoginTitle(u.LastSession)">@LastLoginLabel(u.LastSession)</td>
-                        <td class="text-right">
-                            @if (!u.IsAdmin) {
-                                <button type="button" class="text-red-400 hover:text-red-300" @onclick="() => OnDelete.InvokeAsync(u.UserId)">
-                                    Delete
-                                </button>
-                            }
-                        </td>
-                    </tr>
-                }
-                </tbody>
-            </table>
+    </HeadTools>
+    <ChildContent>
+        <div>
+            @if (Users is null) {
+                <p class="usradm-note">Loading...</p>
+            } else {
+                <div class="usradm-scroll">
+                    <table class="data-table usradm-table">
+                        <thead>
+                        <tr>
+                            <th>@SortHeader("User", "username")</th>
+                            <th>@SortHeader("Linked Discord", "discord")</th>
+                            <th class="usradm-num">@SortHeader("Missions", "missions")</th>
+                            <th class="usradm-num">@SortHeader("Reports", "reports")</th>
+                            <th class="usradm-num">@SortHeader("Backups", "backups")</th>
+                            <th class="usradm-num">@SortHeader("Storage", "storage")</th>
+                            <th class="usradm-num" data-tt="Last time the Desktop app paired via Discord. Not tracked for web-only logins.">@SortHeader("Last Pairing", "lastLogin")</th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var u in SortedUsers()) {
+                            <tr>
+                                <td class="usradm-name">@u.Username @(u.IsAdmin ? "(admin)" : "")</td>
+                                <td class="usradm-id">@(u.DiscordId ?? "none")</td>
+                                <td class="usradm-num">@u.MissionCount</td>
+                                <td class="usradm-num">@u.ReportCount</td>
+                                <td class="usradm-num">@u.BackupCount</td>
+                                <td class="usradm-num">@LedgerFormatting.FormatBytes(u.StorageBytes)</td>
+                                <td class="usradm-num usradm-dim" data-tt="@LastLoginTitle(u.LastSession)">@LastLoginLabel(u.LastSession)</td>
+                                <td class="usradm-num">
+                                    @if (!u.IsAdmin) {
+                                        <button type="button" class="usradm-delete" @onclick="() => OnDelete.InvokeAsync(u.UserId)">
+                                            Delete
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(Error)) {
+                <p class="usradm-error">@Error</p>
+            }
         </div>
-    }
-    @if (!string.IsNullOrEmpty(Error)) {
-        <p class="text-red-500 text-xs mt-0_5rem">@Error</p>
-    }
-</div>
+    </ChildContent>
+</AdminPanel>
 
 @code {
     [Parameter] public IReadOnlyList<AdminUser>? Users { get; set; }
     [Parameter] public EventCallback<Guid> OnDelete { get; set; }
     [Parameter] public string? Error { get; set; }
+
+    private string PanelTitle => $"Users ({(Users is null ? "..." : Users.Count.ToString())})";
 
     private string _sortKey = "username";
     private bool _sortAsc = true;
@@ -71,7 +76,7 @@
     }
 
     private RenderFragment SortHeader(string label, string key) => __builder => {
-        <button type="button" class="hover:text-gray-200 whitespace-nowrap" @onclick="() => SetSort(key)">
+        <button type="button" class="usradm-sort" @onclick="() => SetSort(key)">
             @label
             @if (_sortKey == key) {
                 @(_sortAsc ? " ^" : " v")

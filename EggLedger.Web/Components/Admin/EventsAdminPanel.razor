@@ -2,51 +2,54 @@
 @inject GameEventsService GameEvents
 @inject IUserTimeZoneProvider TzProvider
 
-<div class="admin-panel">
-    <div class="admin-panel-head">
-        <span class="admin-panel-title">EGI Events (@GameEvents.Count)</span>
-        <button type="button" class="text-xs text-gray-400 hover:text-gray-200" @onclick="RefreshAsync" disabled="@_refreshing">
+<AdminPanel Title="@($"EGI Events ({GameEvents.Count})")">
+    <HeadTools>
+        <button type="button" class="evadm-refresh" @onclick="RefreshAsync" disabled="@_refreshing">
             @(_refreshing ? "Refreshing..." : "Refresh")
         </button>
-    </div>
-    @if (!GameEvents.IsConfigured) {
-        <p class="text-xs text-gray-500 italic">EGI_BASE_URL not set - events disabled.</p>
-    } else {
-        <div class="text-xs text-gray-500 mb-2">
-            Next refresh eligible: @FormatLocal(GameEvents.NextAllowedRefresh)
+    </HeadTools>
+    <ChildContent>
+        <div class="evadm">
+            @if (!GameEvents.IsConfigured) {
+                <p class="evadm-note">EGI_BASE_URL not set - events disabled.</p>
+            } else {
+                <div class="evadm-next">
+                    Next refresh eligible: @FormatLocal(GameEvents.NextAllowedRefresh)
+                </div>
+                @if (GameEvents.Count == 0) {
+                    <p class="evadm-note">No events loaded.</p>
+                } else {
+                    <div class="evadm-scroll">
+                        <table class="data-table evadm-table">
+                            <thead>
+                            <tr>
+                                <th>Id</th>
+                                <th>Type</th>
+                                <th class="evadm-num">Multiplier</th>
+                                <th>Starts</th>
+                                <th>Ends</th>
+                                <th>Source</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            @foreach (var e in Snapshot) {
+                                <tr>
+                                    <td class="evadm-id">@e.Id</td>
+                                    <td>@e.Type @(e.Ultra ? "(ultra)" : "")</td>
+                                    <td class="evadm-num">@e.Multiplier.ToString("0.##", CultureInfo.InvariantCulture)x</td>
+                                    <td class="evadm-muted">@FormatLocal(e.StartsAt)</td>
+                                    <td class="evadm-muted">@FormatLocal(e.EndsAt)</td>
+                                    <td class="evadm-dim">@(e.Source ?? "none")</td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            }
         </div>
-        @if (GameEvents.Count == 0) {
-            <p class="text-xs text-gray-500 italic">No events loaded.</p>
-        } else {
-            <div class="overflow-auto max-h-64">
-                <table class="data-table w-auto">
-                    <thead>
-                    <tr>
-                        <th>Id</th>
-                        <th>Type</th>
-                        <th class="text-right">Multiplier</th>
-                        <th>Starts</th>
-                        <th>Ends</th>
-                        <th>Source</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    @foreach (var e in Snapshot) {
-                        <tr>
-                            <td class="font-mono text-gray-400">@e.Id</td>
-                            <td>@e.Type @(e.Ultra ? "(ultra)" : "")</td>
-                            <td class="text-right">@e.Multiplier.ToString("0.##", CultureInfo.InvariantCulture)x</td>
-                            <td class="text-gray-500">@FormatLocal(e.StartsAt)</td>
-                            <td class="text-gray-500">@FormatLocal(e.EndsAt)</td>
-                            <td class="text-gray-600">@(e.Source ?? "none")</td>
-                        </tr>
-                    }
-                    </tbody>
-                </table>
-            </div>
-        }
-    }
-</div>
+    </ChildContent>
+</AdminPanel>
 
 @code {
     private bool _refreshing;

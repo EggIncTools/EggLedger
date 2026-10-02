@@ -1,0 +1,21 @@
+<div class="csec @(Open ? "csec-open" : "") @(Inset ? "csec-inset" : "")">
+    <button type="button" class="csec-head" aria-expanded="@(Open ? "true" : "false")" @onclick="OnToggle">
+        <span class="csec-title">@Title</span>
+        @if (Open) {
+            <span class="csec-caret">&#9662;</span>
+        } else {
+            <span class="csec-caret">&#9656;</span>
+        }
+    </button>
+    @if (Open && ChildContent is not null) {
+        <div class="csec-body">@ChildContent</div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public bool Inset { get; set; }
+    [Parameter] public EventCallback OnToggle { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

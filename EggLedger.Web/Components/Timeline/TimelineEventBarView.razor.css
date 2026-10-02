@@ -1,0 +1,60 @@
+.timeline-event-bar {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    border-radius: 0.25rem;
+    left: calc(var(--evt-start) * 1%);
+    width: calc(var(--evt-size) * 1% - 4px);
+    background-color: color-mix(in srgb, var(--evt-bg) 55%, transparent);
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.35rem;
+    padding: 0 0.35rem 0 1.6rem;
+    overflow: hidden;
+    cursor: default;
+}
+
+.timeline-event-icon {
+    width: 1.2rem;
+    height: 1.2rem;
+    flex-shrink: 0;
+    object-fit: contain;
+}
+
+.timeline-event-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--color-white);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.timeline-event-cut-l {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.timeline-event-cut-r {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.timeline-event-tt {
+    font-size: 0.875rem;
+    line-height: calc(1.25 / 0.875);
+}
+
+.timeline-event-tt-name {
+    font-weight: 700;
+}
+
+.timeline-event-tt-key {
+    color: var(--color-muted);
+}
+
+.timeline-event-tt-ultra {
+    color: var(--color-ledger-egg-yellow);
+}

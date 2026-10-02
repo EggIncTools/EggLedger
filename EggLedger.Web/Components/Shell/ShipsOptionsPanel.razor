@@ -2,11 +2,11 @@
 @inject ShipsViewState State
 
 @if (State.AccountId is null) {
-    <p class="text-xs text-gray-500 italic">Select an account to see mission options.</p>
+    <p class="sopt-empty">Select an account to see mission options.</p>
 } else {
-    <div class="flex flex-col gap-3">
+    <div class="sopt">
         @if (State.ViewMode == ShipsViewMode.List) {
-            <button type="button" class="panel-dialog-btn" aria-haspopup="dialog" title="Edit mission card design"
+            <button type="button" class="sopt-dialog-btn" aria-haspopup="dialog" title="Edit mission card design"
                     @onclick="OpenCardConfigAsync">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" aria-hidden="true">
                     <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
@@ -14,28 +14,27 @@
                 <span>Card Design...</span>
             </button>
             <div>
-                <span class="font-bold text-gray-400">Display</span>
-                <div class="flex flex-col gap-1 mt-1">
-                    <label><input type="checkbox" class="ext-opt-check mr-0_5rem" checked="@State.Opts.ViewByDate" @onchange="@(e => State.SetOptAsync(MissionViewOptions.KeyViewByDate, b => State.Opts.ViewByDate = b, e))"/> Separate missions by day</label>
-                    <label><input type="checkbox" class="ext-opt-check mr-0_5rem" checked="@State.Opts.ViewMissionTimes" @onchange="@(e => State.SetOptAsync(MissionViewOptions.KeyViewTimes, b => State.Opts.ViewMissionTimes = b, e))"/> Show launch times</label>
-                    <label><input type="checkbox" class="ext-opt-check mr-0_5rem" checked="@State.Opts.RecolorDC" @onchange="@(e => State.SetOptAsync(MissionViewOptions.KeyRecolorDC, b => State.Opts.RecolorDC = b, e))"/> Re-color dubcaps</label>
-                    <label><input type="checkbox" class="ext-opt-check mr-0_5rem" checked="@State.Opts.RecolorBC" @onchange="@(e => State.SetOptAsync(MissionViewOptions.KeyRecolorBC, b => State.Opts.RecolorBC = b, e))"/> Re-color bugged caps</label>
+                <span class="sopt-heading">Display</span>
+                <div class="sopt-checks">
+                    <label><input type="checkbox" class="ext-opt-check sopt-check" checked="@State.Opts.ViewByDate" @onchange="@(e => State.SetOptAsync(MissionViewOptions.KeyViewByDate, b => State.Opts.ViewByDate = b, e))"/> Separate missions by day</label>
+                    <label><input type="checkbox" class="ext-opt-check sopt-check" checked="@State.Opts.ViewMissionTimes" @onchange="@(e => State.SetOptAsync(MissionViewOptions.KeyViewTimes, b => State.Opts.ViewMissionTimes = b, e))"/> Show launch times</label>
+                    <label><input type="checkbox" class="ext-opt-check sopt-check" checked="@State.Opts.RecolorDC" @onchange="@(e => State.SetOptAsync(MissionViewOptions.KeyRecolorDC, b => State.Opts.RecolorDC = b, e))"/> Re-color dubcaps</label>
+                    <label><input type="checkbox" class="ext-opt-check sopt-check" checked="@State.Opts.RecolorBC" @onchange="@(e => State.SetOptAsync(MissionViewOptions.KeyRecolorBC, b => State.Opts.RecolorBC = b, e))"/> Re-color bugged caps</label>
                 </div>
             </div>
         }
         <div>
-            <span class="font-bold text-gray-400">Drops Sort Method</span>
-            <div class="tile-group flex-wrap mt-1">
-                <button type="button" class="tile-group-item @(State.Opts.SortMethod == MissionSortMethod.Default ? "active" : "")" @onclick="@(() => State.SetSortMethodAsync(MissionSortMethod.Default))">Default</button>
-                <button type="button" class="tile-group-item @(State.Opts.SortMethod == MissionSortMethod.Iv ? "active" : "")" @onclick="@(() => State.SetSortMethodAsync(MissionSortMethod.Iv))">Inventory Visualizer</button>
+            <span class="sopt-heading">Drops Sort Method</span>
+            <div class="sopt-row">
+                <TileGroup TValue="MissionSortMethod" Options="SortTiles" Selected="State.Opts.SortMethod" OnSelect="State.SetSortMethodAsync" Wrap="true"/>
             </div>
         </div>
         @if (State.ViewMode == ShipsViewMode.List) {
             <div>
-                <span class="font-bold text-gray-400">Mission Sort</span>
-                <div class="flex flex-col gap-1 mt-1">
-                    <label class="@(State.DropCounts.Count == 0 ? "opacity-40 cursor-not-allowed" : "")">
-                        <input type="checkbox" class="ext-opt-check mr-0_5rem" checked="@State.Opts.SortByDropCount" disabled="@(State.DropCounts.Count == 0)" @onchange="State.ToggleSortByDropCountAsync"/>
+                <span class="sopt-heading">Mission Sort</span>
+                <div class="sopt-checks">
+                    <label class="@(State.DropCounts.Count == 0 ? "sopt-label-disabled" : "")">
+                        <input type="checkbox" class="ext-opt-check sopt-check" checked="@State.Opts.SortByDropCount" disabled="@(State.DropCounts.Count == 0)" @onchange="State.ToggleSortByDropCountAsync"/>
                         Sort by drop count
                     </label>
                 </div>
@@ -52,6 +51,11 @@
 }
 
 @code {
+    private static readonly IReadOnlyList<TileGroup<MissionSortMethod>.Tile> SortTiles = [
+        new(MissionSortMethod.Default, b => b.AddContent(0, "Default")),
+        new(MissionSortMethod.Iv, b => b.AddContent(0, "Inventory Visualizer"))
+    ];
+
     private MissionCardConfigModal? _cardConfigModal;
 
     protected override async Task OnInitializedAsync() {

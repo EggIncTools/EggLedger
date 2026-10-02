@@ -7,79 +7,72 @@
 @inject ILogger<AccountDataPanel> Logger
 
 @* Browser adaptation of the desktop ExportManagementPanel: manages per-account stored data (count, last fetch, export-to-download, delete) since the browser has no on-disk export files. *@
-<div class="px-2 py-2 text-sm text-gray-400 bg-darker rounded-md tabular-nums overflow-auto">
+<div class="acd">
     @if (ShowHeading) {
-        <span class="mr-0_5rem font-bold text-lg text-gray-400 ledger-underline">Account Data</span>
+        <span class="acd-title ledger-underline">Account Data</span>
         <br/>
     }
     @if (Accounts.Count == 0 && Fetching is null) {
-        <p class="mt-2 text-xs text-gray-500 italic">No accounts with stored missions yet. Add an account above and fetch.</p>
+        <p class="acd-empty">No accounts with stored missions yet. Add an account above and fetch.</p>
     } else {
-        <ul class="mt-2 space-y-2">
+        <ul class="acd-list">
             @if (Fetching is { } f && !Accounts.Any(a => a.Id == f.Id)) {
-                <li class="p-2 border border-yellow-700/60 rounded-md bg-darkest animate-pulse">
-                    <div class="flex items-baseline gap-2 flex-wrap">
-                        <span class="font-bold" style="color: #@f.Color">@f.Nickname</span>
-                        <span class="font-mono text-xs text-gray-600">
+                <li class="acd-card acd-card-fetching">
+                    <div class="acd-head">
+                        <span class="acd-nick" style="--acct-color: #@f.Color">@f.Nickname</span>
+                        <span class="acd-eid">
                             <MaskedEid Value="@f.Id"/>
                         </span>
                     </div>
-                    <div class="flex items-center gap-1 mt-1 text-xs text-yellow-400">
+                    <div class="acd-meta acd-meta-fetching">
                         <span>Fetching missions...</span>
                         @if (f.Total > 0) {
-                            <span class="text-gray-600">&middot;</span>
-                            <span class="text-gray-400 tabular-nums">@f.Finished / @f.Total</span>
+                            <span class="acd-progress">(@f.Finished / @f.Total)</span>
                         }
                     </div>
                 </li>
             }
             @foreach (var acct in Sorted) {
-                <li class="p-2 border border-gray-700 rounded-md bg-darkest">
-                    <div class="flex items-baseline gap-2 flex-wrap">
-                        <span class="font-bold" style="color: #@acct.AccountColor">@acct.Nickname</span>
-                        <span class="text-gray-500 text-sm">@acct.EBString</span>
-                        <span class="font-mono text-xs text-gray-600">
+                <li class="acd-card">
+                    <div class="acd-head">
+                        <span class="acd-nick" style="--acct-color: #@acct.AccountColor">@acct.Nickname</span>
+                        <span class="acd-eb">@acct.EBString</span>
+                        <span class="acd-eid">
                             <MaskedEid Value="@acct.Id"/>
                         </span>
                     </div>
-                    <div class="flex items-center gap-1 mt-1 text-xs text-gray-500">
+                    <div class="acd-meta">
                         <span>@acct.MissionCount missions</span>
                         @{ var since = LedgerFormatting.FormatTimeSince(acct.LastMissionReturnDT, NowUnix); }
                         @if (since != "") {
-                            <span class="text-gray-600">&middot;</span>
-                            <span>latest mission @since</span>
+                            <span>, latest mission @since</span>
                         }
                     </div>
-                    <div class="flex items-center gap-2 mt-2 flex-wrap">
-                        <button type="button" class="ledger-btn apply-filter-button !w-auto !mt-0 !mr-0 !ml-0" disabled="@_busy"
+                    <div class="acd-actions">
+                        <button type="button" class="btn-secondary" disabled="@_busy"
                                 @onclick="() => ExportCsv(acct.Id, acct.Nickname)">
                             Export CSV
                         </button>
-                        <button type="button" class="ledger-btn apply-filter-button !w-auto !mt-0 !mr-0 !ml-0" disabled="@_busy"
+                        <button type="button" class="btn-secondary" disabled="@_busy"
                                 @onclick="() => ExportXlsx(acct.Id, acct.Nickname)">
                             Export XLSX
                         </button>
-                        <button type="button"
-                                class="ledger-btn apply-filter-button !w-auto !mt-0 !mr-0 !ml-0 !bg-gray-700 !text-gray-200 hover:!bg-gray-600 !border-gray-500"
+                        <button type="button" class="btn-secondary"
                                 disabled="@_busy" @onclick="() => Delete(acct.Id)"
                                 data-tt="Removes this account from your account list only. Its cached mission data stays on this device.">
                             Forget account
                         </button>
                         @if (_confirmingDeleteId == acct.Id) {
-                            <span class="text-xs text-red-400">Delete all data for this account?</span>
-                            <button type="button"
-                                    class="ledger-btn apply-filter-button !w-auto !mt-0 !mr-0 !ml-0 !text-gray-300 !bg-gray-700 hover:!bg-gray-600 !border-gray-500"
-                                    @onclick="() => _confirmingDeleteId = null">
+                            <span class="acd-err">Delete all data for this account?</span>
+                            <button type="button" class="btn-secondary" @onclick="() => _confirmingDeleteId = null">
                                 Cancel
                             </button>
-                            <button type="button"
-                                    class="ledger-btn apply-filter-button !w-auto !mt-0 !mr-0 !ml-0 !bg-red-900 !text-red-200 hover:!bg-red-800 !border-red-700"
+                            <button type="button" class="btn-danger"
                                     disabled="@(_busy || Fetching?.Id == acct.Id)" @onclick="() => DeleteAllDataAsync(acct.Id)">
                                 @(_busy ? "Deleting..." : "Yes, delete")
                             </button>
                         } else {
-                            <button type="button"
-                                    class="ledger-btn apply-filter-button !w-auto !mt-0 !mr-0 !ml-0 !bg-red-900/60 !text-red-300 hover:!bg-red-900 !border-red-800"
+                            <button type="button" class="btn-danger acd-soft-danger"
                                     disabled="@(_busy || Fetching?.Id == acct.Id)" @onclick="() => _confirmingDeleteId = acct.Id"
                                     data-tt="@(Fetching?.Id == acct.Id ? "Can't delete while a fetch is in progress for this account." : "Permanently deletes this account's cached mission data from this device, and from cloud sync on your next sync.")">
                                 Delete my data
@@ -91,7 +84,7 @@
         </ul>
     }
     @if (_error != "") {
-        <p class="mt-2 text-xs text-red-500">@_error</p>
+        <p class="acd-error">@_error</p>
     }
 </div>
 

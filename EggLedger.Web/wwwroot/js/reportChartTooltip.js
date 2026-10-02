@@ -49,7 +49,12 @@
     box.innerHTML = "";
     lines.forEach(function (line, i) {
       const d = document.createElement("div");
-      d.className = overrides[i] ? "text-xs " + overrides[i] : (i === 0 ? "text-xs text-gray-200 font-medium" : "text-xs text-gray-400");
+      d.className = "tooltip-line";
+      if (overrides[i]) {
+        d.className += " " + overrides[i];
+      } else if (i === 0) {
+        d.className += " tooltip-line-head";
+      }
       d.textContent = line;
       box.appendChild(d);
     });

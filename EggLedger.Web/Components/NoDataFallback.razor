@@ -1,13 +1,13 @@
 @inject LedgerShellState Shell
 
-<div class="text-center mt-3 rounded-md border border-red-700 py-2">
-    <span class="text-red-700">
+<div class="nodata">
+    <span class="nodata-text">
         @Message<br/>Choose an account in the
     </span>
     <button type="button" class="btn-link" @onclick="OpenAccountPicker">
-        <span class="text-blue-500 ledger-underline font-bold">sidebar account selector</span>
+        <span class="nodata-link ledger-underline">sidebar account selector</span>
     </button>
-    <span class="text-red-700">, then press <b>Fetch</b>.</span>
+    <span class="nodata-text">, then press <b>Fetch</b>.</span>
 </div>
 
 @code {

@@ -1,0 +1,32 @@
+.setm-size {
+    display: contents;
+    --modal-card-w: 92vw;
+    --modal-card-max: 48rem;
+    --modal-card-max-h: 88vh;
+}
+
+.setm {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 0.75rem;
+    font-size: 0.875rem;
+    line-height: calc(1.25 / 0.875);
+    color: var(--color-muted);
+}
+
+.setm-loading {
+    margin: 0;
+    font-style: italic;
+}
+
+.setm-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.setm-rule {
+    margin: 1rem 0;
+    width: 100%;
+}

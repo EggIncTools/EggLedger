@@ -2,28 +2,28 @@
    and formatting. Axis drag-reorder deferred. Optional secondary-value sub-line and
    color-value override drive the Menno dual_value mode. *@
 
-<div class="h-full w-full overflow-auto pr-1">
-    <table class="text-xs w-full h-full border-collapse table-fixed">
+<div class="hmap">
+    <table class="hmap-table">
         <thead>
         <tr>
-            <th class="px-1 py-0.5 text-left font-normal w-20 text-gray-600"></th>
+            <th class="hmap-corner"></th>
             @foreach (var col in Result.ColLabels) {
-                <th class="px-1 py-0.5 text-center font-normal text-gray-400 whitespace-nowrap" data-tt="@col">@col</th>
+                <th class="hmap-col" data-tt="@col">@col</th>
             }
         </tr>
         </thead>
         <tbody>
         @for (var r = 0; r < Result.RowLabels.Count; r++) {
             <tr>
-                <td class="px-1 py-0.5 text-right pr-2 truncate text-gray-400" data-tt="@Result.RowLabels[r]">@Result.RowLabels[r]</td>
+                <td class="hmap-row" data-tt="@Result.RowLabels[r]">@Result.RowLabels[r]</td>
                 @for (var c = 0; c < Result.ColLabels.Count; c++) {
                     var cell = Cell(r, c);
-                    <td class="text-center px-1 py-0.5 transition-[filter] hover:brightness-[1.4]"
-                        style="background-color: @cell.Style.BackgroundColor; color: @cell.Style.Color; cursor: pointer;"
+                    <td class="hmap-cell"
+                        style="--hmap-bg: @cell.Style.BackgroundColor; --hmap-fg: @cell.Style.Color;"
                         data-tt="@($"{Result.RowLabels[r]}\n{Result.ColLabels[c]}: {cell.Display}")">
-                        <div class="leading-none">@cell.Display</div>
+                        <div class="hmap-value">@cell.Display</div>
                         @if (SecondaryValues is not null) {
-                            <div class="leading-none opacity-70" style="font-size: 0.65rem;">@cell.Secondary</div>
+                            <div class="hmap-value hmap-secondary">@cell.Secondary</div>
                         }
                     </td>
                 }

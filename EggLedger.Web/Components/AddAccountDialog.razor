@@ -5,28 +5,28 @@
    card). NOT a native <dialog>.showModal(): top-layer promotion desyncs the Blazor Server
    render tree (insertBefore/parentNode-null crashes). Backdrop click closes. *@
 
-<ModalHost Open="_open" OnClose="Close" Title="Add Account" CardClass="text-gray-300">
-    <div class="p-4 min-w-80">
+<ModalHost Open="_open" OnClose="Close" Title="Add Account" Width="ModalWidth.Small">
+    <div class="addacct">
         <form @onsubmit="Submit" @onsubmit:preventDefault>
             <input
-                class="w-full box-border px-2 py-1 text-sm rounded bg-darkest border border-gray-600 text-gray-300 mb-1 focus:outline-none focus:border-blue-500"
+                class="addacct-input"
                 type="text"
                 placeholder="Enter player ID (e.g. EI1234567890123456)"
                 @bind="_eid"
                 @bind:event="oninput"
                 disabled="@_loading"/>
             @if (_problem != "" && _eid.Trim() != "") {
-                <p class="mb-1 text-xs text-yellow-500">@_problem</p>
+                <p class="addacct-msg addacct-warn">@_problem</p>
             }
             @if (_error != "") {
-                <p class="mb-2 text-xs text-red-500">@_error</p>
+                <p class="addacct-msg addacct-err">@_error</p>
             }
             @if (_loading) {
-                <p class="mb-2 text-xs text-gray-400">Fetching account data...</p>
+                <p class="addacct-msg">Fetching account data...</p>
             }
-            <div class="flex gap-2 justify-end mt-1">
-                <button type="button" class="text-xs px-3 py-1 rounded border border-gray-600 bg-transparent text-gray-400 hover:text-gray-300 disabled:opacity-50 disabled:cursor-default" disabled="@_loading" @onclick="Close">Cancel</button>
-                <button type="submit" class="text-xs px-3 py-1 rounded border-none bg-privacy_blue text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-default" disabled="@(_loading || !IsValid)">Add</button>
+            <div class="addacct-actions">
+                <button type="button" class="btn-secondary" disabled="@_loading" @onclick="Close">Cancel</button>
+                <button type="submit" class="btn-primary" disabled="@(_loading || !IsValid)">Add</button>
             </div>
         </form>
     </div>

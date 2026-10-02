@@ -3,35 +3,34 @@
 @inject IUserTimeZoneProvider TzProvider
 @inject TimeProvider Time
 
-<div class="px-2 py-2 text-sm text-gray-400 bg-darker rounded-md tabular-nums overflow-auto">
+<div class="menno">
     @if (ShowHeading) {
-        <span class="mr-0_5rem font-bold text-lg text-gray-400 ledger-underline">Menno's Ship Data</span>
+        <span class="menno-title ledger-underline">Menno's Ship Data</span>
         <br/>
     }
-    <span class="italic text-gray-400">
+    <span class="menno-refreshed">
         Data last refreshed on
-        <span class="@(Model.LastMennoRefreshAt is null ? "text-red-700" : "text-green-500")">@LastRefreshText</span>
+        <span class="@(Model.LastMennoRefreshAt is null ? "menno-never" : "menno-when")">@LastRefreshText</span>
     </span><br/>
-    <button type="button"
-            class="mt-0_5rem mb-0_5rem px-3 py-1 border border-gray-600 text-sm font-medium rounded-md text-gray-400 ledger-btn disabled:opacity-50 disabled:cursor-not-allowed"
+    <button type="button" class="btn-secondary menno-btn"
             disabled="@(_refreshing || OnCooldown)"
             @onclick="RefreshNowAsync">
         @(_refreshing ? "Refreshing..." : "Refresh Data Now")
     </button><br/>
     @if (OnCooldown) {
-        <span class="italic text-sm text-gray-500">Manual refresh runs once a day, to keep load off Menno's API</span>
+        <span class="menno-note">Manual refresh runs once a day, to keep load off Menno's API</span>
     }
     @if (_error.Length > 0) {
-        <span class="text-red-400 text-sm">@_error</span>
+        <span class="menno-err">@_error</span>
     }
-    <div class="mt-0_5rem">
-        <input id="autoRefreshMennoCheckbox" type="checkbox" class="ext-opt-check mr-0_5rem"
+    <div class="menno-row">
+        <input id="autoRefreshMennoCheckbox" type="checkbox" class="ext-opt-check menno-check"
                checked="@Model.AutoRefreshMenno"
                @onchange="SetAutoRefreshAsync"/>
         <label for="autoRefreshMennoCheckbox" class="ext-opt-label">Automatically refresh Menno data once weekly</label>
     </div>
     @if (Model.AutoRefreshMenno) {
-        <div class="mt-0_5rem text-xs text-gray-500 italic">
+        <div class="menno-row menno-next">
             @(Model.LastMennoRefreshAt is { } last
                 ? $"Next run after {FormatLocal(last.AddDays(5))}"
                 : "Will run on next launch")

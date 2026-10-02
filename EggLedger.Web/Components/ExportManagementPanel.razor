@@ -4,87 +4,84 @@
 @* Lists export file groups per account, prunes to a keep-count, and deletes selected pairs.
    Sizes and counts mirror the Go ExportManagementPanel. *@
 
-<div class="mt-0_5rem">
+<div>
+<div class="exm-section exm-section-first">
     <span class="section-heading">Export Pruning</span><br/>
-    <div class="mt-0_5rem pl-0_5rem flex flex-row items-center gap-2 flex-wrap">
-        <label class="text-sm text-gray-400" for="keepCountInput">Keep</label>
-        <input id="keepCountInput" type="number" class="number-input text-sm bg-darkest" style="width: 4rem"
+    <div class="exm-body exm-row">
+        <label class="exm-text" for="keepCountInput">Keep</label>
+        <input id="keepCountInput" type="number" class="number-input exm-keep"
                value="@_keepCount" min="0" max="50" placeholder="0" @onchange="OnKeepCountChangeAsync"/>
-        <span class="text-sm text-gray-400">most recent exports per player (0 = unlimited)</span>
+        <span class="exm-text">most recent exports per player (0 = unlimited)</span>
     </div>
     @if (PruneFileCount > 0) {
-        <div class="mt-0_5rem pl-0_5rem flex flex-col items-start gap-1">
-            <button type="button"
-                    class="apply-filter-button !mt-0 !mr-0 !ml-0 !bg-orange-700 !text-white hover:!bg-orange-600 !border-orange-500"
-                    disabled="@_pruning" @onclick="PruneNowAsync">
+        <div class="exm-body exm-stack">
+            <button type="button" class="btn-secondary ledger-btn-warn" disabled="@_pruning" @onclick="PruneNowAsync">
                 @(_pruning ? "Pruning..." : "Prune Now")
             </button>
-            <span class="text-xs text-gray-500 italic">Removes @PruneFileCount file(s), freeing @FormatSize(PruneBytes)</span>
+            <span class="exm-note">Removes @PruneFileCount file(s), freeing @FormatSize(PruneBytes)</span>
         </div>
     }
     @if (_pruneError.Length > 0) {
-        <div class="mt-0_25rem pl-0_5rem text-xs text-red-400">@_pruneError</div>
+        <div class="exm-err">@_pruneError</div>
     }
 </div>
 
-<div class="mt-1rem">
+<div class="exm-section">
     <span class="section-heading">Export Files</span><br/>
     @if (_groups.Count == 0) {
-        <div class="mt-0_5rem pl-0_5rem text-xs text-gray-500 italic">No export files found.</div>
+        <div class="exm-body exm-note">No export files found.</div>
     } else {
-        <div class="mt-0_5rem">
+        <div class="exm-files">
             @foreach (var group in _groups) {
                 var collapsed = _collapsed.Contains(group.Eid);
-                <div class="mb-1">
-                    <button type="button"
-                            class="group w-full flex items-center gap-1 text-left text-xs text-gray-400 hover:text-gray-300 py-0.5"
-                            @onclick="() => ToggleCollapse(group.Eid)">
-                        <span class="text-gray-500 w-3">@(collapsed ? "▶" : "▼")</span>
+                <div class="exm-group">
+                    <button type="button" class="exm-group-btn" @onclick="() => ToggleCollapse(group.Eid)">
+                        <span class="exm-caret">@(collapsed ? "▶" : "▼")</span>
                         @if (!string.IsNullOrEmpty(group.Nickname)) {
-                            <span class="font-medium group-hover:brightness-125"
-                                  style="@(string.IsNullOrEmpty(group.AccountColor) ? "" : $"color: #{group.AccountColor}")">
+                            <span class="exm-nick @(string.IsNullOrEmpty(group.AccountColor) ? "" : "exm-nick-colored")"
+                                  style="@(string.IsNullOrEmpty(group.AccountColor) ? "" : $"--acct-color: #{group.AccountColor}")">
                                 @group.Nickname
                             </span>
                         }
-                        <span class="font-mono">@ScreenshotSafety.Mask(group.Eid)</span>
-                        <span class="text-gray-500 ml-1">· @group.Pairs.Count export(s) · @FormatSize(GroupSize(group))</span>
+                        <span class="exm-eid">@ScreenshotSafety.Mask(group.Eid)</span>
+                        <span class="exm-group-meta">@group.Pairs.Count export(s), @FormatSize(GroupSize(group))</span>
                     </button>
                     @if (!collapsed) {
-                        <div class="pl-4 mt-1">
-                            <table class="text-xs">
+                        <div class="exm-table-wrap">
+                            <table class="exm-table">
                                 <thead>
-                                <tr class="text-gray-500">
-                                    <th class="text-left pr-4 font-normal pb-0.5">Date</th>
-                                    <th class="text-left pr-4 font-normal pb-0.5">CSV</th>
-                                    <th class="text-left font-normal pb-0.5">XLSX</th>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>CSV</th>
+                                    <th>XLSX</th>
                                 </tr>
                                 </thead>
                                 <tbody>
                                 @foreach (var pair in group.Pairs) {
-                                    <tr class="text-gray-400">
-                                        <td class="pr-4 py-0.5">@pair.DisplayDate</td>
-                                        <td class="pr-4 py-0.5">
+                                    <tr>
+                                        <td>@pair.DisplayDate</td>
+                                        <td>
                                             @if (!string.IsNullOrEmpty(pair.CsvPath)) {
-                                                <label class="flex items-center gap-1 cursor-pointer">
+                                                <label class="exm-pick">
                                                     <input type="checkbox" class="ext-opt-check"
                                                            checked="@_selected.Contains(pair.CsvPath)"
                                                            @onchange="() => TogglePath(pair.CsvPath)"/>
                                                     <span>@FormatSize(pair.CsvSize)</span>
                                                 </label>
                                             } else {
-                                                <span class="text-gray-600">-</span>
+                                                <span class="exm-none">-</span>
                                             }
                                         </td>
-                                        <td class="py-0.5">
+                                        <td>
                                             @if (!string.IsNullOrEmpty(pair.XlsxPath)) {
-                                                <label class="flex items-center gap-1 cursor-pointer">
+                                                <label class="exm-pick">
                                                     <input type="checkbox" class="ext-opt-check"
                                                            checked="@_selected.Contains(pair.XlsxPath)"
                                                            @onchange="() => TogglePath(pair.XlsxPath)"/>
                                                     <span>@FormatSize(pair.XlsxSize)</span>
                                                 </label>
                                             } else {
-                                                <span class="text-gray-600">-</span>
+                                                <span class="exm-none">-</span>
                                             }
                                         </td>
                                     </tr>
@@ -96,19 +93,18 @@
                 </div>
             }
 
-            <div class="mt-0_5rem pl-0_5rem flex flex-row items-center gap-2 flex-wrap">
-                <span class="text-xs text-gray-500">@_selected.Count file(s) selected · @FormatSize(SelectedBytes)</span>
-                <button type="button"
-                        class="apply-filter-button !mt-0 !mr-0 !ml-0 !bg-red-900 !text-red-200 hover:!bg-red-800 !border-red-700"
-                        disabled="@(_selected.Count == 0 || _deleting)" @onclick="DeleteSelectedAsync">
+            <div class="exm-body exm-row">
+                <span class="exm-note-plain">@_selected.Count file(s) selected, @FormatSize(SelectedBytes)</span>
+                <button type="button" class="btn-danger" disabled="@(_selected.Count == 0 || _deleting)" @onclick="DeleteSelectedAsync">
                     @(_deleting ? "Deleting..." : "Delete selected")
                 </button>
             </div>
             @if (_deleteError.Length > 0) {
-                <div class="mt-0_25rem pl-0_5rem text-xs text-red-400">@_deleteError</div>
+                <div class="exm-err">@_deleteError</div>
             }
         </div>
     }
+</div>
 </div>
 
 @code {

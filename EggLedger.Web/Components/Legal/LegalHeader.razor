@@ -1,0 +1,15 @@
+<div>
+    <h1 class="legal-head-title">@Title</h1>
+    <p class="legal-head-updated">Last updated @Updated</p>
+
+    <div class="legal-head-disclaimer">
+        EggLedger is an independent, fan-made tool and is not affiliated with, endorsed by, or
+        sponsored by Auxbrain Inc. Egg, Inc. and related marks are the property of their respective
+        owners.
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter, EditorRequired] public string Updated { get; set; } = "";
+}

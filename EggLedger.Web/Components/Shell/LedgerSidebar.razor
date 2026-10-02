@@ -4,10 +4,10 @@
 @inject DropsViewState Drops
 @inject MissionConfigProvider Config
 
-<aside class="ledger-sidebar @(_collapsed ? "is-rail" : "") @(IsReports ? "is-reports" : "")">
+<aside class="ledger-sidebar @(_collapsed ? "ledger-sidebar-rail" : "") @(IsReports ? "ledger-sidebar-reports" : "")">
     <AccountFetchHeader OnExpandRequest="Expand"/>
 
-    <div class="filter-panel sidebar-panel sidebar-filter @(_filterOpen ? "" : "sidebar-section-closed")">
+    <div class="sb-panel sidebar-panel sidebar-filter @(_filterOpen ? "" : "sidebar-panel-closed")">
         <div class="sidebar-panel-head">
             @if (_collapsed) {
                 <button type="button" class="sidebar-rail-expand" aria-label="Expand sidebar" @onclick="Expand">
@@ -32,9 +32,9 @@
         </div>
         <div class="sidebar-panel-body">
             @if (ActiveContext.EmptyNote is { Length: > 0 }) {
-                <p class="text-xs text-gray-500 italic py-1">@ActiveContext.EmptyNote</p>
+                <p class="sidebar-empty-note">@ActiveContext.EmptyNote</p>
             }
-            <div class="@(IsReports ? "hidden" : "flex flex-col flex-1 min-h-0")">
+            <div class="@(IsReports ? "sidebar-filter-host-hidden" : "sidebar-filter-host")">
                 <MissionFilterBar @key="FilterBarKey"
                                   Context="BarContext"
                                   Applying="ActiveApplying"
@@ -45,7 +45,7 @@
         </div>
     </div>
 
-    <div class="filter-panel sidebar-panel sidebar-options @(_optionsOpen ? "" : "sidebar-section-closed")">
+    <div class="sb-panel sidebar-panel sidebar-options @(_optionsOpen ? "" : "sidebar-panel-closed")">
         <div class="sidebar-panel-head">
             @if (_collapsed) {
                 <button type="button" class="sidebar-rail-expand" aria-label="Expand sidebar" @onclick="Expand">
@@ -68,12 +68,12 @@
                 <button type="button" class="sidebar-collapse-btn" aria-label="Collapse sidebar" @onclick="ToggleRail">&#8249;</button>
             }
         </div>
-        <div class="sidebar-panel-body sidebar-scroll-body text-sm">
+        <div class="sidebar-panel-body sidebar-scroll-body">
             <OptionsHost/>
         </div>
     </div>
 
-    <div class="filter-panel sidebar-panel sidebar-footer">
+    <div class="sb-panel sidebar-panel sidebar-footer">
         <SidebarFooter OnSettings="OpenSettings" OnAbout="OpenAbout" OnTerms="OpenTerms" OnPrivacy="OpenPrivacy" OnSupport="OpenSupport"/>
     </div>
 </aside>

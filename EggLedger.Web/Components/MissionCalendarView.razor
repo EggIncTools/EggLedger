@@ -5,10 +5,10 @@
 @using System.Globalization
 @using EggIdentity.UI
 
-<div class="flex flex-col gap-2 min-h-0 flex-1">
-    <div class="relative flex items-center gap-2 flex-wrap mt-0_75rem">
+<div class="mcal">
+    <div class="mcal-bar">
         @LeadingControls
-        <div class="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
+        <div class="mcal-center">
             <CalendarRangePicker TZoom="TimelineZoom"
                                  AvailableZooms="Zooms"
                                  Zoom="_zoom"
@@ -44,7 +44,7 @@
         </div>
     </div>
 
-    <div class="flex-1 min-h-0 shadow-sm bg-darkest rounded-md p-2 timeline-shell timeline-view-@ZoomClass">
+    <div class="timeline-shell timeline-view-@ZoomClass">
         <div class="timeline-scale">
             @if (_zoom == TimelineZoom.Day) {
                 @foreach (var tick in CurrentHourTicks) {
@@ -68,11 +68,11 @@
 </div>
 
 @if (_showStillFlying) {
-    <dialog open class="fixed inset-0 m-auto w-max h-max z-50 rounded-lg bg-dark border border-gray-700 p-4 text-gray-300 shadow-2xl">
-        <div class="flex flex-col items-center gap-2 max-w-72 text-center">
-            <span class="font-bold">Still flying</span>
-            <span class="text-sm text-gray-400">This mission has not returned yet. Drops show up after it lands and you fetch again.</span>
-            <button type="button" class="toggle-link text-base" @onclick="CloseStillFlying">Close</button>
+    <dialog open class="mcal-flying">
+        <div class="mcal-flying-body">
+            <span class="mcal-flying-title">Still flying</span>
+            <span class="mcal-flying-text">This mission has not returned yet. Drops show up after it lands and you fetch again.</span>
+            <button type="button" class="toggle-link mcal-flying-close" @onclick="CloseStillFlying">Close</button>
         </div>
     </dialog>
 }

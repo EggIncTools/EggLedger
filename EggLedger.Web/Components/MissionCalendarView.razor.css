@@ -1,0 +1,167 @@
+.mcal {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 0.5rem;
+    min-height: 0;
+}
+
+.mcal-bar {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.mcal-center {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.airtime-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+}
+
+.airtime-label {
+    color: var(--color-muted);
+}
+
+.airtime-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.3rem;
+    padding: 0.1rem 0.55rem;
+    border-radius: 9999px;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-bg);
+    color: var(--color-fg);
+    font-variant-numeric: tabular-nums;
+}
+
+.airtime-farm {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.85;
+}
+
+.airtime-filtered {
+    border-style: dashed;
+    color: var(--color-muted);
+}
+
+.timeline-shell {
+    --bar-h: 2.25rem;
+    --bubble-h: 2.75rem;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    isolation: isolate;
+    padding: 0.5rem;
+    background-color: var(--color-darkest);
+    border-radius: 0.375rem;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+.timeline-view-day {
+    --bar-h: 2.5rem;
+    --bubble-h: 3.1rem;
+}
+
+.timeline-view-week {
+    --bar-h: 1.75rem;
+    --bubble-h: 2.6rem;
+}
+
+.timeline-view-month {
+    --bar-h: 1.35rem;
+    --bubble-h: 2.1rem;
+}
+
+.timeline-view-month ::deep .cal-strip {
+    --strip-top: -20%;
+    --strip-h: 140%;
+    --strip-slot-h: calc(100% / 7);
+}
+
+.timeline-view-month ::deep .cal-period-context {
+    opacity: 1;
+}
+
+.timeline-scale {
+    position: relative;
+    height: 1.25rem;
+    flex-shrink: 0;
+    margin-bottom: 0.25rem;
+}
+
+.timeline-scale-label {
+    position: absolute;
+    top: 0;
+    left: calc(var(--tick-pos) * 1%);
+    transform: translateX(-50%);
+    font-size: 0.7rem;
+    line-height: 1.25rem;
+    color: var(--color-muted);
+    white-space: nowrap;
+}
+
+.mcal-flying {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    margin: auto;
+    width: max-content;
+    height: max-content;
+    padding: 1rem;
+    color: var(--color-fg);
+    background-color: var(--color-dark);
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+}
+
+.mcal-flying-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    max-width: 18rem;
+    text-align: center;
+}
+
+.mcal-flying-title {
+    font-weight: 700;
+}
+
+.mcal-flying-text {
+    font-size: 0.875rem;
+    line-height: calc(1.25 / 0.875);
+    color: var(--color-muted);
+}
+
+.mcal-flying-close {
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+@media (max-width: 47.9375rem) {
+    .timeline-scale-label {
+        font-size: 0.6rem;
+    }
+
+    .timeline-shell ::deep .timeline-cell-label {
+        font-size: 0.55rem;
+    }
+}

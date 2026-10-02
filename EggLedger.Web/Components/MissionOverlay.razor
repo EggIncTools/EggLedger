@@ -12,74 +12,73 @@
    <dialog>.showModal(): top-layer promotion desyncs the Blazor Server render tree
    (insertBefore/parentNode-null crashes). Backdrop click closes. *@
 
+<div class="mov-size @SizeClass">
 <ModalHost Open="_open" OnClose="Close" Title="Mission Details" OnKeyDown="OnKeyDown" PreventKeyDefault="true"
-           CardClass="@ContainerCssClass">
+           Width="ModalWidth.Custom">
     @if (_multi is null) {
-        <button class="disabled:cursor-not-allowed absolute left-2 top-1/2 -translate-y-1/2 z-10 rounded-md text-gray-400 focus:outline-none disabled:text-gray-600 hover:text-gray-200" type="button" aria-label="Previous mission"
+        <button class="mov-nav mov-nav-prev" type="button" aria-label="Previous mission"
                 disabled="@(_data?.PrevMission is null)"
                 @onclick="@(() => NavigateAsync(_data?.PrevMission))">
-            <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="mov-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
             </svg>
         </button>
-        <button class="disabled:cursor-not-allowed absolute right-2 top-1/2 -translate-y-1/2 z-10 rounded-md text-gray-400 focus:outline-none disabled:text-gray-600 hover:text-gray-200" type="button" aria-label="Next mission"
+        <button class="mov-nav mov-nav-next" type="button" aria-label="Next mission"
                 disabled="@(_data?.NextMission is null)"
                 @onclick="@(() => NavigateAsync(_data?.NextMission))">
-            <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="mov-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
         </button>
     }
 
     @if (_multi is null) {
-        <div class="overflow-auto flex-1 min-h-0 pt-8 px-4 md:px-10 pb-2">
-            <div class="bg-darkerer rounded-lg py-2">
+        <div class="mov-body mov-body-scroll">
+            <div class="mov-panel">
                 @if (_data is not null) {
                     <ShipDisplay Data="_data" ShowExpectedDrops="ShowExpectedDrops"/>
                 } else if (_isLoading) {
-                    <div class="text-center px-8 py-6">
+                    <div class="mov-loading">
                         <img src="@ContentPaths.Asset("images/loading.gif")" alt="Loading..." class="xl-ico"/>
-                        <div class="mt-3 text-sm text-gray-400">Loading mission...</div>
+                        <div class="mov-loading-text">Loading mission...</div>
                     </div>
                 }
             </div>
         </div>
     } else if (_isLoading) {
-        <div class="text-center px-8 py-4 min-w-60 pt-8">
-            <div class="mt-0_5rem text-center text-xl text-gray-400">Multi-Mission View Loading</div>
-            <hr class="mt-1rem mb-1rem w-full"/>
+        <div class="mov-multi-loading">
+            <div class="mov-multi-title">Multi-Mission View Loading</div>
+            <hr class="mov-rule"/>
             <img src="@ContentPaths.Asset("images/loading.gif")" alt="Loading..." class="xl-ico"/>
-            <div class="mt-3 text-sm text-gray-400">
+            <div class="mov-loading-text">
                 @if (_loadedCount == 0) {
                     <span>Loading drops...</span>
                 } else if (_loadedCount >= _totalToLoad) {
                     <span>Combining drops...</span>
                 } else {
                     <span>Loading mission</span>
-                    <span class="text-gray-200 font-semibold">@_loadedCount</span>
+                    <span class="mov-strong">@_loadedCount</span>
                     <span>of</span>
-                    <span class="text-gray-200 font-semibold">@_totalToLoad</span>
+                    <span class="mov-strong">@_totalToLoad</span>
                 }
             </div>
-            <div class="mt-2 w-full bg-darker rounded-full h-1.5 overflow-hidden">
-                <div class="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
-                     style="width: @(LoadingPercent)%;">
-                </div>
+            <div class="mov-progress">
+                <div class="mov-progress-fill" style="--mov-pct: @(LoadingPercent)%;"></div>
             </div>
         </div>
     } else {
-        <div class="flex flex-col flex-1 min-h-0 pt-8 px-4 md:px-10 pb-2">
-            <div class="flex justify-center mb-3 shrink-0">
-                <div class="flex bg-darkerer border border-gray-700 rounded-md p-0.5 text-sm gap-0.5">
+        <div class="mov-body">
+            <div class="mov-mode-wrap">
+                <div class="mov-mode">
                     <button type="button"
                             disabled="@(_multi.Count > MaxSeparate)"
                             title="@(_multi.Count > MaxSeparate ? $"Separate view is limited to {MaxSeparate} missions" : null)"
-                            class="px-3 py-1 rounded focus:outline-none transition-colors @(_displayMode == "separate" ? "bg-dark text-blue-400" : _multi.Count > MaxSeparate ? "text-gray-600 cursor-not-allowed" : "text-gray-500 hover:text-gray-300")"
+                            class="mov-mode-btn @(_displayMode == "separate" ? "mov-mode-btn-on" : "")"
                             @onclick="@(() => _displayMode = "separate")">
                         Separate
                     </button>
                     <button type="button"
-                            class="px-3 py-1 rounded focus:outline-none transition-colors @(_displayMode == "combined" ? "bg-dark text-blue-400" : "text-gray-500 hover:text-gray-300")"
+                            class="mov-mode-btn @(_displayMode == "combined" ? "mov-mode-btn-on" : "")"
                             @onclick="@(() => _displayMode = "combined")">
                         Combined
                     </button>
@@ -87,33 +86,33 @@
             </div>
 
             @if (_displayMode == "separate" && _multi.Count <= MaxSeparate) {
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-2 flex-1 min-h-0 overflow-y-auto mb-3">
+                <div class="mov-grid">
                     @foreach (var d in _multi) {
-                        <div class="bg-darkerer rounded-lg py-2">
+                        <div class="mov-panel">
                             <ShipDisplay Data="d" IsMulti="true" ShowExpectedDrops="ShowExpectedDrops"/>
                         </div>
                     }
                 </div>
             } else {
-                <div class="bg-darkerer rounded-lg p-3 text-gray-300 text-center flex-1 min-h-0 overflow-auto mb-3">
-                    <div class="flex flex-wrap justify-center gap-x-3 gap-y-2 mb-4">
+                <div class="mov-combined">
+                    <div class="mov-ships">
                         @foreach (var d in _shipHeaderExpanded ? _multi : _multi.Take(20)) {
-                            <div class="flex flex-col items-center rounded-lg px-3 py-2 min-w-36" style="background: rgba(120, 128, 138, 0.12);">
+                            <div class="panel-muted mov-ship">
                                 @if (!string.IsNullOrEmpty(d.MissionInfo.ShipEnumString)) {
                                     <img loading="lazy" decoding="async"
                                          src="@ContentPaths.Asset($"images/ships/{d.MissionInfo.ShipEnumString}.png")"
-                                         alt="@d.MissionInfo.ShipString" class="w-14 h-14 object-contain mb-1"/>
+                                         alt="@d.MissionInfo.ShipString" class="mov-ship-img"/>
                                 }
-                                <div class="font-semibold text-sm @DurationClass(d.MissionInfo)">@d.MissionInfo.ShipString</div>
+                                <div class="mov-ship-name @DurationClass(d.MissionInfo)">@d.MissionInfo.ShipString</div>
                                 @if (d.MissionInfo.Level > 0) {
-                                    <span class="text-goldenstar text-xs">(@d.MissionInfo.Level★)</span>
+                                    <span class="text-goldenstar mov-small">(@d.MissionInfo.Level★)</span>
                                 }
-                                <div class="text-gray-400 text-xs mt-1">@ShortDate(d.LaunchDT)</div>
-                                <div class="text-gray-400 text-xs">@ShortDate(d.ReturnDT)</div>
+                                <div class="mov-small mov-muted mov-gap">@ShortDate(d.LaunchDT)</div>
+                                <div class="mov-small mov-muted">@ShortDate(d.ReturnDT)</div>
                                 @if (HasTarget(d.MissionInfo)) {
-                                    <div class="text-gray-400 text-xs mt-1">@ProperCase(d.MissionInfo.Target.Replace("_", " ", StringComparison.Ordinal))</div>
+                                    <div class="mov-small mov-muted mov-gap">@ProperCase(d.MissionInfo.Target.Replace("_", " ", StringComparison.Ordinal))</div>
                                 }
-                                <div class="text-gray-500 text-xs mt-0.5 flex items-center gap-1">
+                                <div class="mov-small mov-muted mov-cap">
                                     <span>@d.MissionInfo.Capacity</span>
                                     @if (d.MissionInfo.IsBuggedCap) {
                                         <span class="text-buggedcap">0.6x</span>
@@ -124,10 +123,7 @@
                             </div>
                         }
                         @if (!_shipHeaderExpanded && _multi.Count > 20) {
-                            <button type="button"
-                                    class="flex flex-col items-center justify-center rounded-lg px-3 py-2 min-w-36 text-gray-400 hover:text-gray-200 transition-colors"
-                                    style="background: rgba(120, 128, 138, 0.12);"
-                                    @onclick="@(() => _shipHeaderExpanded = true)">
+                            <button type="button" class="panel-muted mov-ship mov-more" @onclick="@(() => _shipHeaderExpanded = true)">
                                 + @(_multi.Count - 20) more
                             </button>
                         }
@@ -140,7 +136,7 @@
                 </div>
             }
 
-            <div class="text-xs text-gray-300 text-center shrink-0">
+            <div class="mov-tip">
                 Hover mouse over an item to show details.<br/>
                 Click to open the relevant
                 <a class="ledger-underline" target="_blank" rel="noopener" href="https://wasmegg-carpet.netlify.app/artifact-explorer/">artifact explorer</a>
@@ -149,6 +145,7 @@
         </div>
     }
 </ModalHost>
+</div>
 
 @code {
     [Parameter] public string? AccountId { get; set; }
@@ -176,8 +173,8 @@
 
     private static readonly TimeSpan ProgressInterval = TimeSpan.FromMilliseconds(100);
 
-    private string ContainerCssClass =>
-        $"mission-overlay focus:outline-none {(_multi is null ? "w-[92vw] md:w-60vw" : _isLoading ? "min-w-[92vw] max-w-[92vw] md:min-w-40vw md:max-w-40vw" : "min-w-[92vw] max-w-[92vw] md:min-w-60vw md:max-w-85vw")} max-h-95vh bg-dark rounded-lg relative flex flex-col";
+    private string SizeClass =>
+        _multi is null ? "mov-size-single" : _isLoading ? "mov-size-loading" : "mov-size-multi";
 
     public async Task OpenAsync(string missionId) {
         _multi = null;

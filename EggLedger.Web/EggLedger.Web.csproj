@@ -24,10 +24,7 @@
 
   <ItemGroup>
     <_StylesInput Include="Styles\app.v4.css" />
-    <_StylesInput Include="**\*.razor" Exclude="bin\**;obj\**;Tests\**" />
-    <_StylesInput Include="..\EggLedger.Desktop\wwwroot\desktop.html" Condition="Exists('..\EggLedger.Desktop\wwwroot\desktop.html')" />
     <_StylesInput Include="..\EggLedger.CssBuild\**\*.cs" Exclude="..\EggLedger.CssBuild\bin\**;..\EggLedger.CssBuild\obj\**" />
-    <_StylesInput Include="..\EggLedger.Web.Server\**\*.razor" Exclude="..\EggLedger.Web.Server\bin\**;..\EggLedger.Web.Server\obj\**" />
   </ItemGroup>
 
   <Target Name="BuildStyles"

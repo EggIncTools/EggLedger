@@ -5,10 +5,10 @@
 @inject ILogger<SearchablePicker> Logger
 
 @if (TriggerContent is not null) {
-    <button type="button" class="@TriggerClass" aria-label="@Placeholder" data-tt="@Placeholder" @onclick="Open">@TriggerContent</button>
+    <button type="button" class="picker-trigger picker-trigger-@TriggerVariant.ToString().ToLowerInvariant()" aria-label="@Placeholder" data-tt="@Placeholder" @onclick="Open">@TriggerContent</button>
 } else {
     <input type="text" readonly placeholder="@Placeholder"
-           class="filter-select border-gray-600 @(Selected?.StyleClass ?? "text-gray-400") cursor-pointer @(Incomplete ? "field-incomplete" : "")"
+           class="filter-select @(Selected?.StyleClass ?? "") @(Incomplete ? "field-incomplete" : "")"
            value="@(Selected?.Text ?? "")"
            @onclick="Open"/>
 }
@@ -42,26 +42,26 @@
                     var segments = BuildSegments(filtered);
                 }
                 @if (filtered.Count == 0) {
-                    <span class="text-gray-400">No results found.</span>
+                    <span class="popup-muted">No results found.</span>
                 } else {
                     @foreach (var segment in segments) {
                         @if (segment.GroupLabel is null) {
-                            <div class="flex flex-wrap">
+                            <div class="popup-opt-row">
                                 @foreach (var (opt, idx) in segment.Items) {
                                     <div class="popup-opt @(segment.Items.Count > 1 ? "popup-opt-inline" : "") @(idx == _activeIndex ? "selected-popup-opt" : "")"
                                          @onclick="() => Choose(opt)">
                                         @if (!string.IsNullOrEmpty(opt.ImagePath)) {
-                                            <img class="max-w-7 mr-1rem @RingClass(opt)" loading="lazy" decoding="async"
+                                            <img class="popup-opt-icon @RingClass(opt)" loading="lazy" decoding="async"
                                                  alt="@opt.Text" src="@ImageSrc(opt)"/>
                                         }
-                                        <span class="@(opt.StyleClass ?? "text-gray-400")">@opt.Text</span>
+                                        <span class="@(opt.StyleClass ?? "popup-muted")">@opt.Text</span>
                                     </div>
                                 }
                             </div>
                         } else {
                             <div class="popup-opt-group">
                                 <span class="popup-opt-group-label">@segment.GroupLabel</span>
-                                <div class="flex flex-wrap items-start gap-1">
+                                <div class="popup-opt-chips">
                                     @foreach (var cluster in BuildTierClusters(segment.Items)) {
                                         @if (cluster.TierKey is null) {
                                             @foreach (var item in cluster.Items) {
@@ -96,7 +96,11 @@
     [Parameter] public RenderFragment? Footer { get; set; }
     [Parameter] public bool Incomplete { get; set; }
     [Parameter] public RenderFragment? TriggerContent { get; set; }
-    [Parameter] public string TriggerClass { get; set; } = "";
+    [Parameter] public PickerTriggerVariant TriggerVariant { get; set; } = PickerTriggerVariant.Mini;
+
+    public enum PickerTriggerVariant {
+        Mini
+    }
     private bool _open;
     private bool _focusPending;
     private bool _preventKey;
@@ -164,7 +168,7 @@
                      alt="@opt.Text" src="@ImageSrc(opt)"/>
             }
             @if (!string.IsNullOrEmpty(opt.Badge)) {
-                <span class="popup-opt-chip-badge @(opt.StyleClass ?? "text-gray-400")">@opt.Badge</span>
+                <span class="popup-opt-chip-badge @(opt.StyleClass ?? "popup-muted")">@opt.Badge</span>
             }
         </button>
     };
@@ -183,10 +187,10 @@
 
     private string RingClass(FilterOption o) {
         if (RarityRing && o.Rarity is { } r) {
-            return $"rounded-full bg-r-{r}";
+            return $"popup-ring bg-r-{r}";
         }
 
-        return o.ImagePath == "icon_help.webp" ? "rounded-full bg-gray-500" : "";
+        return o.ImagePath == "icon_help.webp" ? "popup-ring popup-ring-help" : "";
     }
 
     private void Open() {

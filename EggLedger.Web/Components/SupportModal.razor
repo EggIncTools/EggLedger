@@ -1,13 +1,15 @@
 @using EggIdentity.UI
-<ModalHost Open="true" OnClose="Close" Title="Support the project" CardClass="w-[92vw] max-w-[24rem] p-4">
-    <p class="text-xs text-gray-400 mb-3">
-        Covers server and cert costs and keeps EggLedger free for everyone.
-    </p>
+<ModalHost Open="true" OnClose="Close" Title="Support the project" Width="ModalWidth.Small">
+    <div class="support">
+        <p class="support-lead">
+            Covers server and cert costs and keeps EggLedger free for everyone.
+        </p>
 
-    <div class="flex flex-col gap-2">
-        <a class="support-rail" href="https://github.com/sponsors/DavidArthurCole" target="_blank" rel="noopener">GitHub Sponsors</a>
-        <a class="support-rail" href="https://patreon.com/DavidArthurCole" target="_blank" rel="noopener">Patreon</a>
-        <a class="support-rail" href="https://buymeacoffee.com/davidarthurcole" target="_blank" rel="noopener">Buy Me a Coffee</a>
+        <div class="support-rails">
+            <a class="support-rail" href="https://github.com/sponsors/DavidArthurCole" target="_blank" rel="noopener">GitHub Sponsors</a>
+            <a class="support-rail" href="https://patreon.com/DavidArthurCole" target="_blank" rel="noopener">Patreon</a>
+            <a class="support-rail" href="https://buymeacoffee.com/davidarthurcole" target="_blank" rel="noopener">Buy Me a Coffee</a>
+        </div>
     </div>
 </ModalHost>
 

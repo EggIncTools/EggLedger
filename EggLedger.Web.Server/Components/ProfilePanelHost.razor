@@ -9,70 +9,68 @@
 @inject ILogger<ProfilePanelHost> Logger
 
 @if (!string.IsNullOrEmpty(_sessionToken)) {
-    <div class="px-2 py-2 text-sm text-gray-400 bg-darker rounded-md tabular-nums overflow-auto">
+    <div class="prof">
         <ProfilePanel SessionToken="@_sessionToken" ReturnUrl="@CleanReturnUrl">
             <AvatarTemplate Context="ctx">
-                <div class="mt-0_5rem flex items-center gap-3">
+                <div class="prof-avatar-row">
                     @if (!string.IsNullOrEmpty(ctx.AvatarUrl)) {
-                        <img class="w-14 h-14 rounded-full border border-gray-600 bg-darkest object-cover shrink-0" src="@Abs(ctx.AvatarUrl!)" alt="Profile picture"/>
+                        <img class="prof-avatar" src="@Abs(ctx.AvatarUrl!)" alt="Profile picture"/>
                     } else {
-                        <div class="w-14 h-14 rounded-full border border-gray-600 bg-darkest shrink-0"></div>
+                        <div class="prof-avatar"></div>
                     }
-                    <div class="flex flex-col gap-1">
-                        <label class="ledger-btn apply-filter-button !mt-0 !mr-0 !ml-0 self-start cursor-pointer">
+                    <div class="prof-avatar-side">
+                        <label class="btn-secondary prof-upload">
                             Upload picture
-                            <InputFile class="hidden" OnChange="@ctx.OnFileSelected" accept="image/png,image/jpeg,image/webp"/>
+                            <InputFile class="prof-file" OnChange="@ctx.OnFileSelected" accept="image/png,image/jpeg,image/webp"/>
                         </label>
-                        <span class="text-gray-500 text-xs">PNG, JPEG, or WebP, up to 2 MB.</span>
+                        <span class="prof-small">PNG, JPEG, or WebP, up to 2 MB.</span>
                         @if (ctx.Error is not null) {
-                            <span class="text-red-400 text-xs">@ctx.Error</span>
+                            <span class="prof-small prof-err">@ctx.Error</span>
                         }
                     </div>
                 </div>
             </AvatarTemplate>
             <ProvidersTemplate Context="ctx">
-                <hr class="mt-0_5rem mb-0_5rem border-gray-700"/>
+                <hr class="prof-rule"/>
                 @if (ctx.Banner is not null) {
-                    <div class="mb-0_5rem text-xs text-gray-500">@ctx.Banner</div>
+                    <div class="prof-small prof-banner">@ctx.Banner</div>
                 }
-                <table class="mt-0_5rem w-full text-sm border-collapse">
+                <table class="prof-table">
                     <tbody>
                     @foreach (var item in ctx.Items) {
-                        <tr class="border-b border-gray-800 last:border-b-0">
-                            <td class="py-1.5 pr-2 w-28">
-                                <span class="flex items-center gap-1.5 font-medium text-gray-300">
-                                    <img class="w-5 h-5 shrink-0 object-contain" style="filter: brightness(0) invert(1);" src="@Abs(Identity.IconUrl(item.Provider))" alt=""/>
+                        <tr class="prof-tr">
+                            <td class="prof-td prof-td-provider">
+                                <span class="prof-provider">
+                                    <img class="prof-provider-icon" src="@Abs(Identity.IconUrl(item.Provider))" alt=""/>
                                     @Cap(item.Provider)
                                 </span>
                             </td>
                             @if (item.Identity is { } id) {
-                                <td class="py-1.5 px-2 min-w-0">
-                                    <span class="flex items-center gap-2 min-w-0">
+                                <td class="prof-td prof-td-id">
+                                    <span class="prof-identity">
                                         @if (!string.IsNullOrEmpty(id.Avatar)) {
-                                            <button type="button" class="w-5 h-5 rounded-full shrink-0 overflow-hidden border border-transparent hover:border-gray-500"
+                                            <button type="button" class="prof-pick"
                                                     data-tt="Use this picture" aria-label="Use this picture" @onclick="item.OnSelectAvatar">
-                                                <img class="w-full h-full object-cover" src="@Abs(id.Avatar!)" alt=""/>
+                                                <img class="prof-pick-img" src="@Abs(id.Avatar!)" alt=""/>
                                             </button>
                                         }
-                                        <span class="truncate text-gray-400">@(id.Username ?? id.Subject)</span>
-                                        <span class="text-xs text-gray-600 shrink-0">@id.LinkedAt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)</span>
+                                        <span class="prof-username">@(id.Username ?? id.Subject)</span>
+                                        <span class="prof-small prof-dim prof-date">@id.LinkedAt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)</span>
                                     </span>
                                 </td>
-                                <td class="py-1.5 pl-2 w-20 text-right">
+                                <td class="prof-td prof-td-action">
                                     @if (item.CanUnlink) {
-                                        <button type="button" class="text-xs px-2 py-1 rounded bg-darkerthandark text-red-300 hover:bg-red-950"
-                                                @onclick="item.OnUnlink">
+                                        <button type="button" class="prof-chip prof-chip-unlink" @onclick="item.OnUnlink">
                                             Unlink
                                         </button>
                                     } else {
-                                        <span class="text-xs text-gray-600 italic" data-tt="Cannot unlink the last login">Linked</span>
+                                        <span class="prof-small prof-dim prof-italic" data-tt="Cannot unlink the last login">Linked</span>
                                     }
                                 </td>
                             } else {
-                                <td class="py-1.5 px-2 text-gray-600 italic">Not linked</td>
-                                <td class="py-1.5 pl-2 w-20 text-right">
-                                    <a class="text-xs px-2 py-1 rounded bg-darkerthandark text-privacy_blue hover:bg-dark_tab_hover"
-                                       href="@Abs(item.LinkUrl)">
+                                <td class="prof-td prof-td-id prof-dim prof-italic">Not linked</td>
+                                <td class="prof-td prof-td-action">
+                                    <a class="prof-chip prof-chip-link" href="@Abs(item.LinkUrl)">
                                         Link
                                     </a>
                                 </td>
@@ -84,28 +82,28 @@
             </ProvidersTemplate>
         </ProfilePanel>
 
-        <hr class="mt-0_5rem mb-0_5rem border-gray-700"/>
-        <span class="mr-0_5rem font-bold text-sm text-gray-400 ledger-underline">Preferences</span>
-        <div class="mt-0_5rem flex items-end gap-2 flex-wrap">
-            <label class="flex flex-col gap-1 text-xs text-gray-500">
+        <hr class="prof-rule"/>
+        <span class="prof-heading ledger-underline">Preferences</span>
+        <div class="prof-prefs">
+            <label class="prof-field">
                 Timezone
                 <TimeZonePicker @bind-Value="_timezone" Placeholder="Search timezone..."/>
             </label>
-            <label class="flex flex-col gap-1 text-xs text-gray-500">
+            <label class="prof-field">
                 Language
                 <LanguagePicker @bind-Value="_language" Placeholder="Search language..."/>
             </label>
-            <button type="button" class="ledger-btn apply-filter-button !w-auto !mt-0 !mr-0 !ml-0" disabled="@_prefsSaving" @onclick="SavePreferencesAsync">
+            <button type="button" class="btn-secondary" disabled="@_prefsSaving" @onclick="SavePreferencesAsync">
                 @(_prefsSaving ? "Saving..." : "Save")
             </button>
             @if (_prefsSaved) {
-                <span class="text-xs text-green-400">Saved.</span>
+                <span class="prof-small prof-ok">Saved.</span>
             }
             @if (_prefsError is not null) {
-                <span class="text-xs text-red-400">@_prefsError</span>
+                <span class="prof-small prof-err">@_prefsError</span>
             }
         </div>
-        <span class="text-gray-500 text-xs">Will also take effect in other EggIdentity apps (e.g., EggIncognito).</span>
+        <span class="prof-small">Will also take effect in other EggIdentity apps (e.g., EggIncognito).</span>
     </div>
 }
 

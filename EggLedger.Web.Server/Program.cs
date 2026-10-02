@@ -436,4 +436,6 @@ app.MapRazorComponents<AppHost>()
     .AddInteractiveServerRenderMode()
     .AddAdditionalAssemblies(typeof(App).Assembly);
 
+app.MapAppVersion();
+
 await app.RunAsync();

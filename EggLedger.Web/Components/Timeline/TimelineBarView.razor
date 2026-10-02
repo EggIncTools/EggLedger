@@ -23,20 +23,20 @@
             }
         </span>
     }
-    <div class="tooltip-floating tooltip-fixed tooltip-toggle text-sm">
-        <span class="font-bold">@Bar.ShipName</span>
+    <div class="tooltip-floating tooltip-fixed tooltip-toggle timeline-bar-tt">
+        <span class="timeline-bar-tt-name">@Bar.ShipName</span>
         <span class="timeline-dur-text-@Bar.DurationIndex">@Bar.Mission.DurationString</span><br/>
-        <span class="text-gray-400">Launched:</span> @FormatTime(Bar.Mission.LaunchDT)<br/>
-        <span class="text-gray-400">@(Bar.IsActive ? "Returns:" : "Returned:")</span> @FormatTime(Bar.Mission.ReturnDT)<br/>
-        <span class="text-gray-400">Capacity:</span> @Bar.Mission.Capacity
+        <span class="timeline-bar-tt-key">Launched:</span> @FormatTime(Bar.Mission.LaunchDT)<br/>
+        <span class="timeline-bar-tt-key">@(Bar.IsActive ? "Returns:" : "Returned:")</span> @FormatTime(Bar.Mission.ReturnDT)<br/>
+        <span class="timeline-bar-tt-key">Capacity:</span> @Bar.Mission.Capacity
         @if (!string.IsNullOrEmpty(Bar.Mission.Target) && Bar.Mission.Target != "UNKNOWN") {
             <br/>
-            <span class="text-gray-400">Target: </span>
+            <span class="timeline-bar-tt-key">Target: </span>
             @NameFormatting.TargetDisplayName(Bar.Mission.Target)
         }
         @if (!Bar.HasData) {
             <br/>
-            <span class="text-gray-500 italic">Still flying, no drop data yet</span>
+            <span class="timeline-bar-tt-note">Still flying, no drop data yet</span>
         }
     </div>
 </div>
@@ -74,7 +74,6 @@
 
     private string BarStyle =>
         FormattableString.Invariant($"--bar-start:{Bar.LeftPercent};--bar-size:{Bar.WidthPercent};--bar-fill:{Bar.FillPercent};--bar-z:{Bar.StackOrder};");
-
     private string CapModifierClass {
         get {
             if (RecolorBC && Bar.Mission.IsBuggedCap) {

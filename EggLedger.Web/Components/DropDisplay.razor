@@ -7,18 +7,18 @@
     <div class="@LabelClass">
         @LabelText (@TotalCount)
     </div>
-    <div class="ledger-af-repeat">
+    <div class="drop-grid">
         @foreach (var item in Items) {
-            <div class="mission-view-rep relative tooltip-host">
+            <div class="drop-rep tooltip-host">
                 <a class="@RarityBgClass(item)" target="_blank" rel="noopener" href="@ExplorerUrl(item)"
                    @onmouseenter="@(() => ShowTooltip(item))" @onmouseleave="HideTooltip">
-                    <img class="h-full w-full" loading="lazy" decoding="async" alt="@item.GameName" src="@SpecPath(item)"/>
+                    <img class="drop-img" loading="lazy" decoding="async" alt="@item.GameName" src="@SpecPath(item)"/>
                     @if (item.Count > 1) {
-                        <span class="ledger-af-count @NumToDigClass(item.Count)">@item.Count</span>
+                        <span class="drop-count @NumToDigClass(item.Count)">@item.Count</span>
                     }
                 </a>
                 @if (ReferenceEquals(_hovered, item)) {
-                    <div class="tooltip-floating tooltip-fixed tooltip-toggle text-sm">
+                    <div class="tooltip-floating tooltip-fixed tooltip-toggle drop-tt">
                         @item.GameName (T@(item.Level + SpecPathOffset(item)))
                         @if (item.SpecType == "Artifact") {
                             <span class="text-rarity-@item.Rarity">@FilterOptions.RarityWord(item.Rarity) </span>
@@ -28,41 +28,41 @@
                             <br/>
                             var bound = BoundEffectString(item.EffectString);
                             <span>
-                                @bound.Prefix<span class="text-green-500">@bound.Highlight</span>@bound.Suffix
+                                @bound.Prefix<span class="drop-tt-num">@bound.Highlight</span>@bound.Suffix
                             </span>
                         }
                         @if (ShowPerShip && LifetimeMissionCount > 0) {
-                            <hr class="mt-0_5rem mb-0_5rem w-full"/>
+                            <hr class="drop-tt-rule"/>
                             var perShip = (double)item.Count / LifetimeMissionCount;
                             <span>
-                                (<span class="text-green-500">@perShip.ToString("0.00000", CultureInfo.InvariantCulture)</span> per ship -
-                                <span class="text-green-500">1</span> : <span class="text-green-500">@((1 / perShip).ToString("0.00", CultureInfo.InvariantCulture))</span>)
+                                (<span class="drop-tt-num">@perShip.ToString("0.00000", CultureInfo.InvariantCulture)</span> per ship -
+                                <span class="drop-tt-num">1</span> : <span class="drop-tt-num">@((1 / perShip).ToString("0.00", CultureInfo.InvariantCulture))</span>)
                             </span>
                         }
                         @if (LifetimeExpected) {
-                            <hr class="mt-0_5rem mb-0_5rem w-full"/>
+                            <hr class="drop-tt-rule"/>
                             var lifetimeCalc = DropCalcs(item);
                             @if (lifetimeCalc is null || lifetimeCalc.Value.Total == 0) {
-                                <span class="text-red-700">Not enough data to determine drop rate.</span>
+                                <span class="drop-tt-err">Not enough data to determine drop rate.</span>
                             } else {
-                                <span class="text-gray-400">
-                                    <span class="text-green-500">@(((double)lifetimeCalc.Value.Seen / lifetimeCalc.Value.Total * MissionTotalDrops).ToString("0.00", CultureInfo.InvariantCulture))</span>
+                                <span class="drop-tt-muted">
+                                    <span class="drop-tt-num">@(((double)lifetimeCalc.Value.Seen / lifetimeCalc.Value.Total * MissionTotalDrops).ToString("0.00", CultureInfo.InvariantCulture))</span>
                                     <span> expected drops</span>
                                 </span>
                             }
                         }
                         @if (ShowExpectedDrops) {
-                            <hr class="mt-0_5rem mb-0_5rem w-full"/>
+                            <hr class="drop-tt-rule"/>
                             var calc = DropCalcs(item);
                             @if (calc is null) {
-                                <span class="text-red-700">Not enough data to determine drop rate.</span>
+                                <span class="drop-tt-err">Not enough data to determine drop rate.</span>
                             } else {
-                                <span class="text-gray-400">
-                                    <span class="text-green-500">@calc.Value.Seen.ToString("N0", CultureInfo.InvariantCulture)</span>
+                                <span class="drop-tt-muted">
+                                    <span class="drop-tt-num">@calc.Value.Seen.ToString("N0", CultureInfo.InvariantCulture)</span>
                                     <span> seen out of </span>
-                                    <span class="text-green-500">@calc.Value.Total.ToString("N0", CultureInfo.InvariantCulture)</span>
+                                    <span class="drop-tt-num">@calc.Value.Total.ToString("N0", CultureInfo.InvariantCulture)</span>
                                     <span> drops</span><br/>
-                                    <span>(Average of <span class="text-green-500">@ExpectedPerShip(item)</span> expected in this ship)</span>
+                                    <span>(Average of <span class="drop-tt-num">@ExpectedPerShip(item)</span> expected in this ship)</span>
                                 </span>
                             }
                         }
@@ -121,11 +121,11 @@
         _ => "Unknown"
     };
 
-    private string LabelClass => "mission-view-div " + Type switch {
-        "artifact" => "bg-blue-900",
-        "stone" => "bg-fuchsia-900",
-        "ingredient" or "stone_fragment" => "text-gray-400 bg-darkerer",
-        _ => "bg-gray-900"
+    private string LabelClass => "drop-label " + Type switch {
+        "artifact" => "drop-label-artifact",
+        "stone" => "drop-label-stone",
+        "ingredient" or "stone_fragment" => "drop-label-ingredient",
+        _ => "drop-label-unknown"
     };
 
 
@@ -135,7 +135,7 @@
 
 
     private static string RarityBgClass(DropLike item) {
-        return item.SpecType == "Artifact" ? "ledger-af-link bg-r-" + item.Rarity : "ledger-af-link bg-r-0";
+        return item.SpecType == "Artifact" ? "drop-link bg-r-" + item.Rarity : "drop-link bg-r-0";
     }
 
     private static string ExplorerUrl(DropLike item) {
@@ -149,13 +149,13 @@
 
     private static string NumToDigClass(int num) {
         return num switch {
-            > 999999 => "w-sevendig",
-            > 99999 => "w-sixdig",
-            > 9999 => "w-fivedig",
-            > 999 => "w-fourdig",
-            > 99 => "w-threedig",
-            > 9 => "w-twodig",
-            _ => "w-onedig"
+            > 999999 => "drop-count-7",
+            > 99999 => "drop-count-6",
+            > 9999 => "drop-count-5",
+            > 999 => "drop-count-4",
+            > 99 => "drop-count-3",
+            > 9 => "drop-count-2",
+            _ => "drop-count-1"
         };
     }
 

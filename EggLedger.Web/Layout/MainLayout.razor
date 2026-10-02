@@ -16,8 +16,8 @@
 @* No cascading AuthenticationState means no auth gate exists at all (the desktop host's App.razor
    never wraps in CascadingAuthenticationState), so the account controls stay enabled there. *@
 <CascadingValue Value="IsLoggedIn" Name="IsLoggedIn">
-    <div class="h-full flex flex-col pb-3 bg-darker">
-        <main class="flex-1 min-h-0 flex flex-col" @key="TzProvider.TimeZone.Id">
+    <div class="layout">
+        <main class="layout-main" @key="TzProvider.TimeZone.Id">
             @Body
         </main>
     </div>

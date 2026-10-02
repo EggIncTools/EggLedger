@@ -1,93 +1,87 @@
 @using EggIdentity.UI
-<ModalHost Open="_open" OnClose="Close" Title="Mission Card Layout" CardClass="w-[70vw] max-h-[85vh] flex flex-col">
-    <div class="flex flex-1 min-h-0 px-6 py-4 gap-4">
-        <div class="w-1/2 overflow-auto flex flex-col gap-3 text-sm text-gray-300 pr-1">
-            <div class="panel-muted rounded-md p-3">
-                <span class="font-bold text-gray-400">Preset</span>
-                <div class="flex items-center gap-2 mt-2 flex-wrap">
-                    @foreach (var p in PresetSet.Presets) {
-                        <button type="button" class="tile-group-item @(p.Name == _editingPresetName ? "active" : "")" @onclick="@(() => SwitchTo(p.Name))">@p.Name</button>
-                    }
-                </div>
-                <div class="flex items-center gap-3 mt-2 flex-wrap">
-                    <button type="button" class="text-xs toggle-link" @onclick="@(() => BeginNaming(NameAction.SaveAsNew))">Save as new</button>
-                    <button type="button" class="text-xs toggle-link" @onclick="@(() => BeginNaming(NameAction.Duplicate))">Duplicate</button>
-                    <button type="button" class="text-xs toggle-link @(_editingPresetName == "Classic" ? "opacity-40 cursor-not-allowed" : "")" disabled="@(_editingPresetName == "Classic")" @onclick="@(() => BeginNaming(NameAction.Rename))">Rename</button>
-                    <button type="button" class="text-xs toggle-link @(_editingPresetName == "Classic" ? "opacity-40 cursor-not-allowed" : "")" disabled="@(_editingPresetName == "Classic")" @onclick="Delete">Delete</button>
+<div class="mcc-size">
+<ModalHost Open="_open" OnClose="Close" Title="Mission Card Layout" Width="ModalWidth.Custom">
+    <div class="mcc">
+        <div class="mcc-form">
+            <div class="panel-muted mcc-box">
+                <span class="mcc-heading">Preset</span>
+                <TileGroup TValue="string" Options="PresetTiles()" Selected="_editingPresetName" OnSelect="SwitchTo" Wrap="true"/>
+                <div class="mcc-actions">
+                    <button type="button" class="toggle-link mcc-link" @onclick="@(() => BeginNaming(NameAction.SaveAsNew))">Save as new</button>
+                    <button type="button" class="toggle-link mcc-link" @onclick="@(() => BeginNaming(NameAction.Duplicate))">Duplicate</button>
+                    <button type="button" class="toggle-link mcc-link" disabled="@IsClassic" @onclick="@(() => BeginNaming(NameAction.Rename))">Rename</button>
+                    <button type="button" class="toggle-link mcc-link" disabled="@IsClassic" @onclick="Delete">Delete</button>
                 </div>
                 @if (_pendingNameAction is not null) {
-                    <div class="flex items-center gap-2 mt-2">
-                        <input class="reg-filter-input text-xs" @bind="_pendingNameInput" @bind:event="oninput" placeholder="Preset name"/>
-                        <button type="button" class="text-xs toggle-link" @onclick="ConfirmNaming" disabled="@(!CanConfirmNaming)">Confirm</button>
-                        <button type="button" class="text-xs toggle-link" @onclick="@(() => _pendingNameAction = null)">Cancel</button>
+                    <div class="mcc-naming">
+                        <input class="mcc-input" @bind="_pendingNameInput" @bind:event="oninput" placeholder="Preset name"/>
+                        <button type="button" class="toggle-link mcc-link" @onclick="ConfirmNaming" disabled="@(!CanConfirmNaming)">Confirm</button>
+                        <button type="button" class="toggle-link mcc-link" @onclick="@(() => _pendingNameAction = null)">Cancel</button>
                         @if (_nameError is not null) {
-                            <span class="text-red-400 text-xs">@_nameError</span>
+                            <span class="mcc-error">@_nameError</span>
                         }
                     </div>
                 }
             </div>
 
-            <div class="panel-muted rounded-md p-3">
-                <span class="font-bold text-gray-400">Layout</span>
-                <div class="tile-group mt-2">
-                    <button type="button" class="tile-group-item @(_form.Layout == CardLayout.CompactRow ? "active" : "")" @onclick="@(() => _form.Layout = CardLayout.CompactRow)">Compact row</button>
-                    <button type="button" class="tile-group-item @(_form.Layout == CardLayout.Grid ? "active" : "")" @onclick="@(() => _form.Layout = CardLayout.Grid)">Grid</button>
-                </div>
+            <div class="panel-muted mcc-box">
+                <span class="mcc-heading">Layout</span>
+                <TileGroup TValue="CardLayout" Options="LayoutTiles" Selected="_form.Layout" OnSelect="SetLayout"/>
             </div>
 
-            <div class="panel-muted rounded-md p-3">
-                <span class="font-bold text-gray-400">Fields</span>
-                <div class="flex flex-col mt-2">
+            <div class="panel-muted mcc-box">
+                <span class="mcc-heading">Fields</span>
+                <div class="mcc-fields">
                     @foreach (var slot in _form.Fields.OrderBy(f => f.Order)) {
-                        <div class="flex items-center gap-2 py-1 border-b border-gray-800 last:border-b-0">
+                        <div class="mcc-field">
                             <input type="checkbox" checked="@slot.Enabled" @onchange="@(e => SetFieldEnabled(slot, e))"/>
-                            <span class="flex-1 text-gray-300">@slot.Field</span>
-                            <button type="button" class="w-6 h-6 flex items-center justify-center text-xs border border-gray-700 rounded-md bg-darkest text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed" disabled="@IsFirst(slot)" @onclick="@(() => MoveField(slot, -1))" aria-label="Move up">&uarr;</button>
-                            <button type="button" class="w-6 h-6 flex items-center justify-center text-xs border border-gray-700 rounded-md bg-darkest text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed" disabled="@IsLast(slot)" @onclick="@(() => MoveField(slot, 1))" aria-label="Move down">&darr;</button>
+                            <span class="mcc-field-name">@slot.Field</span>
+                            <button type="button" class="mcc-move" disabled="@IsFirst(slot)" @onclick="@(() => MoveField(slot, -1))" aria-label="Move up">&uarr;</button>
+                            <button type="button" class="mcc-move" disabled="@IsLast(slot)" @onclick="@(() => MoveField(slot, 1))" aria-label="Move down">&darr;</button>
                         </div>
                     }
                 </div>
             </div>
 
-            <div class="panel-muted rounded-md p-3 flex flex-col gap-2">
-                <label class="flex items-center gap-2">
+            <div class="panel-muted mcc-box mcc-checks">
+                <label class="mcc-check">
                     <input type="checkbox" @bind="_form.ColorizeByDuration"/> Colorize by duration
                 </label>
-                <label class="flex items-center gap-2">
+                <label class="mcc-check">
                     <input type="checkbox" @bind="_form.ShowExpectedDropsPerShip"/> Show expected drops per ship
                 </label>
             </div>
 
-            <div class="panel-muted rounded-md p-3">
-                <span class="font-bold text-gray-400">Colors</span>
-                <div class="flex flex-col gap-2 mt-2">
-                    <div class="flex items-center gap-2">
-                        <span class="w-24 text-gray-400">Background</span>
+            <div class="panel-muted mcc-box">
+                <span class="mcc-heading">Colors</span>
+                <div class="mcc-colors">
+                    <div class="mcc-color">
+                        <span class="mcc-color-label">Background</span>
                         <ColorPicker Value="@(_form.BackgroundColor ?? ColorPickerMath.Fallback)" ValueChanged="@(v => _form.BackgroundColor = v)"/>
-                        <button type="button" class="text-xs toggle-link" @onclick="@(() => _form.BackgroundColor = null)">Reset</button>
+                        <button type="button" class="toggle-link mcc-link" @onclick="@(() => _form.BackgroundColor = null)">Reset</button>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <span class="w-24 text-gray-400">Border</span>
+                    <div class="mcc-color">
+                        <span class="mcc-color-label">Border</span>
                         <ColorPicker Value="@(_form.BorderColor ?? ColorPickerMath.Fallback)" ValueChanged="@(v => _form.BorderColor = v)"/>
-                        <button type="button" class="text-xs toggle-link" @onclick="@(() => _form.BorderColor = null)">Reset</button>
+                        <button type="button" class="toggle-link mcc-link" @onclick="@(() => _form.BorderColor = null)">Reset</button>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <span class="w-24 text-gray-400">Accent</span>
+                    <div class="mcc-color">
+                        <span class="mcc-color-label">Accent</span>
                         <ColorPicker Value="@(_form.AccentColor ?? ColorPickerMath.Fallback)" ValueChanged="@(v => _form.AccentColor = v)"/>
-                        <button type="button" class="text-xs toggle-link" @onclick="@(() => _form.AccentColor = null)">Reset</button>
+                        <button type="button" class="toggle-link mcc-link" @onclick="@(() => _form.AccentColor = null)">Reset</button>
                     </div>
                 </div>
             </div>
 
-            <div class="panel-muted rounded-md p-3">
-                <label class="text-xs text-gray-400">
+            <div class="panel-muted mcc-box">
+                <label class="mcc-css-label">
                     Custom CSS
-                    <textarea class="reg-filter-input w-full mt-2 font-mono text-xs" rows="6" @bind="_form.CustomCss" @bind:event="oninput"></textarea>
+                    <textarea class="mcc-input mcc-css" rows="6" @bind="_form.CustomCss" @bind:event="oninput"></textarea>
                 </label>
-                <div class="flex items-center justify-between mt-1">
-                    <span class="text-gray-500 text-xs">@(_form.CustomCss?.Length ?? 0) / 20000</span>
+                <div class="mcc-css-foot">
+                    <span class="mcc-css-count">@(_form.CustomCss?.Length ?? 0) / 20000</span>
                     @if (_cssError is not null) {
-                        <span class="text-red-400 text-xs">@_cssError</span>
+                        <span class="mcc-error">@_cssError</span>
                     }
                 </div>
             </div>
@@ -95,19 +89,20 @@
             <button type="button" class="btn-primary" @onclick="Save" disabled="@(_cssError is not null)">Save</button>
         </div>
 
-        <div class="w-1/2 overflow-auto flex flex-col gap-2">
-            <span class="font-bold text-gray-400 text-sm">Preview</span>
-            <div class="px-2 py-2 shadow-sm block text-xs font-mono text-gray-500 bg-darkest rounded-md flex-1">
+        <div class="mcc-preview">
+            <span class="mcc-preview-title">Preview</span>
+            <div class="mcc-preview-body">
                 <MissionCardCustomStyle Config="_form.ToConfig()"/>
                 @if (_previewMission is not null) {
                     <MissionCard Mission="_previewMission" Config="_form.ToConfig()" ViewByDate="false" ViewMissionTimes="true"/>
                 } else {
-                    <span class="italic text-gray-600">No missions loaded to preview.</span>
+                    <span class="mcc-preview-empty">No missions loaded to preview.</span>
                 }
             </div>
         </div>
     </div>
 </ModalHost>
+</div>
 
 @code {
     [Parameter] public CardPresetSet PresetSet { get; set; } = CardPresetSet.Default;
@@ -119,6 +114,20 @@
     private string? _cssError;
     private DatabaseMission? _previewMission => PreviewMission;
     private string _editingPresetName = "Classic";
+
+    private static readonly IReadOnlyList<TileGroup<CardLayout>.Tile> LayoutTiles = [
+        new(CardLayout.CompactRow, b => b.AddContent(0, "Compact row")),
+        new(CardLayout.Grid, b => b.AddContent(0, "Grid"))
+    ];
+
+    private IReadOnlyList<TileGroup<string>.Tile> PresetTiles() =>
+        [.. PresetSet.Presets.Select(p => new TileGroup<string>.Tile(p.Name, b => b.AddContent(0, p.Name)))];
+
+    private bool IsClassic => _editingPresetName == "Classic";
+
+    private void SetLayout(CardLayout layout) {
+        _form.Layout = layout;
+    }
 
     public Task OpenAsync() {
         _editingPresetName = PresetSet.ActivePresetName;

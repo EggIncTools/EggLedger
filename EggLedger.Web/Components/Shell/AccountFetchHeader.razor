@@ -16,34 +16,34 @@
 @inject ILogger<AccountFetchHeader> Logger
 @inject ILogger<OutsideClickRegistration> OutsideClickLogger
 
-<div class="filter-panel account-bar">
+<div class="account-bar">
     <button type="button" class="account-rail-chip" title="@ChipTitle" aria-label="Expand sidebar" @onclick="RequestExpand">
-        <span class="account-chip-dot" style="background-color: #@ChipColor"></span>
+        <span class="account-chip-dot" style="--acct-color: #@ChipColor"></span>
     </button>
 
     <div class="account-full">
         <div class="account-main-row">
             <div class="account-select-wrap" @ref="_wrapRef">
                 <button type="button" class="account-select-btn" disabled="@(!IsLoggedIn)" @onclick="OpenPopover">
-                    <span class="min-w-0 flex flex-col items-start leading-tight gap-0.5">
+                    <span class="account-summary">
                         @if (_active is not null) {
-                            <span class="flex items-center flex-wrap gap-1.5 max-w-full">
-                                <span class="font-medium truncate" style="color: #@_active.AccountColor">@_active.Nickname</span>
-                                <span class="text-gray-500 text-xs shrink-0">@_active.EBString</span>
+                            <span class="account-line">
+                                <span class="account-nick account-nick-trunc" style="--acct-color: #@_active.AccountColor">@_active.Nickname</span>
+                                <span class="account-eb account-small">@_active.EBString</span>
                                 @{ var activeInfo = InfoFor(_active.Id); }
                                 @if (activeInfo is { SeString: not "" }) {
-                                    <span class="text-xs" style="color:#a855f7">@activeInfo.SeString SE</span>
-                                    <span class="text-xs" style="color:#eab308">@activeInfo.PeCount PE</span>
+                                    <span class="account-small account-se">@activeInfo.SeString SE</span>
+                                    <span class="account-small account-pe">@activeInfo.PeCount PE</span>
                                     @if (activeInfo.TeCount > 0) {
-                                        <span class="text-xs" style="color:#c831ff">@activeInfo.TeCount TE</span>
+                                        <span class="account-small account-te">@activeInfo.TeCount TE</span>
                                     }
                                 }
                             </span>
-                            <span class="account-option-meta flex items-center flex-wrap gap-1.5 text-xs text-gray-500 max-w-full">
+                            <span class="account-option-meta account-line account-small account-dim">
                                 <MaskedEid Value="@_active.Id"/>
                                 @RenderBackupStamp(activeInfo)
                             </span>
-                            <span class="account-option-meta flex items-center flex-wrap gap-1.5 text-xs text-gray-500 max-w-full">
+                            <span class="account-option-meta account-line account-small account-dim">
                                 @{ var activeStats = StatsFor(_active.Id); }
                                 @if (activeStats is not null) {
                                     <span>@activeStats.MissionCount missions</span>
@@ -51,12 +51,12 @@
                                 @RenderShipStamp(activeStats)
                             </span>
                         } else if (!IsLoggedIn) {
-                            <span class="text-gray-500 italic text-xs">Login to add an account</span>
+                            <span class="account-placeholder">Login to add an account</span>
                         } else {
-                            <span class="text-gray-500 italic text-xs">No account - click to add</span>
+                            <span class="account-placeholder">No account - click to add</span>
                         }
                     </span>
-                    <span class="text-gray-600 text-xs shrink-0">&#9660;</span>
+                    <span class="account-caret">&#9660;</span>
                 </button>
 
                 @if (_open) {
@@ -78,12 +78,12 @@
         </div>
 
         @if (Fetch.HasFetchContent) {
-            <div class="fetch-log-section @(Fetch.LogExpanded ? "is-open" : "")">
-                <button type="button" class="fetch-log-header text-yellow-400"
+            <div class="fetch-log-section @(Fetch.LogExpanded ? "fetch-log-section-open" : "")">
+                <button type="button" class="fetch-log-header"
                         aria-label="@(Fetch.LogExpanded ? "Hide fetch log" : "Show fetch log")"
                         aria-expanded="@(Fetch.LogExpanded ? "true" : "false")" @onclick="Fetch.ToggleLog">
-                    <span class="w-8 h-1.5 rounded-sm overflow-hidden bg-dark">
-                        <span class="block h-full bg-green-500 transition-all duration-300 rounded-sm" style="width: @(Fetch.Percent)%"></span>
+                    <span class="fetch-log-meter">
+                        <span class="fetch-log-meter-fill" style="--fetch-pct: @(Fetch.Percent)%"></span>
                     </span>
                     <span>@(Fetch.Percent)%</span>
                     <span class="fetch-log-caret">@(Fetch.LogExpanded ? "▾" : "▸")</span>
@@ -92,7 +92,7 @@
                     <div class="fetch-log-inline">
                         @if (!Fetch.IsIdle) {
                             <div class="fetch-log-workers">
-                                <span class="section-heading text-xs">Parallel Download Workers</span>
+                                <span class="section-heading fetch-log-workers-title">Parallel Download Workers</span>
                                 <WorkerCountSlider WorkerCount="_workerCount" WorkerCountChanged="SetWorkerCountAsync" ShowWarningBox="false"/>
                             </div>
                         }
@@ -109,14 +109,14 @@
     private RenderFragment RenderBackupStamp(AccountInfo? info) => __builder => {
         var backup = info is null ? "" : LedgerFormatting.FormatTimeSince(info.LastBackupTime, NowUnix);
         if (backup != "") {
-            <span class="text-gray-600">last backup <span class="@(IsStaleBackup(info) ? "text-yellow-400" : "text-gray-400")">@backup</span></span>
+            <span class="account-stamp">last backup <span class="@(IsStaleBackup(info) ? "account-stamp-stale" : "account-stamp-value")">@backup</span></span>
         }
     };
 
     private RenderFragment RenderShipStamp(DatabaseAccount? stats) => __builder => {
         var ship = stats is null ? "" : LedgerFormatting.FormatTimeSince(stats.LastMissionReturnDT, NowUnix);
         if (ship != "") {
-            <span class="text-gray-600">last ship <span class="text-gray-400">@ship</span></span>
+            <span class="account-stamp">last ship <span class="account-stamp-value">@ship</span></span>
         }
     };
 
@@ -127,38 +127,37 @@
 
     private RenderFragment RenderAccountList() => __builder => {
         <div class="account-pop-head">
-            <span class="text-xs font-bold text-gray-300">Accounts</span>
-            <CloseButton OnClick="ClosePopover" Class="text-gray-400 hover:text-gray-200" IconClass="w-4 h-4"/>
+            <span class="account-pop-title">Accounts</span>
+            <CloseButton OnClick="ClosePopover" Variant="CloseButton.CloseButtonVariant.Inline"/>
         </div>
-        <ul class="account-pop-list text-xs">
+        <ul class="account-pop-list">
             @foreach (var acct in Accounts) {
-                <li class="flex items-start gap-2 px-3 py-2.5 cursor-pointer hover:bg-darker transition-colors border-b border-gray-800 last:border-b-0"
-                    @onclick="() => Select(acct.Id)">
-                    <span class="text-gray-500 w-3 shrink-0 mt-0.5">
+                <li class="account-pop-item" @onclick="() => Select(acct.Id)">
+                    <span class="account-pop-check">
                         @if (acct.Id == Active.ActiveAccountId) {
                             <text>&#10003;</text>
                         }
                     </span>
-                    <span class="flex-1 min-w-0 flex flex-col gap-0.5">
-                        <span class="flex items-center flex-wrap gap-1.5">
-                            <span class="font-medium" style="color: #@acct.AccountColor">@acct.Nickname</span>
-                            <span class="text-gray-500">@acct.EBString</span>
+                    <span class="account-pop-body">
+                        <span class="account-line">
+                            <span class="account-nick" style="--acct-color: #@acct.AccountColor">@acct.Nickname</span>
+                            <span class="account-eb">@acct.EBString</span>
                             @{ var info = InfoFor(acct.Id); }
                             @if (info is { SeString: not "" }) {
-                                <span style="color:#a855f7">@info.SeString SE</span>
-                                <span style="color:#eab308">@info.PeCount PE</span>
+                                <span class="account-se">@info.SeString SE</span>
+                                <span class="account-pe">@info.PeCount PE</span>
                                 @if (info.TeCount > 0) {
-                                    <span style="color:#c831ff">@info.TeCount TE</span>
+                                    <span class="account-te">@info.TeCount TE</span>
                                 }
                             }
                         </span>
-                        <span class="flex items-center flex-wrap gap-1.5 text-gray-500">
-                            <span class="text-gray-400">
+                        <span class="account-line account-dim">
+                            <span class="account-stamp-value">
                                 <MaskedEid Value="@acct.Id"/>
                             </span>
                             @RenderBackupStamp(info)
                         </span>
-                        <span class="flex items-center flex-wrap gap-1.5 text-gray-500">
+                        <span class="account-line account-dim">
                             @{ var stats = StatsFor(acct.Id); }
                             @if (stats is not null) {
                                 <span>@stats.MissionCount missions</span>
@@ -168,21 +167,18 @@
                     </span>
                 </li>
             }
-            <li class="flex flex-col border-t border-gray-800">
-                <div class="flex">
-                    <button type="button" class="flex-1 px-3 py-2 text-center text-gray-400 hover:bg-darker transition-colors cursor-pointer border-r border-gray-800"
-                            @onclick="OpenSettings">
+            <li class="account-pop-foot">
+                <div class="account-pop-actions">
+                    <button type="button" class="account-pop-action account-pop-action-split" @onclick="OpenSettings">
                         Account Settings
                     </button>
-                    <button type="button" class="flex-1 px-3 py-2 text-center text-privacy_blue hover:bg-darker transition-colors cursor-pointer"
-                            @onclick="OpenAddDialog">
+                    <button type="button" class="account-pop-action account-pop-action-add" @onclick="OpenAddDialog">
                         Add Account
                     </button>
                 </div>
                 @if (IsLoggedIn && !Platform.IsDesktop) {
-                    <form method="post" action="/api/v1/auth/logout" style="margin:0;">
-                        <button type="submit"
-                                class="w-full px-3 py-2 text-center text-red-400 hover:bg-red-950 hover:text-red-300 transition-colors cursor-pointer border-t border-gray-800">
+                    <form class="account-pop-form" method="post" action="/api/v1/auth/logout">
+                        <button type="submit" class="account-pop-action account-pop-logout">
                             Log out
                         </button>
                     </form>

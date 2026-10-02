@@ -3,40 +3,40 @@
 @inject IPlatformCapabilities Platform
 @inject IUpdateStatusProvider UpdateStatus
 
-<ModalHost Open="true" OnClose="Close" Title="About EggLedger" CardClass="w-[92vw] max-w-[62rem] max-h-[88vh] flex flex-col">
-    <div class="flex-1 min-h-0 overflow-y-auto px-4 py-3 text-sm text-gray-400">
+<ModalHost Open="true" OnClose="Close" Title="About EggLedger" Width="ModalWidth.Large">
+    <div class="about">
         <DesktopOnly>
-            <div class="flex items-center gap-3 p-3 rounded-lg bg-blue-950/40 border border-blue-700/40 mb-4">
+            <div class="about-update">
                 @switch (UpdateStatus.Phase) {
                     case UpdatePhase.Checking:
-                        <p class="text-blue-200/80 text-xs">Checking for updates...</p>
+                        <p class="about-update-text">Checking for updates...</p>
                         break;
                     case UpdatePhase.Available:
-                        <p class="text-blue-200/80 text-xs font-semibold flex-1">Update v@UpdateStatus.AvailableVersion available</p>
-                        <button type="button" class="shrink-0 inline-flex items-center px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-colors" @onclick="InstallUpdate">Update now</button>
+                        <p class="about-update-text about-update-text-strong">Update v@UpdateStatus.AvailableVersion available</p>
+                        <button type="button" class="btn-primary about-update-btn" @onclick="InstallUpdate">Update now</button>
                         break;
                     case UpdatePhase.Downloading:
-                        <p class="text-blue-200/60 text-xs">Downloading update@(UpdateStatus.TotalBytes > 0 ? $" ({UpdateStatus.DownloadedBytes * 100 / UpdateStatus.TotalBytes}%)" : "")...</p>
+                        <p class="about-update-text about-update-text-dim">Downloading update@(UpdateStatus.TotalBytes > 0 ? $" ({UpdateStatus.DownloadedBytes * 100 / UpdateStatus.TotalBytes}%)" : "")...</p>
                         break;
                     case UpdatePhase.Ready:
-                        <p class="text-blue-200/80 text-xs">Update ready. The app will restart to finish.</p>
+                        <p class="about-update-text">Update ready. The app will restart to finish.</p>
                         break;
                     case UpdatePhase.Failed:
-                        <p class="text-red-400 text-xs flex-1">Update failed@(string.IsNullOrEmpty(UpdateStatus.Message) ? "." : $": {UpdateStatus.Message}")</p>
-                        <button type="button" class="shrink-0 inline-flex items-center px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-colors" @onclick="CheckUpdate">Try again</button>
+                        <p class="about-update-text about-update-text-err">Update failed@(string.IsNullOrEmpty(UpdateStatus.Message) ? "." : $": {UpdateStatus.Message}")</p>
+                        <button type="button" class="btn-primary about-update-btn" @onclick="CheckUpdate">Try again</button>
                         break;
                     default:
-                        <p class="text-blue-200/80 text-xs flex-1">EggLedger is up to date.</p>
-                        <button type="button" class="shrink-0 inline-flex items-center px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-colors" @onclick="CheckUpdate">Check for updates</button>
+                        <p class="about-update-text about-update-text-grow">EggLedger is up to date.</p>
+                        <button type="button" class="btn-primary about-update-btn" @onclick="CheckUpdate">Check for updates</button>
                         break;
                 }
             </div>
         </DesktopOnly>
 
-        <div class="space-y-5">
+        <div class="about-groups">
             <div class="about-group about-ships">
                 <h3 class="about-group-title">About the project</h3>
-                <div class="columns-1 md:columns-2 gap-3 space-y-3">
+                <div class="about-cards">
                     <div class="about-card">
                         <h4 class="about-card-title">Is mk2 back?</h4>
                         <p>No. This tool is now being developed independently - the community has taken over mk2's orphaned tools since he went AWOL in 2022.</p>
@@ -61,7 +61,7 @@
 
             <div class="about-group about-drops">
                 <h3 class="about-group-title">Getting started</h3>
-                <div class="columns-1 md:columns-2 gap-3 space-y-3">
+                <div class="about-cards">
                     <div class="about-card">
                         <h4 class="about-card-title">How do I use EggLedger?</h4>
                         <ul class="about-list-1">
@@ -83,14 +83,14 @@
                     <div class="about-card">
                         <h4 class="about-card-title">Where do I find my Egg, Inc. account ID?</h4>
                         <ul class="about-list-1">
-                            <li>Open the game menu <img src="@ContentPaths.Asset("images/icon_menu.webp")" alt="Menu Icon" class="game-btn-ico"/></li>
-                            <li>Choose Settings <img src="@ContentPaths.Asset("images/icon_settings.webp")" alt="Settings Icon" class="game-btn-ico"/></li>
-                            <li>Choose &nbsp;<span class="p-0.5 text-xs rounded-md bg-privacy_blue w-4 pl-3 pr-3"> Privacy &amp; Data </span></li>
+                            <li>Open the game menu <img src="@ContentPaths.Asset("images/icon_menu.webp")" alt="Menu Icon" class="about-game-ico"/></li>
+                            <li>Choose Settings <img src="@ContentPaths.Asset("images/icon_settings.webp")" alt="Settings Icon" class="about-game-ico"/></li>
+                            <li>Choose &nbsp;<span class="about-privacy-chip"> Privacy &amp; Data </span></li>
                             <li>
                                 Your EID is at the bottom
                                 <ul class="about-list-2">
                                     <li><span class="ledger-underline">It should look like EI1234567890123456</span>. That's the letters "EI" followed by 16 digits.</li>
-                                    <li>Use the Copy button (<img src="@ContentPaths.Asset("images/icon_copy.webp")" alt="Help Icon" class="game-btn-ico"/>) to copy your EID to clipboard</li>
+                                    <li>Use the Copy button (<img src="@ContentPaths.Asset("images/icon_copy.webp")" alt="Help Icon" class="about-game-ico"/>) to copy your EID to clipboard</li>
                                 </ul>
                             </li>
                         </ul>
@@ -100,7 +100,7 @@
 
             <div class="about-group about-reports">
                 <h3 class="about-group-title">Privacy &amp; data</h3>
-                <div class="columns-1 md:columns-2 gap-3 space-y-3">
+                <div class="about-cards">
                     <DesktopOnly>
                         <div class="about-card">
                             <h4 class="about-card-title">Is my data shared with anyone?</h4>
@@ -149,7 +149,7 @@
 
             <div class="about-group about-neutral">
                 <h3 class="about-group-title">Troubleshooting</h3>
-                <div class="columns-1 md:columns-2 gap-3 space-y-3">
+                <div class="about-cards">
                     <div class="about-card">
                         <h4 class="about-card-title">Why are recent missions missing?</h4>
                         <p>Your server backup is probably out of date. Watch the freshness message when your backup is fetched.</p>

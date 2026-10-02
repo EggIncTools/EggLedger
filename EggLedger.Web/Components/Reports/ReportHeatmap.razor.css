@@ -1,0 +1,62 @@
+.hmap {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    padding-right: 0.25rem;
+}
+
+.hmap-table {
+    width: 100%;
+    height: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    font-size: 0.75rem;
+    line-height: calc(1 / 0.75);
+}
+
+.hmap-corner {
+    width: 5rem;
+    padding: 0.125rem 0.25rem;
+    text-align: left;
+    font-weight: 400;
+    color: var(--color-ledger-dim);
+}
+
+.hmap-col {
+    padding: 0.125rem 0.25rem;
+    text-align: center;
+    font-weight: 400;
+    white-space: nowrap;
+    color: var(--color-muted);
+}
+
+.hmap-row {
+    padding: 0.125rem 0.5rem 0.125rem 0.25rem;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-muted);
+}
+
+.hmap-cell {
+    padding: 0.125rem 0.25rem;
+    text-align: center;
+    color: var(--hmap-fg);
+    background-color: var(--hmap-bg);
+    cursor: pointer;
+    transition: filter 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hmap-cell:hover {
+    filter: brightness(1.4);
+}
+
+.hmap-value {
+    line-height: 1;
+}
+
+.hmap-secondary {
+    font-size: 0.65rem;
+    opacity: 0.7;
+}

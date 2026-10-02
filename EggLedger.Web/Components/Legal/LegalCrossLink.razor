@@ -1,0 +1,17 @@
+@if (OnCrossLink.HasDelegate) {
+    <button type="button" class="legal-xlink" @onclick="Open">@ChildContent</button>
+} else {
+    <a href="@Href">@ChildContent</a>
+}
+
+@code {
+    [Parameter, EditorRequired] public LegalDocument Target { get; set; }
+    [Parameter] public EventCallback<LegalDocument> OnCrossLink { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string Href => Target == LegalDocument.Terms ? "/terms" : "/privacy";
+
+    private Task Open() {
+        return OnCrossLink.InvokeAsync(Target);
+    }
+}

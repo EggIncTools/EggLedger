@@ -1,0 +1,11 @@
+<main class="legal-page">
+    <a class="legal-page-home" href="/">&#8592; Back to EggLedger</a>
+
+    <div class="prose-legal">
+        @ChildContent
+    </div>
+</main>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

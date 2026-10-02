@@ -13,17 +13,17 @@
 @using EggIdentity.Consent
 @using EggLedger.Web.State
 @implements IAsyncDisposable
-<div class="flex flex-col items-center justify-center gap-4 py-16 text-center">
+<div class="connect-gate">
     <div class="connect-gate-card">
         <img class="connect-gate-logo" src="@ContentPaths.Asset("images/icon-512.png")" alt="EggLedger" width="48" height="48"/>
-        <h1 class="text-xl font-semibold text-gray-200">Log in to EggLedger</h1>
-        <p class="max-w-md text-sm text-gray-400">
+        <h1 class="connect-gate-title">Log in to EggLedger</h1>
+        <p class="connect-gate-lead">
             Your mission history is stored server-side under your account, private to you.
         </p>
-        <div class="flex flex-row items-center justify-center gap-3">
+        <div class="connect-gate-actions">
             @if (!string.IsNullOrEmpty(Cfg.IdentityWidgetUrl)) {
                 <div class="auth-source-anchor">
-                    <button type="button" class="discord-btn disabled:opacity-60" disabled="@(_loading || !FunctionalAllowed)" @onclick="Toggle" @ref="_button">
+                    <button type="button" class="discord-btn" disabled="@(_loading || !FunctionalAllowed)" @onclick="Toggle" @ref="_button">
                         @(_loading ? "Loading..." : "Login")
                     </button>
                     @if (_sources is not null) {
@@ -39,19 +39,19 @@
                         </div>
                     } else if (_error is not null) {
                         <div class="auth-source-menu" @ref="_menu">
-                            <p class="text-red-500 text-sm" style="margin:0;padding:0.3rem 0.5rem;">@_error</p>
+                            <p class="auth-source-error">@_error</p>
                         </div>
                     }
                 </div>
             }
         </div>
         @if (!FunctionalAllowed) {
-            <p class="max-w-md text-xs text-gray-400">
+            <p class="connect-gate-note">
                 @if (Consent.Current is null) {
                     <span>Choose "Accept all" or enable Functional cookies in the banner to log in.</span>
                 } else {
                     <span>Logging in needs functional cookies.</span>
-                    <button type="button" class="underline text-blue-400 hover:text-blue-300" @onclick="AllowFunctionalAsync">Allow functional cookies</button>
+                    <button type="button" class="connect-gate-consent-btn" @onclick="AllowFunctionalAsync">Allow functional cookies</button>
                 }
             </p>
         }

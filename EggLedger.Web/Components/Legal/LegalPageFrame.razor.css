@@ -1,0 +1,21 @@
+.legal-page {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    max-width: 60rem;
+    margin: 0 auto;
+    padding: 1.5rem 2rem 4rem;
+    overflow-y: auto;
+}
+
+.legal-page-home {
+    display: inline-block;
+    margin-bottom: 1rem;
+    color: var(--color-muted);
+    font-size: 0.8rem;
+    text-decoration: none;
+}
+
+.legal-page-home:hover {
+    color: var(--color-fg);
+}

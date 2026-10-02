@@ -4,36 +4,36 @@
 @inject MennoService Menno
 
 @if (State.AccountId is null) {
-    <div class="flex-1 flex items-center justify-center">
-        <p class="text-xs text-gray-500">Select an account in the sidebar to view its reports.</p>
+    <div class="rv-empty">
+        <p class="rv-empty-text">Select an account in the sidebar to view its reports.</p>
     </div>
 } else {
-    <div class="reports-toolbar flex items-center justify-between gap-2 px-2 pt-1.5 pb-1.5 shrink-0 flex-wrap border-b border-gray-800">
-        <div class="flex items-center gap-1.5 flex-wrap">
+    <div class="rv-toolbar">
+        <div class="rv-groups">
             <button type="button"
-                    class="text-sm px-4 py-1.5 rounded-full transition-colors @(State.SelectedGroup is null ? "bg-indigo-700 text-white" : "bg-darkerer text-gray-400 hover:text-gray-200")"
+                    class="rv-pill @(State.SelectedGroup is null ? "rv-pill-on" : "")"
                     @onclick="() => State.SelectGroup(null)">
                 All
             </button>
             @foreach (var g in State.Groups) {
-                <div class="relative flex items-center">
+                <div class="rv-group">
                     @if (State.EditMode && State.RenamingGroupId == g.Id) {
-                        <input class="text-sm px-2 py-1 rounded bg-darker border border-gray-600 text-gray-200 focus:outline-none focus:border-blue-500 w-28"
+                        <input class="rv-input"
                                @bind="State.RenameGroupName" @bind:event="oninput"
                                @onkeydown="e => RenameKeyDown(e, g.Id)" @onblur="() => State.CommitRenameAsync(g.Id)" @onclick:stopPropagation autofocus/>
                     } else {
                         <button type="button"
-                                class="text-sm px-4 py-1.5 rounded-full transition-colors @(State.SelectedGroup == g.Id ? "bg-indigo-700 text-white" : "bg-darkerer text-gray-400 hover:text-gray-200")"
+                                class="rv-pill @(State.SelectedGroup == g.Id ? "rv-pill-on" : "")"
                                 @onclick="() => State.SelectGroup(g.Id)">
                             @g.Name
                         </button>
                     }
                     @if (State.EditMode) {
-                        <button type="button" class="text-gray-600 hover:text-gray-300 text-xs px-0.5" aria-label="Rename group"
+                        <button type="button" class="rv-icon-btn" aria-label="Rename group"
                                 @onclick:stopPropagation @onclick="() => State.StartRename(g)">
                             &#9998;
                         </button>
-                        <button type="button" class="text-gray-600 hover:text-red-400 text-sm" aria-label="Delete group"
+                        <button type="button" class="rv-icon-btn rv-icon-btn-danger" aria-label="Delete group"
                                 @onclick:stopPropagation @onclick="() => DeleteGroupAsync(g.Id)">
                             &#215;
                         </button>
@@ -41,29 +41,29 @@
                 </div>
             }
             @if (State.ShowNewGroup) {
-                <input class="text-sm px-2 py-1 rounded bg-darker border border-gray-600 text-gray-200 focus:outline-none focus:border-blue-500 w-28"
+                <input class="rv-input"
                        placeholder="Group name" @bind="State.NewGroupName" @bind:event="oninput"
                        @onkeydown="GroupKeyDown" autofocus/>
-                <button type="button" class="text-xs px-2 py-1 rounded bg-darkerer text-gray-300 hover:text-gray-100" @onclick="State.CreateGroupAsync">Add</button>
-                <button type="button" class="text-xs px-2 py-1 rounded bg-darkerer text-gray-400 hover:text-gray-200" @onclick="State.CancelNewGroup">Cancel</button>
+                <button type="button" class="rv-small-btn" @onclick="State.CreateGroupAsync">Add</button>
+                <button type="button" class="rv-small-btn" @onclick="State.CancelNewGroup">Cancel</button>
             } else {
-                <button type="button" class="text-sm px-3 py-1.5 rounded-full bg-darkerer text-gray-400 hover:text-gray-200" @onclick="State.BeginNewGroup">+ Group</button>
+                <button type="button" class="rv-pill rv-pill-compact" @onclick="State.BeginNewGroup">+ Group</button>
             }
-            <button type="button" class="text-sm px-3 py-1.5 rounded-full bg-darkerer @(State.EditMode ? "text-indigo-400" : "text-gray-400 hover:text-gray-200")"
+            <button type="button" class="rv-pill rv-pill-compact @(State.EditMode ? "rv-pill-editing" : "")"
                     @onclick="State.ToggleEditMode">
                 @(State.EditMode ? "Done Editing" : "Edit Groups")
             </button>
         </div>
-        <div class="flex items-center gap-1.5 flex-wrap">
+        <div class="rv-actions">
             @if (Menno.IsLoading) {
-                <span class="menno-status-pill" title="Downloading Menno's community ship data">
-                    <img class="menno-status-spinner" src="@ContentPaths.Asset("images/loading.gif")" alt=""/>
+                <span class="rv-menno" title="Downloading Menno's community ship data">
+                    <img class="rv-menno-spinner" src="@ContentPaths.Asset("images/loading.gif")" alt=""/>
                     Syncing community data...
                 </span>
             }
-            <button type="button" class="ledger-btn apply-filter-button !mt-0 !w-auto" @onclick="State.RequestNewReportAsync">+ New Report</button>
-            <button type="button" class="ledger-btn apply-filter-button !mt-0 !w-auto" @onclick="State.RequestExportAllAsync">Export All</button>
-            <button type="button" class="ledger-btn apply-filter-button !mt-0 !w-auto" @onclick="State.RequestImportAsync">Import</button>
+            <button type="button" class="btn-secondary" @onclick="State.RequestNewReportAsync">+ New Report</button>
+            <button type="button" class="btn-secondary" @onclick="State.RequestExportAllAsync">Export All</button>
+            <button type="button" class="btn-secondary" @onclick="State.RequestImportAsync">Import</button>
         </div>
     </div>
 

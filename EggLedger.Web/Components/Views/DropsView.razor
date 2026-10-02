@@ -2,13 +2,16 @@
 @inject DropsViewState State
 
 @if (State.AccountId is null) {
-    <p class="text-gray-500 italic mt-0_75rem">Select an account in the sidebar to view its lifetime data.</p>
+    <p class="drops-note">Select an account in the sidebar to view its lifetime data.</p>
 } else if (State.Loading && State.Data is null) {
-    @LifetimeLoadingContent
+    <div class="drops-loading">
+        <span class="drops-loading-text">Compiling lifetime data...</span>
+        <img src="@ContentPaths.Asset("images/loading.gif")" alt="Loading..." class="xl-ico"/>
+    </div>
 } else if (State.Data is null || State.Data.MissionCount == 0) {
     <NoDataFallback/>
 } else {
-    <div class="flex-1 min-h-0 py-1 overflow-auto block text-xs font-mono text-gray-300 text-center">
+    <div class="drops">
         <DropDisplayContainer Artifacts="State.Data.Artifacts"
                               Stones="State.Data.Stones"
                               Ingredients="State.Data.Ingredients"
@@ -18,34 +21,12 @@
                               ShowPerShip="State.ShowPerShip"
                               LifetimeExpected="@(State.ShowExpectedTotals && State.AllowExpectedTotals)"/>
 
-        <div class="settings-section drops-widgets-section @(_widgetsOpen ? "is-open" : "")">
-            <button type="button" class="settings-section-head" aria-expanded="@(_widgetsOpen ? "true" : "false")"
-                    @onclick="ToggleWidgets">
-                <span class="settings-section-title">Reports</span>
-                @if (_widgetsOpen) {
-                    <span class="settings-section-caret">&#9662;</span>
-                } else {
-                    <span class="settings-section-caret">&#9656;</span>
-                }
-            </button>
-            @if (_widgetsOpen && State.AccountId is { } accountId) {
-                <div class="settings-section-body">
-                    <PinnedReportsStrip AccountId="@accountId" View="@PinnedReportViews.Lifetime"/>
-                </div>
+        <CollapsibleSection Title="Reports" Inset="true" Open="_widgetsOpen" OnToggle="ToggleWidgets">
+            @if (State.AccountId is { } accountId) {
+                <PinnedReportsStrip AccountId="@accountId" View="@PinnedReportViews.Lifetime"/>
             }
-        </div>
+        </CollapsibleSection>
     </div>
-}
-
-@code {
-
-    private static readonly RenderFragment LifetimeLoadingContent = __builder => {
-        <div class="mt-8 flex flex-col items-center justify-center gap-2">
-            <span class="p-0_5rem text-lg">Compiling lifetime data...</span>
-            <img src="@ContentPaths.Asset("images/loading.gif")" alt="Loading..." class="xl-ico"/>
-        </div>
-    };
-
 }
 
 @code {

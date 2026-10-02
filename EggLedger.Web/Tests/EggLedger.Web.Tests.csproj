@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\EggLedger.Web.csproj" />
+    <ProjectReference Include="..\..\EggLedger.CssBuild\EggLedger.CssBuild.csproj" />
   </ItemGroup>
 
   <ItemGroup>

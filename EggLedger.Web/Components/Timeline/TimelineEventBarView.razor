@@ -5,18 +5,18 @@
 <div class="timeline-event-bar timeline-event-@TypeSlug tooltip-host @(Bar.ContinuesLeft ? "timeline-event-cut-l" : "") @(Bar.ContinuesRight ? "timeline-event-cut-r" : "")" style="@BarStyle" data-tt-mode="cursor-x">
     <img class="timeline-event-icon" src="@IconUrl" alt="" loading="lazy" onerror="this.style.display='none'"/>
     <span class="timeline-event-label">@(Bar.Message ?? Bar.Type)</span>
-    <div class="tooltip-floating tooltip-fixed tooltip-toggle text-sm">
-        <span class="font-bold">@(Bar.Message ?? Bar.Type)</span>
+    <div class="tooltip-floating tooltip-fixed tooltip-toggle timeline-event-tt">
+        <span class="timeline-event-tt-name">@(Bar.Message ?? Bar.Type)</span>
         @if (Bar.Multiplier > 0) {
             <br/>
-            <span class="text-gray-400">Multiplier: </span>@MultiplierLabel
+            <span class="timeline-event-tt-key">Multiplier: </span>@MultiplierLabel
         }
         <br/>
-        <span class="text-gray-400">Starts:</span> @FormatTime(Bar.StartUnix)<br/>
-        <span class="text-gray-400">Ends:</span> @FormatTime(Bar.EndUnix)
+        <span class="timeline-event-tt-key">Starts:</span> @FormatTime(Bar.StartUnix)<br/>
+        <span class="timeline-event-tt-key">Ends:</span> @FormatTime(Bar.EndUnix)
         @if (Bar.Ultra) {
             <br/>
-            <span class="text-yellow-400">Ultra</span>
+            <span class="timeline-event-tt-ultra">Ultra</span>
         }
     </div>
 </div>

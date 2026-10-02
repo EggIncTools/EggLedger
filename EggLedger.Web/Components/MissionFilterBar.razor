@@ -8,7 +8,7 @@
    (legacy per-condition OR rescue). Emits the legacy (and, orFilters) shape so the
    matcher reproduces Vue semantics exactly (see docs/filter-legacy-semantics.md). *@
 
-<div class="@(FillHeight ? "flex-1 min-h-0" : "max-h-60") overflow-y-auto">
+<div class="fbar @(FillHeight ? "fbar-fill" : "")">
     @foreach (var index in Enumerable.Range(0, _draft.Rows.Count)) {
         var row = _draft.Rows[index];
 
@@ -61,16 +61,16 @@
 </div>
 
 @if (ShowApply) {
-    <hr class="mt-1rem w-full"/>
+    <hr class="fbar-rule"/>
 
-    <button type="button" class="ledger-btn apply-filter-button apply-filter-button-primary" disabled="@Applying" @onclick="ApplyAsync">Apply Filter</button>
+    <button type="button" class="fbar-apply" disabled="@Applying" @onclick="ApplyAsync">Apply Filter</button>
     @if (Applying) {
         <span class="filter-applying">
             <img class="filter-applying-spinner" src="@ContentPaths.Asset("images/loading.gif")" alt=""/>
             Applying filter...
         </span>
     } else if (LastResultText is { Length: > 0 }) {
-        <div class="mt-0_5rem">
+        <div class="fbar-result">
             @RenderResultText(LastResultText)
         </div>
     }
@@ -160,7 +160,7 @@
         var def = FieldOf(c);
         var incomplete = RowIncomplete(c);
 
-        <select class="filter-select border-gray-600 text-gray-400" value="@c.TopLevel"
+        <select class="filter-select" value="@c.TopLevel"
                 @onchange="@(e => {
                                SetField(c, e.Value?.ToString());
                                changed();
@@ -174,10 +174,10 @@
         @if (def is not null) {
             var ops = FilterFields.MissionBarOpsFor(def);
             @if (def.ValueKind == FilterValueKind.Bool) {
-                <span class="text-gray-400">is</span>
+                <span class="filter-is">is</span>
             } else {
                 var opMissing = incomplete && string.IsNullOrEmpty(c.Op);
-                <select class="filter-select border-gray-600 text-gray-400 @(ops.Count <= 1 ? "opacity-60 cursor-not-allowed" : "") @(opMissing ? "field-incomplete" : "")"
+                <select class="filter-select @(opMissing ? "field-incomplete" : "")"
                         value="@c.Op" disabled="@(ops.Count <= 1)"
                         @onchange="@(e => {
                                        c.Op = e.Value?.ToString() ?? "";
@@ -196,7 +196,7 @@
                 var valMissing = incomplete && string.IsNullOrEmpty(c.Val);
                 @switch (def.ValueKind) {
                     case FilterValueKind.Select:
-                        <select class="filter-select border-gray-600 text-gray-400 @(valMissing ? "field-incomplete" : "")" value="@c.Val"
+                        <select class="filter-select @(valMissing ? "field-incomplete" : "")" value="@c.Val"
                                 @onchange="@(e => {
                                                c.Val = e.Value?.ToString() ?? "";
                                                changed();
@@ -208,7 +208,7 @@
                         </select>
                         break;
                     case FilterValueKind.Bool:
-                        <select class="filter-select border-gray-600 text-gray-400 @(valMissing ? "field-incomplete" : "")" value="@c.Val"
+                        <select class="filter-select @(valMissing ? "field-incomplete" : "")" value="@c.Val"
                                 @onchange="@(e => {
                                                c.Val = e.Value?.ToString() ?? "";
                                                changed();
@@ -220,14 +220,14 @@
                         </select>
                         break;
                     case FilterValueKind.Date:
-                        <input type="date" class="filter-select border-gray-600 text-gray-400 @(valMissing ? "field-incomplete" : "")" value="@c.Val"
+                        <input type="date" class="filter-select @(valMissing ? "field-incomplete" : "")" value="@c.Val"
                                @onchange="@(e => {
                                               c.Val = e.Value?.ToString() ?? "";
                                               changed();
                                           })"/>
                         break;
                     case FilterValueKind.Number:
-                        <input type="number" class="filter-select border-gray-600 text-gray-400 @(valMissing ? "field-incomplete" : "")" value="@c.Val"
+                        <input type="number" class="filter-select @(valMissing ? "field-incomplete" : "")" value="@c.Val"
                                @onchange="@(e => {
                                               c.Val = e.Value?.ToString() ?? "";
                                               changed();
@@ -275,7 +275,7 @@
 
         <span class="filter-result-badge">
             <span class="filter-result-counts">
-                <span class="text-green-500">@match.Groups["shown"].Value shown</span>
+                <span class="filter-result-shown">@match.Groups["shown"].Value shown</span>
                 <span class="filter-result-sep">/</span>
                 <span>@match.Groups["filtered"].Value filtered out</span>
             </span>
@@ -287,7 +287,7 @@
         return string.IsNullOrEmpty(val) ? null : val;
     }
 
-    private RenderFragment DropAdvancedFooter => @<label class="flex items-center gap-1.5 text-xs text-gray-400 cursor-pointer select-none">
+    private RenderFragment DropAdvancedFooter => @<label class="fbar-advanced">
                                                      <input type="checkbox" class="ext-opt-check" checked="@AdvancedDrops" @onchange="OnAdvancedDropsToggled"/>
                                                      Advanced (family groupings)
                                                  </label>;

@@ -1,0 +1,10 @@
+.options-host {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1 0 auto;
+}
+
+.options-host-body {
+    flex: 0 0 auto;
+}

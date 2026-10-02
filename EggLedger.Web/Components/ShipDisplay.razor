@@ -1,39 +1,38 @@
 @using System.Globalization
 @* Single-mode ship display: identity + details + capacity badge, then drops, then the footer tip. *@
 
-<div class="@MultiClass text-gray-300 text-center">
-    <div class="flex flex-row flex-wrap md:flex-nowrap justify-center gap-2 mb-3 mx-auto items-center w-full md:w-fit">
-        <div class="@(Mission.IsBuggedCap ? "bugged-cap-span" : Mission.IsDubCap ? "double-cap-span" : "") flex items-center py-1 px-1.5 self-center"
-             style="visibility: @(Mission.IsBuggedCap || Mission.IsDubCap ? "visible" : "hidden");">
-            <img class="w-5 mr-0_5rem"
+<div class="ship-display @MultiClass">
+    <div class="ship-display-head">
+        <div class="ship-display-cap @CapClass">
+            <img class="ship-display-cap-icon"
                  alt="@(Mission.IsBuggedCap ? "Skull Emoji" : "Artifact Crate")"
                  src="@(Mission.IsBuggedCap ? ContentPaths.Asset("images/skull.png") : ContentPaths.Asset("images/icon_afx_chest_2.png"))"/>
-            <span class="text-xs font-bold whitespace-nowrap">
+            <span class="ship-display-cap-text">
                 @(Mission.IsBuggedCap
                     ? "0.6x Capacity"
                     : Data.CapacityModifier.ToString("0.##", CultureInfo.InvariantCulture) + "x Capacity")
             </span>
         </div>
 
-        <div class="panel-muted rounded-md px-4 py-2 flex flex-col items-center justify-center">
+        <div class="panel-muted ship-display-card ship-display-ident">
             @if (!string.IsNullOrEmpty(Mission.ShipEnumString)) {
-                <img class="w-12 h-12 object-contain mb-2" src="@ContentPaths.Asset($"images/ships/{Mission.ShipEnumString}.png")" alt="@Mission.ShipString"/>
+                <img class="ship-display-ship-img" src="@ContentPaths.Asset($"images/ships/{Mission.ShipEnumString}.png")" alt="@Mission.ShipString"/>
             }
             <span class="@DurationClass">@Mission.ShipString</span>
             @if (Mission.Level > 0) {
-                <span class="text-star text-goldenstar">@(new string('★', Mission.Level))</span>
+                <span class="ship-display-stars text-goldenstar">@(new string('★', Mission.Level))</span>
             }
         </div>
 
-        <div class="panel-muted rounded-md px-4 py-2 flex flex-col justify-center text-left text-sm">
+        <div class="panel-muted ship-display-card ship-display-details">
             <div>Launched: @Format(Data.LaunchDT)</div>
             <div>Returned: @Format(Data.ReturnDT)</div>
             <div>Duration: @Data.DurationStr</div>
             <div>Capacity: @Mission.Capacity</div>
             @if (HasTarget) {
-                <div class="flex items-center gap-1 mt-1">
+                <div class="ship-display-target">
                     <span>Sensor Target:</span>
-                    <div class="text-xs rounded-full w-max px-1.5 py-0.5 text-gray-400 bg-darkerer font-semibold">@ProperCase(Mission.Target.Replace("_", " ", StringComparison.Ordinal))</div>
+                    <div class="ship-display-target-chip">@ProperCase(Mission.Target.Replace("_", " ", StringComparison.Ordinal))</div>
                 </div>
             }
         </div>
@@ -47,7 +46,7 @@
                           ShowExpectedDrops="ShowExpectedDrops"/>
 
     @if (!IsMulti && !HideFooterTip) {
-        <div class="text-xs text-gray-300 text-center shrink-0 pb-2">
+        <div class="ship-display-tip">
             Hover mouse over an item to show details.<br/>
             Click to open the relevant
             <a class="ledger-underline" target="_blank" rel="noopener" href="https://wasmegg-carpet.netlify.app/artifact-explorer/">artifact explorer</a>
@@ -63,7 +62,10 @@
     [Parameter] public bool HideFooterTip { get; set; }
     private DatabaseMission Mission => Data.MissionInfo;
 
-    private string MultiClass => IsMulti ? "px-3rem" : "";
+    private string MultiClass => IsMulti ? "ship-display-multi" : "";
+
+    private string CapClass =>
+        Mission.IsBuggedCap ? "ship-display-cap-bugged" : Mission.IsDubCap ? "ship-display-cap-double" : "";
 
     private bool HasTarget =>
         Mission.Target.Length > 0 && !string.Equals(Mission.Target, "UNKNOWN", StringComparison.OrdinalIgnoreCase);

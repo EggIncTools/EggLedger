@@ -1,0 +1,47 @@
+.csec {
+    border: 1px solid var(--color-border);
+    border-radius: 0.375rem;
+    background-color: var(--color-darkest);
+    overflow: hidden;
+}
+
+.csec-inset {
+    margin: 0.75rem 1px 0;
+}
+
+.csec-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 0;
+    background: transparent;
+    color: var(--color-fg);
+    cursor: pointer;
+    text-align: left;
+}
+
+.csec-head:hover {
+    background-color: var(--color-darkerer);
+}
+
+.csec-open .csec-head {
+    border-bottom: 1px solid var(--color-border);
+}
+
+.csec-title {
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.csec-caret {
+    color: var(--color-muted);
+    font-size: 0.7rem;
+    line-height: 1;
+}
+
+.csec-body {
+    padding: 0.75rem;
+}

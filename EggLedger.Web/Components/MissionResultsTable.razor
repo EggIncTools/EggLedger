@@ -3,24 +3,24 @@
    per-day "View row" button; Free Select adds a per-mission checkbox. *@
 
 @if (Grouping is null || Grouping.Missions.Count == 0) {
-    <p class="text-gray-500 italic mt-0_75rem">No missions to display.</p>
+    <p class="mrt-empty">No missions to display.</p>
 } else {
-    <div id="missionListDiv" class="mt-0_5rem px-2 py-1 shadow-sm block text-xs font-mono text-gray-500 bg-darkest rounded-md">
+    <div id="missionListDiv" class="mrt">
         <MissionCardCustomStyle Config="Config"/>
-        <div class="sticky top-0 z-10 bg-darkest -mx-2 px-2 pt-1 pb-1">
-            <div class="flex items-center gap-2 flex-wrap">
-                <span class="text-xl">
+        <div class="mrt-sticky">
+            <div class="mrt-head">
+                <span class="mrt-title">
                     Missions
-                    <button type="button" class="text-xl toggle-link" @onclick="ToggleAll">
+                    <button type="button" class="toggle-link mrt-title" @onclick="ToggleAll">
                         @(AllExpanded ? "Collapse All" : "Expand All")
                     </button>
                 </span>
             </div>
-            <hr class="mt-0_5rem mb-0_5rem w-full"/>
+            <hr class="mrt-rule"/>
         </div>
 
         @if (FlatMissions is not null) {
-            <div class="mt-1rem mission-grid mission-items-full">
+            <div class="mission-grid mission-items-full mrt-flat">
                 @foreach (var mission in FlatMissions) {
                     <MissionCard Mission="mission"
                                  Config="Config"
@@ -40,8 +40,8 @@
             @foreach (var yearIndex in Enumerable.Range(0, Grouping.Missions.Count)) {
                 var year = Grouping.Arrays.Year[yearIndex];
                 <div>
-                    <span class="text-lg font-bold mr-0_5rem ledger-underline">@year.Year</span>
-                    <button type="button" class="text-lg toggle-link" @onclick="@(() => ToggleYear(yearIndex))">
+                    <span class="mrt-label mrt-label-year ledger-underline">@year.Year</span>
+                    <button type="button" class="toggle-link mrt-label-year" @onclick="@(() => ToggleYear(yearIndex))">
                         @(year.Enabled ? "Collapse" : "Expand")
                     </button>
 
@@ -49,16 +49,16 @@
                         @foreach (var monthIndex in Enumerable.Range(0, Grouping.Missions[yearIndex].Count)) {
                             var month = Grouping.Arrays.Month[yearIndex][monthIndex];
                             <div>
-                                <div class="mt-1rem ml-2rem">
-                                    <span class="text-base font-bold mr-0_5rem ledger-underline">
+                                <div class="mrt-nest">
+                                    <span class="mrt-label mrt-label-month ledger-underline">
                                         @year.Year-@month.Month.ToString("00", CultureInfo.InvariantCulture)
                                     </span>
-                                    <button type="button" class="text-base toggle-link" @onclick="@(() => ToggleMonth(yearIndex, monthIndex))">
+                                    <button type="button" class="toggle-link mrt-label-month" @onclick="@(() => ToggleMonth(yearIndex, monthIndex))">
                                         @(month.Enabled ? "Collapse" : "Expand")
                                     </button>
 
                                     @if (month.Enabled && FlattenDays) {
-                                        <div class="mt-1rem ml-2rem mission-grid mission-items-full">
+                                        <div class="mission-grid mission-items-full mrt-nest">
                                             @foreach (var mission in Grouping.Missions[yearIndex][monthIndex].SelectMany(d => d)) {
                                                 <MissionCard Mission="mission"
                                                              Config="Config"
@@ -78,24 +78,24 @@
                                         @foreach (var dayIndex in Enumerable.Range(0, Grouping.Missions[yearIndex][monthIndex].Count)) {
                                             var day = Grouping.Arrays.Day[yearIndex][monthIndex][dayIndex];
                                             <div>
-                                                <div class="mt-1rem ml-2rem">
+                                                <div class="mrt-nest">
                                                     @if (ViewByDate) {
-                                                        <span class="text-sm font-bold mr-0_5rem ledger-underline">
+                                                        <span class="mrt-label mrt-label-day ledger-underline">
                                                             @year.Year-@month.Month.ToString("00", CultureInfo.InvariantCulture)-@day.Day.ToString("00", CultureInfo.InvariantCulture)
                                                         </span>
-                                                        <button type="button" class="text-sm mr-0_5rem toggle-link"
+                                                        <button type="button" class="toggle-link mrt-label-day mrt-day-toggle"
                                                                 @onclick="@(() => ToggleDay(yearIndex, monthIndex, dayIndex))">
                                                             @(day.Enabled ? "Collapse" : "Expand")
                                                         </button>
                                                     }
-                                                    <div class="mt-1rem flex items-start gap-2">
+                                                    <div class="mrt-day">
                                                         @if (MultiViewMode == MultiViewMode.Row) {
-                                                            <button type="button" class="text-sm toggle-link shrink-0 self-center"
+                                                            <button type="button" class="toggle-link mrt-label-day mrt-view-row"
                                                                     @onclick="@(() => ViewRow(yearIndex, monthIndex, dayIndex))">
                                                                 View row
                                                             </button>
                                                         }
-                                                        <div class="mission-grid mission-items-full flex-1">
+                                                        <div class="mission-grid mission-items-full mrt-day-grid">
                                                             @if (DayVisible(yearIndex, monthIndex, dayIndex)) {
                                                                 @foreach (var mission in Grouping.Missions[yearIndex][monthIndex][dayIndex]) {
                                                                     <MissionCard Mission="mission"
@@ -124,7 +124,7 @@
 
                         <br/>
                         @if (yearIndex != Grouping.Missions.Count - 1) {
-                            <hr class="pt-3rem pb-3rem invisible mt-1"/>
+                            <hr class="mrt-year-gap"/>
                         }
                     }
                 </div>

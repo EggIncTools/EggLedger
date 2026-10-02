@@ -1,0 +1,27 @@
+.logline-img {
+    display: inline;
+    height: 1em;
+    vertical-align: middle;
+}
+
+.logline-eid {
+    display: inline-block;
+    width: 16ch;
+    height: 0.8em;
+    vertical-align: -0.05em;
+    background-color: currentColor;
+    border-radius: 0.25rem;
+    user-select: none;
+}
+
+.logline-colored {
+    color: var(--logline-color);
+}
+
+.logline-text {
+    color: var(--color-muted);
+}
+
+.logline-err {
+    color: var(--color-err);
+}

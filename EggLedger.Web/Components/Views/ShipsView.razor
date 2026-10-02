@@ -3,10 +3,10 @@
 @inject ShipsViewState State
 
 @if (State.AccountId is null) {
-    <p class="text-gray-500 italic mt-0_75rem">Select an account in the sidebar to view its missions.</p>
+    <p class="ships-note">Select an account in the sidebar to view its missions.</p>
 } else if (State.Loading && State.AllMissions is null) {
-    <div class="mt-8 flex flex-col items-center justify-center gap-2">
-        <span class="p-0_5rem text-lg text-gray-500">Loading missions...</span>
+    <div class="ships-loading">
+        <span class="ships-loading-text">Loading missions...</span>
         <img src="@ContentPaths.Asset("images/loading.gif")" alt="Loading..." class="xl-ico"/>
     </div>
 } else if (State.AllMissions is null || State.AllMissions.Count == 0) {
@@ -22,7 +22,7 @@
                              OnViewMission="ViewMissionAsync"
                              LeadingControls="CalendarLeadingControls"/>
     } else {
-        <div class="flex items-center gap-2 flex-wrap mt-0_75rem mb-0_5rem">
+        <div class="ships-controls">
             @RenderModeTiles()
             @if (State.HasBothTypes) {
                 @RenderTileSelector()
@@ -53,25 +53,19 @@
                     SortMethod="State.Opts.SortMethod"
                     ShowExpectedDrops="State.CardPresets.ActivePreset().ShowExpectedDropsPerShip"/>
 
-    <div class="settings-section drops-widgets-section @(_widgetsOpen ? "is-open" : "")">
-        <button type="button" class="settings-section-head" aria-expanded="@(_widgetsOpen ? "true" : "false")"
-                @onclick="ToggleWidgets">
-            <span class="settings-section-title">Reports</span>
-            @if (_widgetsOpen) {
-                <span class="settings-section-caret">&#9662;</span>
-            } else {
-                <span class="settings-section-caret">&#9656;</span>
-            }
-        </button>
-        @if (_widgetsOpen && State.AccountId is { } accountId) {
-            <div class="settings-section-body">
-                <PinnedReportsStrip AccountId="@accountId" View="@PinnedReportViews.Missions"/>
-            </div>
+    <CollapsibleSection Title="Reports" Inset="true" Open="_widgetsOpen" OnToggle="ToggleWidgets">
+        @if (State.AccountId is { } accountId) {
+            <PinnedReportsStrip AccountId="@accountId" View="@PinnedReportViews.Missions"/>
         }
-    </div>
+    </CollapsibleSection>
 }
 
 @code {
+    private static readonly IReadOnlyList<TileGroup<ShipsViewMode>.Tile> ModeTiles = [
+        new(ShipsViewMode.List, b => b.AddContent(0, "List")),
+        new(ShipsViewMode.Calendar, b => b.AddContent(0, "Calendar"))
+    ];
+
     private MissionOverlay? _overlay;
     private bool _widgetsOpen = true;
 
@@ -89,11 +83,16 @@
         _widgetsOpen = !_widgetsOpen;
     }
 
+    private void SetViewMode(ShipsViewMode mode) {
+        State.SetViewMode(mode);
+    }
+
+    private void SelectTab(int? tab) {
+        State.SelectTab(tab);
+    }
+
     private RenderFragment RenderModeTiles() => __builder => {
-        <div class="tile-group">
-            <button type="button" class="tile-group-item @(State.ViewMode == ShipsViewMode.List ? "active" : "")" @onclick="@(() => State.SetViewMode(ShipsViewMode.List))">List</button>
-            <button type="button" class="tile-group-item @(State.ViewMode == ShipsViewMode.Calendar ? "active" : "")" @onclick="@(() => State.SetViewMode(ShipsViewMode.Calendar))">Calendar</button>
-        </div>
+        <TileGroup TValue="ShipsViewMode" Options="ModeTiles" Selected="State.ViewMode" OnSelect="SetViewMode"/>
     };
 
     private RenderFragment CalendarLeadingControls => __builder => {
@@ -103,33 +102,32 @@
         }
     };
 
-    private RenderFragment RenderTileSelector() => __builder => {
-        <div class="tile-group">
-            <button type="button" class="tile-group-item @(State.Opts.MissionTypeTab is null ? "active" : "")" @onclick="@(() => State.SelectTab(null))">All <span class="text-gray-500 ml-1">(@(State.Filtered?.Count ?? 0))</span></button>
-            <button type="button" class="tile-group-item @(State.Opts.MissionTypeTab == 0 ? "active" : "")" @onclick="@(() => State.SelectTab(0))">Home <span class="text-gray-500 ml-1">(@State.CountOfType(0))</span></button>
-            <button type="button" class="tile-group-item @(State.Opts.MissionTypeTab == 1 ? "active" : "")" @onclick="@(() => State.SelectTab(1))">Virtue <span class="text-gray-500 ml-1">(@State.CountOfType(1))</span></button>
-        </div>
+    private IReadOnlyList<TileGroup<int?>.Tile> TypeTiles() => [
+        new(null, CountLabel("All", State.Filtered?.Count ?? 0)),
+        new(0, CountLabel("Home", State.CountOfType(0))),
+        new(1, CountLabel("Virtue", State.CountOfType(1)))
+    ];
+
+    private RenderFragment CountLabel(string label, int count) => __builder => {
+        @label <span class="ships-tile-count">(@count)</span>
     };
+
+    private RenderFragment RenderTileSelector() => __builder => {
+        <TileGroup TValue="int?" Options="TypeTiles()" Selected="State.Opts.MissionTypeTab" OnSelect="SelectTab"/>
+    };
+
+    private IReadOnlyList<TileGroup<MultiViewMode>.Tile> MultiTiles() => [
+        new(MultiViewMode.Off, b => b.AddContent(0, "Off"), Title: "Multi-select off"),
+        new(MultiViewMode.Row, b => b.AddContent(0, "Row/Date"), State.Opts.SortByDropCount, "Row/Date Select"),
+        new(MultiViewMode.Free, b => b.AddContent(0, "Free"), Title: "Free Select")
+    ];
 
     private bool AllMultiSelected =>
         (State.TabFiltered?.Count ?? 0) > 0 && State.MultiSelectedIds.Count >= (State.TabFiltered?.Count ?? 0);
 
     private RenderFragment RenderListControlSet() => __builder => {
-        <div class="list-control-set ml-auto">
-            <div class="tile-group">
-                <button type="button" class="tile-group-item @(State.Opts.MultiViewMode == MultiViewMode.Off ? "active" : "")"
-                        title="Multi-select off" @onclick="@(() => State.SetMultiViewAsync(MultiViewMode.Off))">
-                    Off
-                </button>
-                <button type="button" class="tile-group-item @(State.Opts.MultiViewMode == MultiViewMode.Row ? "active" : "") @(State.Opts.SortByDropCount ? "opacity-40 cursor-not-allowed" : "")"
-                        disabled="@State.Opts.SortByDropCount" title="Row/Date Select" @onclick="@(() => State.SetMultiViewAsync(MultiViewMode.Row))">
-                    Row/Date
-                </button>
-                <button type="button" class="tile-group-item @(State.Opts.MultiViewMode == MultiViewMode.Free ? "active" : "")"
-                        title="Free Select" @onclick="@(() => State.SetMultiViewAsync(MultiViewMode.Free))">
-                    Free
-                </button>
-            </div>
+        <div class="list-control-set">
+            <TileGroup TValue="MultiViewMode" Options="MultiTiles()" Selected="State.Opts.MultiViewMode" OnSelect="State.SetMultiViewAsync"/>
             @if (State.Opts.MultiViewMode == MultiViewMode.Free) {
                 <div class="list-control-actions">
                     <button type="button" class="list-control-action-btn" disabled="@(State.MultiSelectedIds.Count == 0)" @onclick="ViewSelectedMultiAsync">

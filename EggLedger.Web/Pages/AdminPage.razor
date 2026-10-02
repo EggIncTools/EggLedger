@@ -6,9 +6,9 @@
 
 <PageTitle>EggLedger - Admin</PageTitle>
 
-<section class="view-layout overflow-auto">
+<section class="admin-page">
     @if (!_isAdmin) {
-        <p class="text-red-700 italic mt-0_5rem">Admin access required.</p>
+        <p class="admin-denied">Admin access required.</p>
     } else {
         <div class="admin-grid">
             <div>

@@ -1,0 +1,33 @@
+.drops-note {
+    margin: 0.75rem 0 0;
+    color: var(--color-muted);
+    font-style: italic;
+}
+
+.drops-loading {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.drops-loading-text {
+    padding: 0.5rem;
+    font-size: 1.125rem;
+    line-height: calc(1.75 / 1.125);
+}
+
+.drops {
+    flex: 1;
+    min-height: 0;
+    display: block;
+    padding: 0.25rem 0;
+    overflow: auto;
+    font-size: 0.75rem;
+    line-height: calc(1 / 0.75);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    color: var(--color-fg);
+    text-align: center;
+}

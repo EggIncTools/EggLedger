@@ -1,0 +1,16 @@
+.nodata {
+    margin-top: 0.75rem;
+    padding: 0.5rem 0;
+    text-align: center;
+    border: 1px solid var(--color-err);
+    border-radius: 0.375rem;
+}
+
+.nodata-text {
+    color: var(--color-err);
+}
+
+.nodata-link {
+    font-weight: 700;
+    color: var(--color-accent);
+}

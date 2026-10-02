@@ -1,0 +1,36 @@
+.close-button {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    line-height: 0;
+}
+
+.close-button-corner {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    color: var(--color-fg);
+}
+
+.close-button-corner:hover {
+    color: var(--color-muted);
+}
+
+.close-button-inline {
+    color: var(--color-muted);
+}
+
+.close-button-inline:hover {
+    color: var(--color-fg);
+}
+
+.close-button-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.close-button-inline .close-button-icon {
+    width: 1rem;
+    height: 1rem;
+}

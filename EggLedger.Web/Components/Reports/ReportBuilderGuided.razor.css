@@ -1,0 +1,187 @@
+.guide {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.guide-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.guide-step {
+    font-size: 0.75rem;
+    line-height: calc(1 / 0.75);
+    color: var(--color-muted);
+}
+
+.guide-dots {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.guide-dot {
+    width: 1rem;
+    height: 0.25rem;
+    background-color: var(--color-ledger-dim);
+    border: 1px solid color-mix(in srgb, var(--color-muted) 50%, transparent);
+    border-radius: 9999px;
+}
+
+.guide-dot-on {
+    background-color: var(--color-ledger-primary);
+    border-color: var(--color-ledger-primary);
+}
+
+.guide-pane {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.guide-prompt {
+    margin: 0;
+    font-size: 0.75rem;
+    line-height: calc(1 / 0.75);
+    color: var(--color-muted);
+}
+
+.guide-intents {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.guide-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.guide-choice {
+    font-size: 0.75rem;
+    line-height: calc(1 / 0.75);
+    color: var(--color-muted);
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1), background-color 150ms cubic-bezier(0.4, 0, 0.2, 1), border-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.guide-choice:hover {
+    border-color: var(--color-muted);
+}
+
+.guide-choice:focus {
+    outline: none;
+}
+
+.guide-choice-on,
+.guide-choice-on:hover {
+    color: var(--color-ledger-primary);
+    background-color: color-mix(in srgb, var(--color-ledger-primary) 20%, transparent);
+    border-color: var(--color-ledger-primary);
+}
+
+.guide-intent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.75rem;
+}
+
+.guide-intent-label {
+    font-weight: 500;
+}
+
+.guide-intent-hint {
+    text-align: center;
+    line-height: 1.25;
+    color: var(--color-muted);
+}
+
+.guide-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+}
+
+.guide-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.guide-filter {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    line-height: calc(1 / 0.75);
+    color: var(--color-muted);
+    cursor: pointer;
+}
+
+.guide-filter-box {
+    border-radius: 0.25rem;
+}
+
+.guide-name {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.875rem;
+    line-height: calc(1.25 / 0.875);
+    color: var(--color-fg);
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 0.25rem;
+}
+
+.guide-name:focus {
+    outline: none;
+    border-color: var(--color-accent);
+}
+
+.guide-actions {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+.guide-btn {
+    padding: 0.375rem 1rem;
+    font-size: 0.875rem;
+    line-height: calc(1.25 / 0.875);
+    border-radius: 0.25rem;
+    cursor: pointer;
+}
+
+.guide-btn-back {
+    color: var(--color-fg);
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+}
+
+.guide-btn-back:hover {
+    background-color: var(--color-border);
+}
+
+.guide-btn-next {
+    color: var(--color-white);
+    background-color: var(--color-ledger-primary-hover);
+    border: 1px solid var(--color-ledger-primary);
+}
+
+.guide-btn-next:hover {
+    background-color: var(--color-ledger-primary);
+}
+
+.guide-btn-next:disabled {
+    opacity: 0.5;
+}

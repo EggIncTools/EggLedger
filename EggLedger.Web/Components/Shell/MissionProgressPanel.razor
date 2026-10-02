@@ -3,29 +3,29 @@
 @implements IDisposable
 
 @if (Processes.Count > 0) {
-    <div class="flex flex-col gap-1 shrink-0 @(Processes.Count >= 3 ? "overflow-y-auto max-h-48" : "")">
+    <div class="mprog @(Processes.Count >= 3 ? "mprog-scroll" : "")">
         @foreach (var proc in Processes) {
             var expanded = _expanded.Contains(proc.Id);
-            <div @key="proc.Id" class="bg-darkest rounded-md overflow-hidden text-xs font-mono">
-                <button type="button" class="w-full flex items-center gap-2 px-2 py-1 text-gray-400 hover:text-gray-300 text-left"
+            <div @key="proc.Id" class="mprog-item">
+                <button type="button" class="mprog-head"
                         aria-expanded="@(expanded ? "true" : "false")" @onclick="() => Toggle(proc.Id)">
-                    <span class="w-2 h-2 rounded-full shrink-0 @StatusDotClass(proc.Status)"></span>
-                    <span class="flex-1 min-w-0 truncate">@proc.Label</span>
-                    <span class="flex gap-1 shrink-0">
+                    <span class="mprog-dot @StatusDotClass(proc.Status)"></span>
+                    <span class="mprog-label">@proc.Label</span>
+                    <span class="mprog-segs">
                         @foreach (var seg in proc.Segments) {
-                            <span title="@seg.Name" class="w-2 h-2 rounded-full @SegmentDotClass(seg.Status)"></span>
+                            <span title="@seg.Name" class="mprog-dot @SegmentDotClass(seg.Status)"></span>
                         }
                     </span>
-                    <span class="text-gray-600 shrink-0 ml-1">@RelativeTime(proc.StartedAt)</span>
-                    <span class="text-gray-600 shrink-0 ml-1">@(expanded ? "▼" : "▶")</span>
+                    <span class="mprog-meta">@RelativeTime(proc.StartedAt)</span>
+                    <span class="mprog-meta">@(expanded ? "▼" : "▶")</span>
                 </button>
                 @if (expanded) {
-                    <div class="px-2 pb-1 max-h-32 overflow-y-auto border-t border-dark">
+                    <div class="mprog-logs">
                         @if (proc.Logs.Count == 0) {
-                            <div class="text-gray-600 italic py-0.5">No logs yet.</div>
+                            <div class="mprog-empty">No logs yet.</div>
                         } else {
                             @foreach (var entry in proc.Logs) {
-                                <div class="whitespace-pre">
+                                <div class="mprog-line">
                                     <LogLine Text="@entry.Text" IsError="entry.IsError" Masked="ScreenshotSafety.Enabled"/>
                                 </div>
                             }
@@ -96,16 +96,16 @@
     }
 
     private static string StatusDotClass(ProcessStatus status) => status switch {
-        ProcessStatus.Running => "bg-yellow-400 animate-pulse",
-        ProcessStatus.Done => "bg-green-500",
-        _ => "bg-red-500"
+        ProcessStatus.Running => "mprog-dot-running",
+        ProcessStatus.Done => "mprog-dot-done",
+        _ => "mprog-dot-failed"
     };
 
     private static string SegmentDotClass(SegmentStatus? status) => status switch {
-        SegmentStatus.Active => "bg-blue-400 animate-pulse",
-        SegmentStatus.Done => "bg-green-500",
-        SegmentStatus.Failed => "bg-red-500",
-        _ => "bg-gray-600"
+        SegmentStatus.Active => "mprog-dot-active",
+        SegmentStatus.Done => "mprog-dot-done",
+        SegmentStatus.Failed => "mprog-dot-failed",
+        _ => "mprog-dot-pending"
     };
 
     public void Dispose() {

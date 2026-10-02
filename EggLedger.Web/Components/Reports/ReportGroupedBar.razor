@@ -3,7 +3,7 @@
 @* Grouped horizontal bars over a 2D result: each row heads a stack of per-column bars,
    with an "Other" rollup once columns exceed MaxCols. Legend drag-reorder deferred. *@
 
-<div class="chart-rows h-full flex flex-col gap-1 overflow-auto">
+<div class="rgb">
     @{
         var cols = DisplayCols();
         var colors = ColColors(cols);
@@ -11,33 +11,33 @@
     }
     @for (var rIdx = 0; rIdx < Result.RowLabels.Count; rIdx++) {
         var row = Result.RowLabels[rIdx];
-        <div class="flex items-center gap-1 min-w-0 flex-1">
-            <span class="text-xs text-gray-400 w-24 shrink-0 text-right truncate" data-tt="@row">@row</span>
-            <div class="flex-1 flex flex-col gap-0.5">
+        <div class="rgb-row">
+            <span class="rgb-row-label" data-tt="@row">@row</span>
+            <div class="rgb-bars">
                 @for (var cIdx = 0; cIdx < cols.Count; cIdx++) {
                     var raw = CellRawValue(rIdx, cIdx, cols);
                     if (raw > 0) {
-                        <div class="flex items-center gap-1">
-                            <div class="chart-hit h-3 rounded-sm"
-                                 style="width: @BarWidth(raw, max)%; background-color: @colors[cIdx]; min-width: 2px; cursor: pointer;"
+                        <div class="rgb-bar-row">
+                            <div class="rgb-bar"
+                                 style="--rgb-w: @BarWidth(raw, max).ToString(CultureInfo.InvariantCulture)%; --rgb-color: @colors[cIdx];"
                                  data-tt="@($"{cols[cIdx]}\n{row}: {CellLabel(raw)}")">
                             </div>
-                            <span class="text-xs text-gray-500 shrink-0">@CellLabel(raw)</span>
+                            <span class="rgb-bar-value">@CellLabel(raw)</span>
                         </div>
                     }
                 }
             </div>
         </div>
     }
-    <div class="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 px-1">
+    <div class="rgb-legend">
         @{
             var legendCols = DisplayCols();
             var legendColors = ColColors(legendCols);
         }
         @for (var c = 0; c < legendCols.Count; c++) {
-            <div class="flex items-center gap-1 select-none" data-tt="@legendCols[c]">
-                <div class="w-2 h-2 rounded-sm shrink-0" style="background-color: @legendColors[c];"></div>
-                <span class="text-xs text-gray-400 truncate max-w-28">@legendCols[c]</span>
+            <div class="rgb-legend-item" data-tt="@legendCols[c]">
+                <div class="rgb-swatch" style="--rgb-color: @legendColors[c];"></div>
+                <span class="rgb-legend-label">@legendCols[c]</span>
             </div>
         }
     </div>

@@ -88,8 +88,35 @@ public static class LedgerPalette {
         ("upgrade_green", "#1c802e"),
         ("upgrade_green_hover", "#155e22"),
         ("upgrade_green_border", "#155e22"),
-        ("upgrade_green_hover_border", "#114f1c")
+        ("upgrade_green_hover_border", "#114f1c"),
+        ("warn", "#fb923c"),
+        ("ledger-dim", "oklch(44.6% 0.03 256.802)"),
+        ("ledger-hairline", "oklch(27.8% 0.033 256.848)"),
+        ("ledger-primary", "#4f46e5"),
+        ("ledger-primary-hover", "#4338ca"),
+        ("ledger-egg-purple", "#a855f7"),
+        ("ledger-egg-yellow", "#eab308"),
+        ("ledger-egg-pink", "#c831ff"),
+        ("ledger-incomplete", "#fa8072"),
+        ("view-ships", "rgb(246, 168, 35)"),
+        ("view-drops", "rgb(155, 110, 243)"),
+        ("view-reports", "rgb(69, 159, 246)"),
+        ("ledger-support", "oklch(64.5% 0.246 16.439)"),
+        ("ledger-support-hover", "oklch(71.2% 0.194 13.428)"),
+        ("ledger-drop-artifact", "#1e3a8a"),
+        ("ledger-drop-stone", "oklch(40.1% 0.17 325.612)"),
+        ("ledger-drop-unknown", "oklch(21% 0.034 264.665)"),
+        ("ledger-login", "#5865f2"),
+        ("ledger-login-hover", "#4752c4"),
+        ("ledger-login-menu", "#23232a"),
+        ("ledger-login-menu-border", "#3a3a44"),
+        ("ledger-panel-muted", "rgba(120, 128, 138, 0.12)"),
+        ("ledger-scrollbar", "#555555"),
+        ("ledger-scrollbar-hover", "#888888"),
+        ("ledger-tooltip-border", "#cccccc")
     ];
+
+    public static IEnumerable<(string Name, string Value)> All => ComponentColors.Concat(AppColors);
 
     public static IReadOnlyList<string> StatusTokens { get; } = ["accent", "ok", "err"];
 

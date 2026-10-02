@@ -1,0 +1,27 @@
+.pair-page {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 1rem;
+    background-color: var(--color-bg);
+}
+
+.pair-msg {
+    margin: 0.5rem 0 0;
+}
+
+.pair-msg-pending {
+    color: var(--color-muted);
+    font-style: italic;
+}
+
+.pair-msg-ok {
+    color: var(--color-ok);
+}
+
+.pair-msg-err {
+    color: var(--color-err);
+}

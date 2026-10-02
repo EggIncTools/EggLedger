@@ -2,20 +2,19 @@
 @* Horizontal bar chart (CSS-width bars), sortable by chart_type (bar_desc / bar_asc).
    Colors come from per-label overrides or the base color. *@
 
-<div class="chart-rows w-full h-full grid gap-x-2 gap-y-1 overflow-y-auto pr-3"
-     style="grid-template-columns: max-content 1fr max-content; align-content: start;">
+<div class="rbar">
     @foreach (var pair in SortedPairs()) {
-        <span class="text-gray-400 text-xs text-right self-center leading-tight" style="max-width: 9rem;" data-tt="@pair.Label">@pair.Label</span>
-        <div class="bg-gray-800 rounded-sm h-4 min-w-0 self-center">
-            <div class="h-4 rounded-sm chart-hit"
-                 style="width: @BarWidth(pair.Value)%; background-color: @BarColor(pair.Label); cursor: pointer;"
+        <span class="rbar-label" data-tt="@pair.Label">@pair.Label</span>
+        <div class="rbar-track">
+            <div class="rbar-fill"
+                 style="--rbar-w: @BarWidth(pair.Value)%; --rbar-color: @BarColor(pair.Label);"
                  data-tt="@BarTitle(pair.Label, pair.Value)">
             </div>
         </div>
-        <span class="text-gray-300 font-mono text-xs text-right self-center">@FormatValue(pair.Value)</span>
+        <span class="rbar-value">@FormatValue(pair.Value)</span>
     }
     @if (!string.IsNullOrEmpty(UnitLabel)) {
-        <div class="col-span-3 text-xs text-gray-600 text-right mt-0.5">@UnitLabel</div>
+        <div class="rbar-unit">@UnitLabel</div>
     }
 </div>
 

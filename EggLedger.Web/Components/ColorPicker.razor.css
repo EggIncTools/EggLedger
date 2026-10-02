@@ -12,7 +12,7 @@
 }
 
 .cp-swatch:hover {
-    border-color: var(--color-text-muted);
+    border-color: var(--color-muted);
 }
 
 .cp-popover {
@@ -21,8 +21,8 @@
     top: calc(100% + 0.25rem);
     left: 0;
     width: 13.75rem;
-    padding: var(--space-3);
-    background-color: var(--color-darker);
+    padding: 0.75rem;
+    background-color: var(--color-bg);
     border: 1px solid var(--color-border);
     border-radius: 0.5rem;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
@@ -31,8 +31,8 @@
 .cp-presets {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
-    gap: var(--space-1);
-    margin-bottom: var(--space-3);
+    gap: 0.25rem;
+    margin-bottom: 0.75rem;
 }
 
 .cp-preset {
@@ -44,21 +44,21 @@
 }
 
 .cp-preset:hover {
-    border-color: var(--color-text-muted);
+    border-color: var(--color-muted);
 }
 
 .cp-preset-active {
-    border-color: #ffffff;
+    border-color: var(--color-white);
     outline: 1px solid rgba(255, 255, 255, 0.4);
 }
 
 .cp-slider {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: 0.5rem;
     font-size: 0.75rem;
-    color: var(--color-text-dim);
-    margin-bottom: var(--space-1);
+    color: var(--color-ledger-dim);
+    margin-bottom: 0.25rem;
 }
 
 .cp-slider input[type="range"] {
@@ -72,32 +72,32 @@
 .cp-slider-val {
     width: 2.5rem;
     text-align: right;
-    color: var(--color-text-muted);
+    color: var(--color-muted);
     font-variant-numeric: tabular-nums;
 }
 
 .cp-hex {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
-    margin-top: var(--space-2);
+    gap: 0.5rem;
+    margin-top: 0.5rem;
 }
 
 .cp-hex-key {
     font-size: 0.75rem;
-    color: var(--color-text-dim);
+    color: var(--color-ledger-dim);
 }
 
 .cp-hex input {
     flex: 1;
     min-width: 0;
     background-color: var(--color-darkest);
-    border: 1px solid var(--color-border-soft);
+    border: 1px solid var(--color-border);
     border-radius: 0.25rem;
     padding: 0.25rem 0.5rem;
     font-size: 0.75rem;
     font-family: monospace;
-    color: var(--color-text);
+    color: var(--color-fg);
 }
 
 .cp-hex-preview {

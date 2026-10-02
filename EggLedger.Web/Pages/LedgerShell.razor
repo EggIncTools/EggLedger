@@ -22,11 +22,11 @@
     <LedgerSidebar/>
 
     <div class="ledger-content">
-        <div class="shrink-0">
+        <div class="ledger-content-head">
             <ViewSelector Current="Shell.View" OnSelect="SelectView"/>
         </div>
 
-        <div class="ledger-surface @(Shell.View == LedgerView.Reports ? "overflow-hidden" : "overflow-auto")">
+        <div class="ledger-surface @(Shell.View == LedgerView.Reports ? "ledger-surface-clip" : "")">
             @if (Shell.View == LedgerView.Drops) {
                 <DropsView/>
             } else if (Shell.View == LedgerView.Reports) {

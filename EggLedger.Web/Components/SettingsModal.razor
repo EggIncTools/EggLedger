@@ -8,34 +8,25 @@
 @inject AccountLoader Loader
 @inject IServiceProvider Services
 
-<ModalHost Open="true" OnClose="Close" Title="Settings" CardClass="w-[92vw] max-w-[48rem] max-h-[88vh] flex flex-col">
-    <div class="flex-1 min-h-0 overflow-y-auto px-3 py-3 text-sm text-gray-400">
+<div class="setm-size">
+<ModalHost Open="true" OnClose="Close" Title="Settings" Width="ModalWidth.Custom">
+    <div class="setm">
         @if (!_loaded) {
-            <p class="text-gray-500 italic">Loading settings...</p>
+            <p class="setm-loading">Loading settings...</p>
         } else {
-            <div class="flex flex-col gap-2">
+            <div class="setm-sections">
                 @foreach (var section in Sections()) {
                     var id = section.Id;
                     var open = _openSections.Contains(id);
-                    <div class="settings-section @(open ? "is-open" : "")">
-                        <button type="button" class="settings-section-head" aria-expanded="@(open ? "true" : "false")"
-                                @onclick="() => Toggle(id)">
-                            <span class="settings-section-title">@section.Title</span>
-                            @if (open) {
-                                <span class="settings-section-caret">&#9662;</span>
-                            } else {
-                                <span class="settings-section-caret">&#9656;</span>
-                            }
-                        </button>
-                        @if (open) {
-                            <div class="settings-section-body">@section.Body</div>
-                        }
-                    </div>
+                    <CollapsibleSection Title="@section.Title" Open="open" OnToggle="() => Toggle(id)">
+                        @section.Body
+                    </CollapsibleSection>
                 }
             </div>
         }
     </div>
 </ModalHost>
+</div>
 
 @code {
     private const string GeneralSectionId = "general";
@@ -66,7 +57,7 @@
 
     private RenderFragment AccountDataAndSyncBody => __builder => {
         <AccountDataPanel Accounts="_existing" Changed="ReloadAccountsAsync" Fetching="FetchingCardInfo"/>
-        <hr class="mt-1rem mb-1rem w-full"/>
+        <hr class="setm-rule"/>
         <CloudSyncPanel/>
     };
 

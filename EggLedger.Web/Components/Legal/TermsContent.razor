@@ -1,13 +1,6 @@
-<h1 class="legal-title">Terms of Service</h1>
-<p class="legal-updated">Last updated 26 August 2026</p>
+<LegalHeader Title="Terms of Service" Updated="26 August 2026"/>
 
-<div class="legal-disclaimer">
-    EggLedger is an independent, fan-made tool and is not affiliated with, endorsed by, or
-    sponsored by Auxbrain Inc. Egg, Inc. and related marks are the property of their respective
-    owners.
-</div>
-
-<section class="legal-section">
+<LegalSection>
     <h2>1. What this is</h2>
     <p>
         EggLedger exports Egg, Inc. spaceship mission history, including per-mission loot, to
@@ -35,9 +28,9 @@
         <a href="https://github.com/fanaticscripter" target="_blank" rel="noopener">mk2</a>
         and is now developed and maintained by an individual, David Cole, not a company.
     </p>
-</section>
+</LegalSection>
 
-<section class="legal-section">
+<LegalSection>
     <h2>2. Provided as-is, no warranty</h2>
     <p>
         The software is licensed under the MIT License (Copyright 2026 David Cole). As that license
@@ -46,9 +39,9 @@
         is no guarantee they will be available, uninterrupted, accurate, or fit for any particular
         purpose. You use them at your own risk.
     </p>
-</section>
+</LegalSection>
 
-<section class="legal-section">
+<LegalSection>
     <h2>3. Accounts and signing in</h2>
     <p>
         Signing in is handled by EggIdentity, a separate federated authentication service run by
@@ -64,9 +57,9 @@
         responsibility. The web app requires an account. The desktop app needs one only if you
         turn on Settings Sync.
     </p>
-</section>
+</LegalSection>
 
-<section class="legal-section">
+<LegalSection>
     <h2>4. Acceptable use</h2>
     <p>When you use EggLedger or its hosted services, you agree not to:</p>
     <ul>
@@ -84,9 +77,9 @@
         a licence to attack a third party's servers. If you run your own build of the software, the
         same expectations of responsible use apply, and you are responsible for how you use it.
     </p>
-</section>
+</LegalSection>
 
-<section class="legal-section">
+<LegalSection>
     <h2>5. No account risk warranty</h2>
     <p>
         No community tool, including this one, is sanctioned by the Egg, Inc. developer. The
@@ -94,18 +87,18 @@
         read-only API access has been used safely by other community tools for years. Even so,
         this is not a guarantee, and you use the tool at your own risk.
     </p>
-</section>
+</LegalSection>
 
-<section class="legal-section">
+<LegalSection>
     <h2>6. Desktop app</h2>
     <p>
         The desktop app stores config, mission data, and exports next to its own binary. Nothing is
         uploaded unless you turn on Settings Sync. Keeping your own backups of that directory is up
         to you, and the operator cannot recover data you delete or lose.
     </p>
-</section>
+</LegalSection>
 
-<section class="legal-section">
+<LegalSection>
     <h2>7. Web app and stored data</h2>
     <p>
         The hosted web app decodes your Egg, Inc. backup on the server and stores the result in its
@@ -118,16 +111,12 @@
         that is done by asking the operator. The hosted app is a convenience, not a backup service,
         and the operator gives no guarantee that stored data will survive an outage or a change to
         the service. The
-        @if (OnCrossLink.HasDelegate) {
-            <button type="button" class="legal-link-btn" @onclick="OpenPrivacy">Privacy &amp; Cookies</button>
-        } else {
-            <a href="/privacy">Privacy &amp; Cookies</a>
-        }
+        <LegalCrossLink Target="LegalDocument.Privacy" OnCrossLink="OnCrossLink">Privacy &amp; Cookies</LegalCrossLink>
         page describes exactly what is stored and how to remove it.
     </p>
-</section>
+</LegalSection>
 
-<section class="legal-section">
+<LegalSection>
     <h2>8. Supporting the project</h2>
     <p>
         Supporting the project is entirely voluntary. Donations are handled by third-party
@@ -135,9 +124,9 @@
         processes or stores your payment card data. Refunds, billing, and cancellation are
         governed by the platform you paid through, not by this service.
     </p>
-</section>
+</LegalSection>
 
-<section class="legal-section">
+<LegalSection>
     <h2>9. Changes to the service</h2>
     <p>
         This is a personal project. The operator may change, suspend, or discontinue any part of
@@ -146,9 +135,9 @@
         updated terms. The open-source code remains available under its licence regardless of what
         happens to any hosted service.
     </p>
-</section>
+</LegalSection>
 
-<section class="legal-section">
+<LegalSection>
     <h2>10. Limitation of liability</h2>
     <p>
         To the fullest extent permitted by law, the operator is not liable for any damages arising
@@ -156,9 +145,9 @@
         tool maintained in spare time. The MIT License's limitation of liability applies, and the
         same spirit applies to any hosted service: you accept all risk of using it.
     </p>
-</section>
+</LegalSection>
 
-<section class="legal-section">
+<LegalSection>
     <h2>11. Contact</h2>
     <p>
         Questions about these terms can go to the operator through the project's
@@ -166,13 +155,8 @@
         or the project
         <a href="https://discord.egginc.tools" target="_blank" rel="noopener">Discord server</a>.
     </p>
-</section>
+</LegalSection>
 
 @code {
     [Parameter] public EventCallback<LegalDocument> OnCrossLink { get; set; }
-
-    private Task OpenPrivacy() {
-        return OnCrossLink.InvokeAsync(LegalDocument.Privacy);
-    }
-
 }

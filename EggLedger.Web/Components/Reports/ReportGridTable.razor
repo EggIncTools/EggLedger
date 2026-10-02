@@ -1,19 +1,19 @@
 @using System.Globalization
 @* Plain label/value table for the "grid" display mode. Port of Vue ReportVisualGrid.vue. *@
 
-<div class="w-full h-full overflow-y-auto">
-    <table class="w-full text-xs">
+<div class="rtable">
+    <table class="rtable-table">
         <tbody>
         @foreach (var index in Enumerable.Range(0, Result.Labels.Count)) {
-            <tr class="border-b border-gray-800">
-                <td class="py-0.5 pr-2 text-gray-400 truncate max-w-xs">@Result.Labels[index]</td>
-                <td class="py-0.5 text-right font-mono text-gray-300">@FormatValue(index)</td>
+            <tr class="rtable-row">
+                <td class="rtable-label">@Result.Labels[index]</td>
+                <td class="rtable-value">@FormatValue(index)</td>
             </tr>
         }
         </tbody>
     </table>
     @if (!string.IsNullOrEmpty(UnitLabel)) {
-        <div class="text-xs text-gray-600 text-right mt-0.5">@UnitLabel</div>
+        <div class="rtable-unit">@UnitLabel</div>
     }
 </div>
 

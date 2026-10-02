@@ -7,23 +7,23 @@
    ResizeObserver (resizeObserver.js), same as ReportLineChart.
    SVG <text> via MarkupString (Razor reserves the bare <text> tag). *@
 
-<div class="h-full w-full flex flex-col gap-1">
-    <div class="flex-1 min-h-0" @ref="_containerRef">
+<div class="rml">
+    <div class="rml-plot" @ref="_containerRef">
         @if (!_measured) {
-            <div class="h-full flex items-center justify-center">
-                <span class="text-xs text-gray-500 animate-pulse">Loading chart...</span>
+            <div class="rml-msg">
+                <span class="rml-loading">Loading chart...</span>
             </div>
         } else if (SeriesCount >= 1 && BucketCount >= 2) {
             var max = GlobalMax();
             var ticks = BuildTicks(max);
             var seriesPoints = AllSeriesPoints();
             var colors = SeriesColors();
-            <svg viewBox="0 0 @Fmt(_w) @Fmt(_h)" preserveAspectRatio="xMidYMid meet" class="w-full h-full overflow-visible">
+            <svg viewBox="0 0 @Fmt(_w) @Fmt(_h)" preserveAspectRatio="xMidYMid meet" class="rml-svg">
                 @if (max > 0) {
                     @foreach (var tick in ticks) {
-                        <line x1="@Fmt(ChartGeometry.PadLeft)" y1="@Fmt(tick.Y)"
+                        <line class="rml-grid" x1="@Fmt(ChartGeometry.PadLeft)" y1="@Fmt(tick.Y)"
                               x2="@Fmt(_w - ChartGeometry.PadRight)" y2="@Fmt(tick.Y)"
-                              stroke="#374151" stroke-dasharray="3 3" stroke-width="0.5"/>
+                              stroke-dasharray="3 3" stroke-width="0.5"/>
                         @YTickText(tick)
                     }
                 }
@@ -36,8 +36,8 @@
                 @for (var s = 0; s < seriesPoints.Count; s++) {
                     var seriesName = s < Result.ColLabels.Count ? Result.ColLabels[s] : "";
                     @foreach (var p in seriesPoints[s]) {
-                        <circle class="chart-hit" cx="@Fmt(p.X)" cy="@Fmt(p.Y)" r="6" fill="transparent"
-                                style="cursor: pointer;" data-tt="@PointTip(seriesName, p)"/>
+                        <circle class="rml-hit" cx="@Fmt(p.X)" cy="@Fmt(p.Y)" r="6" fill="transparent"
+                                data-tt="@PointTip(seriesName, p)"/>
                     }
                 }
 
@@ -46,24 +46,24 @@
                 }
             </svg>
         } else if (BucketCount < 2) {
-            <div class="h-full flex items-center justify-center">
-                <span class="text-xs text-gray-600 italic">Not enough data for a line chart</span>
+            <div class="rml-msg">
+                <span class="rml-empty">Not enough data for a line chart</span>
             </div>
         } else {
-            <div class="h-full flex items-center justify-center">
-                <span class="text-xs text-gray-600 italic">No series data</span>
+            <div class="rml-msg">
+                <span class="rml-empty">No series data</span>
             </div>
         }
     </div>
 
-    <div class="flex flex-wrap gap-x-3 gap-y-0.5 px-1 shrink-0">
+    <div class="rml-legend">
         @{
             var legendColors = SeriesColors();
         }
         @for (var c = 0; c < Result.ColLabels.Count; c++) {
-            <div class="flex items-center gap-1" data-tt="@Result.ColLabels[c]">
-                <div class="w-2 h-2 rounded-sm shrink-0" style="background-color: @legendColors[c];"></div>
-                <span class="text-xs text-gray-400 truncate max-w-28">@Result.ColLabels[c]</span>
+            <div class="rml-legend-item" data-tt="@Result.ColLabels[c]">
+                <div class="rml-swatch" style="--rml-color: @legendColors[c];"></div>
+                <span class="rml-legend-label">@Result.ColLabels[c]</span>
             </div>
         }
     </div>
@@ -154,7 +154,7 @@
         var y = Fmt(tick.Y);
         var label = Esc(tick.Label);
         return new MarkupString(
-            $"<text x=\"{x}\" y=\"{y}\" text-anchor=\"end\" dominant-baseline=\"middle\" style=\"font-size: 10px; fill: #6b7280;\">{label}</text>");
+            $"<text x=\"{x}\" y=\"{y}\" text-anchor=\"end\" dominant-baseline=\"middle\">{label}</text>");
     }
 
     private MarkupString XLabelText(ChartPoint p) {
@@ -162,7 +162,7 @@
         var ty = Fmt(_h - ChartGeometry.PadBottom + 4);
         var label = Esc(ChartGeometry.FormatXLabel(p.Label));
         return new MarkupString(
-            $"<text transform=\"translate({tx}, {ty}) rotate(-45)\" text-anchor=\"end\" style=\"font-size: 10px; fill: #6b7280;\">{label}</text>");
+            $"<text transform=\"translate({tx}, {ty}) rotate(-45)\" text-anchor=\"end\">{label}</text>");
     }
 
     private string PointTip(string series, ChartPoint p) {

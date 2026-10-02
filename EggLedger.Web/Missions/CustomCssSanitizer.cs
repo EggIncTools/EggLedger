@@ -18,39 +18,54 @@ public static partial class CustomCssSanitizer {
             return false;
         }
 
-        string decodedCss = DecodeCssEscapes(rawCss);
-
-        if (ImportPattern().IsMatch(decodedCss)) {
-            error = "@import is not allowed in custom CSS.";
+        error = FindProblem(rawCss, DecodeCssEscapes(rawCss));
+        if (error is not null) {
             return false;
         }
 
-        if (ExpressionPattern().IsMatch(decodedCss)) {
-            error = "expression() is not allowed in custom CSS.";
-            return false;
-        }
+        scopedCss = $".{ScopeClassFor(presetName)} {{\n{rawCss}\n}}";
+        return true;
+    }
 
-        if (JavascriptUrlPattern().IsMatch(decodedCss)) {
-            error = "javascript: URLs are not allowed in custom CSS.";
-            return false;
-        }
+    private static string? FindProblem(string rawCss, string decodedCss) {
+        if (ImportPattern().IsMatch(decodedCss)) return "@import is not allowed in custom CSS.";
+        if (ExpressionPattern().IsMatch(decodedCss)) return "expression() is not allowed in custom CSS.";
+        if (JavascriptUrlPattern().IsMatch(decodedCss)) return "javascript: URLs are not allowed in custom CSS.";
+        if (StyleClosePattern().IsMatch(decodedCss)) return "</style> is not allowed in custom CSS.";
+        if (decodedCss.Contains('<') || rawCss.Contains('<')) return "'<' is not allowed in custom CSS.";
+        if (DisallowedAtRule(decodedCss) is { } name) return $"@{name} is not allowed in custom CSS; only @media and @container are.";
+        if (DocumentSelectorPattern().IsMatch(decodedCss)) return ":root, html, and body selectors are not allowed in custom CSS.";
+        if (!BracesBalanced(decodedCss)) return "Unbalanced braces in custom CSS.";
+        if (HasForeignUrl(decodedCss)) return "url(...) is only allowed with data:image/ URIs in custom CSS.";
+        return null;
+    }
 
-        if (StyleClosePattern().IsMatch(decodedCss)) {
-            error = "</style> is not allowed in custom CSS.";
-            return false;
-        }
+    private static string? DisallowedAtRule(string css) {
+        return AtRulePattern().Matches(css)
+            .Select(m => m.Groups[1].Value.ToLowerInvariant())
+            .FirstOrDefault(n => n is not ("media" or "container"));
+    }
 
-        foreach (Match match in UrlPattern().Matches(decodedCss)) {
-            string target = match.Groups[1].Value.Trim('\'', '"', ' ');
-            if (!target.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase)) {
-                error = "url(...) is only allowed with data:image/ URIs in custom CSS.";
+    private static bool HasForeignUrl(string css) {
+        return UrlPattern().Matches(css)
+            .Any(m => !m.Groups[1].Value.Trim('\'', '"', ' ').StartsWith("data:image/", StringComparison.OrdinalIgnoreCase));
+    }
+
+    public static string ScopeClassFor(string presetName) {
+        return "mission-card-custom-" + SlugFor(presetName);
+    }
+
+    private static bool BracesBalanced(string css) {
+        var depth = 0;
+        foreach (var ch in css) {
+            if (ch == '{') {
+                depth++;
+            } else if (ch == '}' && --depth < 0) {
                 return false;
             }
         }
 
-        string className = "mission-card-custom-" + SlugFor(presetName);
-        scopedCss = $".{className} {{\n{rawCss}\n}}";
-        return true;
+        return depth == 0;
     }
 
     public static string SlugFor(string presetName) {
@@ -87,6 +102,12 @@ public static partial class CustomCssSanitizer {
 
     [GeneratedRegex(@"url\(\s*([^)]*)\)", RegexOptions.IgnoreCase)]
     private static partial Regex UrlPattern();
+
+    [GeneratedRegex(@"@([a-zA-Z-]+)")]
+    private static partial Regex AtRulePattern();
+
+    [GeneratedRegex(@"(?:^|[\s,>+~{}])(?::root|html|body)(?=[\s,.:#\[>+~{]|$)", RegexOptions.IgnoreCase)]
+    private static partial Regex DocumentSelectorPattern();
 
     [GeneratedRegex(@"[^a-zA-Z0-9]+")]
     private static partial Regex SlugPattern();

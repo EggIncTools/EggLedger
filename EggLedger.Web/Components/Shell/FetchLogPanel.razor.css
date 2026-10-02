@@ -1,0 +1,172 @@
+.flog {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.flog-active {
+    color: var(--color-ledger-egg-yellow);
+}
+
+.flog-current {
+    color: var(--color-muted);
+    font-style: italic;
+    word-break: break-all;
+}
+
+.flog-ok {
+    color: var(--color-ok);
+}
+
+.flog-err {
+    color: var(--color-err);
+}
+
+.flog-warn {
+    color: var(--color-warn);
+}
+
+.flog-muted {
+    color: var(--color-muted);
+}
+
+.flog-pre {
+    white-space: pre;
+}
+
+.flog-list {
+    margin: 0;
+    padding-left: 0.75rem;
+}
+
+.flog-break {
+    word-break: break-all;
+}
+
+.flog-fails {
+    margin-top: 0.25rem;
+    max-height: 8rem;
+    overflow: auto;
+}
+
+.flog-fail {
+    color: var(--color-muted);
+}
+
+.flog-fail-timeout {
+    color: var(--color-warn);
+}
+
+.flog-fail-id {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.flog-fail-note {
+    opacity: 0.8;
+}
+
+.flog-stages {
+    display: flex;
+    gap: 0.25rem;
+    margin-top: 0.25rem;
+}
+
+.flog-stage-save {
+    --flog-stage: var(--color-stage-save);
+}
+
+.flog-stage-missions {
+    --flog-stage: var(--color-stage-missions);
+}
+
+.flog-stage-export {
+    --flog-stage: var(--color-stage-export);
+}
+
+.flog-stage-failed {
+    --flog-stage: var(--color-stage-failed);
+}
+
+.flog-stage {
+    flex: 1;
+    height: 0.75rem;
+    background-color: var(--color-dark);
+    border-radius: 0.25rem;
+    overflow: hidden;
+}
+
+.flog-stage-fill {
+    height: 100%;
+    width: var(--flog-w);
+    border-radius: 0.25rem;
+    transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.flog-fill,
+.flog-fill-failed {
+    background-color: var(--flog-stage);
+}
+
+.flog-fill-skipped {
+    background-image: repeating-linear-gradient(45deg, transparent, transparent 3px, color-mix(in srgb, var(--flog-stage) 30%, transparent) 3px, color-mix(in srgb, var(--flog-stage) 30%, transparent) 5px);
+}
+
+.flog-stage-labels {
+    display: flex;
+    margin-top: 0.125rem;
+    color: var(--color-ledger-dim);
+    font-size: 0.6rem;
+}
+
+.flog-stage-label {
+    flex: 1;
+    text-align: center;
+}
+
+.flog-stage-label-on {
+    color: var(--flog-stage);
+}
+
+.flog-pulse {
+    animation: flog-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.flog-log {
+    display: flex;
+    flex-direction: column-reverse;
+    max-height: 15rem;
+    overflow: auto;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    line-height: calc(1 / 0.75);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    color: var(--color-muted);
+    background-color: var(--color-darkest);
+    border-radius: 0.375rem;
+}
+
+.flog-log-row {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.flog-log-clock {
+    flex-shrink: 0;
+    color: var(--color-green-700);
+}
+
+.flog-log-clock-err {
+    color: var(--color-err);
+}
+
+.flog-log-text {
+    min-width: 0;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+}
+
+@keyframes flog-pulse {
+    50% {
+        opacity: 0.5;
+    }
+}

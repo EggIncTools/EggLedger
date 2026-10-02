@@ -1,33 +1,31 @@
-<div class="mt-0_5rem pl-0_5rem">
-    <div class="relative h-7 mb-1 select-none w-4/5">
-        <span class="absolute top-0 text-sm font-bold font-mono -translate-x-1/2 @WorkerTextClass(WorkerCount)"
-              style="left: @($"{(WorkerCount - 0.5) * 10}%")">
+<div class="wcs @ZoneClass(WorkerCount)" style="--wcs-pos: @($"{(WorkerCount - 0.5) * 10}%")">
+    <div class="wcs-marker">
+        <span class="wcs-marker-value">
             @WorkerCount
         </span>
-        <div class="absolute bottom-0 h-2.5 border-b border-l pointer-events-none opacity-70 @WorkerBorderClass(WorkerCount)"
-             style="left: 0; width: @($"{(WorkerCount - 0.5) * 10}%")">
+        <div class="wcs-marker-line">
         </div>
     </div>
-    <div class="flex gap-px w-4/5 cursor-pointer">
+    <div class="wcs-cells">
         @foreach (var n in Enumerable.Range(1, SettingsModel.MaxWorkerCount)) {
-            <div class="flex-1 h-4 rounded-sm @WorkerCellClass(n) @(n > WorkerCount ? "opacity-20" : "")"
+            <div class="wcs-cell @CellClass(n) @(n > WorkerCount ? "wcs-cell-off" : "")"
                  @onclick="() => SetAsync(n)">
             </div>
         }
     </div>
-    <div class="flex text-xs mt-0_25rem select-none w-4/5">
-        <span class="text-green-500 text-center" style="width: 40%">Safe</span>
-        <span class="text-orange-400 text-center" style="width: 30%">Caution</span>
-        <span class="text-red-500 text-center" style="width: 30%">Risky</span>
+    <div class="wcs-legend">
+        <span class="wcs-legend-safe">Safe</span>
+        <span class="wcs-legend-caution">Caution</span>
+        <span class="wcs-legend-risky">Risky</span>
     </div>
 </div>
 @if (ShowWarningBox && !WarningRead) {
-    <div class="mt-0_5rem pl-0_5rem text-red-700 border border-red-700 rounded-md py-2 px-3">
-        <span class="font-bold ledger-underline">Warning:</span><br/>
+    <div class="wcs-warning">
+        <span class="wcs-warning-title ledger-underline">Warning:</span><br/>
         Higher values fetch missions faster but may trigger API rate limiting.
         Sustained use of higher values can lead to IP blocking and potential further consequences.
         <br/><br/>
-        <button type="button" class="dismiss-btn" @onclick="DismissWarningAsync">I understand</button>
+        <button type="button" class="wcs-dismiss" @onclick="DismissWarningAsync">I understand</button>
     </div>
 }
 
@@ -42,16 +40,12 @@
 
     [Parameter] public bool ShowWarningBox { get; set; } = true;
 
-    private static string WorkerCellClass(int n) {
-        return n <= 4 ? "bg-green-600" : n <= 7 ? "bg-orange-500" : "bg-red-600";
+    private static string ZoneClass(int n) {
+        return n <= 4 ? "wcs-safe" : n <= 7 ? "wcs-caution" : "wcs-risky";
     }
 
-    private static string WorkerTextClass(int n) {
-        return n <= 4 ? "text-green-400" : n <= 7 ? "text-orange-400" : "text-red-400";
-    }
-
-    private static string WorkerBorderClass(int n) {
-        return n <= 4 ? "border-green-400" : n <= 7 ? "border-orange-400" : "border-red-400";
+    private static string CellClass(int n) {
+        return n <= 4 ? "wcs-cell-safe" : n <= 7 ? "wcs-cell-caution" : "wcs-cell-risky";
     }
 
     private async Task SetAsync(int n) {

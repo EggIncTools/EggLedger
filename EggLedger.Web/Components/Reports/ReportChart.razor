@@ -2,8 +2,8 @@
    Empty results show a placeholder. *@
 
 @if (IsEmpty) {
-    <div class="h-full flex items-center justify-center">
-        <span class="text-xs text-gray-600 italic">No data for this report.</span>
+    <div class="rchart-empty">
+        <span class="rchart-empty-text">No data for this report.</span>
     </div>
 } else {
     switch (Def.DisplayMode) {

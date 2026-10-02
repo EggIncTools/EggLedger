@@ -1,0 +1,148 @@
+.exm-section {
+    margin-top: 1rem;
+}
+
+.exm-section-first {
+    margin-top: 0.5rem;
+}
+
+.exm-body {
+    margin-top: 0.5rem;
+    padding-left: 0.5rem;
+}
+
+.exm-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.exm-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+}
+
+.exm-text {
+    font-size: 0.875rem;
+    line-height: calc(1.25 / 0.875);
+    color: var(--color-muted);
+}
+
+.exm-keep {
+    width: 4rem;
+    font-size: 0.875rem;
+}
+
+.exm-note {
+    font-size: 0.75rem;
+    line-height: calc(1 / 0.75);
+    font-style: italic;
+    color: var(--color-muted);
+}
+
+.exm-note-plain {
+    font-size: 0.75rem;
+    line-height: calc(1 / 0.75);
+    color: var(--color-muted);
+}
+
+.exm-err {
+    margin-top: 0.25rem;
+    padding-left: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--color-err);
+}
+
+.exm-files {
+    margin-top: 0.5rem;
+}
+
+.exm-group {
+    margin-bottom: 0.25rem;
+}
+
+.exm-group-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    width: 100%;
+    padding: 0.125rem 0;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    font-size: 0.75rem;
+    line-height: calc(1 / 0.75);
+    color: var(--color-muted);
+    cursor: pointer;
+}
+
+.exm-group-btn:hover {
+    color: var(--color-fg);
+}
+
+.exm-caret {
+    width: 0.75rem;
+    color: var(--color-muted);
+}
+
+.exm-nick {
+    font-weight: 500;
+}
+
+.exm-nick-colored {
+    color: var(--acct-color);
+}
+
+.exm-group-btn:hover .exm-nick {
+    filter: brightness(1.25);
+}
+
+.exm-eid {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.exm-group-meta {
+    margin-left: 0.25rem;
+    color: var(--color-muted);
+}
+
+.exm-table-wrap {
+    margin-top: 0.25rem;
+    padding-left: 1rem;
+}
+
+.exm-table {
+    font-size: 0.75rem;
+    line-height: calc(1 / 0.75);
+    color: var(--color-muted);
+}
+
+.exm-table th {
+    padding: 0 1rem 0.125rem 0;
+    text-align: left;
+    font-weight: 400;
+}
+
+.exm-table td {
+    padding: 0.125rem 1rem 0.125rem 0;
+}
+
+.exm-table th:last-child,
+.exm-table td:last-child {
+    padding-right: 0;
+}
+
+.exm-pick {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    cursor: pointer;
+}
+
+.exm-none {
+    color: var(--color-ledger-dim);
+}

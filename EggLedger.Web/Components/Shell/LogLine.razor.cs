@@ -23,8 +23,6 @@ public partial class LogLine {
 
     [Parameter] public bool Masked { get; set; }
 
-    [Parameter] public string DefaultClass { get; set; } = "text-gray-400";
-
     [Inject] private ScreenshotSafetyState ScreenshotSafety { get; set; } = default!;
 
     protected override void OnParametersSet() {

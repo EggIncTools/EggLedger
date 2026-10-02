@@ -1,19 +1,19 @@
 @* Visual 8 x 4 grid size picker; clicking a cell selects width x height. Two-way bound. *@
 
-<div class="flex flex-col gap-2">
-    <div class="flex flex-col gap-0.5 self-start">
+<div class="gsize">
+    <div class="gsize-grid">
         @foreach (var rr in Enumerable.Range(1, MaxRows)) {
-            <div class="flex gap-0.5">
+            <div class="gsize-row">
                 @foreach (var cc in Enumerable.Range(1, MaxCols)) {
                     <button type="button"
-                            class="w-3.5 h-3.5 rounded-sm border cursor-pointer transition-colors @(IsActive(cc, rr) ? "bg-indigo-600 border-indigo-500" : "bg-gray-800 border-gray-600 hover:border-gray-400")"
+                            class="gsize-cell @(IsActive(cc, rr) ? "gsize-cell-on" : "")"
                             @onclick="() => Select(cc, rr)">
                     </button>
                 }
             </div>
         }
     </div>
-    <span class="text-xs text-gray-500">@Width x @Height</span>
+    <span class="gsize-label">@Width x @Height</span>
 </div>
 
 @code {

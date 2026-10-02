@@ -1,0 +1,70 @@
+.ships-note {
+    margin: 0.75rem 0 0;
+    color: var(--color-muted);
+    font-style: italic;
+}
+
+.ships-loading {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.ships-loading-text {
+    padding: 0.5rem;
+    font-size: 1.125rem;
+    line-height: calc(1.75 / 1.125);
+    color: var(--color-muted);
+}
+
+.ships-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.75rem 0 0.5rem;
+}
+
+.ships-tile-count {
+    margin-left: 0.25rem;
+    color: var(--color-muted);
+}
+
+.list-control-set {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+.list-control-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.list-control-action-btn {
+    padding: 0.2rem 0.6rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.375rem;
+    background-color: var(--color-bg);
+    color: var(--color-muted);
+    font-size: 0.7rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.list-control-action-btn:hover:not(:disabled) {
+    border-color: var(--color-muted);
+    color: var(--color-fg);
+}
+
+.list-control-action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

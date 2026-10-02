@@ -3,71 +3,71 @@
 @* Guided report builder: a 4-step wizard (intent -> group-by -> quick filters -> name)
    that emits a partial ReportDefinition for the parent to prefill and switch to advanced. *@
 
-<div class="flex flex-col gap-4">
-    <div class="flex items-center justify-between mb-4">
-        <span class="text-xs text-gray-500">Step @DisplayStep of @TotalSteps</span>
-        <div class="flex gap-1">
+<div class="guide">
+    <div class="guide-head">
+        <span class="guide-step">Step @DisplayStep of @TotalSteps</span>
+        <div class="guide-dots">
             @for (var n = 1; n <= TotalSteps; n++) {
-                <div class="w-4 h-1 rounded-full @(n <= DisplayStep ? "bg-indigo-500" : "bg-gray-600 border border-gray-500/50")"></div>
+                <div class="guide-dot @(n <= DisplayStep ? "guide-dot-on" : "")"></div>
             }
         </div>
     </div>
 
     @if (_step == 1) {
-        <div class="flex flex-col gap-3">
-            <p class="text-xs text-gray-400">What would you like to analyze?</p>
-            <div class="grid grid-cols-3 gap-2">
+        <div class="guide-pane">
+            <p class="guide-prompt">What would you like to analyze?</p>
+            <div class="guide-intents">
                 @foreach (var opt in IntentOptions) {
                     <button type="button"
-                            class="flex flex-col items-center gap-1.5 p-3 rounded-lg border text-xs transition-colors focus:outline-none @(_intent == opt.Value ? "border-indigo-500 bg-indigo-900/20 text-indigo-300" : "border-gray-700 bg-darker text-gray-400 hover:border-gray-500")"
+                            class="guide-choice guide-intent @(_intent == opt.Value ? "guide-choice-on" : "")"
                             @onclick="() => SelectIntent(opt.Value)">
-                        <span class="font-medium">@opt.Label</span>
-                        <span class="text-gray-500 text-center leading-tight">@opt.Hint</span>
+                        <span class="guide-intent-label">@opt.Label</span>
+                        <span class="guide-intent-hint">@opt.Hint</span>
                     </button>
                 }
             </div>
         </div>
     } else if (_step == 2) {
-        <div class="flex flex-col gap-3">
-            <p class="text-xs text-gray-400">Break it down by...</p>
-            <div class="flex flex-col gap-1.5">
+        <div class="guide-pane">
+            <p class="guide-prompt">Break it down by...</p>
+            <div class="guide-list">
                 @foreach (var opt in GroupByOptions) {
                     <button type="button"
-                            class="flex items-center gap-2 px-3 py-2 rounded-lg border text-xs text-left transition-colors focus:outline-none @(_groupBy == opt.Value ? "border-indigo-500 bg-indigo-900/20 text-indigo-300" : "border-gray-700 bg-darker text-gray-400 hover:border-gray-500")"
+                            class="guide-choice guide-option @(_groupBy == opt.Value ? "guide-choice-on" : "")"
                             @onclick="() => SelectGroupBy(opt.Value)">
-                        <span class="flex-1">@opt.Label</span>
+                        <span>@opt.Label</span>
                     </button>
                 }
             </div>
-            <div class="flex justify-center mt-1">
-                <button type="button" class="px-4 py-1.5 rounded border border-gray-600 bg-darker text-sm text-gray-300 hover:bg-gray-700 hover:text-gray-200" @onclick="GoBack">Back</button>
+            <div class="guide-actions">
+                <button type="button" class="guide-btn guide-btn-back" @onclick="GoBack">Back</button>
             </div>
         </div>
     } else if (_step == 3) {
-        <div class="flex flex-col gap-3">
-            <p class="text-xs text-gray-400">Apply a quick filter? (optional)</p>
-            <div class="flex flex-col gap-2">
+        <div class="guide-pane">
+            <p class="guide-prompt">Apply a quick filter? (optional)</p>
+            <div class="guide-filters">
                 @foreach (var qf in QuickFilterOptions) {
-                    <label class="flex items-center gap-2 text-xs text-gray-400 cursor-pointer">
-                        <input type="checkbox" class="rounded" checked="@_quickFilters.Contains(qf.Key)"
+                    <label class="guide-filter">
+                        <input type="checkbox" class="guide-filter-box" checked="@_quickFilters.Contains(qf.Key)"
                                @onchange="e => ToggleQuickFilter(qf.Key, e)"/>
                         @qf.Label
                     </label>
                 }
             </div>
-            <div class="flex justify-center gap-3 mt-1">
-                <button type="button" class="px-4 py-1.5 rounded border border-gray-600 bg-darker text-sm text-gray-300 hover:bg-gray-700 hover:text-gray-200" @onclick="GoBack">Back</button>
-                <button type="button" class="px-4 py-1.5 rounded border border-indigo-600 bg-indigo-700 text-sm text-white hover:bg-indigo-600" @onclick="() => _step = 4">Next</button>
+            <div class="guide-actions">
+                <button type="button" class="guide-btn guide-btn-back" @onclick="GoBack">Back</button>
+                <button type="button" class="guide-btn guide-btn-next" @onclick="() => _step = 4">Next</button>
             </div>
         </div>
     } else {
-        <div class="flex flex-col gap-3">
-            <p class="text-xs text-gray-400">Give it a name</p>
-            <input type="text" class="bg-darker border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500"
+        <div class="guide-pane">
+            <p class="guide-prompt">Give it a name</p>
+            <input type="text" class="guide-name"
                    placeholder="Report name" @bind="_reportName" @bind:event="oninput" @onkeydown="OnNameKeyDown"/>
-            <div class="flex justify-center gap-3 mt-1">
-                <button type="button" class="px-4 py-1.5 rounded border border-gray-600 bg-darker text-sm text-gray-300 hover:bg-gray-700 hover:text-gray-200" @onclick="GoBack">Back</button>
-                <button type="button" class="px-4 py-1.5 rounded border border-indigo-600 bg-indigo-700 text-sm text-white hover:bg-indigo-600 disabled:opacity-50"
+            <div class="guide-actions">
+                <button type="button" class="guide-btn guide-btn-back" @onclick="GoBack">Back</button>
+                <button type="button" class="guide-btn guide-btn-next"
                         disabled="@string.IsNullOrWhiteSpace(_reportName)" @onclick="Apply">
                     Create Report
                 </button>

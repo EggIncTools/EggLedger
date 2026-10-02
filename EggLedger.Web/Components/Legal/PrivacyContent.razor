@@ -1,13 +1,6 @@
-<h1 class="legal-title">Privacy &amp; Cookies</h1>
-<p class="legal-updated">Last updated 18 September 2026</p>
+<LegalHeader Title="Privacy &amp; Cookies" Updated="18 September 2026"/>
 
-<div class="legal-disclaimer">
-    EggLedger is an independent, fan-made tool and is not affiliated with, endorsed by, or
-    sponsored by Auxbrain Inc. Egg, Inc. and related marks are the property of their respective
-    owners.
-</div>
-
-<section class="legal-section">
+<LegalSection>
     <h2>The short version</h2>
     <p>
         EggLedger reads your mission history from the Egg, Inc. API. There is no advertising and
@@ -23,9 +16,9 @@
     <WebOnly>
         <p>You are using the hosted web app, so the Web app section below applies to you.</p>
     </WebOnly>
-</section>
+</LegalSection>
 
-<section class="legal-section">
+<LegalSection>
     <h2>Signing in</h2>
     <p>
         Sign-in is handled by EggIdentity, a separate federated authentication service run by the
@@ -41,9 +34,9 @@
         <a href="https://eggidentity.egginc.tools/privacy" target="_blank" rel="noopener">privacy policy</a>
         covering the login itself.
     </p>
-</section>
+</LegalSection>
 
-<section class="legal-section">
+<LegalSection>
     <h2>Desktop app</h2>
     <p>
         The desktop build stores all config, mission data, and exports in the same directory as
@@ -53,9 +46,9 @@
         contact the operator directly or turn on Settings Sync, there is no way to know you are
         even using this tool.
     </p>
-</section>
+</LegalSection>
 
-<section class="legal-section">
+<LegalSection>
     <h2>Web app</h2>
     <p>
         The hosted instance runs as a Blazor Server app. Your browser holds a live connection to
@@ -86,9 +79,9 @@
         Browsers sending Do Not Track or Global Privacy Control are not counted, and declining
         analytics in the cookie banner stops counting too.
     </p>
-</section>
+</LegalSection>
 
-<section class="legal-section">
+<LegalSection>
     <h2>Settings Sync (optional)</h2>
     <p>
         Settings Sync lets you carry your settings between devices. On desktop it is off unless
@@ -103,9 +96,9 @@
         technically read what you sync. The web app uses that same key to restore your settings on
         your first sign-in. No settings data passes through the sign-in source you picked.
     </p>
-</section>
+</LegalSection>
 
-<section class="legal-section">
+<LegalSection>
     <h2>Cookies</h2>
     <p>
         The web app uses strictly-necessary cookies, plus one consent cookie that records your
@@ -132,9 +125,9 @@
         your account's settings, along with the rest of your stored data. The desktop app uses no
         cookies; its settings live in the on-disk config described above.
     </p>
-</section>
+</LegalSection>
 
-<section class="legal-section">
+<LegalSection>
     <h2>Payments</h2>
     <p>
         Donations are processed entirely by third-party platforms (GitHub Sponsors, Patreon, and
@@ -142,9 +135,9 @@
         data. Anything to do with billing is held by those platforms under their own privacy
         policies.
     </p>
-</section>
+</LegalSection>
 
-<section class="legal-section">
+<LegalSection>
     <h2>Data retention</h2>
     <p>
         Desktop data is retained for as long as you keep it on disk. Deleting the app's directory
@@ -154,9 +147,9 @@
         purposes. Synced settings are kept only while your account exists. The rejected-request log
         described above is kept for abuse protection and is not tied to any account.
     </p>
-</section>
+</LegalSection>
 
-<section class="legal-section">
+<LegalSection>
     <h2>Removing your data</h2>
     <p>To remove the data stored about you:</p>
     <ul>
@@ -190,27 +183,18 @@
             <a href="https://discord.egginc.tools" target="_blank" rel="noopener">Discord server</a>.
         </li>
     </ul>
-</section>
+</LegalSection>
 
-<section class="legal-section">
+<LegalSection>
     <h2>Changes</h2>
     <p>
         This policy may change as the project evolves. The date at the top reflects the latest
         version. For the terms that govern use of the service, see the
-        @if (OnCrossLink.HasDelegate) {
-            <button type="button" class="legal-link-btn" @onclick="OpenTerms">Terms of Service</button>
-        } else {
-            <a href="/terms">Terms of Service</a>
-        }
+        <LegalCrossLink Target="LegalDocument.Terms" OnCrossLink="OnCrossLink">Terms of Service</LegalCrossLink>
         page.
     </p>
-</section>
+</LegalSection>
 
 @code {
     [Parameter] public EventCallback<LegalDocument> OnCrossLink { get; set; }
-
-    private Task OpenTerms() {
-        return OnCrossLink.InvokeAsync(LegalDocument.Terms);
-    }
-
 }
