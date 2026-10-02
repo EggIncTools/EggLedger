@@ -1,9 +1,9 @@
 using System.Text.RegularExpressions;
+using EggIdentity.Styles.Css;
 
 namespace EggLedger.Web.Tests.Styles;
 
 public partial class ClassResolutionTests {
-    private static readonly Lazy<string> Sheet = new(() => StylePaths.SharedSheet + StylePaths.AppSheet);
 
     private static readonly HashSet<string> DynamicAllowlist = [
         "tooltip-host",
@@ -37,13 +37,13 @@ public partial class ClassResolutionTests {
 
     [Fact]
     public void Every_static_class_in_markup_resolves_to_a_rule() {
-        var global = ClassNames(Sheet.Value);
+        var global = DefinedClasses(StylePaths.SharedSheet).Concat(DefinedClasses(StylePaths.AppSheet)).ToHashSet(StringComparer.Ordinal);
         var unresolved = new List<string>();
         foreach (var razor in RazorFiles()) {
             var scopedPath = razor + ".css";
-            var scoped = File.Exists(scopedPath) ? ClassNames(File.ReadAllText(scopedPath)) : [];
+            var scoped = File.Exists(scopedPath) ? DefinedClasses(CssSheet.Load(scopedPath)) : [];
             foreach (var cls in StaticClasses(File.ReadAllText(razor))) {
-                if (global.Contains(cls) || scoped.Contains(cls) || DynamicAllowlist.Contains(cls) || DynamicPrefixes.Any(cls.StartsWith)) {
+                if (global.Contains(cls) || scoped.Contains(cls) || IsDynamic(cls)) {
                     continue;
                 }
                 unresolved.Add($"{Path.GetFileName(razor)}: {cls}");
@@ -60,8 +60,13 @@ public partial class ClassResolutionTests {
                         && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}")
                         && !f.Contains($"{Path.DirectorySeparatorChar}Tests{Path.DirectorySeparatorChar}"));
 
-    private static HashSet<string> ClassNames(string css) =>
-        CssClass().Matches(css).Select(m => m.Groups[1].Value).ToHashSet(StringComparer.Ordinal);
+    internal static bool IsDynamic(string cls) =>
+        DynamicAllowlist.Contains(cls) || DynamicPrefixes.Any(cls.StartsWith);
+
+    internal static HashSet<string> DefinedClasses(CssSheet sheet) =>
+        StylePaths.SelectorParts(sheet)
+            .SelectMany(s => CssClass().Matches(s).Select(m => m.Groups[1].Value))
+            .ToHashSet(StringComparer.Ordinal);
 
     private static IEnumerable<string> StaticClasses(string razor) {
         foreach (Match m in ClassAttr().Matches(razor)) {

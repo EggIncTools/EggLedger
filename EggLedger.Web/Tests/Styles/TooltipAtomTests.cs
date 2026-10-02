@@ -1,32 +1,22 @@
+using System.Text.RegularExpressions;
+
 namespace EggLedger.Web.Tests.Styles;
 
-public class TooltipAtomTests {
-    private static string Script =>
-        File.ReadAllText(Path.Combine(StylePaths.WebDir, "wwwroot", "js", "reportChartTooltip.js"));
-
-    [Theory]
-    [InlineData(".tooltip-line")]
-    [InlineData(".tooltip-line-head")]
-    public void Shared_sheet_ships_tooltip_line_classes(string selector) {
-        Assert.Contains(selector, StylePaths.SharedSheet);
-    }
-
+public partial class TooltipAtomTests {
     [Fact]
-    public void Interim_tooltip_atoms_are_gone() {
-        Assert.DoesNotContain("ledger-tt-line", StylePaths.AppSheet);
-        Assert.DoesNotContain("ledger-tt-line", Script);
+    public void Every_class_the_tooltip_script_assigns_resolves() {
+        var script = File.ReadAllText(Path.Combine(StylePaths.WebDir, "wwwroot", "js", "reportChartTooltip.js"));
+        var defined = ClassResolutionTests.DefinedClasses(StylePaths.SharedSheet)
+            .Concat(ClassResolutionTests.DefinedClasses(StylePaths.AppSheet))
+            .ToHashSet(StringComparer.Ordinal);
+        var unresolved = AssignedClassLiteral().Matches(script)
+            .SelectMany(m => m.Groups[1].Value.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+            .Where(c => !defined.Contains(c) && !ClassResolutionTests.IsDynamic(c))
+            .Distinct()
+            .ToList();
+        Assert.Empty(unresolved);
     }
 
-    [Theory]
-    [InlineData("text-gray-200")]
-    [InlineData("text-gray-400")]
-    [InlineData("font-medium")]
-    public void Tooltip_script_emits_no_utilities(string utility) {
-        Assert.DoesNotContain(utility, Script);
-    }
-
-    [Fact]
-    public void Tooltip_script_emits_shared_line_classes() {
-        Assert.Contains("tooltip-line-head", Script);
-    }
+    [GeneratedRegex(@"className\s*\+?=\s*""([^""]*)""")]
+    private static partial Regex AssignedClassLiteral();
 }

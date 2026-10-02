@@ -1,13 +1,19 @@
+using EggIdentity.Styles.Css;
+
 namespace EggLedger.Web.Tests.Styles;
 
 internal static class StylePaths {
+    private static readonly Lazy<CssSheet> AppSheetLazy = new(() => CssSheet.Load(Path.Combine(WebDir, "wwwroot", "app.css")));
+
+    private static readonly Lazy<CssSheet> SharedSheetLazy = new(() => CssSheet.Load(Path.Combine(AppContext.BaseDirectory, "SharedStyles", "shared.css")));
+
     public static string RepoRoot { get; } = FindRepoRoot();
 
     public static string WebDir => Path.Combine(RepoRoot, "EggLedger.Web");
 
-    public static string AppSheet => File.ReadAllText(Path.Combine(WebDir, "wwwroot", "app.css"));
+    public static CssSheet AppSheet => AppSheetLazy.Value;
 
-    public static string SharedSheet => File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "SharedStyles", "shared.css"));
+    public static CssSheet SharedSheet => SharedSheetLazy.Value;
 
     public static IEnumerable<string> ScopedCssFiles() =>
         new[] { "EggLedger.Web", "EggLedger.Web.Server", "EggLedger.Desktop" }
@@ -15,6 +21,11 @@ internal static class StylePaths {
             .Where(Directory.Exists)
             .SelectMany(d => Directory.EnumerateFiles(d, "*.razor.css", SearchOption.AllDirectories))
             .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}") && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"));
+
+    public static IEnumerable<string> SelectorParts(CssSheet sheet) =>
+        sheet.Selectors
+            .Where(s => !s.StartsWith('@'))
+            .SelectMany(s => s.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries));
 
     private static string FindRepoRoot() {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
