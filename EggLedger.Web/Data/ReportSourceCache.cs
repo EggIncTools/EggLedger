@@ -1,3 +1,4 @@
+using EggIdentity.Resilience;
 using EggLedger.Domain.MissionQuery;
 using EggLedger.Domain.Reports;
 using EggLedger.Web.State;
@@ -22,7 +23,7 @@ public sealed class ReportSourceCache : IReportSourceCache, IDisposable {
     private readonly TimeSpan _ttl;
     private readonly TimeProvider _time;
     private readonly Lock _gate = new();
-    private readonly Dictionary<string, SourceSlot> _slots = [with(StringComparer.Ordinal)];
+    private readonly Dictionary<string, TtlSnapshot<ReportSource>> _slots = [with(StringComparer.Ordinal)];
     private readonly List<string> _order = [];
     private Action? _detachHub;
 
@@ -40,24 +41,12 @@ public sealed class ReportSourceCache : IReportSourceCache, IDisposable {
     }
 
     public Task<ReportSource> GetAsync(string accountId) {
-        SourceSlot slot;
-        TaskCompletionSource<ReportSource> completion;
+        TtlSnapshot<ReportSource> slot;
         lock (_gate) {
             slot = Touch(accountId);
-            if (slot.Value is { } cached && _time.GetUtcNow().UtcDateTime - slot.LoadedAt < _ttl) {
-                return Task.FromResult(cached);
-            }
-
-            if (slot.InFlight is { } pending) {
-                return pending;
-            }
-
-            completion = new TaskCompletionSource<ReportSource>(TaskCreationOptions.RunContinuationsAsynchronously);
-            slot.InFlight = completion.Task;
         }
 
-        _ = FillAsync(accountId, slot, completion);
-        return completion.Task;
+        return slot.GetAsync();
     }
 
     public void Invalidate(string accountId) {
@@ -82,42 +71,14 @@ public sealed class ReportSourceCache : IReportSourceCache, IDisposable {
         _detachHub = null;
     }
 
-    private async Task FillAsync(
-        string accountId,
-        SourceSlot slot,
-        TaskCompletionSource<ReportSource> completion) {
-        try {
-            var source = await _loader(accountId).ConfigureAwait(false) ?? ReportSource.Empty;
-            lock (_gate) {
-                slot.Value = source;
-                slot.LoadedAt = _time.GetUtcNow().UtcDateTime;
-                ClearInFlight(slot, completion);
-            }
-
-            completion.SetResult(source);
-        } catch (Exception ex) {
-            lock (_gate) {
-                ClearInFlight(slot, completion);
-            }
-
-            completion.SetException(ex);
-        }
-    }
-
-    private static void ClearInFlight(SourceSlot slot, TaskCompletionSource<ReportSource> completion) {
-        if (ReferenceEquals(slot.InFlight, completion.Task)) {
-            slot.InFlight = null;
-        }
-    }
-
-    private SourceSlot Touch(string accountId) {
+    private TtlSnapshot<ReportSource> Touch(string accountId) {
         if (_slots.TryGetValue(accountId, out var existing)) {
             _order.Remove(accountId);
             _order.Add(accountId);
             return existing;
         }
 
-        var slot = new SourceSlot();
+        var slot = new TtlSnapshot<ReportSource>(_ttl, async _ => await _loader(accountId).ConfigureAwait(false) ?? ReportSource.Empty, _time);
         _slots[accountId] = slot;
         _order.Add(accountId);
         while (_order.Count > MaxAccounts) {
@@ -127,12 +88,6 @@ public sealed class ReportSourceCache : IReportSourceCache, IDisposable {
         }
 
         return slot;
-    }
-
-    private sealed class SourceSlot {
-        public ReportSource? Value { get; set; }
-        public DateTime LoadedAt { get; set; }
-        public Task<ReportSource>? InFlight { get; set; }
     }
 }
 

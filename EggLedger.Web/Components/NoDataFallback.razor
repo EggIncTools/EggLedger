@@ -1,20 +1,9 @@
 @inject LedgerShellState Shell
 
-<div class="nodata">
-    <span class="nodata-text">
-        @Message<br/>Choose an account in the
-    </span>
-    <button type="button" class="btn-link" @onclick="OpenAccountPicker">
-        <span class="nodata-link ledger-underline">sidebar account selector</span>
-    </button>
-    <span class="nodata-text">, then press <b>Fetch</b>.</span>
-</div>
+<EmptyState Icon="database" Title="@Message" Hint="Choose an account in the sidebar account selector, then press Fetch.">
+    <button type="button" class="btn-secondary" @onclick="Shell.RequestAccountPopover">Choose account</button>
+</EmptyState>
 
 @code {
     [Parameter] public string Message { get; set; } = "No mission data has been loaded yet.";
-
-    private void OpenAccountPicker() {
-        Shell.RequestAccountPopover();
-    }
-
 }

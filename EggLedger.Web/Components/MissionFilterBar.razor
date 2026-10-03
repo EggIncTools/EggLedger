@@ -24,12 +24,14 @@
             @RenderWarning(row.Cond)
 
             @if (RowComplete(row.Cond)) {
-                <button type="button" data-tt="Add alternate filter condition"
-                        class="filter-icon-btn filter-or-btn"
-                        disabled="@OrAddDisabled(index)"
-                        @onclick="() => AddOr(index)">
-                    OR
-                </button>
+                <Tooltip Text="Add alternate filter condition">
+                    <button type="button"
+                            class="filter-icon-btn filter-or-btn"
+                            disabled="@OrAddDisabled(index)"
+                            @onclick="() => AddOr(index)">
+                        OR
+                    </button>
+                </Tooltip>
             }
 
             @if (FieldOf(row.Cond) is not null) {
@@ -253,13 +255,13 @@
     private RenderFragment RenderWarning(FilterCondition c) => __builder => {
         var def = FieldOf(c);
         @if (def is not null && RowIncomplete(c)) {
-            <span class="filter-incomplete-icon" data-tt="Fill in the missing field">
+            <Tooltip Text="Fill in the missing field" Class="filter-incomplete-icon" Error="true" Focusable="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
                     <circle cx="12" cy="12" r="9"/>
                     <line x1="12" y1="7.5" x2="12" y2="13"/>
                     <line x1="12" y1="16" x2="12" y2="16.01"/>
                 </svg>
-            </span>
+            </Tooltip>
         }
     };
 

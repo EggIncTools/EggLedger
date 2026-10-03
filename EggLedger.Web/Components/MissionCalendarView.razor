@@ -21,7 +21,7 @@
                                  OnPan="Pan"
                                  OnToday="JumpToNow"
                                  DateChanged="JumpToDate"/>
-            <span class="airtime-stat" data-tt="@AirtimeTooltip">
+            <Tooltip Text="@AirtimeTooltip" Class="airtime-stat" Focusable="true">
                 <span class="airtime-label">Airtime</span>
                 @if (_flightSlices is not { Count: > 0 } slices) {
                     <span class="airtime-chip">n/a</span>
@@ -36,11 +36,11 @@
                     }
                 }
                 @if (FilteredOutRatio is { } filteredOut) {
-                    <span class="airtime-chip airtime-filtered" data-tt="Airtime from missions excluded by the active filter, for this period.">
+                    <Tooltip Text="Airtime from missions excluded by the active filter, for this period." Class="airtime-chip airtime-filtered">
                         -@Pct(filteredOut) filtered
-                    </span>
+                    </Tooltip>
                 }
-            </span>
+            </Tooltip>
         </div>
     </div>
 

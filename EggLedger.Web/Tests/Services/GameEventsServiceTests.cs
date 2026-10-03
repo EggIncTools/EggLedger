@@ -109,7 +109,7 @@ public sealed class GameEventsServiceTests {
 
     private static GameEventsService Make(
         FakeHandler handler,
-        ManualClock clock,
+        TimeProvider clock,
         string? baseUrl = BaseUrl,
         string? apiKey = null,
         IGameEventStore? store = null) =>
@@ -118,7 +118,7 @@ public sealed class GameEventsServiceTests {
     [Fact]
     public async Task Refresh_ParsesDocumentedResponseShape() {
         var handler = new FakeHandler().Reply(DocumentedBody);
-        var service = Make(handler, new ManualClock());
+        var service = Make(handler, TestTime.New());
 
         await service.RefreshAsync();
 
@@ -139,7 +139,7 @@ public sealed class GameEventsServiceTests {
     [Fact]
     public async Task Refresh_IgnoresUnknownFields() {
         var handler = new FakeHandler().Reply(ExtendedBody);
-        var service = Make(handler, new ManualClock());
+        var service = Make(handler, TestTime.New());
 
         await service.RefreshAsync();
 
@@ -152,7 +152,7 @@ public sealed class GameEventsServiceTests {
     [Fact]
     public async Task ActiveAt_CoversStartToEndWindow() {
         var handler = new FakeHandler().Reply(DocumentedBody);
-        var service = Make(handler, new ManualClock());
+        var service = Make(handler, TestTime.New());
         await service.RefreshAsync();
 
         Assert.Single(service.ActiveAt(DateTimeOffset.FromUnixTimeSeconds(1756086400)));
@@ -166,7 +166,7 @@ public sealed class GameEventsServiceTests {
     public async Task Merge_KeysOnIdAndStartTimestamp() {
         var handler = new FakeHandler()
             .Reply(Body(2, EventJson("sale", 1000, 2000), EventJson("sale", 500000, 501000)));
-        var service = Make(handler, new ManualClock());
+        var service = Make(handler, TestTime.New());
 
         await service.RefreshAsync();
 
@@ -175,7 +175,7 @@ public sealed class GameEventsServiceTests {
 
     [Fact]
     public async Task Merge_DeviceRowWinsOverCarpetRow() {
-        var clock = new ManualClock();
+        var clock = TestTime.New();
         var handler = new FakeHandler()
             .Reply(Body(1, EventJson("sale", 1000, 2000, source: "carpet")))
             .Reply(Body(1, EventJson("sale", 1000, 3000, source: "device")))
@@ -200,7 +200,7 @@ public sealed class GameEventsServiceTests {
 
     [Fact]
     public async Task Refresh_WithinFloor_IsNoOp() {
-        var clock = new ManualClock();
+        var clock = TestTime.New();
         var handler = new FakeHandler().Reply(DocumentedBody);
         var service = Make(handler, clock);
 
@@ -218,7 +218,7 @@ public sealed class GameEventsServiceTests {
 
     [Fact]
     public async Task Refresh_ColdHasNoAfterFilter_WarmIsIncremental() {
-        var clock = new ManualClock();
+        var clock = TestTime.New();
         var handler = new FakeHandler().Reply(DocumentedBody);
         var service = Make(handler, clock);
 
@@ -238,7 +238,7 @@ public sealed class GameEventsServiceTests {
 
     [Fact]
     public async Task Refresh_FutureStartTimestamp_DoesNotPoisonWarmCursor() {
-        var clock = new ManualClock();
+        var clock = TestTime.New();
         var poison = EventJson("poison", 4102444800, 4102531200);
         var store = new FakeStore { Data = Encoding.UTF8.GetBytes(Body(1, poison)) };
         var handler = new FakeHandler().Reply(Body(0));
@@ -268,7 +268,7 @@ public sealed class GameEventsServiceTests {
 
     [Fact]
     public async Task Refresh_WhenHandlerThrows_StillHonorsFloor() {
-        var clock = new ManualClock();
+        var clock = TestTime.New();
         var handler = new FakeHandler { Fault = new InvalidOperationException("handler exploded") };
         var service = Make(handler, clock);
 
@@ -289,7 +289,7 @@ public sealed class GameEventsServiceTests {
 
     [Fact]
     public async Task Refresh_RateLimitHeaderIsClampedToOneHour() {
-        var clock = new ManualClock();
+        var clock = TestTime.New();
         var handler = new FakeHandler().RateLimitedHeaderOnly(999999);
         var service = Make(handler, clock);
 
@@ -303,7 +303,7 @@ public sealed class GameEventsServiceTests {
         var handler = new FakeHandler()
             .Reply(Body(3, EventJson("a", 100, 200), EventJson("b", 300, 400)))
             .Reply(Body(3, EventJson("c", 500, 600)));
-        var service = Make(handler, new ManualClock());
+        var service = Make(handler, TestTime.New());
 
         await service.RefreshAsync();
 
@@ -315,7 +315,7 @@ public sealed class GameEventsServiceTests {
 
     [Fact]
     public async Task Refresh_RateLimited_GatesUntilRetryAfterElapses() {
-        var clock = new ManualClock();
+        var clock = TestTime.New();
         var handler = new FakeHandler()
             .RateLimited(900)
             .Reply(DocumentedBody);
@@ -337,7 +337,7 @@ public sealed class GameEventsServiceTests {
 
     [Fact]
     public async Task Refresh_Unavailable_BacksOffBeyondFloor() {
-        var clock = new ManualClock();
+        var clock = TestTime.New();
         var handler = new FakeHandler()
             .Unavailable()
             .Unavailable()
@@ -365,7 +365,7 @@ public sealed class GameEventsServiceTests {
     public async Task Unconfigured_MakesNoHttpCallsAndReturnsNothing() {
         var handler = new FakeHandler().Reply(DocumentedBody);
         var store = new FakeStore();
-        var service = Make(handler, new ManualClock(), baseUrl: null, apiKey: ApiKey, store: store);
+        var service = Make(handler, TestTime.New(), baseUrl: null, apiKey: ApiKey, store: store);
 
         Assert.False(service.IsConfigured);
         await service.EnsureLoadedAsync();
@@ -382,7 +382,7 @@ public sealed class GameEventsServiceTests {
     [Fact]
     public async Task Unconfigured_WhenBaseUrlIsBlank_StaysInert() {
         var handler = new FakeHandler().Reply(DocumentedBody);
-        var service = Make(handler, new ManualClock(), baseUrl: "   ");
+        var service = Make(handler, TestTime.New(), baseUrl: "   ");
 
         await service.EnsureLoadedAsync();
         await service.RefreshAsync();
@@ -395,7 +395,7 @@ public sealed class GameEventsServiceTests {
     public async Task EnsureLoaded_ReadsStoreBeforeNetwork_AndRefreshSaves() {
         var handler = new FakeHandler().Reply(DocumentedBody);
         var store = new FakeStore();
-        var first = Make(handler, new ManualClock(), store: store);
+        var first = Make(handler, TestTime.New(), store: store);
 
         await first.EnsureLoadedAsync();
         Assert.Equal(1, handler.Hits);
@@ -404,7 +404,7 @@ public sealed class GameEventsServiceTests {
         Assert.NotNull(store.Data);
 
         var replayHandler = new FakeHandler();
-        var second = Make(replayHandler, new ManualClock(), store: store);
+        var second = Make(replayHandler, TestTime.New(), store: store);
         await second.EnsureLoadedAsync();
 
         Assert.Equal(0, replayHandler.Hits);
@@ -415,7 +415,7 @@ public sealed class GameEventsServiceTests {
     [Fact]
     public async Task EnsureLoaded_RunsOnlyOnce() {
         var handler = new FakeHandler().Reply(DocumentedBody);
-        var service = Make(handler, new ManualClock());
+        var service = Make(handler, TestTime.New());
 
         await service.EnsureLoadedAsync();
         await service.EnsureLoadedAsync();
@@ -426,14 +426,14 @@ public sealed class GameEventsServiceTests {
     [Fact]
     public async Task ApiKey_SentAsHeaderOnlyWhenConfigured() {
         var withKeyHandler = new FakeHandler().Reply(DocumentedBody);
-        var withKey = Make(withKeyHandler, new ManualClock(), apiKey: ApiKey);
+        var withKey = Make(withKeyHandler, TestTime.New(), apiKey: ApiKey);
         await withKey.RefreshAsync();
 
         Assert.Equal(ApiKey, withKeyHandler.Keys[0]);
         Assert.DoesNotContain(ApiKey, withKeyHandler.Uris[0], StringComparison.Ordinal);
 
         var noKeyHandler = new FakeHandler().Reply(DocumentedBody);
-        var noKey = Make(noKeyHandler, new ManualClock());
+        var noKey = Make(noKeyHandler, TestTime.New());
         await noKey.RefreshAsync();
 
         Assert.Null(noKeyHandler.Keys[0]);
@@ -442,7 +442,7 @@ public sealed class GameEventsServiceTests {
     [Fact]
     public async Task ApiKey_BlankValueIsTreatedAsAbsent() {
         var handler = new FakeHandler().Reply(DocumentedBody);
-        var service = Make(handler, new ManualClock(), apiKey: "  ");
+        var service = Make(handler, TestTime.New(), apiKey: "  ");
 
         await service.RefreshAsync();
 

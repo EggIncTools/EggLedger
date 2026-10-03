@@ -22,7 +22,7 @@
                             <th class="usradm-num">@SortHeader("Reports", "reports")</th>
                             <th class="usradm-num">@SortHeader("Backups", "backups")</th>
                             <th class="usradm-num">@SortHeader("Storage", "storage")</th>
-                            <th class="usradm-num" data-tt="Last time the Desktop app paired via Discord. Not tracked for web-only logins.">@SortHeader("Last Pairing", "lastLogin")</th>
+                            <th class="usradm-num"><Tooltip Text="Last time the Desktop app paired via Discord. Not tracked for web-only logins.">@SortHeader("Last Pairing", "lastLogin")</Tooltip></th>
                             <th></th>
                         </tr>
                         </thead>
@@ -35,7 +35,7 @@
                                 <td class="usradm-num">@u.ReportCount</td>
                                 <td class="usradm-num">@u.BackupCount</td>
                                 <td class="usradm-num">@LedgerFormatting.FormatBytes(u.StorageBytes)</td>
-                                <td class="usradm-num usradm-dim" data-tt="@LastLoginTitle(u.LastSession)">@LastLoginLabel(u.LastSession)</td>
+                                <td class="usradm-num usradm-dim"><Tooltip Text="@LastLoginTitle(u.LastSession)" Focusable="true">@LastLoginLabel(u.LastSession)</Tooltip></td>
                                 <td class="usradm-num">
                                     @if (!u.IsAdmin) {
                                         <button type="button" class="usradm-delete" @onclick="() => OnDelete.InvokeAsync(u.UserId)">

@@ -1,20 +1,3 @@
-function triggerDownload(blob, filename) {
-  const url = globalThis.URL.createObjectURL(blob);
-  const a = globalThis.document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  globalThis.document.body.appendChild(a);
-  a.click();
-  a.remove();
-  globalThis.URL.revokeObjectURL(url);
-}
-
-export function downloadText(filename, text, mime) {
-  const blob = new Blob([text], { type: mime });
-  triggerDownload(blob, filename);
-}
-
-
 export function pickTextFile(accept) {
   return new Promise((resolve) => {
     const input = globalThis.document.createElement("input");
@@ -33,14 +16,4 @@ export function pickTextFile(accept) {
     globalThis.document.body.appendChild(input);
     input.click();
   });
-}
-
-export function download(filename, base64, mime) {
-  const binary = globalThis.atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  const blob = new Blob([bytes], { type: mime });
-  triggerDownload(blob, filename);
 }

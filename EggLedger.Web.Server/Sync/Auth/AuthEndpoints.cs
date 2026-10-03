@@ -69,6 +69,21 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
         }
     }
 
+    internal static ClaimsPrincipal CookiePrincipal(Guid userId, string username, string role, string? discordId) {
+        var claims = new List<Claim> {
+            new(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub, userId.ToString()),
+            new(SessionClaims.Name, username),
+            new(ClaimTypes.Name, username),
+            new(Server.Auth.AuthScheme.UserIdClaim, userId.ToString()),
+            new(Server.Auth.AuthScheme.RoleClaim, role),
+            new(SessionClaims.Role, role),
+        };
+        if (!string.IsNullOrEmpty(discordId)) {
+            claims.Add(new Claim(SessionClaims.DiscordId, discordId));
+        }
+        return new ClaimsPrincipal(new ClaimsIdentity(claims, Server.Auth.AuthScheme.Cookie));
+    }
+
     private static async Task WriteTextAsync(HttpContext ctx, int statusCode, string text) {
         ctx.Response.StatusCode = statusCode;
         ctx.Response.ContentType = "text/plain; charset=utf-8";
@@ -87,19 +102,9 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
         await UpsertLocalUserAsync(result.UserId, result.Username, result.Avatar, ct);
 
         if (eggIdentitySession is null) {
-            var claims = new List<Claim> {
-                new(ClaimTypes.Name, result.Username),
-                new(Server.Auth.AuthScheme.UserIdClaim, result.UserId.ToString()),
-                new(Server.Auth.AuthScheme.RoleClaim, result.Role),
-                new(SessionClaims.Role, result.Role),
-            };
-            if (!string.IsNullOrEmpty(result.DiscordId)) {
-                claims.Add(new Claim(Server.Auth.AuthScheme.DiscordIdClaim, result.DiscordId));
-            }
-            var claimsIdentity = new ClaimsIdentity(claims, Server.Auth.AuthScheme.Cookie);
             await ctx.SignInAsync(
                 Server.Auth.AuthScheme.Cookie,
-                new ClaimsPrincipal(claimsIdentity),
+                CookiePrincipal(result.UserId, result.Username, result.Role, result.DiscordId),
                 new AuthenticationProperties { IsPersistent = true });
         }
 

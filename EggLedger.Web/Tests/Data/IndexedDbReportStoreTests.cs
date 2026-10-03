@@ -5,7 +5,7 @@ namespace EggLedger.Web.Tests.Data;
 public sealed class IndexedDbReportStoreTests {
     private static (IndexedDbReportStore Store, FakeIndexedDb Db) Make(long now = 1000) {
         var db = new FakeIndexedDb();
-        return (new IndexedDbReportStore(db, ManualClock.FromUnixSeconds(now)), db);
+        return (new IndexedDbReportStore(db, TestTime.AtUnix(now)), db);
     }
 
     private static ReportRow Report(string id, string accountId, int sortOrder = 0, string filters = "") => new() {
@@ -118,12 +118,12 @@ public sealed class IndexedDbReportStoreTests {
 
     [Fact]
     public async Task UpdateReport_ChangesFieldsAndUpdatedAt_KeepsCreatedAt() {
-        var clock = ManualClock.FromUnixSeconds(100);
+        var clock = TestTime.AtUnix(100);
         var fake = new FakeIndexedDb();
         var s = new IndexedDbReportStore(fake, clock);
 
         await s.InsertReportAsync(Report("r1", "EI1"));
-        clock.SetUnixSeconds(500);
+        clock.SetUtcNow(DateTimeOffset.FromUnixTimeSeconds(500));
         await s.UpdateReportAsync(Report("r1", "EI1") with { Name = "updated" });
 
         var got = await s.RetrieveReportAsync("r1");
@@ -142,17 +142,17 @@ public sealed class IndexedDbReportStoreTests {
 
     [Fact]
     public async Task RetrieveAccountReports_OnlyAccountAndGlobal_OrderedBySortThenCreated() {
-        var clock = ManualClock.FromUnixSeconds(0);
+        var clock = TestTime.AtUnix(0);
         var fake = new FakeIndexedDb();
         var store = new IndexedDbReportStore(fake, clock);
 
-        clock.SetUnixSeconds(10);
-        await store.InsertReportAsync(Report("b", "EI1", sortOrder: 1));
-        clock.SetUnixSeconds(20);
-        await store.InsertReportAsync(Report("a", "EI1", sortOrder: 0));
-        clock.SetUnixSeconds(5);
+        clock.SetUtcNow(DateTimeOffset.FromUnixTimeSeconds(5));
         await store.InsertReportAsync(Report("g", "__global__", sortOrder: 0));
-        clock.SetUnixSeconds(30);
+        clock.SetUtcNow(DateTimeOffset.FromUnixTimeSeconds(10));
+        await store.InsertReportAsync(Report("b", "EI1", sortOrder: 1));
+        clock.SetUtcNow(DateTimeOffset.FromUnixTimeSeconds(20));
+        await store.InsertReportAsync(Report("a", "EI1", sortOrder: 0));
+        clock.SetUtcNow(DateTimeOffset.FromUnixTimeSeconds(30));
         await store.InsertReportAsync(Report("other", "EI2", sortOrder: 0));
 
         var rows = await store.RetrieveAccountReportsAsync("EI1");
@@ -210,15 +210,15 @@ public sealed class IndexedDbReportStoreTests {
 
     [Fact]
     public async Task RetrieveAccountGroups_OnlyAccount_OrderedBySortThenCreated() {
-        var clock = ManualClock.FromUnixSeconds(0);
+        var clock = TestTime.AtUnix(0);
         var fake = new FakeIndexedDb();
         var store = new IndexedDbReportStore(fake, clock);
 
-        clock.SetUnixSeconds(10);
+        clock.SetUtcNow(DateTimeOffset.FromUnixTimeSeconds(10));
         await store.InsertReportGroupAsync(new ReportGroupRow { Id = "b", AccountId = "EI1", SortOrder = 1 });
-        clock.SetUnixSeconds(20);
+        clock.SetUtcNow(DateTimeOffset.FromUnixTimeSeconds(20));
         await store.InsertReportGroupAsync(new ReportGroupRow { Id = "a", AccountId = "EI1", SortOrder = 0 });
-        clock.SetUnixSeconds(30);
+        clock.SetUtcNow(DateTimeOffset.FromUnixTimeSeconds(30));
         await store.InsertReportGroupAsync(new ReportGroupRow { Id = "other", AccountId = "EI2", SortOrder = 0 });
 
         var rows = await store.RetrieveAccountGroupsAsync("EI1");
@@ -268,15 +268,15 @@ public sealed class IndexedDbReportStoreTests {
 
     [Fact]
     public async Task RetrieveReportsByGroup_OrderedBySortThenCreated() {
-        var clock = ManualClock.FromUnixSeconds(0);
+        var clock = TestTime.AtUnix(0);
         var fake = new FakeIndexedDb();
         var store = new IndexedDbReportStore(fake, clock);
 
-        clock.SetUnixSeconds(10);
+        clock.SetUtcNow(DateTimeOffset.FromUnixTimeSeconds(10));
         await store.InsertReportAsync(Report("b", "EI1", sortOrder: 1) with { GroupId = "g1" });
-        clock.SetUnixSeconds(20);
+        clock.SetUtcNow(DateTimeOffset.FromUnixTimeSeconds(20));
         await store.InsertReportAsync(Report("a", "EI1", sortOrder: 0) with { GroupId = "g1" });
-        clock.SetUnixSeconds(30);
+        clock.SetUtcNow(DateTimeOffset.FromUnixTimeSeconds(30));
         await store.InsertReportAsync(Report("none", "EI1", sortOrder: 0) with { GroupId = "" });
 
         var rows = await store.RetrieveReportsByGroupAsync("g1");

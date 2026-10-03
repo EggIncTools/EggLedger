@@ -1,4 +1,5 @@
 using System.Globalization;
+using EggIdentity.UI;
 using EggLedger.Domain.Api;
 using EggLedger.Domain.Ei;
 using EggLedger.Domain.MissionPacking;
@@ -182,7 +183,7 @@ public sealed class FetchService(ApiClient api, IndexedDbMissionStore store, Ind
         if (account.LastBackupTime != 0) {
             var now = _time.GetUtcNow();
             var at = TimeFmt.UnixToTime(account.LastBackupTime);
-            info($"backup is from &7a7a7a<{TimeFmt.HumanizeTime(at > now ? now : at, now)}>");
+            info($"backup is from &7a7a7a<{TimeAgo.Format(at, now)}>");
         } else {
             error("backup is from unknown time");
         }

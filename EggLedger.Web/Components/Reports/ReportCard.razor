@@ -12,13 +12,13 @@
 <div class="rcard">
     <div class="rcard-head">
         <div class="rcard-head-text">
-            <span class="rcard-name" data-tt="@Def.Name">@DisplayName</span>
+            <Tooltip Text="@Def.Name" Class="rcard-name">@DisplayName</Tooltip>
             <span class="rcard-sub">@Subtitle</span>
             @if (!string.IsNullOrEmpty(Def.Description)) {
-                <span class="rcard-sub rcard-desc" data-tt="@Def.Description">@Def.Description</span>
+                <Tooltip Text="@Def.Description" Class="rcard-sub rcard-desc">@Def.Description</Tooltip>
             }
         </div>
-        <span class="rcard-weight @WeightClass" data-tt="@WeightTitle">@Def.Weight</span>
+        <Tooltip Text="@WeightTitle" Class="@($"rcard-weight {WeightClass}")" Focusable="true">@Def.Weight</Tooltip>
     </div>
     <div class="rcard-body">
         @if (_error is not null) {
@@ -77,10 +77,11 @@
                 </select>
             }
 
-            <button type="button" class="rcard-link"
-                    data-tt="Duplicate report" disabled="@(_copying || _deleting)" @onclick="CopyAsync">
-                @(_copying ? "Copying..." : "Copy")
-            </button>
+            <Tooltip Text="Duplicate report">
+                <button type="button" class="rcard-link" disabled="@(_copying || _deleting)" @onclick="CopyAsync">
+                    @(_copying ? "Copying..." : "Copy")
+                </button>
+            </Tooltip>
             <button type="button" class="rcard-link rcard-link-accent"
                     disabled="@(_copying || _deleting)" @onclick="() => OnEdit.InvokeAsync(Def)">
                 Edit

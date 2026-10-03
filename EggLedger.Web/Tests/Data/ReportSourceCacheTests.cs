@@ -24,14 +24,14 @@ public sealed class ReportSourceCacheTests {
     private static ReportSourceCache NewCache(
         Func<string, Task<ReportSource>>? loader = null,
         TimeSpan? ttl = null,
-        ManualClock? clock = null) =>
-        new(loader ?? SourceOf, ttl ?? Ttl, clock ?? new ManualClock());
+        TimeProvider? clock = null) =>
+        new(loader ?? SourceOf, ttl ?? Ttl, clock ?? TestTime.New());
 
     private static LedgerDataHub NewHub() =>
         new(_ => Task.FromResult<IReadOnlyList<DatabaseMission>?>(null),
             _ => Task.FromResult<Dictionary<string, List<MissionDrop>>?>(null),
             Ttl,
-            new ManualClock());
+            TestTime.New());
 
     [Fact]
     public async Task SecondGet_ForTheSameAccount_DoesNotRescan() {
@@ -162,7 +162,7 @@ public sealed class ReportSourceCacheTests {
 
     [Fact]
     public async Task Source_RescansOnlyAfterTtlExpires() {
-        var clock = new ManualClock(new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
+        var clock = new FakeTimeProvider(new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
         var calls = 0;
         var cache = NewCache(id => {
             calls++;

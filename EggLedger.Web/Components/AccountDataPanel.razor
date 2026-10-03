@@ -57,11 +57,12 @@
                                 @onclick="() => ExportXlsx(acct.Id, acct.Nickname)">
                             Export XLSX
                         </button>
-                        <button type="button" class="btn-secondary"
-                                disabled="@_busy" @onclick="() => Delete(acct.Id)"
-                                data-tt="Removes this account from your account list only. Its cached mission data stays on this device.">
-                            Forget account
-                        </button>
+                        <Tooltip Text="Removes this account from your account list only. Its cached mission data stays on this device.">
+                            <button type="button" class="btn-secondary"
+                                    disabled="@_busy" @onclick="() => Delete(acct.Id)">
+                                Forget account
+                            </button>
+                        </Tooltip>
                         @if (_confirmingDeleteId == acct.Id) {
                             <span class="acd-err">Delete all data for this account?</span>
                             <button type="button" class="btn-secondary" @onclick="() => _confirmingDeleteId = null">
@@ -72,11 +73,12 @@
                                 @(_busy ? "Deleting..." : "Yes, delete")
                             </button>
                         } else {
-                            <button type="button" class="btn-danger acd-soft-danger"
-                                    disabled="@(_busy || Fetching?.Id == acct.Id)" @onclick="() => _confirmingDeleteId = acct.Id"
-                                    data-tt="@(Fetching?.Id == acct.Id ? "Can't delete while a fetch is in progress for this account." : "Permanently deletes this account's cached mission data from this device, and from cloud sync on your next sync.")">
-                                Delete my data
-                            </button>
+                            <Tooltip Text="@(Fetching?.Id == acct.Id ? "Can't delete while a fetch is in progress for this account." : "Permanently deletes this account's cached mission data from this device, and from cloud sync on your next sync.")">
+                                <button type="button" class="btn-danger acd-soft-danger"
+                                        disabled="@(_busy || Fetching?.Id == acct.Id)" @onclick="() => _confirmingDeleteId = acct.Id">
+                                    Delete my data
+                                </button>
+                            </Tooltip>
                         }
                     </div>
                 </li>

@@ -48,7 +48,7 @@
     min-width: 0;
 }
 
-.account-select-wrap {
+.account-main-row ::deep .account-select-wrap {
     position: relative;
     display: flex;
     flex-direction: column;
@@ -56,7 +56,7 @@
     min-width: 0;
 }
 
-.account-select-btn {
+.account-main-row ::deep .account-select-btn {
     display: flex;
     flex: 1;
     align-items: center;
@@ -73,11 +73,11 @@
     transition: border-color var(--motion-fast) var(--ease-standard), background-color var(--motion-fast) var(--ease-standard);
 }
 
-.account-select-btn:hover:not(:disabled) {
+.account-main-row ::deep .account-select-btn:hover:not(:disabled) {
     border-color: var(--color-muted);
 }
 
-.account-select-btn:disabled {
+.account-main-row ::deep .account-select-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
@@ -257,28 +257,11 @@
     line-height: calc(1 / 0.75);
 }
 
-.account-dropdown {
-    position: absolute;
-    top: calc(100% + 0.4rem);
-    left: 0;
-    z-index: 1000;
-    max-height: min(70vh, 30rem);
-}
-
 .account-pop-panel {
     display: flex;
     flex-direction: column;
     width: 24rem;
     max-width: min(24rem, calc(100vw - 2rem));
-    max-height: 80vh;
-    border: 1px solid var(--color-border);
-    border-radius: 0.5rem;
-    background-color: var(--color-darkest);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
-}
-
-.account-pop-panel:focus {
-    outline: none;
 }
 
 .account-pop-head {

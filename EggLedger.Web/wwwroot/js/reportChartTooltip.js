@@ -15,7 +15,8 @@
   }
 
   function targetWithTT(node) {
-    return node?.closest?.("[data-tt]") ?? null;
+    const t = node?.closest?.("[data-tt]");
+    return t?.dataset.tt ? t : null;
   }
 
   function place(box, x, y) {

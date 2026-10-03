@@ -53,11 +53,11 @@
                     SortMethod="State.Opts.SortMethod"
                     ShowExpectedDrops="State.CardPresets.ActivePreset().ShowExpectedDropsPerShip"/>
 
-    <CollapsibleSection Title="Reports" Inset="true" Open="_widgetsOpen" OnToggle="ToggleWidgets">
+    <Disclosure Label="Reports" @bind-Open="_widgetsOpen" Class="ledger-section ledger-section-inset">
         @if (State.AccountId is { } accountId) {
             <PinnedReportsStrip AccountId="@accountId" View="@PinnedReportViews.Missions"/>
         }
-    </CollapsibleSection>
+    </Disclosure>
 }
 
 @code {
@@ -77,10 +77,6 @@
 
     private void OnStateChanged() {
         InvokeAsync(StateHasChanged);
-    }
-
-    private void ToggleWidgets() {
-        _widgetsOpen = !_widgetsOpen;
     }
 
     private void SetViewMode(ShipsViewMode mode) {

@@ -139,7 +139,7 @@ public sealed class FetchOrchestratorTests {
 
     [Fact]
     public void Apply_SegmentOnlyReport_CarriesForwardCounts() {
-        using var orchestrator = MakeDetached(new ManualClock());
+        using var orchestrator = MakeDetached(TestTime.New());
 
         orchestrator.Apply(new FetchProgress { State = AppState.FetchingMissions, Total = 7, Finished = 2, Failed = 1, Retried = 3 });
         orchestrator.Apply(Segment("m1", "Fetch", SegmentStatus.Active));
@@ -151,7 +151,7 @@ public sealed class FetchOrchestratorTests {
 
     [Fact]
     public void Apply_ManyReports_CoalesceIntoOneChangedPerFlush() {
-        using var orchestrator = MakeDetached(new ManualClock());
+        using var orchestrator = MakeDetached(TestTime.New());
         int changed = 0;
         orchestrator.Changed += () => changed++;
 
@@ -169,7 +169,7 @@ public sealed class FetchOrchestratorTests {
 
     [Fact]
     public void Apply_LogLines_RouteToGlobalAndRow() {
-        using var orchestrator = MakeDetached(new ManualClock());
+        using var orchestrator = MakeDetached(TestTime.New());
 
         orchestrator.Apply(new FetchProgress { State = AppState.FetchingSave, LogText = "hello" });
         orchestrator.Apply(new FetchProgress { State = AppState.FetchingMissions, MissionId = "m1", MissionLabel = "L", LogText = "retry", LogIsError = true, LogRowOnly = true });
@@ -185,7 +185,7 @@ public sealed class FetchOrchestratorTests {
 
     [Fact]
     public void Apply_GlobalLog_CapsAt2000() {
-        using var orchestrator = MakeDetached(new ManualClock());
+        using var orchestrator = MakeDetached(TestTime.New());
 
         for (int i = 0; i < 2100; i++) {
             orchestrator.Apply(new FetchProgress { State = AppState.FetchingSave, LogText = $"line {i}" });
@@ -198,7 +198,7 @@ public sealed class FetchOrchestratorTests {
 
     [Fact]
     public void Flush_ReapsFinishedRowsAfterFiveSeconds() {
-        var clock = new ManualClock();
+        var clock = TestTime.New();
         using var orchestrator = MakeDetached(clock);
 
         orchestrator.Apply(Segment("m1", "Store", SegmentStatus.Done));
@@ -215,7 +215,7 @@ public sealed class FetchOrchestratorTests {
 
     [Fact]
     public void Flush_MoreThanFiveRows_HidesDoneRows() {
-        using var orchestrator = MakeDetached(new ManualClock());
+        using var orchestrator = MakeDetached(TestTime.New());
 
         for (int i = 0; i < 4; i++) {
             orchestrator.Apply(Segment($"r{i}", "Fetch", SegmentStatus.Active));
@@ -230,7 +230,7 @@ public sealed class FetchOrchestratorTests {
 
     [Fact]
     public void Apply_StageTransitions_NoMissionsNoExport_SkipsBoth() {
-        using var orchestrator = MakeDetached(new ManualClock());
+        using var orchestrator = MakeDetached(TestTime.New());
 
         orchestrator.Apply(new FetchProgress { State = AppState.FetchingSave });
         Assert.Equal(StageStatus.Active, orchestrator.SaveStage);
@@ -244,7 +244,7 @@ public sealed class FetchOrchestratorTests {
 
     [Fact]
     public void Apply_StageTransitions_WithExport_EndsDone() {
-        using var orchestrator = MakeDetached(new ManualClock());
+        using var orchestrator = MakeDetached(TestTime.New());
 
         orchestrator.Apply(new FetchProgress { State = AppState.FetchingSave });
         orchestrator.Apply(new FetchProgress { State = AppState.FetchingMissions, Total = 1 });
@@ -259,7 +259,7 @@ public sealed class FetchOrchestratorTests {
 
     [Fact]
     public void Apply_FailureDuringMissions_FailsActiveStage() {
-        using var orchestrator = MakeDetached(new ManualClock());
+        using var orchestrator = MakeDetached(TestTime.New());
 
         orchestrator.Apply(new FetchProgress { State = AppState.FetchingMissions, Total = 3 });
         orchestrator.Apply(new FetchProgress { State = AppState.Failed, Total = 3, Finished = 3, Failed = 1 });
@@ -269,7 +269,7 @@ public sealed class FetchOrchestratorTests {
 
     [Fact]
     public void Eta_NullUntilThreeFinished_ThenProjectsRemaining() {
-        var clock = new ManualClock();
+        var clock = TestTime.New();
         using var orchestrator = MakeDetached(clock);
 
         orchestrator.Apply(new FetchProgress { State = AppState.FetchingMissions, Total = 10 });
@@ -284,7 +284,7 @@ public sealed class FetchOrchestratorTests {
 
     [Fact]
     public void Apply_ActiveSegment_SetsCurrentMissionLabel() {
-        using var orchestrator = MakeDetached(new ManualClock());
+        using var orchestrator = MakeDetached(TestTime.New());
 
         orchestrator.Apply(Segment("m1", "Fetch", SegmentStatus.Active));
 
@@ -348,7 +348,7 @@ public sealed class FetchOrchestratorTests {
             _ => Task.FromResult<IReadOnlyList<DatabaseMission>?>([]),
             _ => Task.FromResult<Dictionary<string, List<MissionDrop>>?>(null),
             TimeSpan.FromMinutes(5),
-            new ManualClock());
+            TestTime.New());
         var invalidated = new List<string>();
         hub.AccountInvalidated += invalidated.Add;
         hub.AttachFetch(orchestrator);

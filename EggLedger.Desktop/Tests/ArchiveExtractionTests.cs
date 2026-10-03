@@ -8,22 +8,6 @@ namespace EggLedger.Desktop.Tests;
 public sealed class ArchiveExtractionTests {
     private static readonly byte[] Payload = Encoding.ASCII.GetBytes("#!/bin/sh\nfake-egg-binary\n");
 
-    private sealed class TempDir : IDisposable {
-        public string Path { get; } =
-            System.IO.Path.Combine(System.IO.Path.GetTempPath(), "egg-arc-" + Guid.NewGuid().ToString("N"));
-
-        public TempDir() => Directory.CreateDirectory(Path);
-
-        public string File(string name) => System.IO.Path.Combine(Path, name);
-
-        public void Dispose() {
-            try {
-                Directory.Delete(Path, recursive: true);
-            } catch (IOException) {
-            }
-        }
-    }
-
     private static void WriteTarGz(string path, params (string Name, byte[] Data)[] entries) {
         using var file = File.Create(path);
         using var gz = new GZipStream(file, CompressionLevel.Fastest);

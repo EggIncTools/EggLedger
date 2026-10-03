@@ -22,19 +22,8 @@
     border-color: var(--color-accent);
 }
 
-.addacct-msg {
+.addacct ::deep .addacct-msg {
     margin: 0 0 0.5rem;
-    font-size: 0.75rem;
-    line-height: calc(1 / 0.75);
-    color: var(--color-muted);
-}
-
-.addacct-warn {
-    color: var(--color-ledger-egg-yellow);
-}
-
-.addacct-err {
-    color: var(--color-err);
 }
 
 .addacct-actions {

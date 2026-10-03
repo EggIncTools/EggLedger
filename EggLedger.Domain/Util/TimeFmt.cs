@@ -1,5 +1,3 @@
-using System.Globalization;
-
 namespace EggLedger.Domain.Util;
 
 public static class TimeFmt {
@@ -14,25 +12,5 @@ public static class TimeFmt {
         var dec = t - sec;
         var nanos = (long)(dec * 1e9);
         return DateTimeOffset.FromUnixTimeSeconds((long)sec).AddTicks(nanos / 100L);
-    }
-
-    public static string HumanizeTime(DateTimeOffset t, DateTimeOffset? now = null, TimeProvider? time = null) {
-        var reference = now ?? (time ?? TimeProvider.System).GetUtcNow();
-        var delta = reference - t;
-        if (delta < TimeSpan.FromMinutes(1)) {
-            return "just now";
-        }
-        if (delta < TimeSpan.FromHours(1)) {
-            return string.Format(CultureInfo.InvariantCulture, "{0} minutes ago", (int)delta.TotalMinutes);
-        }
-        if (delta < TimeSpan.FromHours(24)) {
-            return string.Format(CultureInfo.InvariantCulture, "{0} hours ago", (int)delta.TotalHours);
-        }
-        if (delta < TimeSpan.FromHours(30 * 24)) {
-            return string.Format(CultureInfo.InvariantCulture, "{0} days ago", (int)(delta.TotalHours / 24));
-        }
-        return delta < TimeSpan.FromHours(365 * 24)
-            ? string.Format(CultureInfo.InvariantCulture, "{0} months ago", (int)(delta.TotalHours / (24 * 30)))
-            : string.Format(CultureInfo.InvariantCulture, "{0} years ago", (int)(delta.TotalHours / (24 * 365)));
     }
 }

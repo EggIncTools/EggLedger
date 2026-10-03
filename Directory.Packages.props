@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <EggIdentityVersion>3.5.3</EggIdentityVersion>
+    <EggIdentityVersion>3.5.5</EggIdentityVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,6 +20,7 @@
     <PackageVersion Include="EggIdentity.Deploy.AdminUi" Version="$(EggIdentityVersion)" />
     <PackageVersion Include="EggIdentity.Fallback" Version="$(EggIdentityVersion)" />
     <PackageVersion Include="EggIdentity.Filtering" Version="$(EggIdentityVersion)" />
+    <PackageVersion Include="EggIdentity.Hosting" Version="$(EggIdentityVersion)" />
     <PackageVersion Include="EggIdentity.Metrics" Version="$(EggIdentityVersion)" />
     <PackageVersion Include="EggIdentity.Resilience" Version="$(EggIdentityVersion)" />
     <PackageVersion Include="EggIdentity.Settings" Version="$(EggIdentityVersion)" />
@@ -27,6 +28,7 @@
     <PackageVersion Include="EggIdentity.Settings.AdminUi" Version="$(EggIdentityVersion)" />
     <PackageVersion Include="EggIdentity.Settings.Api" Version="$(EggIdentityVersion)" />
     <PackageVersion Include="EggIdentity.Styles" Version="$(EggIdentityVersion)" />
+    <PackageVersion Include="EggIdentity.Testing" Version="$(EggIdentityVersion)" />
     <PackageVersion Include="EggIdentity.UI" Version="$(EggIdentityVersion)" />
     <PackageVersion Include="EggIdentity.Visits" Version="$(EggIdentityVersion)" />
     <PackageVersion Include="EggIncognito.Protos" Version="2.17.0" />

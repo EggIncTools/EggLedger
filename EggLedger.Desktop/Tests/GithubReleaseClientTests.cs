@@ -1,3 +1,4 @@
+using System.Net;
 using EggLedger.Desktop.Update;
 
 namespace EggLedger.Desktop.Tests;
@@ -6,7 +7,7 @@ public sealed class GithubReleaseClientTests {
     [Fact]
     public async Task GetLatestTag_ParsesTagAndBodyFromExpectedUrl() {
         var stub = new StubHttpMessageHandler(_ =>
-            StubHttpMessageHandler.Json("""{"tag_name":"2.2.0","body":"notes here"}"""));
+            StubResponses.Json(HttpStatusCode.OK, """{"tag_name":"2.2.0","body":"notes here"}"""));
         var client = new GithubReleaseClient(new HttpClient(stub));
 
         var rel = await client.GetLatestTagAsync();
@@ -14,12 +15,12 @@ public sealed class GithubReleaseClientTests {
         Assert.NotNull(rel);
         Assert.Equal("2.2.0", rel.Value.Tag);
         Assert.Equal("notes here", rel.Value.Body);
-        Assert.Contains("https://api.github.com/repos/DavidArthurCole/EggLedger/releases/latest", stub.RequestedUrls[0]);
+        Assert.Contains("https://api.github.com/repos/DavidArthurCole/EggLedger/releases/latest", stub.Requests[0].RequestUri?.ToString());
     }
 
     [Fact]
     public async Task GetLatestTag_NullOnEmptyTag() {
-        var stub = new StubHttpMessageHandler(_ => StubHttpMessageHandler.Json("""{"tag_name":"","body":""}"""));
+        var stub = new StubHttpMessageHandler(_ => StubResponses.Json(HttpStatusCode.OK, """{"tag_name":"","body":""}"""));
         var client = new GithubReleaseClient(new HttpClient(stub));
         Assert.Null(await client.GetLatestTagAsync());
     }
@@ -33,7 +34,7 @@ public sealed class GithubReleaseClientTests {
           {"tag_name":"2.2.0","body":"stable","draft":false}
         ]
         """;
-        var stub = new StubHttpMessageHandler(_ => StubHttpMessageHandler.Json(json));
+        var stub = new StubHttpMessageHandler(_ => StubResponses.Json(HttpStatusCode.OK, json));
         var client = new GithubReleaseClient(new HttpClient(stub));
 
         var rel = await client.GetLatestTagIncludingPreReleasesAsync();
@@ -41,7 +42,7 @@ public sealed class GithubReleaseClientTests {
         Assert.NotNull(rel);
 
         Assert.Equal("2.2.0", rel.Value.Tag);
-        Assert.Contains("releases?per_page=10", stub.RequestedUrls[0]);
+        Assert.Contains("releases?per_page=10", stub.Requests[0].RequestUri?.ToString());
     }
 
     [Fact]
@@ -53,19 +54,19 @@ public sealed class GithubReleaseClientTests {
           {"name":"{{want}}","browser_download_url":"https://x/{{want}}"}
         ]}
         """;
-        var stub = new StubHttpMessageHandler(_ => StubHttpMessageHandler.Json(json));
+        var stub = new StubHttpMessageHandler(_ => StubResponses.Json(HttpStatusCode.OK, json));
         var client = new GithubReleaseClient(new HttpClient(stub));
 
         var url = await client.GetUpdateAssetUrlAsync("2.2.0");
 
         Assert.Equal($"https://x/{want}", url);
-        Assert.Contains("releases/tags/2.2.0", stub.RequestedUrls[0]);
+        Assert.Contains("releases/tags/2.2.0", stub.Requests[0].RequestUri?.ToString());
     }
 
     [Fact]
     public async Task GetUpdateAssetUrl_NullWhenNoMatch() {
         var json = """{"assets":[{"name":"nope.zip","browser_download_url":"https://x/nope.zip"}]}""";
-        var stub = new StubHttpMessageHandler(_ => StubHttpMessageHandler.Json(json));
+        var stub = new StubHttpMessageHandler(_ => StubResponses.Json(HttpStatusCode.OK, json));
         var client = new GithubReleaseClient(new HttpClient(stub));
         Assert.Null(await client.GetUpdateAssetUrlAsync("2.2.0"));
     }
@@ -76,23 +77,20 @@ public sealed class GithubReleaseClientTests {
         for (var i = 0; i < payload.Length; i++) {
             payload[i] = (byte)(i % 251);
         }
-        var stub = new StubHttpMessageHandler(_ => StubHttpMessageHandler.Bytes(payload));
+        var stub = new StubHttpMessageHandler(_ => StubResponses.Bytes(HttpStatusCode.OK, payload));
         var client = new GithubReleaseClient(new HttpClient(stub));
 
-        var dest = Path.Combine(Path.GetTempPath(), "egg-dl-" + Guid.NewGuid().ToString("N") + ".bin");
-        try {
-            long lastReported = 0;
-            await client.DownloadAsync("https://x/EggLedger.exe", dest, (d, _) => lastReported = d);
+        using var temp = new TempDir("egg-dl");
+        var dest = temp.File("dl.bin");
+        long lastReported = 0;
+        await client.DownloadAsync("https://x/EggLedger.exe", dest, (d, _) => lastReported = d);
 
-            Assert.True(File.Exists(dest));
-            var written = await File.ReadAllBytesAsync(dest);
-            Assert.Equal(payload.Length, written.Length);
-            Assert.Equal(payload, written);
-            Assert.Equal(payload.Length, lastReported);
-            Assert.Contains("https://x/EggLedger.exe", stub.RequestedUrls[0]);
-        } finally {
-            File.Delete(dest);
-        }
+        Assert.True(File.Exists(dest));
+        var written = await File.ReadAllBytesAsync(dest);
+        Assert.Equal(payload.Length, written.Length);
+        Assert.Equal(payload, written);
+        Assert.Equal(payload.Length, lastReported);
+        Assert.Contains("https://x/EggLedger.exe", stub.Requests[0].RequestUri?.ToString());
     }
 
     [Fact]
@@ -104,11 +102,7 @@ public sealed class GithubReleaseClientTests {
             return new HttpResponseMessage(System.Net.HttpStatusCode.OK) { Content = content };
         });
         var client = new GithubReleaseClient(new HttpClient(stub));
-        var dest = Path.Combine(Path.GetTempPath(), "egg-trunc-" + Guid.NewGuid().ToString("N") + ".bin");
-        try {
-            await Assert.ThrowsAsync<IOException>(() => client.DownloadAsync("https://x/a", dest, null));
-        } finally {
-            File.Delete(dest);
-        }
+        using var temp = new TempDir("egg-trunc");
+        await Assert.ThrowsAsync<IOException>(() => client.DownloadAsync("https://x/a", temp.File("dl.bin"), null));
     }
 }

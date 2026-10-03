@@ -1,12 +1,13 @@
 .masked-eid {
     cursor: pointer;
-    filter: blur(4px);
-    transition: filter var(--motion-base) var(--ease-standard);
     user-select: none;
 }
 
-.masked-eid:hover,
-.masked-eid.masked-eid-revealed {
+.masked-eid:hover {
     filter: none;
+}
+
+.masked-eid:hover,
+.masked-eid.revealed {
     user-select: text;
 }

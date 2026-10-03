@@ -122,21 +122,16 @@ public sealed class MigrationTests {
 
     [Fact]
     public void OpenMissionDb_AppliesPragmasAndMigrates() {
-        var path = Path.Combine(Path.GetTempPath(), "egl_migtest_" + Guid.NewGuid().ToString("N"), "ledger.db");
-        var dir = Path.GetDirectoryName(path)!;
+        using var dir = new TempDir("egl_migtest");
         try {
-            using var db = SqliteDatabase.OpenMissionDb(path);
+            using var db = SqliteDatabase.OpenMissionDb(dir.File("ledger.db"));
             Assert.Equal(11, UserVersion(db.Connection));
 
             using var cmd = db.Connection.CreateCommand();
             cmd.CommandText = "PRAGMA foreign_keys;";
             Assert.Equal(1L, (long)cmd.ExecuteScalar()!);
         } finally {
-
             SqliteConnection.ClearAllPools();
-            if (Directory.Exists(dir)) {
-                Directory.Delete(dir, recursive: true);
-            }
         }
     }
 }

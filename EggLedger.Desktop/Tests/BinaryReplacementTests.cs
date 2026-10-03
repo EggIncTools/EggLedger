@@ -3,19 +3,11 @@ using EggLedger.Desktop.Update;
 namespace EggLedger.Desktop.Tests;
 
 public sealed class BinaryReplacementTests : IDisposable {
-    private readonly string _dir;
+    private readonly TempDir _temp = new("egg-replace");
 
-    public BinaryReplacementTests() {
-        _dir = Path.Combine(Path.GetTempPath(), "egg-replace-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(_dir);
-    }
+    private string Dir => _temp.Path;
 
-    public void Dispose() {
-        try {
-            Directory.Delete(_dir, recursive: true);
-        } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or DirectoryNotFoundException) {
-        }
-    }
+    public void Dispose() => _temp.Dispose();
 
     private sealed class FakeProbe(HashSet<int> alive) : IProcessProbe {
         public bool Exists(int pid) => alive.Contains(pid);
@@ -23,8 +15,8 @@ public sealed class BinaryReplacementTests : IDisposable {
 
     [Fact]
     public void RenameWithRetry_MovesFileContents() {
-        var src = Path.Combine(_dir, "src.bin");
-        var dst = Path.Combine(_dir, "dst.bin");
+        var src = Path.Combine(Dir, "src.bin");
+        var dst = Path.Combine(Dir, "dst.bin");
         File.WriteAllText(src, "new");
 
         Assert.True(BinaryReplacement.RenameWithRetry(src, dst, 3, TimeSpan.FromMilliseconds(10)));
@@ -34,8 +26,8 @@ public sealed class BinaryReplacementTests : IDisposable {
 
     [Fact]
     public void RenameWithRetry_OverwritesExistingDestination() {
-        var src = Path.Combine(_dir, "src.bin");
-        var dst = Path.Combine(_dir, "dst.bin");
+        var src = Path.Combine(Dir, "src.bin");
+        var dst = Path.Combine(Dir, "dst.bin");
         File.WriteAllText(src, "fresh");
         File.WriteAllText(dst, "stale");
 
@@ -47,7 +39,7 @@ public sealed class BinaryReplacementTests : IDisposable {
     public void AcquireLock_SecondAcquireFailsWhileHeldThenSucceedsAfterRelease() {
 
         var repl = new BinaryReplacement(new ProcessProbe());
-        var lockPath = Path.Combine(_dir, BinaryReplacement.LockFileName);
+        var lockPath = Path.Combine(Dir, BinaryReplacement.LockFileName);
 
         var (release, ok) = repl.AcquireLock(lockPath);
         Assert.True(ok);
@@ -66,7 +58,7 @@ public sealed class BinaryReplacementTests : IDisposable {
 
     [Fact]
     public void AcquireLock_ReclaimsStaleLockFromDeadOwner() {
-        var lockPath = Path.Combine(_dir, BinaryReplacement.LockFileName);
+        var lockPath = Path.Combine(Dir, BinaryReplacement.LockFileName);
 
         File.WriteAllText(lockPath, "424242");
         var repl = new BinaryReplacement(new FakeProbe([]));
@@ -78,15 +70,15 @@ public sealed class BinaryReplacementTests : IDisposable {
 
     [Fact]
     public void CleanStaleBinaries_RemovesNewBinariesButNotSelf() {
-        var self = Path.Combine(_dir, "EggLedger_new.exe");
-        var otherNew = Path.Combine(_dir, "EggLedgerOther_new.exe");
-        var canonical = Path.Combine(_dir, "EggLedger.exe");
+        var self = Path.Combine(Dir, "EggLedger_new.exe");
+        var otherNew = Path.Combine(Dir, "EggLedgerOther_new.exe");
+        var canonical = Path.Combine(Dir, "EggLedger.exe");
         File.WriteAllText(self, "self");
         File.WriteAllText(otherNew, "stale");
         File.WriteAllText(canonical, "keep");
 
         var repl = new BinaryReplacement(new FakeProbe([]));
-        repl.CleanStaleBinaries(_dir, self);
+        repl.CleanStaleBinaries(Dir, self);
 
         Assert.True(File.Exists(self), "must not delete our own running image");
         Assert.False(File.Exists(otherNew), "stale _new binary should be removed");
@@ -95,26 +87,26 @@ public sealed class BinaryReplacementTests : IDisposable {
 
     [Fact]
     public void CleanStaleBinaries_RemovesStaleLockWhenOwnerDead() {
-        var self = Path.Combine(_dir, "EggLedger.exe");
+        var self = Path.Combine(Dir, "EggLedger.exe");
         File.WriteAllText(self, "self");
-        var lockPath = Path.Combine(_dir, BinaryReplacement.LockFileName);
+        var lockPath = Path.Combine(Dir, BinaryReplacement.LockFileName);
         File.WriteAllText(lockPath, "424242");
 
         var repl = new BinaryReplacement(new FakeProbe([]));
-        repl.CleanStaleBinaries(_dir, self);
+        repl.CleanStaleBinaries(Dir, self);
 
         Assert.False(File.Exists(lockPath));
     }
 
     [Fact]
     public void CleanStaleBinaries_KeepsLockWhenOwnerAlive() {
-        var self = Path.Combine(_dir, "EggLedger.exe");
+        var self = Path.Combine(Dir, "EggLedger.exe");
         File.WriteAllText(self, "self");
-        var lockPath = Path.Combine(_dir, BinaryReplacement.LockFileName);
+        var lockPath = Path.Combine(Dir, BinaryReplacement.LockFileName);
         File.WriteAllText(lockPath, "777");
 
         var repl = new BinaryReplacement(new FakeProbe([777]));
-        repl.CleanStaleBinaries(_dir, self);
+        repl.CleanStaleBinaries(Dir, self);
 
         Assert.True(File.Exists(lockPath));
     }
@@ -143,8 +135,8 @@ public sealed class BinaryReplacementTests : IDisposable {
 
     [Fact]
     public void SameFile_TrueForSamePathFalseForDifferent() {
-        var a = Path.Combine(_dir, "a.bin");
-        var b = Path.Combine(_dir, "b.bin");
+        var a = Path.Combine(Dir, "a.bin");
+        var b = Path.Combine(Dir, "b.bin");
         File.WriteAllText(a, "x");
         File.WriteAllText(b, "y");
         Assert.True(BinaryReplacement.SameFile(a, a));

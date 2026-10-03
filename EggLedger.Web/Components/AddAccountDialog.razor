@@ -16,13 +16,13 @@
                 @bind:event="oninput"
                 disabled="@_loading"/>
             @if (_problem != "" && _eid.Trim() != "") {
-                <p class="addacct-msg addacct-warn">@_problem</p>
+                <StatusNote Kind="StatusNoteKind.Warn" Text="@_problem" Class="addacct-msg"/>
             }
             @if (_error != "") {
-                <p class="addacct-msg addacct-err">@_error</p>
+                <StatusNote Kind="StatusNoteKind.Error" Text="@_error" Class="addacct-msg"/>
             }
             @if (_loading) {
-                <p class="addacct-msg">Fetching account data...</p>
+                <StatusNote Kind="StatusNoteKind.Busy" Text="Fetching account data..." Class="addacct-msg"/>
             }
             <div class="addacct-actions">
                 <button type="button" class="btn-secondary" disabled="@_loading" @onclick="Close">Cancel</button>

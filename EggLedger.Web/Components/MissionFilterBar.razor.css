@@ -102,7 +102,7 @@
     box-shadow: 0 0 5px 1px color-mix(in srgb, var(--color-ledger-incomplete) 55%, transparent);
 }
 
-.filter-incomplete-icon {
+.fbar ::deep .filter-incomplete-icon {
     display: inline-flex;
     align-items: center;
     color: var(--color-ledger-incomplete);

@@ -23,7 +23,7 @@ public sealed class AdminEndpointsTests {
         var json = JsonSerializer.Serialize(new[] {
             new { userId = adminUserId, discordId = (string?)null, username = "admin", role = "admin" },
         });
-        var http = new HttpClient(new StubHttpMessageHandler(_ => StubHttpMessageHandler.Json(HttpStatusCode.OK, json))) {
+        var http = new HttpClient(new StubHttpMessageHandler(_ => StubResponses.Json(HttpStatusCode.OK, json))) {
             BaseAddress = new Uri("http://identity.test"),
         };
         return new IdentityApiClient(http);

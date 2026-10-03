@@ -29,7 +29,7 @@ public sealed class AuthEndpointsTests {
         try {
             var protector = new EphemeralDataProtectionProvider();
             var identity = new IdentityApiClient(new HttpClient(new StubHttpMessageHandler(_ =>
-                StubHttpMessageHandler.Json(HttpStatusCode.OK, "{}"))) { BaseAddress = new Uri("http://localhost:8090") });
+                StubResponses.Json(HttpStatusCode.OK, "{}"))) { BaseAddress = new Uri("http://localhost:8090") });
             var endpoints = new AuthEndpoints(src, protector, identity, NullLogger<AuthEndpoints>.Instance, AppConfig.FromEnv(_ => null));
 
             var userId = Guid.NewGuid();
@@ -61,7 +61,7 @@ public sealed class AuthEndpointsTests {
         await using var src = NpgsqlDataSource.Create(scopedBuilder.ConnectionString);
         try {
             var identity = new IdentityApiClient(new HttpClient(new StubHttpMessageHandler(_ =>
-                StubHttpMessageHandler.Json(HttpStatusCode.OK, "{}"))) { BaseAddress = new Uri("http://localhost:8090") });
+                StubResponses.Json(HttpStatusCode.OK, "{}"))) { BaseAddress = new Uri("http://localhost:8090") });
             var endpoints = new AuthEndpoints(src, new EphemeralDataProtectionProvider(), identity, NullLogger<AuthEndpoints>.Instance, AppConfig.FromEnv(_ => null));
 
             var userId = Guid.NewGuid();
@@ -96,7 +96,7 @@ public sealed class AuthEndpointsTests {
         await using var src = NpgsqlDataSource.Create(scopedBuilder.ConnectionString);
         try {
             var identity = new IdentityApiClient(new HttpClient(new StubHttpMessageHandler(_ =>
-                StubHttpMessageHandler.Json(HttpStatusCode.OK, "{}"))) { BaseAddress = new Uri("http://localhost:8090") });
+                StubResponses.Json(HttpStatusCode.OK, "{}"))) { BaseAddress = new Uri("http://localhost:8090") });
             var endpoints = new AuthEndpoints(src, new EphemeralDataProtectionProvider(), identity, NullLogger<AuthEndpoints>.Instance, AppConfig.FromEnv(_ => null));
 
             var ctx = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity()) };
@@ -121,7 +121,7 @@ public sealed class AuthEndpointsTests {
         await using var src = NpgsqlDataSource.Create(scopedBuilder.ConnectionString);
         try {
             var identity = new IdentityApiClient(new HttpClient(new StubHttpMessageHandler(_ =>
-                StubHttpMessageHandler.Json(HttpStatusCode.OK, "{}"))) { BaseAddress = new Uri("http://localhost:8090") });
+                StubResponses.Json(HttpStatusCode.OK, "{}"))) { BaseAddress = new Uri("http://localhost:8090") });
             var endpoints = new AuthEndpoints(src, new EphemeralDataProtectionProvider(), identity, NullLogger<AuthEndpoints>.Instance, AppConfig.FromEnv(_ => null));
 
             var userId = Guid.NewGuid();
@@ -171,7 +171,7 @@ public sealed class AuthEndpointsTests {
         await using var src = NpgsqlDataSource.Create(scopedBuilder.ConnectionString);
         try {
             var identity = new IdentityApiClient(new HttpClient(new StubHttpMessageHandler(_ =>
-                StubHttpMessageHandler.Json(HttpStatusCode.OK, "{}"))) { BaseAddress = new Uri("http://localhost:8090") });
+                StubResponses.Json(HttpStatusCode.OK, "{}"))) { BaseAddress = new Uri("http://localhost:8090") });
             var endpoints = new AuthEndpoints(src, new EphemeralDataProtectionProvider(), identity, NullLogger<AuthEndpoints>.Instance, AppConfig.FromEnv(_ => null));
 
             var userId = Guid.NewGuid();
@@ -226,7 +226,7 @@ public sealed class AuthEndpointsTests {
             HttpRequestMessage? revokeRequest = null;
             var handler = new StubHttpMessageHandler(req => {
                 revokeRequest = req;
-                return StubHttpMessageHandler.Json(HttpStatusCode.OK, "{}");
+                return StubResponses.Json(HttpStatusCode.OK, "{}");
             });
             var identity = new IdentityApiClient(new HttpClient(handler) { BaseAddress = new Uri("http://localhost:8090") });
             var endpoints = new AuthEndpoints(src, new EphemeralDataProtectionProvider(), identity, NullLogger<AuthEndpoints>.Instance, AppConfig.FromEnv(_ => null));

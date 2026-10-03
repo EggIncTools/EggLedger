@@ -49,10 +49,11 @@
                                 <td class="prof-td prof-td-id">
                                     <span class="prof-identity">
                                         @if (!string.IsNullOrEmpty(id.Avatar)) {
-                                            <button type="button" class="prof-pick"
-                                                    data-tt="Use this picture" aria-label="Use this picture" @onclick="item.OnSelectAvatar">
-                                                <img class="prof-pick-img" src="@Abs(id.Avatar!)" alt=""/>
-                                            </button>
+                                            <Tooltip Text="Use this picture">
+                                                <button type="button" class="prof-pick" aria-label="Use this picture" @onclick="item.OnSelectAvatar">
+                                                    <img class="prof-pick-img" src="@Abs(id.Avatar!)" alt=""/>
+                                                </button>
+                                            </Tooltip>
                                         }
                                         <span class="prof-username">@(id.Username ?? id.Subject)</span>
                                         <span class="prof-small prof-dim prof-date">@id.LinkedAt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)</span>
@@ -64,7 +65,9 @@
                                             Unlink
                                         </button>
                                     } else {
-                                        <span class="prof-small prof-dim prof-italic" data-tt="Cannot unlink the last login">Linked</span>
+                                        <Tooltip Text="Cannot unlink the last login" Focusable="true">
+                                            <span class="prof-small prof-dim prof-italic">Linked</span>
+                                        </Tooltip>
                                     }
                                 </td>
                             } else {

@@ -1,8 +1,13 @@
 <Project>
   <ItemGroup>
     <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="EggIdentity.Testing" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="EggIdentity.Testing" />
+    <Using Include="Microsoft.Extensions.Time.Testing" />
   </ItemGroup>
 </Project>

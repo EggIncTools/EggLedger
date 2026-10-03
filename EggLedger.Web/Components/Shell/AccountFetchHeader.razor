@@ -1,6 +1,5 @@
 @using EggIdentity.UI
-@implements IAsyncDisposable
-@inject OutsideClickInterop OutsideClick
+@implements IDisposable
 @inject ActiveAccount Active
 @inject AppStateService AppStateSvc
 @inject AccountLoader Loader
@@ -14,7 +13,6 @@
 @inject LedgerShellState Shell
 @inject TimeProvider Time
 @inject ILogger<AccountFetchHeader> Logger
-@inject ILogger<OutsideClickRegistration> OutsideClickLogger
 
 <div class="account-bar">
     <button type="button" class="account-rail-chip" title="@ChipTitle" aria-label="Expand sidebar" @onclick="RequestExpand">
@@ -23,48 +21,21 @@
 
     <div class="account-full">
         <div class="account-main-row">
-            <div class="account-select-wrap" @ref="_wrapRef">
-                <button type="button" class="account-select-btn" disabled="@(!IsLoggedIn)" @onclick="OpenPopover">
-                    <span class="account-summary">
-                        @if (_active is not null) {
-                            <span class="account-line">
-                                <span class="account-nick account-nick-trunc" style="--acct-color: #@_active.AccountColor">@_active.Nickname</span>
-                                <span class="account-eb account-small">@_active.EBString</span>
-                                @{ var activeInfo = InfoFor(_active.Id); }
-                                @if (activeInfo is { SeString: not "" }) {
-                                    <span class="account-small account-se">@activeInfo.SeString SE</span>
-                                    <span class="account-small account-pe">@activeInfo.PeCount PE</span>
-                                    @if (activeInfo.TeCount > 0) {
-                                        <span class="account-small account-te">@activeInfo.TeCount TE</span>
-                                    }
-                                }
-                            </span>
-                            <span class="account-option-meta account-line account-small account-dim">
-                                <MaskedEid Value="@_active.Id"/>
-                                @RenderBackupStamp(activeInfo)
-                            </span>
-                            <span class="account-option-meta account-line account-small account-dim">
-                                @{ var activeStats = StatsFor(_active.Id); }
-                                @if (activeStats is not null) {
-                                    <span>@activeStats.MissionCount missions</span>
-                                }
-                                @RenderShipStamp(activeStats)
-                            </span>
-                        } else if (!IsLoggedIn) {
-                            <span class="account-placeholder">Login to add an account</span>
-                        } else {
-                            <span class="account-placeholder">No account - click to add</span>
-                        }
-                    </span>
-                    <span class="account-caret">&#9660;</span>
-                </button>
-
-                @if (_open) {
-                    <div @ref="_popRef" class="account-pop-panel account-dropdown" tabindex="-1" @onkeydown="OnPopoverKeyDown">
-                        @RenderAccountList()
-                    </div>
-                }
-            </div>
+            @if (IsLoggedIn) {
+                <Menu @bind-Open="_open" Class="account-select-wrap" TriggerClass="account-select-btn" TriggerLabel="Choose account"
+                      AlignStart="true" MaxHeight="min(70vh, 30rem)" CloseOnSelect="false">
+                    <Trigger>@RenderSummary()</Trigger>
+                    <ChildContent>
+                        <div class="account-pop-panel">
+                            @RenderAccountList()
+                        </div>
+                    </ChildContent>
+                </Menu>
+            } else {
+                <div class="account-select-wrap">
+                    <button type="button" class="account-select-btn" disabled>@RenderSummary()</button>
+                </div>
+            }
 
             @if (Fetch.IsIdle) {
                 <button type="button" class="account-fetch-btn" disabled="@(Active.ActiveAccountId is null)" @onclick="StartFetch">
@@ -105,6 +76,41 @@
 </div>
 
 @code {
+
+    private RenderFragment RenderSummary() => __builder => {
+        <span class="account-summary">
+            @if (_active is not null) {
+                <span class="account-line">
+                    <span class="account-nick account-nick-trunc" style="--acct-color: #@_active.AccountColor">@_active.Nickname</span>
+                    <span class="account-eb account-small">@_active.EBString</span>
+                    @{ var activeInfo = InfoFor(_active.Id); }
+                    @if (activeInfo is { SeString: not "" }) {
+                        <span class="account-small account-se">@activeInfo.SeString SE</span>
+                        <span class="account-small account-pe">@activeInfo.PeCount PE</span>
+                        @if (activeInfo.TeCount > 0) {
+                            <span class="account-small account-te">@activeInfo.TeCount TE</span>
+                        }
+                    }
+                </span>
+                <span class="account-option-meta account-line account-small account-dim">
+                    <MaskedEid Value="@_active.Id"/>
+                    @RenderBackupStamp(activeInfo)
+                </span>
+                <span class="account-option-meta account-line account-small account-dim">
+                    @{ var activeStats = StatsFor(_active.Id); }
+                    @if (activeStats is not null) {
+                        <span>@activeStats.MissionCount missions</span>
+                    }
+                    @RenderShipStamp(activeStats)
+                </span>
+            } else if (!IsLoggedIn) {
+                <span class="account-placeholder">Login to add an account</span>
+            } else {
+                <span class="account-placeholder">No account - click to add</span>
+            }
+        </span>
+        <span class="account-caret">&#9660;</span>
+    };
 
     private RenderFragment RenderBackupStamp(AccountInfo? info) => __builder => {
         var backup = info is null ? "" : LedgerFormatting.FormatTimeSince(info.LastBackupTime, NowUnix);
@@ -202,10 +208,6 @@
     private KnownAccount? _active;
     private AddAccountDialog? _addDialog;
     private IReadOnlyList<DatabaseAccount> _existing = [];
-    private ElementReference _popRef;
-    private ElementReference _wrapRef;
-    private OutsideClickRegistration? _outsideClick;
-    private bool _focusPending;
     private bool _rendered;
     private bool? _lastWarnedFetchActive;
     private int _workerCount = SettingsModel.MinWorkerCount;
@@ -259,17 +261,6 @@
 
             _rendered = true;
             await SyncUnloadWarningAsync();
-        }
-
-        if (!_focusPending || !_open) {
-            return;
-        }
-
-        _focusPending = false;
-        try {
-            await _popRef.FocusAsync();
-        } catch (Exception ex) when (ex is JSDisconnectedException or JSException) {
-            Logger.LogDebug(ex, "account popover focus failed");
         }
     }
 
@@ -362,49 +353,28 @@
         return OnExpandRequest.InvokeAsync();
     }
 
-    private async Task OpenPopover() {
-        _open = true;
-        _focusPending = true;
-        _outsideClick ??= new OutsideClickRegistration(OutsideClick, HandleOutsideClickAsync, logger: OutsideClickLogger);
-        await _outsideClick.RegisterAsync(_wrapRef);
-    }
-
-    private async Task ClosePopover() {
+    private void ClosePopover() {
         _open = false;
-        if (_outsideClick is not null) {
-            await _outsideClick.UnregisterAsync();
-        }
     }
 
-    private async Task HandleOutsideClickAsync() {
-        _open = false;
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private async Task OnPopoverKeyDown(KeyboardEventArgs e) {
-        if (e.Key == "Escape") {
-            await ClosePopover();
-        }
-    }
-
-    private async Task Select(string id) {
+    private void Select(string id) {
         Active.SetActive(id);
-        await ClosePopover();
+        ClosePopover();
     }
 
-    private async Task OpenAddDialog() {
-        await ClosePopover();
+    private void OpenAddDialog() {
+        ClosePopover();
         _addDialog?.Open();
     }
 
-    private async Task OpenSettings() {
-        await ClosePopover();
+    private void OpenSettings() {
+        ClosePopover();
         Shell.SettingsOpen = true;
     }
 
     private void OnPopoverRequested() {
-        InvokeAsync(async () => {
-            await OpenPopover();
+        InvokeAsync(() => {
+            _open = IsLoggedIn;
             StateHasChanged();
         });
     }
@@ -415,15 +385,12 @@
         await StartFetch();
     }
 
-    public async ValueTask DisposeAsync() {
+    public void Dispose() {
         Active.Changed -= OnStateChanged;
         AppStateSvc.Changed -= OnStateChanged;
         AppStateSvc.Changed -= OnKnownAccountsChanged;
         Fetch.Changed -= OnStateChanged;
         Shell.AccountPopoverRequested -= OnPopoverRequested;
-        if (_outsideClick is not null) {
-            await _outsideClick.DisposeAsync();
-        }
     }
 
 }

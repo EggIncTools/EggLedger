@@ -21,11 +21,11 @@
                               ShowPerShip="State.ShowPerShip"
                               LifetimeExpected="@(State.ShowExpectedTotals && State.AllowExpectedTotals)"/>
 
-        <CollapsibleSection Title="Reports" Inset="true" Open="_widgetsOpen" OnToggle="ToggleWidgets">
+        <Disclosure Label="Reports" @bind-Open="_widgetsOpen" Class="ledger-section ledger-section-inset">
             @if (State.AccountId is { } accountId) {
                 <PinnedReportsStrip AccountId="@accountId" View="@PinnedReportViews.Lifetime"/>
             }
-        </CollapsibleSection>
+        </Disclosure>
     </div>
 }
 
@@ -40,10 +40,6 @@
 
     private void OnStateChanged() {
         InvokeAsync(StateHasChanged);
-    }
-
-    private void ToggleWidgets() {
-        _widgetsOpen = !_widgetsOpen;
     }
 
     public void Dispose() {

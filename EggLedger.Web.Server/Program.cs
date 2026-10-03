@@ -276,6 +276,11 @@ if (hasDb) {
         sp.GetRequiredService<ILogger<EggLedger.Web.Data.ResilientIndexedDb>>(),
         ex => ex is NpgsqlException { IsTransient: true }));
     builder.Services.AddScoped<EggLedger.Web.Server.Storage.FirstLoginBackfill>();
+    builder.Services.AddHostedService(sp => new EggLedger.Web.Server.Sync.Db.ExpiredSessionSweeper(
+        sp.GetRequiredService<IServiceScopeFactory>(),
+        sp.GetRequiredService<TimeProvider>(),
+        TimeSpan.FromMinutes(cfg.SessionSweepIntervalMinutes),
+        sp.GetRequiredService<ILogger<EggLedger.Web.Server.Sync.Db.ExpiredSessionSweeper>>()));
 }
 
 builder.Services.AddSingleton(_ =>
@@ -371,12 +376,6 @@ if (hasDb) {
     await app.Services.GetRequiredService<VisitsStore>().MigrateAsync();
     app.Logger.LogInformation("eggledger: migrations complete, /api/v1 + Postgres storage active");
     app.MapEggIdentityVisits();
-
-    _ = new EggLedger.Web.Server.Sync.Db.ExpiredSessionSweeper(
-            app.Services.GetRequiredService<NpgsqlDataSource>(),
-            TimeSpan.FromMinutes(cfg.SessionSweepIntervalMinutes),
-            app.Services.GetRequiredService<ILogger<EggLedger.Web.Server.Sync.Db.ExpiredSessionSweeper>>())
-        .RunAsync(app.Lifetime.ApplicationStopping);
 
     var constraintValidator = new EggLedger.Web.Server.Storage.ConstraintValidator(
         app.Services.GetRequiredService<NpgsqlDataSource>(),

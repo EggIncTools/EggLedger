@@ -18,12 +18,12 @@ public sealed class LedgerDataHubTests {
         Func<string, Task<IReadOnlyList<DatabaseMission>?>>? missions = null,
         Func<string, Task<Dictionary<string, List<MissionDrop>>?>>? drops = null,
         TimeSpan? ttl = null,
-        ManualClock? clock = null,
+        TimeProvider? clock = null,
         Func<string, Task<IReadOnlyList<DatabaseMission>?>>? inFlight = null) =>
         new(missions ?? MissionsOf,
             drops ?? (_ => Task.FromResult<Dictionary<string, List<MissionDrop>>?>(null)),
             ttl ?? Ttl,
-            clock ?? new ManualClock(),
+            clock ?? TestTime.New(),
             inFlight);
 
     [Fact]
@@ -107,7 +107,7 @@ public sealed class LedgerDataHubTests {
 
     [Fact]
     public async Task Missions_ReloadOnlyAfterTtlExpires() {
-        var clock = new ManualClock(new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
+        var clock = new FakeTimeProvider(new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
         var calls = 0;
         var hub = NewHub(id => {
             calls++;
@@ -185,7 +185,7 @@ public sealed class LedgerDataHubTests {
 
     [Fact]
     public async Task InFlight_IsCachedPerAccount_UntilTtlExpires() {
-        var clock = new ManualClock(new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
+        var clock = new FakeTimeProvider(new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
         var calls = new Dictionary<string, int>(StringComparer.Ordinal);
         var hub = NewHub(clock: clock, inFlight: id => {
             calls[id] = calls.GetValueOrDefault(id) + 1;

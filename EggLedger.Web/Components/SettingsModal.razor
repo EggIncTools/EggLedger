@@ -18,9 +18,9 @@
                 @foreach (var section in Sections()) {
                     var id = section.Id;
                     var open = _openSections.Contains(id);
-                    <CollapsibleSection Title="@section.Title" Open="open" OnToggle="() => Toggle(id)">
+                    <Disclosure Label="@section.Title" Open="open" OpenChanged="() => Toggle(id)" Class="ledger-section">
                         @section.Body
-                    </CollapsibleSection>
+                    </Disclosure>
                 }
             </div>
         }

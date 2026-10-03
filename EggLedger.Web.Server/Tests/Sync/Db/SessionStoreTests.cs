@@ -15,7 +15,7 @@ public sealed class SessionStoreTests {
 
     private static IdentityApiClient StubIdentity(bool revoked) =>
         new(new HttpClient(new StubHttpMessageHandler(_ =>
-            StubHttpMessageHandler.Json(HttpStatusCode.OK, revoked ? "true" : "false"))) {
+            StubResponses.Json(HttpStatusCode.OK, revoked ? "true" : "false"))) {
             BaseAddress = new Uri("http://localhost:8090"),
         });
 

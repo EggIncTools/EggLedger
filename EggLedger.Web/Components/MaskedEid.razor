@@ -2,7 +2,7 @@
 @implements IDisposable
 
 @if (ScreenshotSafety.Enabled && IsEid(Value)) {
-    <span class="masked-eid @(_revealed ? "masked-eid-revealed" : "")"
+    <span class="masked-eid mask @(_revealed ? "revealed" : "")"
           @onclick="Toggle" @onclick:stopPropagation="true">
         @Value
     </span>

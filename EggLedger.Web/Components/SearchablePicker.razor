@@ -5,7 +5,9 @@
 @inject ILogger<SearchablePicker> Logger
 
 @if (TriggerContent is not null) {
-    <button type="button" class="picker-trigger picker-trigger-@TriggerVariant.ToString().ToLowerInvariant()" aria-label="@Placeholder" data-tt="@Placeholder" @onclick="Open">@TriggerContent</button>
+    <Tooltip Text="@Placeholder">
+        <button type="button" class="picker-trigger picker-trigger-@TriggerVariant.ToString().ToLowerInvariant()" aria-label="@Placeholder" @onclick="Open">@TriggerContent</button>
+    </Tooltip>
 } else {
     <input type="text" readonly placeholder="@Placeholder"
            class="filter-select @(Selected?.StyleClass ?? "") @(Incomplete ? "field-incomplete" : "")"

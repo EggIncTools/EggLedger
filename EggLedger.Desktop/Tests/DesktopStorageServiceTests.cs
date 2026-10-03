@@ -4,17 +4,11 @@ using EggLedger.Web.Platform;
 namespace EggLedger.Desktop.Tests;
 
 public sealed class DesktopStorageServiceTests : IDisposable {
-    private readonly string _root =
-        Path.Combine(Path.GetTempPath(), "egglg-store-" + Guid.NewGuid().ToString("N"));
+    private readonly TempDir _temp = new("egglg-store");
 
-    public DesktopStorageServiceTests() => Directory.CreateDirectory(_root);
+    private string Root => _temp.Path;
 
-    public void Dispose() {
-        try {
-            Directory.Delete(_root, recursive: true);
-        } catch (DirectoryNotFoundException) {
-        }
-    }
+    public void Dispose() => _temp.Dispose();
 
     private sealed class FakePlatform : IPlatformCapabilities {
         public int RestartCalls { get; private set; }
@@ -33,8 +27,8 @@ public sealed class DesktopStorageServiceTests : IDisposable {
         public string DataRootDir => "";
     }
 
-    private string SourceRoot() => Path.Combine(_root, "src");
-    private string Dest() => Path.Combine(_root, "dst");
+    private string SourceRoot() => Path.Combine(Root, "src");
+    private string Dest() => Path.Combine(Root, "dst");
 
     private void SeedPart(string subDir, string fileName, string content) {
         var dir = Path.Combine(SourceRoot(), subDir);

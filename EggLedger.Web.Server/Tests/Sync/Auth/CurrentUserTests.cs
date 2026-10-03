@@ -2,8 +2,8 @@ using System.Net;
 using EggIdentity.Auth;
 using EggIdentity.Client;
 using EggIdentity.Contract;
-using EggLedger.Web.Server.Sync.Auth;
 using Microsoft.AspNetCore.Http;
+using CurrentUser = EggLedger.Web.Server.Sync.Auth.CurrentUser;
 
 namespace EggLedger.Web.Server.Tests.Sync.Auth;
 
@@ -15,7 +15,7 @@ public class CurrentUserTests {
     }
 
     private static IdentityApiClient ClientReturningRole(string role) {
-        var handler = new StubHttpMessageHandler(_ => StubHttpMessageHandler.Json(HttpStatusCode.OK,
+        var handler = new StubHttpMessageHandler(_ => StubResponses.Json(HttpStatusCode.OK,
             $$"""{"userId":"11111111-1111-1111-1111-111111111111","username":"x","role":"{{role}}","createdAt":"2026-01-01T00:00:00Z","lastLoginAt":"2026-01-01T00:00:00Z"}"""));
         return new IdentityApiClient(new HttpClient(handler) { BaseAddress = new Uri("http://localhost:8090") });
     }
@@ -59,7 +59,7 @@ public class CurrentUserTests {
         var calls = 0;
         var handler = new StubHttpMessageHandler(_ => {
             calls++;
-            return StubHttpMessageHandler.Json(HttpStatusCode.OK,
+            return StubResponses.Json(HttpStatusCode.OK,
                 """{"userId":"11111111-1111-1111-1111-111111111111","username":"x","role":"admin","createdAt":"2026-01-01T00:00:00Z","lastLoginAt":"2026-01-01T00:00:00Z"}""");
         });
         var client = new IdentityApiClient(new HttpClient(handler) { BaseAddress = new Uri("http://localhost:8090") });

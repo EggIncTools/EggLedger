@@ -146,7 +146,7 @@ public class WeightTests {
     [InlineData("2025-12-01", "MEDIUM")]
     [InlineData("2025-06-01", "HEAVY")]
     public void DateWindow_UsesInjectedClock(string launchedAfter, string expected) {
-        var clock = new FixedClock(new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
+        var clock = new FakeTimeProvider(new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
         var def = new ReportDefinition {
             Mode = "time_series",
             GroupBy = "time_bucket",

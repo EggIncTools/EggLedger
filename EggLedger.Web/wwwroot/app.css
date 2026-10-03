@@ -109,17 +109,9 @@
   --motion-fast: 120ms;
   --motion-base: 150ms;
   --motion-morph: 220ms;
+  --motion-pulse: 2s;
   --ease-standard: cubic-bezier(.2, 0, 0, 1);
   --ease-pulse: cubic-bezier(.4, 0, .6, 1);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  ::before,
-  ::after {
-    transition-duration: 0s !important;
-    animation: none !important;
-  }
 }
 
 *,
@@ -359,6 +351,35 @@ a.url-link:hover {
   height: 4rem;
   width: 4rem;
   padding: 0.5rem;
+}
+
+.ledger-section {
+  border: 1px solid var(--color-border);
+  border-radius: 0.375rem;
+  background-color: var(--color-darkest);
+  overflow: hidden;
+}
+
+.ledger-section-inset {
+  margin: 0.75rem 1px 0;
+}
+
+.ledger-section .disclosure-head {
+  padding: 0.5rem 0.75rem;
+}
+
+.ledger-section .disclosure-head:hover {
+  background-color: var(--color-darkerer);
+}
+
+.ledger-section .disclosure-label {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.ledger-section .disclosure-body {
+  padding: 0.75rem;
+  border-top: 1px solid var(--color-border);
 }
 
 .panel-muted {

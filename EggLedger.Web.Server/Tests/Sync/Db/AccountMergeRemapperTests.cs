@@ -138,7 +138,7 @@ public sealed class AccountMergeRemapperTests {
     private static AccountMergeRemapper RemapperFor(NpgsqlDataSource src, IDataProtectionProvider dp, string feedJson) =>
         new(src,
             new IdentityApiClient(new HttpClient(new StubHttpMessageHandler(_ =>
-                StubHttpMessageHandler.Json(HttpStatusCode.OK, feedJson))) { BaseAddress = new Uri("http://localhost:8090") }),
+                StubResponses.Json(HttpStatusCode.OK, feedJson))) { BaseAddress = new Uri("http://localhost:8090") }),
             dp,
             NullLogger<AccountMergeRemapper>.Instance);
 

@@ -20,42 +20,26 @@ public sealed class StoragePathsTests {
 
     [Fact]
     public void CopyFile_CreatesDestinationDirectory() {
-        var baseDir = Path.Combine(Path.GetTempPath(), "egl_copy_" + Guid.NewGuid().ToString("N"));
-        try {
-            var src = Path.Combine(baseDir, "src.txt");
-            Directory.CreateDirectory(baseDir);
-            File.WriteAllText(src, "hello");
+        using var baseDir = new TempDir("egl_copy");
+        var src = baseDir.Write("src.txt", "hello");
 
-            var dst = Path.Combine(baseDir, "nested", "deep", "out.txt");
-            StoragePaths.CopyFile(src, dst);
+        var dst = baseDir.File(Path.Combine("nested", "deep", "out.txt"));
+        StoragePaths.CopyFile(src, dst);
 
-            Assert.True(File.Exists(dst));
-            Assert.Equal("hello", File.ReadAllText(dst));
-        } finally {
-            if (Directory.Exists(baseDir)) {
-                Directory.Delete(baseDir, recursive: true);
-            }
-        }
+        Assert.True(File.Exists(dst));
+        Assert.Equal("hello", File.ReadAllText(dst));
     }
 
     [Fact]
     public void CopyDir_ReplicatesTree() {
-        var baseDir = Path.Combine(Path.GetTempPath(), "egl_copydir_" + Guid.NewGuid().ToString("N"));
-        try {
-            var src = Path.Combine(baseDir, "src");
-            Directory.CreateDirectory(Path.Combine(src, "sub"));
-            File.WriteAllText(Path.Combine(src, "a.txt"), "A");
-            File.WriteAllText(Path.Combine(src, "sub", "b.txt"), "B");
+        using var baseDir = new TempDir("egl_copydir");
+        baseDir.Write(Path.Combine("src", "a.txt"), "A");
+        baseDir.Write(Path.Combine("src", "sub", "b.txt"), "B");
 
-            var dst = Path.Combine(baseDir, "dst");
-            StoragePaths.CopyDir(src, dst);
+        var dst = baseDir.File("dst");
+        StoragePaths.CopyDir(baseDir.File("src"), dst);
 
-            Assert.Equal("A", File.ReadAllText(Path.Combine(dst, "a.txt")));
-            Assert.Equal("B", File.ReadAllText(Path.Combine(dst, "sub", "b.txt")));
-        } finally {
-            if (Directory.Exists(baseDir)) {
-                Directory.Delete(baseDir, recursive: true);
-            }
-        }
+        Assert.Equal("A", File.ReadAllText(Path.Combine(dst, "a.txt")));
+        Assert.Equal("B", File.ReadAllText(Path.Combine(dst, "sub", "b.txt")));
     }
 }

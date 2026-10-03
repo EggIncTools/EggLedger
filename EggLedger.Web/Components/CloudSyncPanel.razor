@@ -20,10 +20,9 @@
         <div class="csync-checking">Checking sync server connection...</div>
     } else if (!_reachable) {
         <div class="csync-gap">
-            <div class="csync-callout csync-callout-warn">
-                <p class="csync-callout-title">Could not reach the sync server</p>
-                <p>Settings sync is unavailable. Try disabling any active VPN, then Retry.</p>
-            </div>
+            <StatusNote Kind="StatusNoteKind.Warn">
+                <strong>Could not reach the sync server.</strong> Settings sync is unavailable. Try disabling any active VPN, then Retry.
+            </StatusNote>
             <button type="button" class="btn-secondary csync-gap" @onclick="RecheckReachableAsync">Retry</button>
         </div>
     } else {
@@ -54,10 +53,9 @@
         }
 
         @if (_authWaiting) {
-            <div class="csync-callout csync-callout-info csync-gap">
-                <p class="csync-callout-title">Waiting for sign-in...</p>
-                <p class="csync-callout-sub">Your browser should have opened the sign-in page. Approve it there, then return here.</p>
-            </div>
+            <StatusNote Kind="StatusNoteKind.Busy" Class="csync-gap">
+                <strong>Waiting for sign-in...</strong> Your browser should have opened the sign-in page. Approve it there, then return here.
+            </StatusNote>
         }
 
         <div class="csync-row csync-gap">
@@ -111,13 +109,13 @@
 
         <div class="csync-status">
             @if (!string.IsNullOrEmpty(_syncError)) {
-                <div class="csync-err">Sync failed: @_syncError</div>
+                <StatusNote Kind="StatusNoteKind.Error" Text="@($"Sync failed: {_syncError}")"/>
             }
             @if (!string.IsNullOrEmpty(_restoreError)) {
-                <div class="csync-err">Restore failed: @_restoreError</div>
+                <StatusNote Kind="StatusNoteKind.Error" Text="@($"Restore failed: {_restoreError}")"/>
             }
             @if (!string.IsNullOrEmpty(_deleteError)) {
-                <div class="csync-err">Delete failed: @_deleteError</div>
+                <StatusNote Kind="StatusNoteKind.Error" Text="@($"Delete failed: {_deleteError}")"/>
             }
             @if (_restoreSuccess) {
                 <div class="csync-ok">Restore complete. Restart the app to apply synced settings.</div>

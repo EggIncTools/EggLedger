@@ -6,17 +6,11 @@ using Microsoft.JSInterop;
 namespace EggLedger.Desktop.Tests;
 
 public sealed class DesktopDownloadServiceTests : IDisposable {
-    private readonly string _tempDir =
-        Path.Combine(Path.GetTempPath(), "egglg-dl-" + Guid.NewGuid().ToString("N"));
+    private readonly TempDir _temp = new("egglg-dl");
 
-    public DesktopDownloadServiceTests() => Directory.CreateDirectory(_tempDir);
+    private string TempPath => _temp.Path;
 
-    public void Dispose() {
-        try {
-            Directory.Delete(_tempDir, recursive: true);
-        } catch (DirectoryNotFoundException) {
-        }
-    }
+    public void Dispose() => _temp.Dispose();
 
     private sealed class FakePlatform(string? saveResult) : IPlatformCapabilities {
         public string? SaveResult { get; } = saveResult;
@@ -56,7 +50,7 @@ public sealed class DesktopDownloadServiceTests : IDisposable {
     [Fact]
     public async Task DownloadCsvAsync_WritesDomainBytesToChosenPath_AndReveals() {
         var missions = SampleMissions();
-        var path = Path.Combine(_tempDir, "out.csv");
+        var path = Path.Combine(TempPath, "out.csv");
         var platform = new FakePlatform(path);
         var sink = new DesktopDownloadService(platform, new NotUsedJSRuntime());
 
@@ -71,7 +65,7 @@ public sealed class DesktopDownloadServiceTests : IDisposable {
     [Fact]
     public async Task DownloadXlsxAsync_WritesDomainBytesToChosenPath_AndReveals() {
         var missions = SampleMissions();
-        var path = Path.Combine(_tempDir, "out.xlsx");
+        var path = Path.Combine(TempPath, "out.xlsx");
         var platform = new FakePlatform(path);
         var sink = new DesktopDownloadService(platform, new NotUsedJSRuntime());
 
@@ -89,7 +83,7 @@ public sealed class DesktopDownloadServiceTests : IDisposable {
 
         await sink.DownloadCsvAsync(SampleMissions(), "account.csv");
 
-        Assert.Empty(Directory.GetFiles(_tempDir));
+        Assert.Empty(Directory.GetFiles(TempPath));
         Assert.Empty(platform.Revealed);
     }
 
@@ -100,7 +94,7 @@ public sealed class DesktopDownloadServiceTests : IDisposable {
 
         await sink.DownloadXlsxAsync(SampleMissions(), "account.xlsx");
 
-        Assert.Empty(Directory.GetFiles(_tempDir));
+        Assert.Empty(Directory.GetFiles(TempPath));
         Assert.Empty(platform.Revealed);
     }
 }
