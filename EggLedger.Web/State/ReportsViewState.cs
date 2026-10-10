@@ -9,7 +9,7 @@ public interface IReportsViewActions {
 
     Task ExportAllAsync();
 
-    Task ImportAsync();
+    Task ImportAsync(string json);
 }
 
 public sealed class ReportsViewState(ActiveAccount active, IndexedDbReportStore store, ILogger<ReportsViewState> logger) : IDisposable {
@@ -47,8 +47,8 @@ public sealed class ReportsViewState(ActiveAccount active, IndexedDbReportStore 
     public Task RequestExportAllAsync() =>
         Actions?.ExportAllAsync() ?? Task.CompletedTask;
 
-    public Task RequestImportAsync() =>
-        Actions?.ImportAsync() ?? Task.CompletedTask;
+    public Task RequestImportAsync(string json) =>
+        Actions?.ImportAsync(json) ?? Task.CompletedTask;
 
     public async Task EnsureInitializedAsync(Func<Func<Task>, Task> dispatch) {
         if (_initialized) {

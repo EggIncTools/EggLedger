@@ -182,6 +182,7 @@ if (hasDb) {
     builder.Services.AddSingleton<EggLedger.Web.Components.Admin.IAdminData, EggLedger.Web.Server.Sync.Admin.AdminDataService>();
     builder.Services.AddEggIdentityVisits(new VisitsOptions("eggledger") { HostedBehindProxy = true });
     builder.Services.AddScoped<EggLedger.Web.Components.Admin.IVisitsPanelSlot, EggLedger.Web.Server.Sync.Admin.VisitsPanelSlot>();
+    builder.Services.AddSingleton<EggLedger.Web.Components.IVisitCounterSlot, EggLedger.Web.Server.Components.VisitCounterSlot>();
 
     if (!string.IsNullOrEmpty(cfg.BotToken)) {
         builder.Services.AddSingleton(new BotConfig {
@@ -301,6 +302,7 @@ builder.Services.AddEggIdentityFallback(new FallbackBranding("EggLedger", new Di
     [ComponentTokens.Ok] = "#10b981",
     [ComponentTokens.Err] = "#b91c1c",
     [ComponentTokens.Border] = "#364153",
+    [ComponentTokens.Warn] = "#fb923c",
 }));
 
 builder.Services.AddProblemDetails();
@@ -375,7 +377,6 @@ if (hasDb) {
         EggLedger.Web.Server.Storage.MigrationLedger.Table);
     await app.Services.GetRequiredService<VisitsStore>().MigrateAsync();
     app.Logger.LogInformation("eggledger: migrations complete, /api/v1 + Postgres storage active");
-    app.MapEggIdentityVisits();
 
     var constraintValidator = new EggLedger.Web.Server.Storage.ConstraintValidator(
         app.Services.GetRequiredService<NpgsqlDataSource>(),
@@ -430,6 +431,9 @@ if (!string.IsNullOrEmpty(cfg.AdminApiSecret)) {
         adminApi.MapCloneAdminApi(LedgerClonePlan.Plan);
     }
 }
+
+app.MapEggIdentityViewerCookies();
+app.MapEggIdentityDownloads();
 
 app.MapRazorComponents<AppHost>()
     .AddInteractiveServerRenderMode()

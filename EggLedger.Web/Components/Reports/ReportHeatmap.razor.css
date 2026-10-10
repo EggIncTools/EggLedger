@@ -52,6 +52,10 @@
     filter: brightness(1.4);
 }
 
+.hmap ::deep .hmap-cell-body {
+    display: block;
+}
+
 .hmap-value {
     line-height: 1;
 }

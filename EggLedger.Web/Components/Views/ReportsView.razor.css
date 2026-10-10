@@ -30,6 +30,14 @@
     gap: 0.375rem;
 }
 
+.rv-import {
+    cursor: pointer;
+}
+
+.rv-import ::deep .rv-import-input {
+    display: none;
+}
+
 .rv-group {
     position: relative;
     display: flex;

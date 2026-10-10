@@ -1,3 +1,4 @@
+@using Microsoft.AspNetCore.Components.Forms
 @implements IDisposable
 @implements IReportsViewActions
 @inject ReportsViewState State
@@ -63,7 +64,10 @@
             }
             <button type="button" class="btn-secondary" @onclick="State.RequestNewReportAsync">+ New Report</button>
             <button type="button" class="btn-secondary" @onclick="State.RequestExportAllAsync">Export All</button>
-            <button type="button" class="btn-secondary" @onclick="State.RequestImportAsync">Import</button>
+            <label class="btn-secondary rv-import">
+                Import
+                <InputFile class="rv-import-input" accept=".json,application/json" OnChange="OnImportFileAsync"/>
+            </label>
         </div>
     </div>
 
@@ -138,9 +142,16 @@
         return _grid?.ExportAllAsync() ?? Task.CompletedTask;
     }
 
-    public Task ImportAsync() {
-        return _grid?.ImportAsync() ?? Task.CompletedTask;
+    public Task ImportAsync(string json) {
+        return _grid?.ImportAsync(json) ?? Task.CompletedTask;
     }
+
+    private async Task OnImportFileAsync(InputFileChangeEventArgs e) {
+        using var reader = new StreamReader(e.File.OpenReadStream(ImportMaxBytes));
+        await State.RequestImportAsync(await reader.ReadToEndAsync());
+    }
+
+    private const long ImportMaxBytes = 16 * 1024 * 1024;
 
     public void Dispose() {
         State.Changed -= OnStateChanged;

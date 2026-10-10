@@ -162,25 +162,24 @@
     }
 
     private RenderFragment RenderChip(FilterOption opt, int idx) => __builder => {
-        <button type="button" class="popup-opt-chip @(idx == _activeIndex ? "selected-popup-opt" : "")"
-                data-tt="@TooltipText(opt)" data-tt-classes="@TooltipClasses(opt)"
-                @onclick="() => Choose(opt)">
-            @if (!string.IsNullOrEmpty(opt.ImagePath)) {
-                <img class="popup-opt-chip-icon @RingClass(opt)" loading="lazy" decoding="async"
-                     alt="@opt.Text" src="@ImageSrc(opt)"/>
-            }
-            @if (!string.IsNullOrEmpty(opt.Badge)) {
-                <span class="popup-opt-chip-badge @(opt.StyleClass ?? "popup-muted")">@opt.Badge</span>
-            }
-        </button>
+        <Tooltip Lines="@ChipLines(opt)" Class="popup-opt-chip-wrap">
+            <button type="button" class="popup-opt-chip @(idx == _activeIndex ? "selected-popup-opt" : "")"
+                    @onclick="() => Choose(opt)">
+                @if (!string.IsNullOrEmpty(opt.ImagePath)) {
+                    <img class="popup-opt-chip-icon @RingClass(opt)" loading="lazy" decoding="async"
+                         alt="@opt.Text" src="@ImageSrc(opt)"/>
+                }
+                @if (!string.IsNullOrEmpty(opt.Badge)) {
+                    <span class="popup-opt-chip-badge @(opt.StyleClass ?? "popup-muted")">@opt.Badge</span>
+                }
+            </button>
+        </Tooltip>
     };
 
-    private static string TooltipText(FilterOption opt) {
-        return opt.Rarity is { } r ? opt.Text + "\n" + FilterOptions.RarityWord(r) : opt.Text;
-    }
-
-    private static string TooltipClasses(FilterOption opt) {
-        return opt.Rarity is { } r && FilterOptions.RarityStyleClass(r) is { } cls ? "1=" + cls : "";
+    private static IReadOnlyList<TooltipLine> ChipLines(FilterOption opt) {
+        return opt.Rarity is { } r
+            ? [new TooltipLine(opt.Text, Head: true), new TooltipLine(FilterOptions.RarityWord(r), Class: FilterOptions.RarityStyleClass(r))]
+            : [new TooltipLine(opt.Text, Head: true)];
     }
 
     private string ImageSrc(FilterOption o) {

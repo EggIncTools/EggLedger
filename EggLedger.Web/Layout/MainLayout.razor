@@ -24,6 +24,7 @@
 </CascadingValue>
 
 <ToastHost/>
+<DownloadSink/>
 
 @if (Services.GetService<IDeployToastSlot>() is { } deployToasts) {
     @deployToasts.Render()
@@ -31,6 +32,12 @@
 
 @if (Services.GetService<ICookieBannerSlot>() is { } cookieBanner) {
     @cookieBanner.Render()
+} else if (Services.GetService<ViewerCookies>() is not null) {
+    <ViewerCookieSink/>
+}
+
+@if (Services.GetService<IVisitCounterSlot>() is { } visitCounter) {
+    @visitCounter.Render()
 }
 
 @code {

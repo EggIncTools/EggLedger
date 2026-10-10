@@ -1,7 +1,7 @@
 @using System.Globalization
 @inject IUserTimeZoneProvider TzProvider
 
-<div class="timeline-bar timeline-dur-@Bar.DurationIndex @CapModifierClass tooltip-host @(Bar.ContinuesLeft ? "timeline-bar-cut-l" : "") @(Bar.ContinuesRight ? "timeline-bar-cut-r" : "") @(IsLinkedHover ? "timeline-bar-linked-hover" : "")" style="@BarStyle" data-tt-mode="cursor-x" @onclick="@(() => OnSelect.InvokeAsync(Bar.MissionId))" @onmouseenter="@(() => OnHoverMissionId.InvokeAsync(Bar.MissionId))" @onmouseleave="@(() => OnHoverMissionId.InvokeAsync(null))">
+<div class="timeline-bar timeline-dur-@Bar.DurationIndex @CapModifierClass tooltip-host tooltip-trigger @(Bar.ContinuesLeft ? "timeline-bar-cut-l" : "") @(Bar.ContinuesRight ? "timeline-bar-cut-r" : "") @(IsLinkedHover ? "timeline-bar-linked-hover" : "")" style="@BarStyle" @onclick="@(() => OnSelect.InvokeAsync(Bar.MissionId))" @onmouseenter="@(() => OnHoverMissionId.InvokeAsync(Bar.MissionId))" @onmouseleave="@(() => OnHoverMissionId.InvokeAsync(null))">
     <div class="timeline-bar-track">
         <div class="timeline-bar-fill"></div>
     </div>
@@ -16,7 +16,7 @@
         </div>
     }
     @if (Bar.ShowBubble) {
-        <span class="timeline-bar-bubble tt-anchor">
+        <span class="timeline-bar-bubble">
             <img class="timeline-bar-ship" src="@Bar.ShipIconPath" alt="@Bar.ShipName"/>
             @if (Bar.TargetIconPath is not null) {
                 <img class="timeline-bar-target" src="@Bar.TargetIconPath" alt=""/>
@@ -73,7 +73,9 @@
     }
 
     private string BarStyle =>
-        FormattableString.Invariant($"--bar-start:{Bar.LeftPercent};--bar-size:{Bar.WidthPercent};--bar-fill:{Bar.FillPercent};--bar-z:{Bar.StackOrder};");
+        FormattableString.Invariant($"--bar-start:{Bar.LeftPercent};--bar-size:{Bar.WidthPercent};--bar-fill:{Bar.FillPercent};--bar-z:{Bar.StackOrder};--tt-anchor:--{_anchorId};");
+
+    private readonly string _anchorId = "tt-" + Guid.NewGuid().ToString("N");
     private string CapModifierClass {
         get {
             if (RecolorBC && Bar.Mission.IsBuggedCap) {

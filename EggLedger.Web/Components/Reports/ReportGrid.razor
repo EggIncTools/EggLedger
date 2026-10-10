@@ -1,18 +1,16 @@
 @inject IndexedDbReportStore Store
 @inject IDownloadService Downloader
-@inject IJSRuntime Js
 @inject ReportsViewState State
 @inject TimeProvider Time
 @inject ILogger<ReportGrid> Logger
-@inject ILogger<JsResizeObserver> ResizeLogger
 @using System.Text.Json
-@implements IAsyncDisposable
+@implements IDisposable
 
 @* Dashboard grid of report cards, positioned via ReportGridLayout packing. Drag-reorder
    is a simple index swap (drop onto a card swaps its position with the dragged one);
    the Vue zone-insertion drag math is not replicated. *@
 
-<div @ref="_gridRef" class="rgrid">
+<div class="rgrid">
     @if (!string.IsNullOrEmpty(_actionMessage)) {
         <span class="rgrid-msg @(_actionMessageIsError ? "rgrid-msg-err" : "")">@_actionMessage</span>
     }
@@ -20,7 +18,7 @@
         <div class="rgrid-empty">No reports yet. Click "New Report" to create one.</div>
     } else {
         var (positions, _) = ReportGridLayout.BuildOccupancyFromLayout(_defs);
-        <div class="report-grid" style="--rgrid-row-h: @(_rowHeightPx)px;">
+        <div class="report-grid">
             @foreach (var index in Enumerable.Range(0, _defs.Count)) {
                 var def = _defs[index];
                 var pos = positions[index];
@@ -49,10 +47,6 @@
     private int? _draggingIndex;
     private string? _actionMessage;
     private bool _actionMessageIsError;
-    private ElementReference _gridRef;
-    private JsResizeObserver? _resizeObserver;
-    private DotNetObjectReference<ReportGrid>? _selfRef;
-    private int _rowHeightPx = 144;
 
     protected override void OnInitialized() {
         State.Changed += OnStateChanged;
@@ -78,23 +72,6 @@
     private void RecomputeDefs() {
         var rows = GroupFilter is null ? State.Reports : State.Reports.Where(r => r.GroupId == GroupFilter);
         _defs = [.. rows];
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender) {
-        if (firstRender) {
-            _selfRef = DotNetObjectReference.Create(this);
-            _resizeObserver = new JsResizeObserver(Js, ResizeLogger);
-            await _resizeObserver.ObserveAsync(_gridRef, _selfRef, nameof(OnGridResized));
-        }
-    }
-
-    [JSInvokable]
-    public void OnGridResized(double width, double height) {
-        var next = ReportGridLayout.ComputeRowHeightPx(width);
-        if (next != _rowHeightPx) {
-            _rowHeightPx = next;
-            StateHasChanged();
-        }
     }
 
     public async Task ReloadAsync() {
@@ -142,8 +119,7 @@
         ClearMessageLater();
     }
 
-    public async Task ImportAsync() {
-        var json = await Downloader.PickJsonFileAsync();
+    public async Task ImportAsync(string json) {
         if (string.IsNullOrWhiteSpace(json)) {
             return;
         }
@@ -193,13 +169,7 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    public async ValueTask DisposeAsync() {
+    public void Dispose() =>
         State.Changed -= OnStateChanged;
-        if (_resizeObserver is not null) {
-            await _resizeObserver.DisposeAsync();
-        }
-
-        _selfRef?.Dispose();
-    }
 
 }

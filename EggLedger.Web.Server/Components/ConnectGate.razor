@@ -1,18 +1,14 @@
-@* Unauthenticated prompt. "Login" reveals a dropdown of federated providers fetched from
-   EggIdentity's /login/sources (Discord, Google, Microsoft, GitHub, etc.); each is a plain
-   top-level <a> into EggIdentity's /login/go/{provider} (mode=redirect), which returns the browser
-   to this exact page with ?code appended, caught by LoginCallbackMiddleware. The dropdown is
-   fixed-positioned by loginMenu.js so it escapes any overflow-clipped container. *@
 @inject AppConfig Cfg
 @inject NavigationManager Nav
 @inject IdentityApiClient Identity
-@inject IJSRuntime JS
 @inject ILogger<ConnectGate> Logger
 @inject ConsentReader Consent
 @inject ConsentOptions ConsentConfig
+@inject ViewerCookies Cookies
 @using EggIdentity.Consent
+@using EggIdentity.UI
 @using EggLedger.Web.State
-@implements IAsyncDisposable
+@implements IDisposable
 <div class="connect-gate">
     <div class="connect-gate-card">
         <img class="connect-gate-logo" src="@ContentPaths.Asset("images/icon-512.png")" alt="EggLedger" width="48" height="48"/>
@@ -22,27 +18,27 @@
         </p>
         <div class="connect-gate-actions">
             @if (!string.IsNullOrEmpty(Cfg.IdentityWidgetUrl)) {
-                <div class="auth-source-anchor">
-                    <button type="button" class="discord-btn" disabled="@(_loading || !FunctionalAllowed)" @onclick="Toggle" @ref="_button">
-                        @(_loading ? "Loading..." : "Login")
-                    </button>
-                    @if (_sources is not null) {
-                        <div class="auth-source-menu" @ref="_menu">
-                            @foreach (var source in _sources) {
-                                <a class="auth-source-btn" href="@Abs(source.Url)">
-                                    @if (!string.IsNullOrEmpty(source.IconUrl)) {
-                                        <img class="auth-source-logo" src="@Abs(source.IconUrl)" alt=""/>
-                                    }
-                                    <span>@source.Name</span>
-                                </a>
+                @if (FunctionalAllowed) {
+                    <Menu Class="auth-source-anchor" TriggerClass="discord-btn" Open="_open" OpenChanged="OnOpenChangedAsync">
+                        <Trigger>@(_loading ? "Loading..." : "Login")</Trigger>
+                        <ChildContent>
+                            @if (_sources is not null) {
+                                @foreach (var source in _sources) {
+                                    <a class="auth-source-btn" href="@Abs(source.Url)">
+                                        @if (!string.IsNullOrEmpty(source.IconUrl)) {
+                                            <img class="auth-source-logo" src="@Abs(source.IconUrl)" alt=""/>
+                                        }
+                                        <span>@source.Name</span>
+                                    </a>
+                                }
+                            } else if (_error is not null) {
+                                <p class="auth-source-error">@_error</p>
                             }
-                        </div>
-                    } else if (_error is not null) {
-                        <div class="auth-source-menu" @ref="_menu">
-                            <p class="auth-source-error">@_error</p>
-                        </div>
-                    }
-                </div>
+                        </ChildContent>
+                    </Menu>
+                } else {
+                    <button type="button" class="discord-btn" disabled>Login</button>
+                }
             }
         </div>
         @if (!FunctionalAllowed) {
@@ -51,7 +47,7 @@
                     <span>Choose "Accept all" or enable Functional cookies in the banner to log in.</span>
                 } else {
                     <span>Logging in needs functional cookies.</span>
-                    <button type="button" class="connect-gate-consent-btn" @onclick="AllowFunctionalAsync">Allow functional cookies</button>
+                    <button type="button" class="connect-gate-consent-btn" @onclick="AllowFunctional">Allow functional cookies</button>
                 }
             </p>
         }
@@ -59,11 +55,8 @@
 </div>
 
 @code {
-    private ElementReference _button;
-    private ElementReference _menu;
-    private IJSObjectReference? _mod;
-    private bool _positioned;
     private List<LoginSourceResponse>? _sources;
+    private bool _open;
     private bool _loading;
     private string? _error;
 
@@ -73,30 +66,24 @@
 
     private void OnConsentChanged(object? sender, EventArgs e) => _ = InvokeAsync(StateHasChanged);
 
-    private async Task AllowFunctionalAsync() {
+    private void AllowFunctional() {
         var now = DateTimeOffset.FromUnixTimeSeconds(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
         var state = new ConsentState(true, Consent.Current?.Analytics ?? false, ConsentConfig.PolicyVersion, now);
-        try {
-            await JS.InvokeVoidAsync("eggConsentWrite", ConsentCookie.Format(state), ConsentConfig.CookieDomain, (int)ConsentConfig.CookieLifetime.TotalDays);
-        } catch (Exception ex) when (ex is JSException or JSDisconnectedException or TaskCanceledException) {
-            Logger.LogDebug(ex, "login: failed to write functional consent");
-            return;
-        }
+        Cookies.Set(ConsentCookie.Name, ConsentCookie.Format(state));
         Consent.Set(state);
     }
 
-    private async Task Toggle() {
-        if (_sources is not null || _error is not null) {
-            await CloseMenuAsync();
+    private async Task OnOpenChangedAsync(bool open) {
+        _open = open;
+        if (!open) {
             _sources = null;
             _error = null;
             return;
         }
 
-        _error = null;
         _loading = true;
         try {
-            var response = await Identity.GetLoginSourcesAsync(Nav.Uri, "redirect", CancellationToken.None);
+            var response = await Identity.GetLoginSourcesAsync(Nav.Uri, CancellationToken.None);
             if (response.Sources.Count == 0) {
                 _error = "No login providers configured.";
             } else {
@@ -110,54 +97,12 @@
         }
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender) {
-        var menuOpen = _sources is not null || _error is not null;
-        if (menuOpen && !_positioned) {
-            try {
-                _mod ??= await JS.InvokeAsync<IJSObjectReference>("import", "./interop/loginMenu.js");
-                await _mod.InvokeVoidAsync("open", _button, _menu, LoginMenuPlacement.BottomRight.ToString());
-                _positioned = true;
-            } catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or TaskCanceledException) {
-                Logger.LogDebug(ex, "login: failed to open login menu");
-            }
-        } else if (!menuOpen && _positioned) {
-            _positioned = false;
-        }
-    }
-
     private string Abs(string url) {
         return url.StartsWith("http", StringComparison.Ordinal)
             ? url
             : $"{Cfg.IdentityWidgetUrl.TrimEnd('/')}/{url.TrimStart('/')}";
     }
 
-    private async Task CloseMenuAsync() {
-        if (_mod is not null) {
-            try {
-                await _mod.InvokeVoidAsync("close");
-            } catch (JSDisconnectedException ex) {
-                Logger.LogDebug(ex, "login: failed to close login menu");
-            }
-        }
-
-        _positioned = false;
-    }
-
-    public async ValueTask DisposeAsync() {
-        Consent.Changed -= OnConsentChanged;
-        if (_mod is not null) {
-            try {
-                await _mod.InvokeVoidAsync("close");
-            } catch (JSDisconnectedException ex) {
-                Logger.LogDebug(ex, "login: failed to close login menu on dispose");
-            }
-
-            try {
-                await _mod.DisposeAsync();
-            } catch (JSDisconnectedException ex) {
-                Logger.LogDebug(ex, "login: failed to dispose login menu module");
-            }
-        }
-    }
+    public void Dispose() => Consent.Changed -= OnConsentChanged;
 
 }

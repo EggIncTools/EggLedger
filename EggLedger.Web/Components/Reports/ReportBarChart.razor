@@ -4,12 +4,10 @@
 
 <div class="rbar">
     @foreach (var pair in SortedPairs()) {
-        <span class="rbar-label" data-tt="@pair.Label">@pair.Label</span>
+        <Tooltip Text="@pair.Label" Class="rbar-label">@pair.Label</Tooltip>
         <div class="rbar-track">
-            <div class="rbar-fill"
-                 style="--rbar-w: @BarWidth(pair.Value)%; --rbar-color: @BarColor(pair.Label);"
-                 data-tt="@BarTitle(pair.Label, pair.Value)">
-            </div>
+            <Tooltip Class="rbar-fill" Lines="@BarLines(pair.Label, pair.Value)"
+                     Style="@($"--rbar-w: {BarWidth(pair.Value)}%; --rbar-color: {BarColor(pair.Label)};")"/>
         </div>
         <span class="rbar-value">@FormatValue(pair.Value)</span>
     }
@@ -59,8 +57,8 @@
         return ParsedColors.TryGetValue(label, out var c) && !string.IsNullOrEmpty(c) ? c : Color;
     }
 
-    private string BarTitle(string label, double value) {
-        return $"{label}\n{FormatValue(value)}{UnitSuffix}";
+    private IReadOnlyList<TooltipLine> BarLines(string label, double value) {
+        return [new TooltipLine(label, Head: true), new TooltipLine(FormatValue(value) + UnitSuffix)];
     }
 
     private string FormatValue(double val) {

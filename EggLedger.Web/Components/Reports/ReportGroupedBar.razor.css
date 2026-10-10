@@ -14,7 +14,8 @@
     flex: 1;
 }
 
-.rgb-row-label {
+.rgb ::deep .rgb-row-label {
+    display: block;
     width: 6rem;
     flex-shrink: 0;
     text-align: right;
@@ -39,7 +40,8 @@
     gap: 0.25rem;
 }
 
-.rgb-bar {
+.rgb ::deep .rgb-bar {
+    display: block;
     height: 0.75rem;
     width: var(--rgb-w);
     min-width: 2px;
@@ -49,11 +51,11 @@
     transition: opacity var(--motion-fast) var(--ease-standard), filter var(--motion-fast) var(--ease-standard);
 }
 
-.rgb:hover .rgb-bar {
+.rgb:hover ::deep .rgb-bar {
     opacity: 0.4;
 }
 
-.rgb .rgb-bar:hover {
+.rgb ::deep .rgb-bar:hover {
     opacity: 1;
 }
 
@@ -73,7 +75,7 @@
     padding: 0 0.25rem;
 }
 
-.rgb-legend-item {
+.rgb ::deep .rgb-legend-item {
     display: flex;
     align-items: center;
     gap: 0.25rem;

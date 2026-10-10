@@ -7,6 +7,4 @@ public interface IDownloadService {
     ValueTask DownloadXlsxAsync(IReadOnlyList<Mission> missions, string filename);
 
     ValueTask DownloadJsonAsync(string json, string filename);
-
-    ValueTask<string?> PickJsonFileAsync();
 }

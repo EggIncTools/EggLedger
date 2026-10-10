@@ -12,16 +12,14 @@
     @for (var rIdx = 0; rIdx < Result.RowLabels.Count; rIdx++) {
         var row = Result.RowLabels[rIdx];
         <div class="rgb-row">
-            <span class="rgb-row-label" data-tt="@row">@row</span>
+            <Tooltip Text="@row" Class="rgb-row-label">@row</Tooltip>
             <div class="rgb-bars">
                 @for (var cIdx = 0; cIdx < cols.Count; cIdx++) {
                     var raw = CellRawValue(rIdx, cIdx, cols);
                     if (raw > 0) {
                         <div class="rgb-bar-row">
-                            <div class="rgb-bar"
-                                 style="--rgb-w: @BarWidth(raw, max).ToString(CultureInfo.InvariantCulture)%; --rgb-color: @colors[cIdx];"
-                                 data-tt="@($"{cols[cIdx]}\n{row}: {CellLabel(raw)}")">
-                            </div>
+                            <Tooltip Class="rgb-bar" Lines="@BarLines(cols[cIdx], row, raw)"
+                                     Style="@($"--rgb-w: {BarWidth(raw, max).ToString(CultureInfo.InvariantCulture)}%; --rgb-color: {colors[cIdx]};")"/>
                             <span class="rgb-bar-value">@CellLabel(raw)</span>
                         </div>
                     }
@@ -34,11 +32,11 @@
             var legendCols = DisplayCols();
             var legendColors = ColColors(legendCols);
         }
-        @for (var c = 0; c < legendCols.Count; c++) {
-            <div class="rgb-legend-item" data-tt="@legendCols[c]">
-                <div class="rgb-swatch" style="--rgb-color: @legendColors[c];"></div>
-                <span class="rgb-legend-label">@legendCols[c]</span>
-            </div>
+        @foreach (var (label, color) in legendCols.Zip(legendColors)) {
+            <Tooltip Text="@label" Class="rgb-legend-item">
+                <div class="rgb-swatch" style="--rgb-color: @color;"></div>
+                <span class="rgb-legend-label">@label</span>
+            </Tooltip>
         }
     </div>
 </div>
@@ -89,6 +87,10 @@
         }
 
         return max == 0 ? 0 : v / max * 100;
+    }
+
+    private IReadOnlyList<TooltipLine> BarLines(string col, string row, double v) {
+        return [new TooltipLine(col, Head: true), new TooltipLine($"{row}: {CellLabel(v)}")];
     }
 
     private string CellLabel(double v) {

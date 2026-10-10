@@ -8,13 +8,10 @@
 @page "/settings"
 @page "/about"
 @using EggIdentity.UI
-@using Microsoft.JSInterop
-@implements IAsyncDisposable
+@implements IDisposable
 @inject LedgerShellState Shell
 @inject ShipsViewState Ships
 @inject NavigationManager Nav
-@inject IJSRuntime JS
-@inject ILogger<LedgerShell> Logger
 
 <PageTitle>EggLedger - @ViewLabel(Shell.View)</PageTitle>
 
@@ -61,7 +58,6 @@
     public string? Path { get; set; }
 
     private PathRouteSync? _routeSync;
-    private bool _routeSyncStarted;
     private bool _applyingRoute;
     private string _routePath = "/";
     private LedgerView _shownView;
@@ -71,22 +67,21 @@
         Shell.Changed += OnShellChanged;
         Shell.Changed += OnShellRouteChanged;
         Ships.Changed += OnShipsRouteChanged;
-        _routeSync = new PathRouteSync(JS, Nav, "/");
+        _routeSync = new PathRouteSync(Nav, "/");
         _routeSync.Changed += OnRouteChanged;
         _routePath = "/" + Nav.ToBaseRelativePath(Nav.Uri).Split('?', '#')[0].Trim('/').ToLowerInvariant();
         ApplyRoute();
         _shownView = Shell.View;
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender) {
+    protected override void OnAfterRender(bool firstRender) {
         if (!firstRender || _routeSync is null) {
             return;
         }
 
-        await _routeSync.StartAsync();
-        _routeSyncStarted = true;
+        _routeSync.Start();
         if (_routePath == "/") {
-            await _routeSync.Replace("/missions/list/all");
+            _routeSync.Replace("/missions/list/all");
             _routePath = "/missions/list/all";
             ApplyRoute();
         }
@@ -305,7 +300,7 @@
         }
 
         _routePath = CurrentPath();
-        _ = _routeSync.Push(_routePath);
+        _routeSync.Push(_routePath);
     }
 
     private void OnShipsRouteChanged() {
@@ -314,7 +309,7 @@
         }
 
         _routePath = CurrentPath();
-        _ = _routeSync.Replace(_routePath);
+        _routeSync.Replace(_routePath);
     }
 
     private void OnRouteChanged() {
@@ -326,21 +321,13 @@
         InvokeAsync(StateHasChanged);
     }
 
-    public async ValueTask DisposeAsync() {
+    public void Dispose() {
         Shell.Changed -= OnShellChanged;
         Shell.Changed -= OnShellRouteChanged;
         Ships.Changed -= OnShipsRouteChanged;
         if (_routeSync is not null) {
             _routeSync.Changed -= OnRouteChanged;
-            if (_routeSyncStarted) {
-                try {
-                    await _routeSync.DisposeAsync();
-                } catch (Microsoft.JSInterop.JSDisconnectedException ex) {
-                    Logger.LogDebug(ex, "route sync dispose failed, circuit disconnected");
-                } catch (InvalidOperationException ex) {
-                    Logger.LogDebug(ex, "route sync dispose failed");
-                }
-            }
+            _routeSync.Dispose();
         }
     }
 

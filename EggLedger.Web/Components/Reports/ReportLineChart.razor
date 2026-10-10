@@ -1,22 +1,11 @@
 @using System.Globalization
-@implements IAsyncDisposable
-@inject IJSRuntime Js
-@inject ILogger<JsResizeObserver> ResizeLogger
-@* Line / area chart; geometry from ChartGeometry. viewBox tracks the container's actual
-   rendered size via ResizeObserver (resizeObserver.js) so geometry is never CSS-distorted.
-   SVG <text> is emitted via MarkupString helpers because Razor reserves the bare
-   <text> tag for its own text-transition control block. *@
 
-<div class="rline" @ref="_containerRef">
-    @if (!_measured) {
-        <div class="rline-msg">
-            <span class="rline-loading pulse">Loading chart...</span>
-        </div>
-    } else if (Points().Count >= 2) {
+<div class="rline" style="--rline-color: @Color;">
+    @if (Points().Count >= 2) {
         var pts = Points();
         var max = MaxVal();
-        var ticks = ChartGeometry.YTicks(max, _h, Result.IsFloat);
-        <svg viewBox="0 0 @Fmt(_w) @Fmt(_h)" preserveAspectRatio="xMidYMid meet" class="rline-svg">
+        var ticks = ChartGeometry.YTicks(max, H, Result.IsFloat);
+        <svg viewBox="0 0 @Fmt(W) @Fmt(H)" preserveAspectRatio="none" class="rline-svg">
             <defs>
                 <linearGradient id="@_gradId" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stop-color="@Color" stop-opacity="0.3"/>
@@ -27,29 +16,43 @@
             @if (max > 0) {
                 @foreach (var tick in ticks) {
                     <line class="rline-grid" x1="@Fmt(ChartGeometry.PadLeft)" y1="@Fmt(tick.Y)"
-                          x2="@Fmt(_w - ChartGeometry.PadRight)" y2="@Fmt(tick.Y)"
-                          stroke-dasharray="3 3" stroke-width="0.5"/>
-                    @YTickText(tick)
+                          x2="@Fmt(W - ChartGeometry.PadRight)" y2="@Fmt(tick.Y)"
+                          stroke-dasharray="3 3" stroke-width="0.5" vector-effect="non-scaling-stroke"/>
                 }
             }
 
             @if (ChartType != "line") {
-                <path d="@ChartGeometry.AreaPath(pts, _h)" fill="url(#@_gradId)"/>
+                <path d="@ChartGeometry.AreaPath(pts, H)" fill="url(#@_gradId)"/>
             }
 
             <polyline points="@ChartGeometry.PolylinePoints(pts)" fill="none"
-                      stroke="@Color" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
-
-            @foreach (var p in ChartGeometry.ThinLabels(pts)) {
-                @XLabelText(p)
-            }
-
-            @foreach (var p in pts) {
-                <circle cx="@Fmt(p.X)" cy="@Fmt(p.Y)" r="2.5" fill="@Color"/>
-                <circle class="rline-hit" cx="@Fmt(p.X)" cy="@Fmt(p.Y)" r="7" fill="transparent"
-                        data-tt="@PointTip(p)"/>
-            }
+                      stroke="@Color" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"
+                      vector-effect="non-scaling-stroke"/>
         </svg>
+
+        @if (max > 0) {
+            @foreach (var tick in ticks) {
+                <span class="rline-ytick" style="@RightPos(ChartGeometry.PadLeft - 4, tick.Y)">@tick.Label</span>
+            }
+        }
+
+        @foreach (var p in ChartGeometry.ThinLabels(pts)) {
+            <span class="rline-xlabel" style="@RightPos(p.X, H - ChartGeometry.PadBottom + 4)">@ChartGeometry.FormatXLabel(p.Label)</span>
+        }
+
+        @for (var i = 0; i < pts.Count; i++) {
+            var idx = i;
+            var p = pts[i];
+            <span class="rline-hit" style="@LeftPos(p.X, p.Y)"
+                  @onmouseenter="() => _hover = idx" @onmouseleave="() => _hover = null">
+                <span class="rline-dot"></span>
+            </span>
+        }
+
+        @if (_hover is { } h && h < pts.Count) {
+            <PointTooltip Visible="true" X="@Pct(pts[h].X, W)" Y="@Pct(pts[h].Y, H)"
+                          Lines="@PointLines(pts[h])" PopClass="report-tooltip"/>
+        }
     } else {
         <div class="rline-msg">
             <span class="rline-empty">Not enough data for a line chart</span>
@@ -58,12 +61,9 @@
 </div>
 
 @code {
-    private double _w = 300;
-    private double _h = 150;
-    private bool _measured;
-    private ElementReference _containerRef;
-    private JsResizeObserver? _resizeObserver;
-    private DotNetObjectReference<ReportLineChart>? _selfRef;
+    private const double W = 300;
+    private const double H = 150;
+    private int? _hover;
     private readonly string _gradId = "line-grad-" + Guid.NewGuid().ToString("N").Substring(0, 5);
     [Parameter] [EditorRequired] public ReportResult Result { get; set; } = new();
     [Parameter] [EditorRequired] public string Color { get; set; } = "#6366f1";
@@ -82,38 +82,7 @@
     }
 
     private List<ChartPoint> Points() {
-        return ChartGeometry.Points(Values(), Result.Labels, _w, _h);
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender) {
-        if (firstRender) {
-            _selfRef = DotNetObjectReference.Create(this);
-            _resizeObserver = new JsResizeObserver(Js, ResizeLogger);
-            await _resizeObserver.ObserveAsync(_containerRef, _selfRef, nameof(OnChartResized));
-        }
-    }
-
-    [JSInvokable]
-    public void OnChartResized(double width, double height) {
-        _w = width > 0 ? width : 300;
-        _h = height > 0 ? height : 150;
-        _measured = true;
-        StateHasChanged();
-    }
-
-    private MarkupString YTickText(YTick tick) {
-        var x = Fmt(ChartGeometry.PadLeft - 4);
-        var y = Fmt(tick.Y);
-        return new MarkupString(
-            $"<text x=\"{x}\" y=\"{y}\" text-anchor=\"end\" dominant-baseline=\"middle\">{Esc(tick.Label)}</text>");
-    }
-
-    private MarkupString XLabelText(ChartPoint p) {
-        var tx = Fmt(p.X);
-        var ty = Fmt(_h - ChartGeometry.PadBottom + 4);
-        var label = Esc(ChartGeometry.FormatXLabel(p.Label));
-        return new MarkupString(
-            $"<text transform=\"translate({tx}, {ty}) rotate(-45)\" text-anchor=\"end\">{label}</text>");
+        return ChartGeometry.Points(Values(), Result.Labels, W, H);
     }
 
     private string FormatValue(double v) {
@@ -122,24 +91,24 @@
             : Math.Round(v).ToString(CultureInfo.InvariantCulture);
     }
 
-    private string PointTip(ChartPoint p) {
-        return $"{p.Label}\n{FormatValue(p.Value)}{UnitSuffix}";
+    private IReadOnlyList<TooltipLine> PointLines(ChartPoint p) {
+        return [new TooltipLine(p.Label, Head: true), new TooltipLine(FormatValue(p.Value) + UnitSuffix)];
+    }
+
+    private static double Pct(double v, double total) {
+        return v / total * 100;
+    }
+
+    private static string LeftPos(double x, double y) {
+        return string.Create(CultureInfo.InvariantCulture, $"left:{Pct(x, W):0.###}%;top:{Pct(y, H):0.###}%");
+    }
+
+    private static string RightPos(double x, double y) {
+        return string.Create(CultureInfo.InvariantCulture, $"right:{100 - Pct(x, W):0.###}%;top:{Pct(y, H):0.###}%");
     }
 
     private static string Fmt(double v) {
         return v.ToString("0.###", CultureInfo.InvariantCulture);
-    }
-
-    private static string Esc(string s) {
-        return ChartGeometry.EscapeText(s);
-    }
-
-    public async ValueTask DisposeAsync() {
-        if (_resizeObserver is not null) {
-            await _resizeObserver.DisposeAsync();
-        }
-
-        _selfRef?.Dispose();
     }
 
 }

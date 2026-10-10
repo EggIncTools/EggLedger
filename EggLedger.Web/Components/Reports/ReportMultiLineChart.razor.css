@@ -7,6 +7,7 @@
 }
 
 .rml-plot {
+    position: relative;
     flex: 1;
     min-height: 0;
 }
@@ -18,12 +19,6 @@
     justify-content: center;
 }
 
-.rml-loading {
-    font-size: 0.75rem;
-    line-height: calc(1 / 0.75);
-    color: var(--color-muted);
-}
-
 .rml-empty {
     font-size: 0.75rem;
     line-height: calc(1 / 0.75);
@@ -32,30 +27,60 @@
 }
 
 .rml-svg {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     overflow: visible;
-}
-
-.rml-svg ::deep text {
-    font-size: 10px;
-    fill: var(--color-muted);
 }
 
 .rml-grid {
     stroke: var(--color-border);
 }
 
-.rml-hit {
-    cursor: pointer;
-    transition: opacity var(--motion-fast) var(--ease-standard), filter var(--motion-fast) var(--ease-standard);
+.rml-ytick,
+.rml-xlabel {
+    position: absolute;
+    font-size: 10px;
+    line-height: 1;
+    white-space: nowrap;
+    color: var(--color-muted);
+    pointer-events: none;
 }
 
-.rml:hover .rml-hit {
+.rml-ytick {
+    transform: translateY(-50%);
+}
+
+.rml-xlabel {
+    transform: rotate(-45deg);
+    transform-origin: 100% 0;
+}
+
+.rml-hit {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+}
+
+.rml-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 9999px;
+    background-color: var(--rml-color);
+    transition: opacity var(--motion-fast) var(--ease-standard);
+}
+
+.rml-plot:hover .rml-dot {
     opacity: 0.4;
 }
 
-.rml .rml-hit:hover {
+.rml-plot .rml-hit:hover .rml-dot {
     opacity: 1;
 }
 
@@ -68,7 +93,7 @@
     flex-shrink: 0;
 }
 
-.rml-legend-item {
+.rml-legend ::deep .rml-legend-item {
     display: flex;
     align-items: center;
     gap: 0.25rem;

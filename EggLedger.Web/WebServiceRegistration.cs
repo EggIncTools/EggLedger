@@ -55,6 +55,7 @@ public static class WebServiceRegistration {
         services.AddScoped<FetchOrchestrator>();
         services.AddScoped<AddAccountService>();
 
+        services.AddEggIdentityDownloads();
         services.AddScoped<DownloadService>();
         services.AddScoped<IDownloadService>(sp => sp.GetRequiredService<DownloadService>());
         services.AddScoped<IAutoExporter, BrowserAutoExporter>();
@@ -76,7 +77,6 @@ public static class WebServiceRegistration {
             egiApiKey,
             logger: sp.GetService<ILogger<EventIconCache>>()));
 
-        services.AddScoped<EggIdentity.UI.OutsideClickInterop>();
         services.AddEggIdentityToasts();
 
         services.AddScoped<INavigation, BlazorNavigation>();

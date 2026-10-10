@@ -1,7 +1,6 @@
 using EggLedger.Desktop.Export;
 using EggLedger.Domain.Export;
 using EggLedger.Web.Platform;
-using Microsoft.JSInterop;
 
 namespace EggLedger.Desktop.Tests;
 
@@ -37,14 +36,6 @@ public sealed class DesktopDownloadServiceTests : IDisposable {
         public string DataRootDir => "";
     }
 
-    private sealed class NotUsedJSRuntime : IJSRuntime {
-        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) =>
-            throw new InvalidOperationException("CSV/XLSX export does not use JS interop.");
-
-        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args) =>
-            throw new InvalidOperationException("CSV/XLSX export does not use JS interop.");
-    }
-
     private static IReadOnlyList<Mission> SampleMissions() => [];
 
     [Fact]
@@ -52,7 +43,7 @@ public sealed class DesktopDownloadServiceTests : IDisposable {
         var missions = SampleMissions();
         var path = Path.Combine(TempPath, "out.csv");
         var platform = new FakePlatform(path);
-        var sink = new DesktopDownloadService(platform, new NotUsedJSRuntime());
+        var sink = new DesktopDownloadService(platform);
 
         await sink.DownloadCsvAsync(missions, "account.csv");
 
@@ -67,7 +58,7 @@ public sealed class DesktopDownloadServiceTests : IDisposable {
         var missions = SampleMissions();
         var path = Path.Combine(TempPath, "out.xlsx");
         var platform = new FakePlatform(path);
-        var sink = new DesktopDownloadService(platform, new NotUsedJSRuntime());
+        var sink = new DesktopDownloadService(platform);
 
         await sink.DownloadXlsxAsync(missions, "account.xlsx");
 
@@ -79,7 +70,7 @@ public sealed class DesktopDownloadServiceTests : IDisposable {
     [Fact]
     public async Task DownloadCsvAsync_Cancelled_WritesNothing_AndDoesNotReveal() {
         var platform = new FakePlatform(saveResult: null);
-        var sink = new DesktopDownloadService(platform, new NotUsedJSRuntime());
+        var sink = new DesktopDownloadService(platform);
 
         await sink.DownloadCsvAsync(SampleMissions(), "account.csv");
 
@@ -90,7 +81,7 @@ public sealed class DesktopDownloadServiceTests : IDisposable {
     [Fact]
     public async Task DownloadXlsxAsync_Cancelled_WritesNothing_AndDoesNotReveal() {
         var platform = new FakePlatform(saveResult: null);
-        var sink = new DesktopDownloadService(platform, new NotUsedJSRuntime());
+        var sink = new DesktopDownloadService(platform);
 
         await sink.DownloadXlsxAsync(SampleMissions(), "account.xlsx");
 

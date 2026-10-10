@@ -1,14 +1,19 @@
+using EggIdentity.UI;
 using EggLedger.Domain.Export;
 using EggLedger.Web.Services;
-using EggLedger.Web.Tests.Data;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EggLedger.Web.Tests.Services;
 
 public sealed class DownloadServiceTests {
-    private static (DownloadService Service, FakeJsRuntime Runtime) Make() {
-        var runtime = new FakeJsRuntime(new FakeJsObjectReference());
-        return (new DownloadService(runtime, NullLogger<DownloadService>.Instance), runtime);
+    private static (DownloadService Service, Downloads Downloads, DownloadStore Store) Make() {
+        var store = new DownloadStore(TimeProvider.System);
+        var downloads = new Downloads(store, new DownloadOptions());
+        return (new DownloadService(downloads), downloads, store);
+    }
+
+    private static PendingDownload TakeSingle(Downloads downloads, DownloadStore store) {
+        var id = Assert.Single(downloads.Pending).Split('/')[^1];
+        return Assert.IsType<PendingDownload>(store.Take(id));
     }
 
     private static IReadOnlyList<Mission> CannedMissions() => [
@@ -28,28 +33,40 @@ public sealed class DownloadServiceTests {
     ];
 
     [Fact]
-    public async Task DownloadCsvAsync_forwards_csv_bytes_and_mime() {
-        var (service, runtime) = Make();
+    public async Task DownloadCsvAsync_queues_csv_bytes_and_mime() {
+        var (service, downloads, store) = Make();
         var missions = CannedMissions();
 
         await service.DownloadCsvAsync(missions, "missions.csv");
 
-        var (_, args) = Assert.Single(runtime.Calls, c => c.Identifier == "eggDownload");
-        Assert.Equal("missions.csv", args[0]);
-        Assert.Equal("text/csv", args[1]);
-        Assert.Equal(MissionExport.MissionsToCsvBytes(missions), args[2]);
+        var item = TakeSingle(downloads, store);
+        Assert.Equal("missions.csv", item.FileName);
+        Assert.Equal("text/csv", item.ContentType);
+        Assert.Equal(MissionExport.MissionsToCsvBytes(missions), item.Bytes.ToArray());
     }
 
     [Fact]
-    public async Task DownloadXlsxAsync_forwards_xlsx_bytes_and_mime() {
-        var (service, runtime) = Make();
+    public async Task DownloadXlsxAsync_queues_xlsx_bytes_and_mime() {
+        var (service, downloads, store) = Make();
         var missions = CannedMissions();
 
         await service.DownloadXlsxAsync(missions, "missions.xlsx");
 
-        var (_, args) = Assert.Single(runtime.Calls, c => c.Identifier == "eggDownload");
-        Assert.Equal("missions.xlsx", args[0]);
-        Assert.Equal("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", args[1]);
-        Assert.Equal(MissionExport.MissionsToXlsxBytes(missions), args[2]);
+        var item = TakeSingle(downloads, store);
+        Assert.Equal("missions.xlsx", item.FileName);
+        Assert.Equal("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", item.ContentType);
+        Assert.Equal(MissionExport.MissionsToXlsxBytes(missions), item.Bytes.ToArray());
+    }
+
+    [Fact]
+    public async Task DownloadJsonAsync_queues_utf8_json() {
+        var (service, downloads, store) = Make();
+
+        await service.DownloadJsonAsync("{\"a\":1}", "reports.json");
+
+        var item = TakeSingle(downloads, store);
+        Assert.Equal("reports.json", item.FileName);
+        Assert.Equal("application/json", item.ContentType);
+        Assert.Equal("{\"a\":1}", System.Text.Encoding.UTF8.GetString(item.Bytes.ToArray()));
     }
 }

@@ -1,25 +1,31 @@
 @using System.Globalization
-@* Pie chart; slice geometry and colors from PieGeometry. Connector-line callouts are
-   simplified to a compact legend beneath the pie. *@
 
 <div class="rpie">
-    <svg viewBox="0 0 @Vw @Vh" preserveAspectRatio="xMidYMid meet" class="rpie-svg">
-        @{
-            var slices = Slices();
+    @{
+        var slices = Slices();
+    }
+    <span class="rpie-plot">
+        <svg viewBox="0 0 @Vw @Vh" preserveAspectRatio="xMidYMid meet" class="rpie-svg">
+            @for (var i = 0; i < slices.Count; i++) {
+                var idx = i;
+                <path class="rpie-slice" d="@slices[i].Path" fill="@slices[i].Color"
+                      @onmouseenter="() => _hover = idx" @onmouseleave="() => _hover = null">
+                </path>
+            }
+        </svg>
+        @if (_hover is { } h && h < slices.Count) {
+            var (x, y) = SlicePoint(slices, h);
+            <PointTooltip Visible="true" X="@(x / Vw * 100)" Y="@(y / Vh * 100)"
+                          Lines="@SliceLines(slices[h])" PopClass="report-tooltip"/>
         }
-        @foreach (var seg in slices) {
-            <path class="rpie-slice" d="@seg.Path" fill="@seg.Color"
-                  data-tt="@SliceTip(seg)">
-            </path>
-        }
-    </svg>
+    </span>
     <div class="rpie-legend">
-        @foreach (var seg in Slices()) {
-            <div class="rpie-legend-row" data-tt="@seg.Label">
+        @foreach (var seg in slices) {
+            <Tooltip Text="@seg.Label" Class="rpie-legend-row">
                 <span class="rpie-swatch" style="--rpie-color: @seg.Color;"></span>
                 <span class="rpie-label">@seg.Label</span>
                 <span class="rpie-pct">@seg.Pct.ToString("0.0", CultureInfo.InvariantCulture)%</span>
-            </div>
+            </Tooltip>
         }
     </div>
 </div>
@@ -27,6 +33,7 @@
 @code {
     private const double Vw = 240;
     private const double Vh = 240;
+    private int? _hover;
     [Parameter] [EditorRequired] public ReportResult Result { get; set; } = new();
     [Parameter] [EditorRequired] public string Color { get; set; } = "#6366f1";
     [Parameter] public string? LabelColors { get; set; }
@@ -49,14 +56,27 @@
             SliceColors.ParseLabelColors(LabelColors));
     }
 
+    private (double X, double Y) SlicePoint(List<PieSlice> slices, int idx) {
+        var start = -Math.PI / 2;
+        for (var i = 0; i < idx; i++) {
+            start += slices[i].Pct / 100 * 2 * Math.PI;
+        }
+
+        var mid = start + slices[idx].Pct / 100 * Math.PI;
+        return (Cx + Math.Cos(mid) * R * 0.6, Cy + Math.Sin(mid) * R * 0.6);
+    }
+
     private string FormatVal(double v) {
         return Result.IsFloat
             ? v.ToString("0.00", CultureInfo.InvariantCulture)
             : ((long)v).ToString(CultureInfo.InvariantCulture);
     }
 
-    private string SliceTip(PieSlice seg) {
-        return $"{seg.Label}\n{FormatVal(seg.Value)} ({seg.Pct.ToString("0.0", CultureInfo.InvariantCulture)}%)";
+    private IReadOnlyList<TooltipLine> SliceLines(PieSlice seg) {
+        return [
+            new TooltipLine(seg.Label, Head: true),
+            new TooltipLine($"{FormatVal(seg.Value)} ({seg.Pct.ToString("0.0", CultureInfo.InvariantCulture)}%)"),
+        ];
     }
 
 }

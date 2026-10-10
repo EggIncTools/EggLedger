@@ -8,23 +8,25 @@
         <tr>
             <th class="hmap-corner"></th>
             @foreach (var col in Result.ColLabels) {
-                <th class="hmap-col" data-tt="@col">@col</th>
+                <th class="hmap-col"><Tooltip Text="@col">@col</Tooltip></th>
             }
         </tr>
         </thead>
         <tbody>
         @for (var r = 0; r < Result.RowLabels.Count; r++) {
+            var rowLabel = Result.RowLabels[r];
             <tr>
-                <td class="hmap-row" data-tt="@Result.RowLabels[r]">@Result.RowLabels[r]</td>
+                <td class="hmap-row"><Tooltip Text="@rowLabel">@rowLabel</Tooltip></td>
                 @for (var c = 0; c < Result.ColLabels.Count; c++) {
                     var cell = Cell(r, c);
                     <td class="hmap-cell"
-                        style="--hmap-bg: @cell.Style.BackgroundColor; --hmap-fg: @cell.Style.Color;"
-                        data-tt="@($"{Result.RowLabels[r]}\n{Result.ColLabels[c]}: {cell.Display}")">
-                        <div class="hmap-value">@cell.Display</div>
-                        @if (SecondaryValues is not null) {
-                            <div class="hmap-value hmap-secondary">@cell.Secondary</div>
-                        }
+                        style="--hmap-bg: @cell.Style.BackgroundColor; --hmap-fg: @cell.Style.Color;">
+                        <Tooltip Class="hmap-cell-body" Lines="@CellLines(r, c, cell.Display)">
+                            <div class="hmap-value">@cell.Display</div>
+                            @if (SecondaryValues is not null) {
+                                <div class="hmap-value hmap-secondary">@cell.Secondary</div>
+                            }
+                        </Tooltip>
                     </td>
                 }
             </tr>
@@ -43,6 +45,10 @@
     [Parameter] public IReadOnlyList<double>? SecondaryValues { get; set; }
 
     [Parameter] public IReadOnlyList<double>? ColorValues { get; set; }
+
+    private IReadOnlyList<TooltipLine> CellLines(int r, int c, string display) {
+        return [new TooltipLine(Result.RowLabels[r], Head: true), new TooltipLine($"{Result.ColLabels[c]}: {display}")];
+    }
 
     private double GlobalMax() {
         return Result.MatrixValues.DefaultIfEmpty(0).Max();

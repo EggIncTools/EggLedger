@@ -7,12 +7,13 @@
 @inject MissionQueryHandlers Queries
 @inject IndexedDbSettings SettingsStore
 @inject SettingsWriteCoordinator Writer
-@inject IJSRuntime Js
 @inject IPlatformCapabilities Platform
 @inject NavigationManager Nav
 @inject LedgerShellState Shell
 @inject TimeProvider Time
 @inject ILogger<AccountFetchHeader> Logger
+
+<NavigationLock ConfirmExternalNavigation="@(!Fetch.IsIdle)"/>
 
 <div class="account-bar">
     <button type="button" class="account-rail-chip" title="@ChipTitle" aria-label="Expand sidebar" @onclick="RequestExpand">
@@ -208,8 +209,6 @@
     private KnownAccount? _active;
     private AddAccountDialog? _addDialog;
     private IReadOnlyList<DatabaseAccount> _existing = [];
-    private bool _rendered;
-    private bool? _lastWarnedFetchActive;
     private int _workerCount = SettingsModel.MinWorkerCount;
 
     private double NowUnix => Time.GetUtcNow().ToUnixTimeSeconds();
@@ -253,14 +252,9 @@
         await Writer.SetAsync(SettingsModel.KeyWorkerCount, SettingsModel.FormatInt(_workerCount));
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender) {
-        if (firstRender) {
-            if (IsLoggedIn) {
-                ReopenSettingsAfterLinkReturn();
-            }
-
-            _rendered = true;
-            await SyncUnloadWarningAsync();
+    protected override void OnAfterRender(bool firstRender) {
+        if (firstRender && IsLoggedIn) {
+            ReopenSettingsAfterLinkReturn();
         }
     }
 
@@ -294,7 +288,6 @@
 
     private void OnStateChanged() {
         RefreshActive();
-        _ = SyncUnloadWarningAsync();
         InvokeAsync(StateHasChanged);
     }
 
@@ -303,24 +296,6 @@
             await RefreshExistingAsync();
             StateHasChanged();
         });
-    }
-
-    private async Task SyncUnloadWarningAsync() {
-        if (!_rendered) {
-            return;
-        }
-
-        var active = !Fetch.IsIdle;
-        if (active == _lastWarnedFetchActive) {
-            return;
-        }
-
-        _lastWarnedFetchActive = active;
-        try {
-            await Js.InvokeVoidAsync("setFetchInProgressWarning", active);
-        } catch (JSDisconnectedException ex) {
-            Logger.LogDebug(ex, "setting fetch-in-progress unload warning failed");
-        }
     }
 
     private void RefreshActive() =>

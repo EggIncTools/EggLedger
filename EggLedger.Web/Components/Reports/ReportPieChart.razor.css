@@ -7,10 +7,17 @@
     gap: 0.5rem;
 }
 
-.rpie-svg {
+.rpie-plot {
+    position: relative;
+    display: block;
     height: 100%;
     max-width: 60%;
     aspect-ratio: 1 / 1;
+}
+
+.rpie-svg {
+    width: 100%;
+    height: 100%;
 }
 
 .rpie-slice {
@@ -35,7 +42,7 @@
     min-width: 0;
 }
 
-.rpie-legend-row {
+.rpie-legend ::deep .rpie-legend-row {
     display: flex;
     align-items: center;
     gap: 0.25rem;

@@ -9,7 +9,7 @@ public partial class ClassResolutionTests {
         "tooltip-host",
         "tooltip-fixed",
         "tooltip-toggle",
-        "tt-anchor",
+        "tooltip-trigger",
         "btn-link",
         "prose-legal",
         "data-table",

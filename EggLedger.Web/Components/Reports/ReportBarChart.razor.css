@@ -10,7 +10,8 @@
     padding-right: 0.75rem;
 }
 
-.rbar-label {
+.rbar ::deep .rbar-label {
+    display: block;
     max-width: 9rem;
     align-self: center;
     text-align: right;
@@ -27,7 +28,8 @@
     border-radius: 0.25rem;
 }
 
-.rbar-fill {
+.rbar ::deep .rbar-fill {
+    display: block;
     height: 1rem;
     width: var(--rbar-w);
     background-color: var(--rbar-color);
@@ -36,11 +38,11 @@
     transition: opacity var(--motion-fast) var(--ease-standard), filter var(--motion-fast) var(--ease-standard);
 }
 
-.rbar:hover .rbar-fill {
+.rbar:hover ::deep .rbar-fill {
     opacity: 0.4;
 }
 
-.rbar .rbar-fill:hover {
+.rbar ::deep .rbar-fill:hover {
     opacity: 1;
 }
 

@@ -262,6 +262,10 @@
     border-radius: 0.375rem;
 }
 
+.popup-selector-inner ::deep .popup-opt-chip-wrap {
+    display: inline-flex;
+}
+
 .popup-opt-chip {
     position: relative;
     display: inline-flex;

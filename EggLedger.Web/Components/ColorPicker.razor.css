@@ -15,6 +15,12 @@
     border-color: var(--color-muted);
 }
 
+.cp-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 49;
+}
+
 .cp-popover {
     position: absolute;
     z-index: 50;

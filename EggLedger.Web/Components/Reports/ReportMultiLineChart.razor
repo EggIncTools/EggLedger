@@ -1,50 +1,55 @@
 @using System.Globalization
-@implements IAsyncDisposable
-@inject IJSRuntime Js
-@inject ILogger<JsResizeObserver> ResizeLogger
-@* Multi-series line chart over a 2D result (rows = buckets, cols = series); geometry
-   from ChartGeometry. viewBox tracks the container's actual rendered size via
-   ResizeObserver (resizeObserver.js), same as ReportLineChart.
-   SVG <text> via MarkupString (Razor reserves the bare <text> tag). *@
 
 <div class="rml">
-    <div class="rml-plot" @ref="_containerRef">
-        @if (!_measured) {
-            <div class="rml-msg">
-                <span class="rml-loading pulse">Loading chart...</span>
-            </div>
-        } else if (SeriesCount >= 1 && BucketCount >= 2) {
+    <div class="rml-plot">
+        @if (SeriesCount >= 1 && BucketCount >= 2) {
             var max = GlobalMax();
             var ticks = BuildTicks(max);
             var seriesPoints = AllSeriesPoints();
             var colors = SeriesColors();
-            <svg viewBox="0 0 @Fmt(_w) @Fmt(_h)" preserveAspectRatio="xMidYMid meet" class="rml-svg">
+            <svg viewBox="0 0 @Fmt(W) @Fmt(H)" preserveAspectRatio="none" class="rml-svg">
                 @if (max > 0) {
                     @foreach (var tick in ticks) {
                         <line class="rml-grid" x1="@Fmt(ChartGeometry.PadLeft)" y1="@Fmt(tick.Y)"
-                              x2="@Fmt(_w - ChartGeometry.PadRight)" y2="@Fmt(tick.Y)"
-                              stroke-dasharray="3 3" stroke-width="0.5"/>
-                        @YTickText(tick)
+                              x2="@Fmt(W - ChartGeometry.PadRight)" y2="@Fmt(tick.Y)"
+                              stroke-dasharray="3 3" stroke-width="0.5" vector-effect="non-scaling-stroke"/>
                     }
                 }
 
                 @for (var s = 0; s < seriesPoints.Count; s++) {
                     <polyline points="@PolyPoints(seriesPoints[s])" fill="none"
-                              stroke="@colors[s]" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
-                }
-
-                @for (var s = 0; s < seriesPoints.Count; s++) {
-                    var seriesName = s < Result.ColLabels.Count ? Result.ColLabels[s] : "";
-                    @foreach (var p in seriesPoints[s]) {
-                        <circle class="rml-hit" cx="@Fmt(p.X)" cy="@Fmt(p.Y)" r="6" fill="transparent"
-                                data-tt="@PointTip(seriesName, p)"/>
-                    }
-                }
-
-                @foreach (var p in LabeledPoints(seriesPoints)) {
-                    @XLabelText(p)
+                              stroke="@colors[s]" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"
+                              vector-effect="non-scaling-stroke"/>
                 }
             </svg>
+
+            @if (max > 0) {
+                @foreach (var tick in ticks) {
+                    <span class="rml-ytick" style="@RightPos(ChartGeometry.PadLeft - 4, tick.Y)">@tick.Label</span>
+                }
+            }
+
+            @foreach (var p in LabeledPoints(seriesPoints)) {
+                <span class="rml-xlabel" style="@RightPos(p.X, H - ChartGeometry.PadBottom + 4)">@ChartGeometry.FormatXLabel(p.Label)</span>
+            }
+
+            @for (var s = 0; s < seriesPoints.Count; s++) {
+                var series = s;
+                for (var i = 0; i < seriesPoints[s].Count; i++) {
+                    var idx = i;
+                    var p = seriesPoints[s][i];
+                    <span class="rml-hit" style="@LeftPos(p.X, p.Y);--rml-color: @colors[s];"
+                          @onmouseenter="() => _hover = (series, idx)" @onmouseleave="() => _hover = null">
+                        <span class="rml-dot"></span>
+                    </span>
+                }
+            }
+
+            @if (_hover is { } h && h.Series < seriesPoints.Count && h.Index < seriesPoints[h.Series].Count) {
+                var hp = seriesPoints[h.Series][h.Index];
+                <PointTooltip Visible="true" X="@Pct(hp.X, W)" Y="@Pct(hp.Y, H)"
+                              Lines="@PointLines(SeriesName(h.Series), hp)" PopClass="report-tooltip"/>
+            }
         } else if (BucketCount < 2) {
             <div class="rml-msg">
                 <span class="rml-empty">Not enough data for a line chart</span>
@@ -60,22 +65,19 @@
         @{
             var legendColors = SeriesColors();
         }
-        @for (var c = 0; c < Result.ColLabels.Count; c++) {
-            <div class="rml-legend-item" data-tt="@Result.ColLabels[c]">
-                <div class="rml-swatch" style="--rml-color: @legendColors[c];"></div>
-                <span class="rml-legend-label">@Result.ColLabels[c]</span>
-            </div>
+        @foreach (var (label, color) in Result.ColLabels.Zip(legendColors)) {
+            <Tooltip Text="@label" Class="rml-legend-item">
+                <div class="rml-swatch" style="--rml-color: @color;"></div>
+                <span class="rml-legend-label">@label</span>
+            </Tooltip>
         }
     </div>
 </div>
 
 @code {
-    private double _w = 300;
-    private double _h = 150;
-    private bool _measured;
-    private ElementReference _containerRef;
-    private JsResizeObserver? _resizeObserver;
-    private DotNetObjectReference<ReportMultiLineChart>? _selfRef;
+    private const double W = 300;
+    private const double H = 150;
+    private (int Series, int Index)? _hover;
     [Parameter] [EditorRequired] public ReportResult Result { get; set; } = new();
     [Parameter] [EditorRequired] public string Color { get; set; } = "#6366f1";
     [Parameter] public string? LabelColors { get; set; }
@@ -92,20 +94,8 @@
         return ChartGeometry.SeriesColors(Result.ColLabels, Color, SliceColors.ParseLabelColors(LabelColors));
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender) {
-        if (firstRender) {
-            _selfRef = DotNetObjectReference.Create(this);
-            _resizeObserver = new JsResizeObserver(Js, ResizeLogger);
-            await _resizeObserver.ObserveAsync(_containerRef, _selfRef, nameof(OnChartResized));
-        }
-    }
-
-    [JSInvokable]
-    public void OnChartResized(double width, double height) {
-        _w = width > 0 ? width : 300;
-        _h = height > 0 ? height : 150;
-        _measured = true;
-        StateHasChanged();
+    private string SeriesName(int s) {
+        return s < Result.ColLabels.Count ? Result.ColLabels[s] : "";
     }
 
     private List<List<ChartPoint>> AllSeriesPoints() {
@@ -116,8 +106,8 @@
         }
 
         var max = Math.Max(GlobalMax(), 1);
-        var xStep = (_w - ChartGeometry.PadLeft - ChartGeometry.PadRight) / (nR - 1);
-        var yRange = _h - ChartGeometry.PadTop - ChartGeometry.PadBottom;
+        var xStep = (W - ChartGeometry.PadLeft - ChartGeometry.PadRight) / (nR - 1);
+        var yRange = H - ChartGeometry.PadTop - ChartGeometry.PadBottom;
         for (var s = 0; s < SeriesCount; s++) {
             var vals = ChartGeometry.SeriesValues(Result.MatrixValues, nR, SeriesCount, s);
             result.Add([.. vals.Select((v, i) => new ChartPoint(
@@ -140,7 +130,7 @@
             return [];
         }
 
-        var yRange = _h - ChartGeometry.PadTop - ChartGeometry.PadBottom;
+        var yRange = H - ChartGeometry.PadTop - ChartGeometry.PadBottom;
         var ci = CultureInfo.InvariantCulture;
         return [.. new[] { 0.33, 0.67, 1.0 }.Select(frac => new YTick(
             ChartGeometry.PadTop + yRange * (1 - frac),
@@ -149,29 +139,25 @@
                 : (max * frac).ToString("0.0", ci)))];
     }
 
-    private MarkupString YTickText(YTick tick) {
-        var x = Fmt(ChartGeometry.PadLeft - 4);
-        var y = Fmt(tick.Y);
-        var label = Esc(tick.Label);
-        return new MarkupString(
-            $"<text x=\"{x}\" y=\"{y}\" text-anchor=\"end\" dominant-baseline=\"middle\">{label}</text>");
-    }
-
-    private MarkupString XLabelText(ChartPoint p) {
-        var tx = Fmt(p.X);
-        var ty = Fmt(_h - ChartGeometry.PadBottom + 4);
-        var label = Esc(ChartGeometry.FormatXLabel(p.Label));
-        return new MarkupString(
-            $"<text transform=\"translate({tx}, {ty}) rotate(-45)\" text-anchor=\"end\">{label}</text>");
-    }
-
-    private string PointTip(string series, ChartPoint p) {
+    private IReadOnlyList<TooltipLine> PointLines(string series, ChartPoint p) {
         var val = IsPct
             ? p.Value.ToString("0.0", CultureInfo.InvariantCulture) + "%"
             : Result.IsFloat
                 ? p.Value.ToString("0.00", CultureInfo.InvariantCulture)
                 : Math.Round(p.Value).ToString(CultureInfo.InvariantCulture);
-        return $"{series}\n{p.Label}: {val}";
+        return [new TooltipLine(series, Head: true), new TooltipLine($"{p.Label}: {val}")];
+    }
+
+    private static double Pct(double v, double total) {
+        return v / total * 100;
+    }
+
+    private static string LeftPos(double x, double y) {
+        return string.Create(CultureInfo.InvariantCulture, $"left:{Pct(x, W):0.###}%;top:{Pct(y, H):0.###}%");
+    }
+
+    private static string RightPos(double x, double y) {
+        return string.Create(CultureInfo.InvariantCulture, $"right:{100 - Pct(x, W):0.###}%;top:{Pct(y, H):0.###}%");
     }
 
     private static string PolyPoints(List<ChartPoint> pts) {
@@ -180,18 +166,6 @@
 
     private static string Fmt(double v) {
         return v.ToString("0.###", CultureInfo.InvariantCulture);
-    }
-
-    private static string Esc(string s) {
-        return ChartGeometry.EscapeText(s);
-    }
-
-    public async ValueTask DisposeAsync() {
-        if (_resizeObserver is not null) {
-            await _resizeObserver.DisposeAsync();
-        }
-
-        _selfRef?.Dispose();
     }
 
 }

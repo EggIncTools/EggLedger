@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <EggIdentityVersion>3.5.5</EggIdentityVersion>
+    <EggIdentityVersion>3.6.1</EggIdentityVersion>
   </PropertyGroup>
 
   <ItemGroup>

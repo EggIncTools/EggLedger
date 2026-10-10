@@ -1,10 +1,6 @@
-@using EggIdentity.UI
-@implements IAsyncDisposable
-@inject OutsideClickInterop OutsideClick
-@inject ILogger<OutsideClickRegistration> OutsideClickLogger
 @* Color math lives in the pure ColorPickerMath helper. Two-way bound through Value/ValueChanged (canonical #rrggbb). *@
 
-<div class="color-picker" @ref="_rootRef">
+<div class="color-picker" @onkeydown="OnKeyDown">
     <button type="button"
             class="cp-swatch"
             style="background-color: @CurrentHex"
@@ -13,6 +9,7 @@
     </button>
 
     @if (_open) {
+        <div class="cp-backdrop" @onclick="Close"></div>
         <div class="cp-popover">
             <div class="cp-presets">
                 @foreach (var swatch in ColorPickerMath.PresetColors) {
@@ -60,8 +57,6 @@
     private string _hexInput = ColorPickerMath.Fallback;
     private string _lastSynced = "";
     private string CurrentHex => ColorPickerMath.NormalizeToHex(Value);
-    private ElementReference _rootRef;
-    private OutsideClickRegistration? _outsideClick;
 
     protected override void OnParametersSet() {
         if (CurrentHex != _lastSynced) {
@@ -70,19 +65,14 @@
         }
     }
 
-    private async Task Toggle() {
-        _open = !_open;
-        if (_open) {
-            _outsideClick ??= new OutsideClickRegistration(OutsideClick, HandleOutsideClickAsync, logger: OutsideClickLogger);
-            await _outsideClick.RegisterAsync(_rootRef);
-        } else if (_outsideClick is not null) {
-            await _outsideClick.UnregisterAsync();
-        }
-    }
+    private void Toggle() => _open = !_open;
 
-    private async Task HandleOutsideClickAsync() {
-        _open = false;
-        await InvokeAsync(StateHasChanged);
+    private void Close() => _open = false;
+
+    private void OnKeyDown(KeyboardEventArgs e) {
+        if (e.Key == "Escape") {
+            _open = false;
+        }
     }
 
     private void SyncFromHex(string hex) {
@@ -133,15 +123,6 @@
         SyncFromHex(color);
         await EmitAsync(color);
         _open = false;
-        if (_outsideClick is not null) {
-            await _outsideClick.UnregisterAsync();
-        }
-    }
-
-    public async ValueTask DisposeAsync() {
-        if (_outsideClick is not null) {
-            await _outsideClick.DisposeAsync();
-        }
     }
 
 }
