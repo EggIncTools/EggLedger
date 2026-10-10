@@ -1,7 +1,6 @@
 .target-ico {
-    display: inline;
-    position: relative;
-    top: -1px;
+    display: inline-block;
+    vertical-align: middle;
     height: 1.5rem;
     width: 1.5rem;
     padding: 0.125rem;

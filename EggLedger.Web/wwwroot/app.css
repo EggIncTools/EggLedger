@@ -138,6 +138,10 @@ body {
   height: 100%;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 hr {
   border-color: var(--color-fg);
 }
