@@ -2,7 +2,8 @@
 @using System.Globalization
 @inject IUserTimeZoneProvider TzProvider
 
-<div class="timeline-event-bar timeline-event-@TypeSlug tooltip-host tooltip-trigger @(Bar.ContinuesLeft ? "timeline-event-cut-l" : "") @(Bar.ContinuesRight ? "timeline-event-cut-r" : "")" style="@BarStyle">
+<div class="timeline-event-bar timeline-event-@TypeSlug tooltip-host @(Bar.ContinuesLeft ? "timeline-event-cut-l" : "") @(Bar.ContinuesRight ? "timeline-event-cut-r" : "")" style="@BarStyle" @onmousemove="OnMouseMove">
+    <span class="tooltip-point" style="@PointStyle"></span>
     <img class="timeline-event-icon" src="@IconUrl" alt="" loading="lazy" onerror="this.style.display='none'"/>
     <span class="timeline-event-label">@(Bar.Message ?? Bar.Type)</span>
     <div class="tooltip-floating tooltip-fixed tooltip-toggle timeline-event-tt">
@@ -43,7 +44,14 @@
     private string BarStyle =>
         FormattableString.Invariant($"--evt-start:{Bar.LeftPercent};--evt-size:{Bar.WidthPercent};--evt-bg:{EventColor};--tt-anchor:--{_anchorId};");
 
+    private string PointStyle =>
+        FormattableString.Invariant($"left:{_hoverX}px;top:0;--tt-anchor:--{_anchorId};");
+
     private readonly string _anchorId = "tt-" + Guid.NewGuid().ToString("N");
+    private double _hoverX;
+
+    private void OnMouseMove(MouseEventArgs e) =>
+        _hoverX = Math.Round(e.OffsetX);
 
     private string FormatTime(long unixSeconds) =>
         TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(unixSeconds), TzProvider.TimeZone)

@@ -1,7 +1,8 @@
 @using System.Globalization
 @inject IUserTimeZoneProvider TzProvider
 
-<div class="timeline-bar timeline-dur-@Bar.DurationIndex @CapModifierClass tooltip-host tooltip-trigger @(Bar.ContinuesLeft ? "timeline-bar-cut-l" : "") @(Bar.ContinuesRight ? "timeline-bar-cut-r" : "") @(IsLinkedHover ? "timeline-bar-linked-hover" : "")" style="@BarStyle" @onclick="@(() => OnSelect.InvokeAsync(Bar.MissionId))" @onmouseenter="@(() => OnHoverMissionId.InvokeAsync(Bar.MissionId))" @onmouseleave="@(() => OnHoverMissionId.InvokeAsync(null))">
+<div class="timeline-bar timeline-dur-@Bar.DurationIndex @CapModifierClass tooltip-host @(Bar.ContinuesLeft ? "timeline-bar-cut-l" : "") @(Bar.ContinuesRight ? "timeline-bar-cut-r" : "") @(IsLinkedHover ? "timeline-bar-linked-hover" : "")" style="@BarStyle" @onclick="@(() => OnSelect.InvokeAsync(Bar.MissionId))" @onmouseenter="@(() => OnHoverMissionId.InvokeAsync(Bar.MissionId))" @onmouseleave="@(() => OnHoverMissionId.InvokeAsync(null))" @onmousemove="OnMouseMove">
+    <span class="tooltip-point" style="@PointStyle"></span>
     <div class="timeline-bar-track">
         <div class="timeline-bar-fill"></div>
     </div>
@@ -53,6 +54,8 @@
     private bool _renderedRecolorDC;
     private bool _renderedRecolorBC;
     private bool _renderedLinkedHover;
+    private double _renderedHoverX;
+    private double _hoverX;
     private bool _hasRendered;
 
     protected override bool ShouldRender() {
@@ -60,7 +63,8 @@
             && ReferenceEquals(_renderedBar, Bar)
             && _renderedRecolorDC == RecolorDC
             && _renderedRecolorBC == RecolorBC
-            && _renderedLinkedHover == IsLinkedHover) {
+            && _renderedLinkedHover == IsLinkedHover
+            && _renderedHoverX == _hoverX) {
             return false;
         }
 
@@ -69,11 +73,18 @@
         _renderedRecolorDC = RecolorDC;
         _renderedRecolorBC = RecolorBC;
         _renderedLinkedHover = IsLinkedHover;
+        _renderedHoverX = _hoverX;
         return true;
     }
 
+    private void OnMouseMove(MouseEventArgs e) =>
+        _hoverX = Math.Round(e.OffsetX);
+
     private string BarStyle =>
         FormattableString.Invariant($"--bar-start:{Bar.LeftPercent};--bar-size:{Bar.WidthPercent};--bar-fill:{Bar.FillPercent};--bar-z:{Bar.StackOrder};--tt-anchor:--{_anchorId};");
+
+    private string PointStyle =>
+        FormattableString.Invariant($"left:{_hoverX}px;top:0;--tt-anchor:--{_anchorId};");
 
     private readonly string _anchorId = "tt-" + Guid.NewGuid().ToString("N");
     private string CapModifierClass {

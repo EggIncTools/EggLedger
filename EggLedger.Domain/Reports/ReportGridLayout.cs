@@ -7,7 +7,6 @@ public readonly record struct EmptyZone(int ColStart, int ColEnd, int RowStart, 
 public static class ReportGridLayout {
     public const int GridCols = 8;
 
-    public const int GridGap = 12;
 
     public static (int W, int H) ClampDims(int gridW, int gridH) =>
         (Math.Min(Math.Max(gridW, 1), GridCols), Math.Min(Math.Max(gridH, 1), 8));
@@ -137,8 +136,4 @@ public static class ReportGridLayout {
         return [.. Enumerable.Range(1, maxRow).SelectMany(r => RowEmptyZones(r, occupied, cardPositions))];
     }
 
-    public static int ComputeRowHeightPx(double containerWidthPx) {
-        var raw = (containerWidthPx - (GridCols - 1) * GridGap) / GridCols;
-        return Math.Max(80, (int)Math.Floor(raw));
-    }
 }

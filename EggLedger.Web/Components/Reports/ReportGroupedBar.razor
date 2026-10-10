@@ -18,7 +18,7 @@
                     var raw = CellRawValue(rIdx, cIdx, cols);
                     if (raw > 0) {
                         <div class="rgb-bar-row">
-                            <Tooltip Class="rgb-bar" Lines="@BarLines(cols[cIdx], row, raw)"
+                            <Tooltip Tag="div" Class="rgb-bar" Lines="@BarLines(cols[cIdx], row, raw)"
                                      Style="@($"--rgb-w: {BarWidth(raw, max).ToString(CultureInfo.InvariantCulture)}%; --rgb-color: {colors[cIdx]};")"/>
                             <span class="rgb-bar-value">@CellLabel(raw)</span>
                         </div>

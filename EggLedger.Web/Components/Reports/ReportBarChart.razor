@@ -6,7 +6,7 @@
     @foreach (var pair in SortedPairs()) {
         <Tooltip Text="@pair.Label" Class="rbar-label">@pair.Label</Tooltip>
         <div class="rbar-track">
-            <Tooltip Class="rbar-fill" Lines="@BarLines(pair.Label, pair.Value)"
+            <Tooltip Tag="div" Class="rbar-fill" Lines="@BarLines(pair.Label, pair.Value)"
                      Style="@($"--rbar-w: {BarWidth(pair.Value)}%; --rbar-color: {BarColor(pair.Label)};")"/>
         </div>
         <span class="rbar-value">@FormatValue(pair.Value)</span>

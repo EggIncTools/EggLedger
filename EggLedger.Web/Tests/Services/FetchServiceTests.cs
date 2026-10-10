@@ -18,7 +18,8 @@ public sealed class FetchServiceTests {
         HttpMessageHandler handler,
         int workerCount = 4,
         IndexedDbSettings? settings = null,
-        IAutoExporter? exporter = null) {
+        IAutoExporter? exporter = null,
+        TimeProvider? time = null) {
         var http = new HttpClient(handler) { BaseAddress = new Uri("https://example.test") };
         var api = new ApiClient(http);
         settings ??= new IndexedDbSettings(db);
@@ -27,7 +28,16 @@ public sealed class FetchServiceTests {
         }
         var store = new IndexedDbMissionStore(db, new LocalApiPayloadDecoder(new ApiClient()));
         var accounts = new IndexedDbAccountStore(settings);
-        return new FetchService(api, store, settings, accounts, new LocalApiPayloadDecoder(api), NullLogger<FetchService>.Instance, autoExporter: exporter);
+        return new FetchService(api, store, settings, accounts, new LocalApiPayloadDecoder(api), NullLogger<FetchService>.Instance, autoExporter: exporter, time: time);
+    }
+
+    private static async Task<AppState> RunWithClockAsync(FakeTimeProvider clock, Task<AppState> fetch) {
+        while (!fetch.IsCompleted) {
+            clock.Advance(TimeSpan.FromSeconds(4));
+            await Task.Yield();
+        }
+
+        return await fetch;
     }
 
     private static string ToApiBody<T>(T msg) {
@@ -335,12 +345,13 @@ public sealed class FetchServiceTests {
         var handler = new RoutingHandler(
             FirstContactBody(["bad"]),
             id => id == "bad" ? null : CompleteMissionBody(id));
-        var service = await MakeAsync(db, handler);
+        var clock = new FakeTimeProvider();
+        var service = await MakeAsync(db, handler, time: clock);
 
         var events = new List<FetchProgress>();
         var progress = new SynchronousProgress<FetchProgress>(events.Add);
 
-        var final = await service.FetchPlayerDataAsync(Eid, progress, CancellationToken.None);
+        var final = await RunWithClockAsync(clock, service.FetchPlayerDataAsync(Eid, progress, CancellationToken.None));
 
         Assert.Equal(AppState.Failed, final);
         var failedReport = events.Last(e => e.State == AppState.Failed);
@@ -358,9 +369,10 @@ public sealed class FetchServiceTests {
         var handler = new RoutingHandler(
             FirstContactBody(["flaky"]),
             id => id == "flaky" && Interlocked.Increment(ref attempts) == 1 ? null : CompleteMissionBody(id));
-        var service = await MakeAsync(db, handler);
+        var clock = new FakeTimeProvider();
+        var service = await MakeAsync(db, handler, time: clock);
 
-        var final = await service.FetchPlayerDataAsync(Eid, null, CancellationToken.None);
+        var final = await RunWithClockAsync(clock, service.FetchPlayerDataAsync(Eid, null, CancellationToken.None));
 
         Assert.Equal(AppState.Success, final);
         var store = new IndexedDbMissionStore(db, new LocalApiPayloadDecoder(new ApiClient()));
@@ -466,10 +478,11 @@ public sealed class FetchServiceTests {
     public async Task FetchPlayerData_MissionFails_RoutesRetriesRowOnlyAndFinalErrorGlobally() {
         var db = new FakeIndexedDb();
         var handler = new RoutingHandler(FirstContactBody(["bad"]), _ => null);
-        var service = await MakeAsync(db, handler);
+        var clock = new FakeTimeProvider();
+        var service = await MakeAsync(db, handler, time: clock);
         var events = new List<FetchProgress>();
 
-        await service.FetchPlayerDataAsync(Eid, new SynchronousProgress<FetchProgress>(events.Add), CancellationToken.None);
+        await RunWithClockAsync(clock, service.FetchPlayerDataAsync(Eid, new SynchronousProgress<FetchProgress>(events.Add), CancellationToken.None));
 
         var retries = events.Where(e => e.LogRowOnly).ToList();
         Assert.Equal(5, retries.Count);

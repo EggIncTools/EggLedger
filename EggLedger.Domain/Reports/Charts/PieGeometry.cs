@@ -4,7 +4,7 @@ namespace EggLedger.Domain.Reports.Charts;
 
 public readonly record struct PieItem(string Label, double Value);
 
-public readonly record struct PieSlice(string Label, double Value, double Pct, string Path, string Color);
+public readonly record struct PieSlice(string Label, double Value, double Pct, string Path, string Color, double MidAngle);
 
 public static class PieGeometry {
     public const int MaxSegments = 10;
@@ -72,8 +72,12 @@ public static class PieGeometry {
                 item.Value,
                 pct,
                 SlicePath(cx, cy, r, startAngle, endAngle),
-                color));
+                color,
+                (startAngle + endAngle) / 2));
         }
         return slices;
     }
+
+    public static (double X, double Y) SlicePoint(double cx, double cy, double r, double midAngle, double inset = 0.6) =>
+        (cx + Math.Cos(midAngle) * r * inset, cy + Math.Sin(midAngle) * r * inset);
 }

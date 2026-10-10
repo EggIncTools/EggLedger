@@ -21,7 +21,7 @@
                     var cell = Cell(r, c);
                     <td class="hmap-cell"
                         style="--hmap-bg: @cell.Style.BackgroundColor; --hmap-fg: @cell.Style.Color;">
-                        <Tooltip Class="hmap-cell-body" Lines="@CellLines(r, c, cell.Display)">
+                        <Tooltip Tag="div" Lines="@CellLines(r, c, cell.Display)">
                             <div class="hmap-value">@cell.Display</div>
                             @if (SecondaryValues is not null) {
                                 <div class="hmap-value hmap-secondary">@cell.Secondary</div>

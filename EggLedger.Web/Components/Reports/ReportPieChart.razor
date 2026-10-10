@@ -14,7 +14,7 @@
             }
         </svg>
         @if (_hover is { } h && h < slices.Count) {
-            var (x, y) = SlicePoint(slices, h);
+            var (x, y) = PieGeometry.SlicePoint(Cx, Cy, R, slices[h].MidAngle);
             <PointTooltip Visible="true" X="@(x / Vw * 100)" Y="@(y / Vh * 100)"
                           Lines="@SliceLines(slices[h])" PopClass="report-tooltip"/>
         }
@@ -54,16 +54,6 @@
             R,
             Color,
             SliceColors.ParseLabelColors(LabelColors));
-    }
-
-    private (double X, double Y) SlicePoint(List<PieSlice> slices, int idx) {
-        var start = -Math.PI / 2;
-        for (var i = 0; i < idx; i++) {
-            start += slices[i].Pct / 100 * 2 * Math.PI;
-        }
-
-        var mid = start + slices[idx].Pct / 100 * Math.PI;
-        return (Cx + Math.Cos(mid) * R * 0.6, Cy + Math.Sin(mid) * R * 0.6);
     }
 
     private string FormatVal(double v) {

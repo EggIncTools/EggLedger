@@ -42,6 +42,10 @@
     border-bottom-right-radius: 0;
 }
 
+.timeline-event-bar > :not(.tooltip-floating) {
+    pointer-events: none;
+}
+
 .timeline-event-tt {
     font-size: 0.875rem;
     line-height: calc(1.25 / 0.875);

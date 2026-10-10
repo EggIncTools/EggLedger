@@ -161,6 +161,10 @@
     padding: 2px;
 }
 
+.timeline-bar > :not(.tooltip-floating) {
+    pointer-events: none;
+}
+
 .timeline-bar-tt {
     font-size: 0.875rem;
     line-height: calc(1.25 / 0.875);

@@ -46,6 +46,15 @@ public class PieGeometryTests {
         Assert.Equal(75, slices[0].Pct, 5);
         Assert.Equal(25, slices[1].Pct, 5);
         Assert.Equal("#6366f1", slices[0].Color);
+        Assert.Equal(-Math.PI / 2 + 0.75 * Math.PI, slices[0].MidAngle, 9);
+        Assert.Equal(Math.PI + 0.25 * Math.PI, slices[1].MidAngle, 9);
+    }
+
+    [Fact]
+    public void SlicePoint_InsetsAlongMidAngle() {
+        var (x, y) = PieGeometry.SlicePoint(100, 100, 50, 0);
+        Assert.Equal(130, x, 9);
+        Assert.Equal(100, y, 9);
     }
 
     [Fact]

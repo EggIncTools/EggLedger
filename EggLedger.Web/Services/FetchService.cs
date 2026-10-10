@@ -293,7 +293,7 @@ public sealed class FetchService(ApiClient api, IndexedDbMissionStore store, Ind
                 var delay = RetryDelay(attempt + 1);
                 onRetry(missionId, string.Create(CultureInfo.InvariantCulture,
                     $"attempt {attempt + 1} failed: {ex.Message}, retrying in {delay.TotalSeconds:0.#}s"));
-                await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
+                await Task.Delay(delay, _time, cancellationToken).ConfigureAwait(false);
             }
         }
     }
