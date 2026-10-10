@@ -142,6 +142,10 @@ body {
   display: none !important;
 }
 
+dialog:not([open]) {
+  display: none;
+}
+
 hr {
   border-color: var(--color-fg);
 }
