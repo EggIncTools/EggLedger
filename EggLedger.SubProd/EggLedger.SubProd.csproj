@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="EggIdentity.DbClone" />
+    <PackageReference Include="EggIdentity.Data" />
     <PackageReference Include="Npgsql" />
   </ItemGroup>
 

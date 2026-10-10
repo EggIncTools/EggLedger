@@ -49,7 +49,7 @@ public class GlobalSheetTests {
     [InlineData("EggLedger.Web.Server/Components/AppHost.razor")]
     public void Host_pages_link_shared_then_app_then_scoped(string hostPage) {
         var text = File.ReadAllText(Path.Combine(StylePaths.RepoRoot, hostPage));
-        var shared = text.IndexOf("_content/EggIdentity.Styles/shared.css", StringComparison.Ordinal);
+        var shared = text.IndexOf("_content/EggIdentity.UI/shared.css", StringComparison.Ordinal);
         var app = text.IndexOf("_content/EggLedger.Web/app.css", StringComparison.Ordinal);
         var scoped = text.IndexOf(".styles.css", StringComparison.Ordinal);
         Assert.True(shared >= 0 && shared < app && app < scoped, $"{hostPage}: link order must be shared.css, app.css, scoped bundle.");

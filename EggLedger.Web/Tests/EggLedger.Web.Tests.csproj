@@ -12,11 +12,11 @@
 
   <ItemGroup>
     <PackageReference Include="bunit" />
-    <PackageReference Include="EggIdentity.Styles" GeneratePathProperty="true" />
+    <PackageReference Include="EggIdentity.UI" GeneratePathProperty="true" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="$(PkgEggIdentity_Styles)\staticwebassets\shared.css" Link="SharedStyles\shared.css" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="$(PkgEggIdentity_UI)\staticwebassets\shared.css" Link="SharedStyles\shared.css" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

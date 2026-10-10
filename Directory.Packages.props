@@ -1,36 +1,20 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <EggIdentityVersion>3.6.1</EggIdentityVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageVersion Include="bunit" Version="2.9.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
-    <PackageVersion Include="EggIdentity.AdminUi" Version="$(EggIdentityVersion)" />
-    <PackageVersion Include="EggIdentity.Auth" Version="$(EggIdentityVersion)" />
-    <PackageVersion Include="EggIdentity.Bot" Version="$(EggIdentityVersion)" />
-    <PackageVersion Include="EggIdentity.Client" Version="$(EggIdentityVersion)" />
-    <PackageVersion Include="EggIdentity.CodeStyle" Version="$(EggIdentityVersion)" />
-    <PackageVersion Include="EggIdentity.Consent" Version="$(EggIdentityVersion)" />
-    <PackageVersion Include="EggIdentity.Contract" Version="$(EggIdentityVersion)" />
-    <PackageVersion Include="EggIdentity.Db" Version="$(EggIdentityVersion)" />
-    <PackageVersion Include="EggIdentity.DbClone" Version="$(EggIdentityVersion)" />
-    <PackageVersion Include="EggIdentity.Deploy" Version="$(EggIdentityVersion)" />
-    <PackageVersion Include="EggIdentity.Deploy.AdminUi" Version="$(EggIdentityVersion)" />
-    <PackageVersion Include="EggIdentity.Fallback" Version="$(EggIdentityVersion)" />
-    <PackageVersion Include="EggIdentity.Filtering" Version="$(EggIdentityVersion)" />
-    <PackageVersion Include="EggIdentity.Hosting" Version="$(EggIdentityVersion)" />
-    <PackageVersion Include="EggIdentity.Metrics" Version="$(EggIdentityVersion)" />
-    <PackageVersion Include="EggIdentity.Resilience" Version="$(EggIdentityVersion)" />
-    <PackageVersion Include="EggIdentity.Settings" Version="$(EggIdentityVersion)" />
-    <PackageVersion Include="EggIdentity.Settings.Store" Version="$(EggIdentityVersion)" />
-    <PackageVersion Include="EggIdentity.Settings.AdminUi" Version="$(EggIdentityVersion)" />
-    <PackageVersion Include="EggIdentity.Settings.Api" Version="$(EggIdentityVersion)" />
-    <PackageVersion Include="EggIdentity.Styles" Version="$(EggIdentityVersion)" />
-    <PackageVersion Include="EggIdentity.Testing" Version="$(EggIdentityVersion)" />
-    <PackageVersion Include="EggIdentity.UI" Version="$(EggIdentityVersion)" />
-    <PackageVersion Include="EggIdentity.Visits" Version="$(EggIdentityVersion)" />
+    <PackageVersion Include="EggIdentity.Admin" Version="3.7.0" />
+    <PackageVersion Include="EggIdentity.Auth" Version="3.7.0" />
+    <PackageVersion Include="EggIdentity.Bot" Version="3.7.0" />
+    <PackageVersion Include="EggIdentity.CodeStyle" Version="3.7.0" />
+    <PackageVersion Include="EggIdentity.Core" Version="3.7.0" />
+    <PackageVersion Include="EggIdentity.Data" Version="3.7.0" />
+    <PackageVersion Include="EggIdentity.Testing" Version="3.7.0" />
+    <PackageVersion Include="EggIdentity.UI" Version="3.7.0" />
+    <PackageVersion Include="EggIdentity.Web" Version="3.7.0" />
     <PackageVersion Include="EggIncognito.Protos" Version="2.17.0" />
     <PackageVersion Include="Markdig" Version="0.41.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.Authorization" Version="10.0.0" />
