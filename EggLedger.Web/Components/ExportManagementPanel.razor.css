@@ -70,6 +70,7 @@
     align-items: center;
     gap: 0.25rem;
     width: 100%;
+    box-sizing: border-box;
     padding: 0.125rem 0;
     border: 0;
     background: transparent;
