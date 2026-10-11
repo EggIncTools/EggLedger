@@ -72,10 +72,6 @@
             <OptionsHost/>
         </div>
     </div>
-
-    <div class="sb-panel sidebar-panel sidebar-footer">
-        <SidebarFooter OnSettings="OpenSettings" OnAbout="OpenAbout" OnTerms="OpenTerms" OnPrivacy="OpenPrivacy" OnSupport="OpenSupport"/>
-    </div>
 </aside>
 
 @code {
@@ -122,26 +118,6 @@
             LedgerView.Reports => Task.CompletedTask,
             _ => Ships.ApplyFilterAsync(filter)
         };
-    }
-
-    private void OpenSettings() {
-        Shell.SettingsOpen = true;
-    }
-
-    private void OpenAbout() {
-        Shell.AboutOpen = true;
-    }
-
-    private void OpenTerms() {
-        Shell.Legal = LegalDocument.Terms;
-    }
-
-    private void OpenPrivacy() {
-        Shell.Legal = LegalDocument.Privacy;
-    }
-
-    private void OpenSupport() {
-        Shell.SupportOpen = true;
     }
 
     private void ToggleFilter() {

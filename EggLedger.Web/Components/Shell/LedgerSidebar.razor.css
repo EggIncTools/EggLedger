@@ -1,6 +1,6 @@
 .ledger-sidebar {
     display: grid;
-    grid-template-rows: auto minmax(6rem, 1fr) minmax(6rem, 1fr) auto;
+    grid-template-rows: auto minmax(6rem, 1fr) minmax(6rem, 1fr);
     grid-template-columns: minmax(0, 1fr);
     gap: 0.5rem;
     width: clamp(19rem, 23vw, 30rem);
@@ -10,7 +10,7 @@
 }
 
 .ledger-sidebar-reports {
-    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto minmax(0, 1fr);
 }
 
 .sb-panel {
@@ -100,10 +100,6 @@
     line-height: calc(1.25 / 0.875);
 }
 
-.sidebar-footer {
-    justify-content: center;
-}
-
 .sidebar-empty-note {
     font-size: 0.75rem;
     line-height: calc(1 / 0.75);
@@ -127,7 +123,7 @@
     .ledger-sidebar-rail {
         width: 2.75rem;
         min-width: 2.75rem;
-        grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr) 0;
+        grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr);
     }
 
     .ledger-sidebar-rail ::deep .account-full {
@@ -139,10 +135,6 @@
     }
 
     .ledger-sidebar-rail .sidebar-panel-body {
-        display: none;
-    }
-
-    .ledger-sidebar-rail .sidebar-footer {
         display: none;
     }
 
@@ -170,10 +162,6 @@
 
     .sidebar-options {
         order: 4;
-    }
-
-    .sidebar-footer {
-        order: 5;
     }
 
     .sidebar-accordion-btn {

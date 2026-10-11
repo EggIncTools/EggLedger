@@ -113,7 +113,7 @@ public sealed class FetchOrchestrator(
         _autoHideTimer = null;
         TerminalState = null;
         HasFetchContent = false;
-        LogExpanded = false;
+        LogExpanded = true;
         Progress = null;
         FetchingAccountId = accountId;
         _cts?.Cancel();

@@ -8,12 +8,30 @@
 }
 
 .layout-suite {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
     flex-shrink: 0;
+    min-height: 3.25rem;
+    padding: 0.25rem 0.75rem;
+    background-color: var(--color-panel0);
+    border-bottom: 1px solid var(--color-border);
     font-size: 0.95rem;
     --suite-gap: 0.5rem;
     --suite-radius: 0.375rem;
     --suite-font-size: 0.95rem;
     --suite-font-weight: 600;
+    --suite-wordmark-text: inline;
+}
+
+.layout-suite-chrome {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    margin-left: auto;
+    min-width: 0;
 }
 
 .layout-main {

@@ -1,53 +1,41 @@
-.sidebar-footer-row {
+.ledger-about {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 0.35rem;
-    width: 100%;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.75rem;
+    min-width: 0;
 }
 
-.sidebar-footer-info {
+.ledger-about-info {
     display: flex;
     align-items: center;
     gap: 0.4rem;
     min-width: 0;
-    font-size: 0.95rem;
     white-space: nowrap;
-    overflow: hidden;
 }
 
-.sidebar-footer-actions-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.25rem;
-    width: 100%;
-}
-
-.sidebar-footer-logo {
+.ledger-about-logo {
     border-radius: 0.2rem;
     flex-shrink: 0;
 }
 
-.sidebar-footer-brand {
+.ledger-about-brand {
     color: var(--color-fg);
-    font-weight: 600;
-    white-space: nowrap;
+    font-weight: 700;
 }
 
-.sidebar-footer-version {
+.ledger-about-version {
     color: var(--color-accent);
     font-weight: 600;
-    white-space: nowrap;
 }
 
-.sidebar-footer-authors {
+.ledger-about-authors {
     color: var(--color-muted);
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.sidebar-footer-badge {
+.ledger-about-badge {
     display: inline-flex;
     align-items: center;
     padding: 0 0.15rem;
@@ -56,7 +44,7 @@
     cursor: pointer;
 }
 
-.sidebar-footer-dot {
+.ledger-about-dot {
     width: 0.5rem;
     height: 0.5rem;
     border-radius: 9999px;
@@ -64,13 +52,13 @@
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-ok) 25%, transparent);
 }
 
-.sidebar-footer-actions {
+.ledger-about-actions {
     display: flex;
     align-items: center;
     gap: 0.1rem;
 }
 
-.sidebar-footer-btn {
+.ledger-about-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -84,15 +72,21 @@
     text-decoration: none;
 }
 
-.sidebar-footer-btn:hover {
+.ledger-about-btn:hover {
     color: var(--color-fg);
     background-color: var(--color-bg);
 }
 
-.sidebar-footer-btn-support {
+.ledger-about-btn-support {
     color: var(--color-ledger-support);
 }
 
-.sidebar-footer-btn-support:hover {
+.ledger-about-btn-support:hover {
     color: var(--color-ledger-support-hover);
+}
+
+@media (max-width: 47.9375rem) {
+    .ledger-about-authors {
+        display: none;
+    }
 }

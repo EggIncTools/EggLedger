@@ -17,9 +17,12 @@
    never wraps in CascadingAuthenticationState), so the account controls stay enabled there. *@
 <CascadingValue Value="IsLoggedIn" Name="IsLoggedIn">
     <div class="layout">
-        @if (Services.GetService<ISuiteChromeSlot>() is { } suiteChrome) {
-            <header class="layout-suite">@suiteChrome.Render()</header>
-        }
+        <header class="layout-suite">
+            <LedgerAbout/>
+            @if (Services.GetService<ISuiteChromeSlot>() is { } suiteChrome) {
+                <div class="layout-suite-chrome">@suiteChrome.Render()</div>
+            }
+        </header>
         <main class="layout-main" @key="TzProvider.TimeZone.Id">
             @Body
         </main>
