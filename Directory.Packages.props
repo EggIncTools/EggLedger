@@ -6,16 +6,16 @@
   <ItemGroup>
     <PackageVersion Include="bunit" Version="2.9.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
-    <PackageVersion Include="EggIdentity.Admin" Version="3.8.2" />
-    <PackageVersion Include="EggIdentity.Auth" Version="3.8.2" />
-    <PackageVersion Include="EggIdentity.Bot" Version="3.8.2" />
-    <PackageVersion Include="EggIdentity.Brand" Version="3.8.2" />
-    <PackageVersion Include="EggIdentity.CodeStyle" Version="3.8.2" />
-    <PackageVersion Include="EggIdentity.Core" Version="3.8.2" />
-    <PackageVersion Include="EggIdentity.Data" Version="3.8.2" />
-    <PackageVersion Include="EggIdentity.Testing" Version="3.8.2" />
-    <PackageVersion Include="EggIdentity.UI" Version="3.8.2" />
-    <PackageVersion Include="EggIdentity.Web" Version="3.8.2" />
+    <PackageVersion Include="EggIdentity.Admin" Version="3.8.3" />
+    <PackageVersion Include="EggIdentity.Auth" Version="3.8.3" />
+    <PackageVersion Include="EggIdentity.Bot" Version="3.8.3" />
+    <PackageVersion Include="EggIdentity.Brand" Version="3.8.3" />
+    <PackageVersion Include="EggIdentity.CodeStyle" Version="3.8.3" />
+    <PackageVersion Include="EggIdentity.Core" Version="3.8.3" />
+    <PackageVersion Include="EggIdentity.Data" Version="3.8.3" />
+    <PackageVersion Include="EggIdentity.Testing" Version="3.8.3" />
+    <PackageVersion Include="EggIdentity.UI" Version="3.8.3" />
+    <PackageVersion Include="EggIdentity.Web" Version="3.8.3" />
     <PackageVersion Include="EggIncognito.Protos" Version="2.17.0" />
     <PackageVersion Include="Markdig" Version="0.41.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.Authorization" Version="10.0.0" />

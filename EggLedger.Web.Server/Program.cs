@@ -414,6 +414,7 @@ if (!string.IsNullOrEmpty(cfg.AdminApiSecret)) {
 
 app.MapEggIdentityViewerCookies();
 app.MapEggIdentityDownloads();
+app.MapEggIdentitySuite();
 
 app.MapRazorComponents<AppHost>()
     .AddInteractiveServerRenderMode()
