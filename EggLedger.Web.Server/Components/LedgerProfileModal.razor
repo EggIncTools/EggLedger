@@ -1,0 +1,205 @@
+@using System.Globalization
+@using EggIdentity.Contract
+@using EggIdentity.UI
+@using EggIdentity.UI.Suite
+@inject SuiteContext Suite
+@inject ToastService Toasts
+
+<ModalHost Open="Open" Title="Profile" Width="ModalWidth.Regular" OnClose="OnClose">
+    <div class="prof">
+        @if (_profile is null) {
+            <span class="prof-small">@(_loadFailed ? "Profile could not be loaded." : "Loading...")</span>
+        } else {
+            <div class="prof-avatar-row">
+                @if (AvatarSrc(_profile.Avatar) is { } avatar) {
+                    <img class="prof-avatar" src="@avatar" alt="Profile picture"/>
+                } else {
+                    <div class="prof-avatar"></div>
+                }
+                <div class="prof-avatar-side">
+                    <span class="prof-username prof-strong">@_profile.Username</span>
+                    <DirectUpload Url="@SuiteRoutes.AvatarPath" Accept="@AvatarAccept" Label="Upload picture" Class="prof-upload"
+                                  ButtonClass="prof-chip prof-chip-link" OnResult="AvatarUploadedAsync"/>
+                    <span class="prof-small">PNG, JPEG, WebP or GIF, up to 2 MB.</span>
+                </div>
+            </div>
+
+            <hr class="prof-rule"/>
+            <table class="prof-table">
+                <tbody>
+                @foreach (var id in _profile.Identities) {
+                    var current = !string.IsNullOrEmpty(id.Avatar) && id.Avatar == _profile.Avatar;
+                    <tr class="prof-tr">
+                        <td class="prof-td prof-td-provider">
+                            <span class="prof-provider">
+                                <Icon Name="@SuiteCatalog.ProviderIcon(id.Provider)" Class="prof-provider-icon"/>
+                                @Cap(id.Provider)
+                            </span>
+                        </td>
+                        <td class="prof-td prof-td-id">
+                            <span class="prof-identity">
+                                @if (!string.IsNullOrEmpty(id.Avatar)) {
+                                    <Tooltip Text="@(current ? "Current picture" : "Use this picture")">
+                                        <button type="button" class="@(current ? "prof-pick prof-pick-current" : "prof-pick")" aria-label="Use this picture"
+                                                @onclick="() => SelectAvatarAsync(id)">
+                                            <img class="prof-pick-img" src="@id.Avatar" alt=""/>
+                                        </button>
+                                    </Tooltip>
+                                }
+                                <span class="prof-username">@(id.Username ?? id.Subject)</span>
+                                <span class="prof-small prof-dim prof-date">@id.LinkedAt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)</span>
+                            </span>
+                        </td>
+                        <td class="prof-td prof-td-action">
+                            @if (CanUnlink) {
+                                <button type="button" class="prof-chip prof-chip-unlink" @onclick="() => UnlinkAsync(id)">Unlink</button>
+                            } else {
+                                <Tooltip Text="Cannot unlink the last login" Focusable="true">
+                                    <span class="prof-small prof-dim prof-italic">Linked</span>
+                                </Tooltip>
+                            }
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+            <button type="button" class="prof-chip prof-chip-link prof-sync" @onclick="SyncAsync">Sync from provider</button>
+
+            <hr class="prof-rule"/>
+            <span class="prof-heading ledger-underline">Preferences</span>
+            <div class="prof-prefs">
+                <label class="prof-field">
+                    Timezone
+                    <TimeZonePicker Value="@_profile.Timezone" ValueChanged="TimezoneAsync" Placeholder="Search timezone..."/>
+                </label>
+                <label class="prof-field">
+                    Language
+                    <LanguagePicker Value="@_profile.Language" ValueChanged="LanguageAsync" Placeholder="Search language..."/>
+                </label>
+                <label class="prof-field">
+                    Theme
+                    <select class="prof-select" value="@Suite.Theme" @onchange="e => ThemeAsync(e.Value as string)">
+                        @foreach (var theme in Suite.Themes) {
+                            <option value="@theme">@theme</option>
+                        }
+                    </select>
+                </label>
+                <label class="prof-field prof-check">
+                    <input type="checkbox" checked="@Suite.ReducedMotion" @onchange="e => MotionAsync(e.Value is true)"/>
+                    Reduce motion
+                </label>
+            </div>
+            <span class="prof-small">Saved on change. Will also take effect in other EggIdentity apps (e.g., EggIncognito).</span>
+
+            <hr class="prof-rule"/>
+            <span class="prof-heading ledger-underline">Active EID</span>
+            <div class="prof-prefs">
+                <label class="prof-field">
+                    EID
+                    <input class="prof-input" maxlength="@ProfileGame.MaxEidLength" autocomplete="off" spellcheck="false" @bind="_eid"/>
+                </label>
+                <label class="prof-field">
+                    Label
+                    <input class="prof-input" maxlength="@ProfileGame.MaxLabelLength" @bind="_eidLabel"/>
+                </label>
+                <button type="button" class="prof-chip prof-chip-link prof-save" @onclick="SaveEidAsync">Save</button>
+            </div>
+        }
+    </div>
+</ModalHost>
+
+@code {
+    private const string AvatarAccept = "image/png,image/jpeg,image/webp,image/gif";
+
+    [Parameter] public bool Open { get; set; }
+
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private ProfileResponse? _profile;
+    private bool _loadFailed;
+    private bool _wasOpen;
+    private string? _eid;
+    private string? _eidLabel;
+
+    private bool CanUnlink => _profile?.Identities.Count > 1;
+
+    protected override async Task OnParametersSetAsync() {
+        var opening = Open && !_wasOpen;
+        _wasOpen = Open;
+        if (opening) await LoadAsync();
+    }
+
+    private async Task LoadAsync() {
+        await Suite.LoadAsync();
+        try {
+            _profile = await Suite.GetProfileAsync();
+            _loadFailed = _profile is null;
+        } catch (HttpRequestException) {
+            _loadFailed = true;
+        }
+        _eid = Suite.ActiveEid;
+        _eidLabel = Suite.ActiveEidLabel;
+    }
+
+    private static string? AvatarSrc(string? avatar) =>
+        string.IsNullOrEmpty(avatar) || !avatar.StartsWith('/') || avatar.StartsWith("//", StringComparison.Ordinal)
+            ? avatar
+            : SuiteCatalog.IdentityOrigin + avatar;
+
+    private static string Cap(string s) =>
+        string.IsNullOrEmpty(s) ? s : char.ToUpperInvariant(s[0]) + s[1..];
+
+    private async Task Report(Task<bool> work, string ok, string failed, bool reload = false) {
+        bool success;
+        try {
+            success = await work;
+        } catch (HttpRequestException) {
+            success = false;
+        }
+        Toasts.Push(success ? StatusNoteKind.Ok : StatusNoteKind.Error, success ? ok : failed);
+        if (success && reload) await LoadAsync();
+    }
+
+    private static async Task<bool> Done(Task work) {
+        await work;
+        return true;
+    }
+
+    private Task SelectAvatarAsync(ProfileIdentityResponse id) =>
+        Report(Suite.SelectAvatarAsync(id.Provider, id.Subject), "Avatar updated.", "Could not use that avatar.", reload: true);
+
+    private Task UnlinkAsync(ProfileIdentityResponse id) =>
+        Report(Suite.UnlinkIdentityAsync(id.Provider, id.Subject), "Identity unlinked.", "Could not unlink that identity.", reload: true);
+
+    private Task SyncAsync() =>
+        Report(Suite.SyncIdentitiesAsync(), "Identities synced.", "Could not sync from the provider.", reload: true);
+
+    private Task TimezoneAsync(string? timezone) =>
+        Report(Suite.SetLocaleAsync(timezone, null), "Timezone saved.", "Could not save the timezone.", reload: true);
+
+    private Task LanguageAsync(string? language) =>
+        Report(Suite.SetLocaleAsync(null, language), "Language saved.", "Could not save the language.", reload: true);
+
+    private Task ThemeAsync(string? theme) =>
+        string.IsNullOrWhiteSpace(theme)
+            ? Task.CompletedTask
+            : Report(Done(Suite.SetThemeAsync(theme)), "Theme saved.", "Could not save the theme.");
+
+    private Task MotionAsync(bool reduced) =>
+        Report(Done(Suite.SetReducedMotionAsync(reduced)), "Motion preference saved.", "Could not save the motion preference.");
+
+    private Task SaveEidAsync() {
+        if (_eid?.Trim().Length > ProfileGame.MaxEidLength) {
+            Toasts.Push(StatusNoteKind.Error, "That EID is too long.");
+            return Task.CompletedTask;
+        }
+        return Report(Done(Suite.SetActiveEidAsync(_eid, _eidLabel)), "Active EID saved.", "Could not save the EID.");
+    }
+
+    private async Task AvatarUploadedAsync(UploadResult result) {
+        Toasts.Push(result.Ok ? StatusNoteKind.Ok : StatusNoteKind.Error,
+            result.Ok ? "Avatar uploaded." : "Upload failed: unsupported file type or too large.");
+        if (result.Ok) await LoadAsync();
+    }
+
+}

@@ -11,6 +11,7 @@ public sealed class CookieBannerSlot(IHttpContextAccessor accessor, SessionCooki
         builder.OpenComponent<CookieBanner>(0);
         builder.AddComponentParameter(1, "SessionToken", string.IsNullOrEmpty(token) ? null : token);
         builder.AddComponentParameter(2, "PrivacyUrl", "/privacy");
+        builder.AddComponentParameter(3, "TermsUrl", "/terms");
         builder.CloseComponent();
     };
 }
