@@ -16,7 +16,11 @@
             <span class="timeline-bar-edge-label">@FormatEdgeTime(Bar.Mission.ReturnDT)</span>
         </div>
     }
-    @if (Bar.ShowBubble) {
+    @if (CardConfig is { } card) {
+        <div class="timeline-bar-body">
+            <MissionCard Mission="Bar.Mission" Config="card" Embedded="true" ViewMissionTimes="true" RecolorDC="RecolorDC" RecolorBC="RecolorBC"/>
+        </div>
+    } else if (Bar.ShowBubble) {
         <span class="timeline-bar-bubble">
             <img class="timeline-bar-ship" src="@Bar.ShipIconPath" alt="@Bar.ShipName"/>
             @if (Bar.TargetIconPath is not null) {
@@ -44,6 +48,7 @@
 
 @code {
     [Parameter] public required TimelineBar Bar { get; set; }
+    [Parameter] public MissionCardConfig? CardConfig { get; set; }
     [Parameter] public bool RecolorDC { get; set; }
     [Parameter] public bool RecolorBC { get; set; }
     [Parameter] public EventCallback<string> OnSelect { get; set; }
@@ -51,6 +56,7 @@
     [Parameter] public EventCallback<string?> OnHoverMissionId { get; set; }
 
     private TimelineBar? _renderedBar;
+    private MissionCardConfig? _renderedConfig;
     private bool _renderedRecolorDC;
     private bool _renderedRecolorBC;
     private bool _renderedLinkedHover;
@@ -61,6 +67,7 @@
     protected override bool ShouldRender() {
         if (_hasRendered
             && ReferenceEquals(_renderedBar, Bar)
+            && ReferenceEquals(_renderedConfig, CardConfig)
             && _renderedRecolorDC == RecolorDC
             && _renderedRecolorBC == RecolorBC
             && _renderedLinkedHover == IsLinkedHover
@@ -70,6 +77,7 @@
 
         _hasRendered = true;
         _renderedBar = Bar;
+        _renderedConfig = CardConfig;
         _renderedRecolorDC = RecolorDC;
         _renderedRecolorBC = RecolorBC;
         _renderedLinkedHover = IsLinkedHover;

@@ -1,13 +1,16 @@
-@using System.Collections.Frozen
 @using System.Globalization
 @inject IUserTimeZoneProvider TzProvider
 
-<div class="timeline-event-bar timeline-event-@TypeSlug tooltip-host @(Bar.ContinuesLeft ? "timeline-event-cut-l" : "") @(Bar.ContinuesRight ? "timeline-event-cut-r" : "")" style="@BarStyle" @onmousemove="OnMouseMove">
+<div class="timeline-event-bar timeline-event-@TypeSlug tooltip-host @(Bar.Predicted ? "timeline-event-predicted" : "") @(Bar.ContinuesLeft ? "timeline-event-cut-l" : "") @(Bar.ContinuesRight ? "timeline-event-cut-r" : "")" style="@BarStyle" @onmousemove="OnMouseMove">
     <span class="tooltip-point" style="@PointStyle"></span>
     <img class="timeline-event-icon" src="@IconUrl" alt="" loading="lazy" onerror="this.style.display='none'"/>
-    <span class="timeline-event-label">@(Bar.Message ?? Bar.Type)</span>
+    <span class="timeline-event-label">@Title</span>
     <div class="tooltip-floating tooltip-fixed tooltip-toggle timeline-event-tt">
-        <span class="timeline-event-tt-name">@(Bar.Message ?? Bar.Type)</span>
+        <span class="timeline-event-tt-name">@Title</span>
+        @if (Bar.Predicted) {
+            <br/>
+            <span class="timeline-event-tt-key">Predicted</span>
+        }
         @if (Bar.Multiplier > 0) {
             <br/>
             <span class="timeline-event-tt-key">Multiplier: </span>@MultiplierLabel
@@ -23,20 +26,15 @@
 </div>
 
 @code {
-
-    private static readonly FrozenDictionary<string, string> ColorByType = new Dictionary<string, string> {
-        ["mission-fuel"] = "#8b5cf6",
-        ["mission-capacity"] = "#a21caf",
-        ["mission-duration"] = "#be185d"
-    }.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
-
     [Parameter] public required TimelineEventBar Bar { get; set; }
 
-    private string TypeSlug => Bar.Type.Replace('_', '-').ToLowerInvariant();
+    private string TypeSlug => GameEventDisplay.Slug(Bar.Type);
+
+    private string Title => GameEventDisplay.Title(Bar.Type, Bar.Message);
 
     private string MultiplierLabel => Bar.Multiplier.ToString("0.##", CultureInfo.InvariantCulture) + "x";
 
-    private string EventColor => ColorByType.GetValueOrDefault(Bar.Type, "#9ca3af");
+    private string EventColor => GameEventDisplay.Color(Bar.Type);
 
     private string IconUrl =>
         FormattableString.Invariant($"/api/v1/event-icon?name={Uri.EscapeDataString(TypeSlug)}{(Bar.Ultra ? "&cc=1" : "")}");

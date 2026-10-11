@@ -182,8 +182,8 @@ public sealed class TimelineLayoutEngineTests {
         var bars = TimelineLayoutEngine.Layout([mission], WindowStart, WindowEnd, WindowStart);
 
         Assert.Equal(2, bars[0].DurationIndex);
-        Assert.NotNull(bars[0].TargetIconPath);
-        Assert.Contains("PHOENIX_FEATHER", bars[0].TargetIconPath!);
+        var targetIcon = Assert.IsType<string>(bars[0].TargetIconPath);
+        Assert.Contains("PHOENIX_FEATHER", targetIcon);
         Assert.Same(mission, bars[0].Mission);
     }
 
@@ -194,6 +194,32 @@ public sealed class TimelineLayoutEngineTests {
 
         Assert.Equal(3, bars[0].DurationIndex);
         Assert.Null(bars[0].TargetIconPath);
+    }
+
+    [Fact]
+    public void Layout_BubbleShownOnlyInWindowContainingTheReturn() {
+        var mission = M("spanning", WindowStart.AddHours(-30), WindowStart.AddHours(6));
+
+        var earlier = TimelineLayoutEngine.Layout(
+            [mission], WindowStart.AddDays(-1), WindowStart, WindowEnd);
+        var containing = TimelineLayoutEngine.Layout(
+            [mission], WindowStart, WindowEnd, WindowEnd);
+
+        Assert.False(earlier[0].ShowBubble);
+        Assert.True(containing[0].ShowBubble);
+    }
+
+    [Fact]
+    public void Layout_ActiveMissionBubbleFollowsNowIntoTheCurrentWindow() {
+        var mission = M("flying", WindowStart.AddHours(-30), WindowEnd.AddHours(12));
+
+        var current = TimelineLayoutEngine.Layout(
+            [mission], WindowStart, WindowEnd, WindowStart.AddHours(6));
+        var past = TimelineLayoutEngine.Layout(
+            [mission], WindowStart.AddDays(-1), WindowStart, WindowStart.AddHours(6));
+
+        Assert.True(current[0].ShowBubble);
+        Assert.False(past[0].ShowBubble);
     }
 
     [Fact]
@@ -260,32 +286,6 @@ public sealed class TimelineLayoutEngineTests {
         var byId = bars.ToDictionary(b => b.MissionId);
         Assert.Equal(byId["earlier"].Lane, byId["late"].Lane);
         Assert.True(byId["earlier"].StackOrder < byId["late"].StackOrder);
-    }
-
-    [Fact]
-    public void Layout_BubbleShownOnlyInWindowContainingTheReturn() {
-        var mission = M("spanning", WindowStart.AddHours(-30), WindowStart.AddHours(6));
-
-        var earlier = TimelineLayoutEngine.Layout(
-            [mission], WindowStart.AddDays(-1), WindowStart, WindowEnd);
-        var containing = TimelineLayoutEngine.Layout(
-            [mission], WindowStart, WindowEnd, WindowEnd);
-
-        Assert.False(earlier[0].ShowBubble);
-        Assert.True(containing[0].ShowBubble);
-    }
-
-    [Fact]
-    public void Layout_ActiveMissionBubbleFollowsNowIntoTheCurrentWindow() {
-        var mission = M("flying", WindowStart.AddHours(-30), WindowEnd.AddHours(12));
-
-        var current = TimelineLayoutEngine.Layout(
-            [mission], WindowStart, WindowEnd, WindowStart.AddHours(6));
-        var past = TimelineLayoutEngine.Layout(
-            [mission], WindowStart.AddDays(-1), WindowStart, WindowStart.AddHours(6));
-
-        Assert.True(current[0].ShowBubble);
-        Assert.False(past[0].ShowBubble);
     }
 
     [Fact]

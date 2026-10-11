@@ -1,0 +1,82 @@
+@using System.Globalization
+@inject IUserTimeZoneProvider TzProvider
+
+<div class="agenda">
+    @if (_days.Count == 0) {
+        <p class="agenda-empty">No missions in this period.</p>
+    }
+    @foreach (var day in _days) {
+        <section class="agenda-day">
+            <span class="agenda-day-head">@day.Label</span>
+            @if (day.Events.Count > 0) {
+                <div class="agenda-events">
+                    @foreach (var e in day.Events) {
+                        <span class="agenda-event @(e.Predicted ? "agenda-event-predicted" : "")" style="@EventStyle(e)">
+                            @GameEventDisplay.Title(e.Type, e.Message)
+                        </span>
+                    }
+                </div>
+            }
+            <div class="agenda-cards">
+                @foreach (var entry in day.Missions) {
+                    <MissionCard Mission="entry.Mission"
+                                 Config="MissionCardConfig.Agenda"
+                                 ViewByDate="@(!entry.Carried)"
+                                 ViewMissionTimes="true"
+                                 RecolorDC="RecolorDC"
+                                 RecolorBC="RecolorBC"
+                                 OnView="OnSelect"/>
+                }
+            </div>
+        </section>
+    }
+</div>
+
+@code {
+    [Parameter] public IReadOnlyList<DatabaseMission> Missions { get; set; } = Array.Empty<DatabaseMission>();
+    [Parameter] public IReadOnlyList<GameEvent> Events { get; set; } = Array.Empty<GameEvent>();
+    [Parameter] public DateTimeOffset WindowStart { get; set; }
+    [Parameter] public DateTimeOffset WindowEnd { get; set; }
+    [Parameter] public bool RecolorDC { get; set; }
+    [Parameter] public bool RecolorBC { get; set; }
+    [Parameter] public EventCallback<string> OnSelect { get; set; }
+
+    private List<AgendaDay> _days = [];
+
+    private sealed record AgendaEntry(DatabaseMission Mission, bool Carried);
+
+    private sealed record AgendaDay(string Label, IReadOnlyList<AgendaEntry> Missions, IReadOnlyList<GameEvent> Events);
+
+    protected override void OnParametersSet() {
+        var tz = TzProvider.TimeZone;
+        long ws = WindowStart.ToUnixTimeSeconds();
+        long we = WindowEnd.ToUnixTimeSeconds();
+        var firstDay = TimeZoneInfo.ConvertTime(WindowStart, tz).Date;
+        var byDay = new SortedDictionary<DateTime, List<AgendaEntry>>();
+        foreach (var m in Missions.Where(m => m.ReturnDT > ws && m.LaunchDT < we).OrderBy(m => m.LaunchDT)) {
+            var carried = m.LaunchDT < ws;
+            var day = carried ? firstDay : TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(m.LaunchDT), tz).Date;
+            if (!byDay.TryGetValue(day, out var list)) {
+                list = [];
+                byDay[day] = list;
+            }
+
+            list.Add(new AgendaEntry(m, carried));
+        }
+
+        _days = byDay.Select(kv => new AgendaDay(
+            kv.Key.ToString("ddd, MMM d yyyy", CultureInfo.InvariantCulture),
+            kv.Value,
+            EventsOn(kv.Key, tz))).ToList();
+    }
+
+    private IReadOnlyList<GameEvent> EventsOn(DateTime day, TimeZoneInfo tz) {
+        long start = TimelineWindow.ToOffset(day, tz).ToUnixTimeSeconds();
+        long end = TimelineWindow.ToOffset(day.AddDays(1), tz).ToUnixTimeSeconds();
+        return Events.Where(e => e.EndTimestamp > start && e.StartTimestamp < end).ToList();
+    }
+
+    private static string EventStyle(GameEvent e) =>
+        FormattableString.Invariant($"--evt-bg:{GameEventDisplay.Color(e.Type)};");
+
+}

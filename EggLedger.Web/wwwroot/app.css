@@ -8,7 +8,7 @@
   --color-accent: #3b82f6;
   --color-accent2: #2563eb;
   --color-ok: #10b981;
-  --color-err: #b91c1c;
+  --color-err: #f87171;
   --color-border: #364153;
   --color-warn: #fb923c;
   --color-white: #ffffff;
@@ -105,7 +105,7 @@
   --color-ledger-panel-muted: rgba(120, 128, 138, 0.12);
   --color-ledger-scrollbar: #555555;
   --color-ledger-scrollbar-hover: #888888;
-  --color-ledger-tooltip-border: #cccccc;
+  --color-ledger-tooltip-border: #4b5563;
   --motion-fast: 120ms;
   --motion-base: 150ms;
   --motion-morph: 220ms;

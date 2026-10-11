@@ -16,12 +16,13 @@
 }
 
 .mcal-center {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
     display: flex;
+    flex: 1;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 0.5rem;
+    justify-content: center;
+    gap: 0.75rem;
+    min-width: 0;
 }
 
 .mcal-bar ::deep .airtime-stat {
@@ -33,6 +34,11 @@
 
 .airtime-label {
     color: var(--color-muted);
+}
+
+.mcal-bar ::deep .airtime-tt {
+    position-area: bottom span-all;
+    margin: 10px 0 0;
 }
 
 .airtime-chip,
@@ -59,6 +65,13 @@
 .mcal-bar ::deep .airtime-filtered {
     border-style: dashed;
     color: var(--color-muted);
+}
+
+.mcal-agenda {
+    display: none;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 .timeline-shell {
@@ -164,5 +177,13 @@
 
     .timeline-shell ::deep .timeline-cell-label {
         font-size: 0.55rem;
+    }
+
+    .mcal-cards .timeline-shell {
+        display: none;
+    }
+
+    .mcal-cards .mcal-agenda {
+        display: block;
     }
 }

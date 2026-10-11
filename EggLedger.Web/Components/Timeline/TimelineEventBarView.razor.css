@@ -15,6 +15,12 @@
     cursor: default;
 }
 
+.timeline-event-predicted {
+    background-color: color-mix(in srgb, var(--evt-bg) 22%, transparent);
+    outline: 1px dashed color-mix(in srgb, var(--evt-bg) 80%, transparent);
+    outline-offset: -1px;
+}
+
 .timeline-event-icon {
     width: 1.2rem;
     height: 1.2rem;

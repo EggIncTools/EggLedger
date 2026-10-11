@@ -12,4 +12,5 @@ public sealed record TimelineEventBar(
     double LeftPercent,
     double WidthPercent,
     bool ContinuesLeft,
-    bool ContinuesRight);
+    bool ContinuesRight,
+    bool Predicted = false);

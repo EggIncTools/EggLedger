@@ -4,7 +4,7 @@
 @using System.Globalization
 @using EggIdentity.UI
 
-<div class="mcal">
+<div class="mcal @(UseCards ? "mcal-cards" : "")">
     <div class="mcal-bar">
         @LeadingControls
         <div class="mcal-center">
@@ -20,7 +20,7 @@
                                  OnPan="Pan"
                                  OnToday="JumpToNow"
                                  DateChanged="JumpToDate"/>
-            <Tooltip Text="@AirtimeTooltip" Class="airtime-stat" Focusable="true">
+            <Tooltip Text="@AirtimeTooltip" Class="airtime-stat" PopClass="airtime-tt" Focusable="true">
                 <span class="airtime-label">Airtime</span>
                 @if (_flightSlices is not { Count: > 0 } slices) {
                     <span class="airtime-chip">n/a</span>
@@ -64,6 +64,17 @@
                       ShowHourTicks="@(_zoom == TimelineZoom.Day)"
                       OnCommitScrollPan="OnCommitScrollPan"/>
     </div>
+    @if (UseCards) {
+        <div class="mcal-agenda">
+            <MissionAgendaView Missions="_merged"
+                               Events="_overlayEvents"
+                               WindowStart="_visibleStart"
+                               WindowEnd="_visibleEnd"
+                               RecolorDC="RecolorDC"
+                               RecolorBC="RecolorBC"
+                               OnSelect="OnSelectMission"/>
+        </div>
+    }
 </div>
 
 @if (_showStillFlying) {
@@ -88,6 +99,7 @@
     [Parameter] public bool HasActiveFilter { get; set; }
     [Parameter] public bool RecolorDC { get; set; }
     [Parameter] public bool RecolorBC { get; set; }
+    [Parameter] public bool UseCards { get; set; }
     [Parameter] public EventCallback<string> OnViewMission { get; set; }
     [Parameter] public RenderFragment? LeadingControls { get; set; }
 
@@ -116,6 +128,7 @@
 
     private RenderFragment<object> MissionItemTemplate => item =>
         @<TimelineBarView Bar="((TimelineBar)item)"
+                          CardConfig="@(UseCards ? BarCardConfig : null)"
                           RecolorDC="RecolorDC"
                           RecolorBC="RecolorBC"
                           OnSelect="OnSelectMission"
@@ -123,6 +136,12 @@
                           OnHoverMissionId="SetHoveredMissionId"/>;
 
     private string ZoomClass => _zoom.ToString().ToLowerInvariant();
+
+    private MissionCardConfig BarCardConfig => _zoom switch {
+        TimelineZoom.Day => MissionCardConfig.CalendarDay,
+        TimelineZoom.Week => MissionCardConfig.CalendarWeek,
+        _ => MissionCardConfig.CalendarMonth
+    };
 
     private int VisibleSlots => _zoom == TimelineZoom.Month ? 5 : 1;
 
@@ -186,9 +205,13 @@
             : InFlightMissions.Where(m => !dbIds.Contains(m.MissiondId)).ToList();
         _noDataIds = inFlight.Select(m => m.MissiondId).ToHashSet(StringComparer.Ordinal);
         _merged = Missions.Concat(inFlight).ToList();
-        _overlayEvents = GameEvents.Snapshot()
+        var observed = GameEvents.Snapshot()
             .Where(e => OverlayEventTypes.Contains(e.Type, StringComparer.OrdinalIgnoreCase))
             .ToList();
+        var observedUntil = observed.Count == 0 ? 0 : observed.Max(e => e.EndTimestamp);
+        var predicted = GameEvents.Predictions()
+            .Where(p => OverlayEventTypes.Contains(p.Type, StringComparer.OrdinalIgnoreCase) && p.StartTimestamp >= observedUntil);
+        _overlayEvents = [.. observed, .. predicted];
 
         var now = Time.GetUtcNow();
         var statsStart = _zoom == TimelineZoom.Month ? _visibleStart.AddDays(-7 * (VisibleSlots - 1)) : _visibleStart;
@@ -366,8 +389,8 @@
     }
 
     private void UpdatePanBounds(TimeZoneInfo tz) {
-        var nowWindow = TimelineWindow.Compute(Time.GetUtcNow(), _zoom, tz);
-        _canPanNext = _visibleStart < nowWindow.Start;
+        var nextMonth = TimelineWindow.Compute(Time.GetUtcNow().AddMonths(1), TimelineZoom.Month, tz);
+        _canPanNext = _visibleEnd < nextMonth.End;
 
         if (EarliestLaunchUnixSeconds() is { } earliest) {
             var earliestWindow = TimelineWindow.Compute(DateTimeOffset.FromUnixTimeSeconds(earliest), _zoom, tz);

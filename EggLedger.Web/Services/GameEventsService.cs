@@ -18,6 +18,9 @@ public sealed record GameEvent {
     public string? Source { get; init; }
 
     [JsonIgnore]
+    public bool Predicted { get; init; }
+
+    [JsonIgnore]
     public bool IsDeviceSourced =>
         string.Equals(Source, GameEventsService.DeviceSource, StringComparison.OrdinalIgnoreCase);
 
@@ -42,6 +45,19 @@ public sealed record GameEventsResponse {
     public IReadOnlyList<GameEvent> Events { get; init; } = [];
 }
 
+public sealed record EventPrediction {
+    public string? Type { get; init; }
+    public bool Ultra { get; init; }
+    public double PredictedStart { get; init; }
+    public double PredictedEnd { get; init; }
+    public double Confidence { get; init; }
+}
+
+public sealed record EventPredictionSet {
+    public double GeneratedAt { get; init; }
+    public IReadOnlyList<EventPrediction> Predictions { get; init; } = [];
+}
+
 public interface IGameEventStore {
     Task<byte[]?> LoadAsync(CancellationToken cancellationToken = default);
     Task SaveAsync(byte[] utf8Json, CancellationToken cancellationToken = default);
@@ -60,6 +76,8 @@ public sealed class GameEventsService {
     public const string ApiKeyVariable = "EGI_API_KEY";
     public const string ApiKeyHeader = "X-Api-Key";
     public const string EndpointPath = "/api/v1/events";
+    public const string PredictionsPath = "/api/v1/events/predictions";
+    public const int PredictionHorizonDays = 45;
 
     public static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(30);
     public static readonly TimeSpan RefreshFloor = TimeSpan.FromMinutes(5);
@@ -84,6 +102,7 @@ public sealed class GameEventsService {
     private readonly string _endpoint = "";
     private readonly Lock _gate = new();
     private readonly Dictionary<GameEventKey, GameEvent> _events = [];
+    private IReadOnlyList<EventPrediction> _predictions = [];
     private DateTimeOffset _nextAllowedRefresh = DateTimeOffset.MinValue;
     private Task? _inFlight;
     private int _consecutiveUnavailable;
@@ -162,6 +181,22 @@ public sealed class GameEventsService {
         }
         all.Sort(NewestFirst);
         return all;
+    }
+
+    public IReadOnlyList<GameEvent> Predictions() {
+        IReadOnlyList<EventPrediction> predictions;
+        lock (_gate) {
+            predictions = _predictions;
+        }
+
+        return [.. predictions.Select(p => new GameEvent {
+            Id = string.Create(CultureInfo.InvariantCulture, $"predicted-{p.Type}-{p.PredictedStart:0}"),
+            Type = p.Type!,
+            Ultra = p.Ultra,
+            StartTimestamp = p.PredictedStart,
+            EndTimestamp = p.PredictedEnd,
+            Predicted = true,
+        })];
     }
 
     public Task EnsureLoadedAsync(CancellationToken cancellationToken = default) {
@@ -276,7 +311,39 @@ public sealed class GameEventsService {
             await SaveAsync(cancellationToken).ConfigureAwait(false);
         }
 
+        if (reachedServer) {
+            await FetchPredictionsAsync(cancellationToken).ConfigureAwait(false);
+        }
+
         return reachedServer;
+    }
+
+    private async Task FetchPredictionsAsync(CancellationToken cancellationToken) {
+        var uri = string.Create(CultureInfo.InvariantCulture, $"{_baseUrl}{PredictionsPath}?horizon={PredictionHorizonDays}");
+        using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+        if (_apiKey is not null) {
+            request.Headers.TryAddWithoutValidation(ApiKeyHeader, _apiKey);
+        }
+
+        try {
+            using var response = await _http.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode) {
+                _logger?.LogDebug("event predictions returned {Status}", (int)response.StatusCode);
+                return;
+            }
+
+            var set = await JsonSerializer.DeserializeAsync<EventPredictionSet>(
+                await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false), Json, cancellationToken).ConfigureAwait(false);
+            if (set is null) {
+                return;
+            }
+
+            lock (_gate) {
+                _predictions = [.. set.Predictions.Where(p => !string.IsNullOrEmpty(p.Type) && p.PredictedEnd > p.PredictedStart)];
+            }
+        } catch (Exception ex) when (ex is HttpRequestException or JsonException or TaskCanceledException) {
+            _logger?.LogDebug(ex, "event predictions fetch failed");
+        }
     }
 
     private double? ComputeAfter() {

@@ -20,7 +20,7 @@
         </div>
 
         @if (FlatMissions is not null) {
-            <div class="mission-grid mission-items-full mrt-flat">
+            <div class="mission-grid @GridClass mission-items-full mrt-flat">
                 @foreach (var mission in FlatMissions) {
                     <MissionCard Mission="mission"
                                  Config="Config"
@@ -58,7 +58,7 @@
                                     </button>
 
                                     @if (month.Enabled && FlattenDays) {
-                                        <div class="mission-grid mission-items-full mrt-nest">
+                                        <div class="mission-grid @GridClass mission-items-full mrt-nest">
                                             @foreach (var mission in Grouping.Missions[yearIndex][monthIndex].SelectMany(d => d)) {
                                                 <MissionCard Mission="mission"
                                                              Config="Config"
@@ -95,7 +95,7 @@
                                                                 View row
                                                             </button>
                                                         }
-                                                        <div class="mission-grid mission-items-full mrt-day-grid">
+                                                        <div class="mission-grid @GridClass mission-items-full mrt-day-grid">
                                                             @if (DayVisible(yearIndex, monthIndex, dayIndex)) {
                                                                 @foreach (var mission in Grouping.Missions[yearIndex][monthIndex][dayIndex]) {
                                                                     <MissionCard Mission="mission"
@@ -159,6 +159,8 @@
     [Parameter] public EventCallback OnSelectionChanged { get; set; }
 
     [Parameter] public EventCallback OnGroupingChanged { get; set; }
+
+    private string GridClass => Config.UsesCards ? "mission-grid-cards" : "";
 
     private async Task OnView(string missionId) {
         await OnViewMission.InvokeAsync(missionId);

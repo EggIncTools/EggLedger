@@ -81,7 +81,13 @@ public sealed class GameEventsServiceTests {
 
         protected override Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request, CancellationToken cancellationToken) {
-            Uris.Add(request.RequestUri!.ToString());
+            if (request.RequestUri!.AbsolutePath.EndsWith(GameEventsService.PredictionsPath, StringComparison.Ordinal)) {
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) {
+                    Content = new StringContent("""{"generatedAt":0,"predictions":[]}""", Encoding.UTF8, "application/json"),
+                });
+            }
+
+            Uris.Add(request.RequestUri.ToString());
             Keys.Add(request.Headers.TryGetValues(GameEventsService.ApiKeyHeader, out var values)
                 ? string.Join(",", values)
                 : null);

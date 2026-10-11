@@ -1,6 +1,26 @@
 @using System.Globalization
 @inject IUserTimeZoneProvider TzProvider
-@if (Config.Layout == CardLayout.Grid) {
+
+@if (Embedded) {
+    <div class="mc mc-embedded @CustomClass" style="@InlineStyle()" data-missionid="@Mission.MissiondId">
+        @foreach (var slot in VisibleFieldsInOrder) {
+            @RenderField(slot)
+        }
+    </div>
+} else if (Config.Layout == CardLayout.Cards) {
+    <div class="mc panel-muted @CustomClass" style="@InlineStyle()" data-missionid="@Mission.MissiondId">
+        @if (MultiViewMode == MultiViewMode.Free) {
+            <input type="checkbox" class="mc-check"
+                   checked="@IsSelected"
+                   @onclick="@(e => OnToggleSelected.InvokeAsync((Mission.MissiondId, e.ShiftKey)))"/>
+        }
+        <button type="button" class="mc-btn" @onclick="@(() => OnView.InvokeAsync(Mission.MissiondId))">
+            @foreach (var slot in VisibleFieldsInOrder) {
+                @RenderField(slot)
+            }
+        </button>
+    </div>
+} else if (Config.Layout == CardLayout.Grid) {
     <div @key="Mission.MissiondId" class="panel-muted mission-card-grid @CustomClass" style="@InlineStyle()" data-missionid="@Mission.MissiondId">
         @if (MultiViewMode == MultiViewMode.Free) {
             <input type="checkbox" class="mission-card-grid-check"
@@ -8,8 +28,8 @@
                    @onclick="@(e => OnToggleSelected.InvokeAsync((Mission.MissiondId, e.ShiftKey)))"/>
         }
         <button type="button" class="mission-card-grid-btn" @onclick="@(() => OnView.InvokeAsync(Mission.MissiondId))">
-            @foreach (var slot in EnabledFieldsInOrder) {
-                @RenderField(slot)
+            @foreach (var slot in EnabledLegacyFieldsInOrder) {
+                @RenderLegacyField(slot)
             }
         </button>
     </div>
@@ -21,8 +41,8 @@
                    @onclick="@(e => OnToggleSelected.InvokeAsync((Mission.MissiondId, e.ShiftKey)))"/>
         }
         <button type="button" class="mission-item-btn" @onclick="@(() => OnView.InvokeAsync(Mission.MissiondId))">
-            @foreach (var slot in EnabledFieldsInOrder) {
-                @RenderField(slot)
+            @foreach (var slot in EnabledLegacyFieldsInOrder) {
+                @RenderLegacyField(slot)
             }
         </button>
     </div>
@@ -31,6 +51,7 @@
 @code {
     [Parameter] public required DatabaseMission Mission { get; set; }
     [Parameter] public required MissionCardConfig Config { get; set; }
+    [Parameter] public bool Embedded { get; set; }
     [Parameter] public bool IsSelected { get; set; }
     [Parameter] public bool IsBeingViewed { get; set; }
     [Parameter] public bool ViewByDate { get; set; }
@@ -62,20 +83,98 @@
         return styles.Count == 0 ? null : string.Join(";", styles);
     }
 
-    private IEnumerable<CardFieldSlot> EnabledFieldsInOrder =>
-        Config.Fields.Where(f => f.Enabled).OrderBy(f => f.Order);
+    private IEnumerable<CardFieldSlot> VisibleFieldsInOrder =>
+        Config.Fields.Where(f => f.Enabled && HasContent(f.Field)).OrderBy(f => f.Order);
 
-    private string FieldSpanClass(CardFieldSlot slot) {
+    private IEnumerable<CardFieldSlot> EnabledLegacyFieldsInOrder =>
+        Config.Fields.Where(f => f.Enabled && f.Field != CardField.ShipIcon).OrderBy(f => f.Order);
+
+    private bool HasContent(CardField field) {
+        return field switch {
+            CardField.LaunchDate => !ViewByDate,
+            CardField.LaunchTime => ViewMissionTimes,
+            CardField.LevelStars => Mission.Level > 0,
+            CardField.Target => TargetImagePaths.Resolve(Mission.Target).Path is not null,
+            CardField.CapacityModifierBadge => Mission.IsBuggedCap || Mission.IsDubCap,
+            CardField.DropCount => DropCount is > 0,
+            _ => true
+        };
+    }
+
+    private static int DropRank(CardField field) {
+        return field switch {
+            CardField.ShipIcon => 0,
+            CardField.Target => 0,
+            CardField.ShipName => 1,
+            CardField.LevelStars => 2,
+            CardField.Duration => 2,
+            _ => 3
+        };
+    }
+
+    private string FieldClass(CardFieldSlot slot) {
+        var rank = "mc-f mc-r" + DropRank(slot.Field);
         return slot.Field switch {
-            CardField.LaunchDate => RowColorClass(false),
-            CardField.LaunchTime => RowColorClass(true),
+            CardField.LaunchDate => rank + " " + RowColorClass(false, "mc-muted"),
+            CardField.LaunchTime => rank + " " + RowColorClass(true, "mc-muted"),
+            CardField.ShipName => rank + " mc-ship " + DurationClass(),
+            CardField.Duration => rank + " mc-muted",
+            CardField.Capacity => rank + " mc-muted",
+            _ => rank
+        };
+    }
+
+    private static string FieldSlug(CardField field) => field.ToString().ToLowerInvariant();
+
+    private RenderFragment RenderField(CardFieldSlot slot) => __builder => {
+        <span class="@FieldClass(slot)" data-field="@FieldSlug(slot.Field)">
+            @switch (slot.Field) {
+                case CardField.LaunchDate:
+                    @DateLabel()
+                    break;
+                case CardField.LaunchTime:
+                    @TimeLabel()
+                    break;
+                case CardField.ShipIcon:
+                    <img class="mc-ico" src="@ContentPaths.Asset($"images/ships/{Mission.ShipEnumString}.png")" alt="@Mission.ShipString" loading="lazy" decoding="async"/>
+                    break;
+                case CardField.ShipName:
+                    @Mission.ShipString
+                    break;
+                case CardField.LevelStars:
+                    <text>@Mission.Level<span class="text-goldenstar">&#9733;</span></text>
+                    break;
+                case CardField.Target:
+                    <TargetDisplay Target="@Mission.Target"/>
+                    <span class="mc-r1 mc-muted">@NameFormatting.TargetDisplayName(Mission.Target)</span>
+                    break;
+                case CardField.Duration:
+                    @Mission.DurationString
+                    break;
+                case CardField.Capacity:
+                    @Mission.Capacity.ToString(CultureInfo.InvariantCulture)
+                    break;
+                case CardField.CapacityModifierBadge:
+                    <span class="mc-badge">@(Mission.IsBuggedCap ? "0.6x" : "2x")</span>
+                    break;
+                case CardField.DropCount:
+                    <span class="drop-count-badge">@(DropCount)x</span>
+                    break;
+            }
+        </span>
+    };
+
+    private string LegacyFieldSpanClass(CardFieldSlot slot) {
+        return slot.Field switch {
+            CardField.LaunchDate => RowColorClass(false, "mission-item-date"),
+            CardField.LaunchTime => RowColorClass(true, "mission-item-date"),
             CardField.DropCount => "",
             _ => "mission-item-field"
         };
     }
 
-    private RenderFragment RenderField(CardFieldSlot slot) => __builder => {
-        <span class="@FieldSpanClass(slot)">
+    private RenderFragment RenderLegacyField(CardFieldSlot slot) => __builder => {
+        <span class="@LegacyFieldSpanClass(slot)">
             @switch (slot.Field) {
                 case CardField.LaunchDate:
                     @(!ViewByDate ? DateLabel() : "")
@@ -114,7 +213,7 @@
         </span>
     };
 
-    private string RowColorClass(bool altMode) {
+    private string RowColorClass(bool altMode, string fallback) {
         if (IsBeingViewed) {
             return altMode ? "text-selectedmissiondarker" : "text-selectedmission";
         }
@@ -127,7 +226,7 @@
             return altMode ? "text-dubcapdarker" : "text-dubcap";
         }
 
-        return "mission-item-date";
+        return fallback;
     }
 
     private string DurationClass() {

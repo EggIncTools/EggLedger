@@ -1,7 +1,6 @@
 .wcs {
     --wcs-pos: 0%;
     --wcs-zone: var(--color-ok);
-    margin-top: 0.5rem;
     padding-left: 0.5rem;
 }
 
@@ -19,8 +18,8 @@
 
 .wcs-marker {
     position: relative;
-    height: 1.75rem;
-    margin-bottom: 0.25rem;
+    height: 1.25rem;
+    margin-bottom: 0.125rem;
     user-select: none;
     width: 80%;
 }

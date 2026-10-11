@@ -117,7 +117,8 @@
 
     private static readonly IReadOnlyList<TileGroup<CardLayout>.Tile> LayoutTiles = [
         new(CardLayout.CompactRow, b => b.AddContent(0, "Compact row")),
-        new(CardLayout.Grid, b => b.AddContent(0, "Grid"))
+        new(CardLayout.Grid, b => b.AddContent(0, "Grid")),
+        new(CardLayout.Cards, b => b.AddContent(0, "Cards (beta)"), Title: "Stacked mission cards in List, cards inside Calendar bars, and an agenda view on phones")
     ];
 
     private IReadOnlyList<TileGroup<string>.Tile> PresetTiles() =>
@@ -282,7 +283,7 @@
             return new CardConfigForm {
                 Name = c.Name,
                 Layout = c.Layout,
-                Fields = [.. c.Fields],
+                Fields = [.. c.WithAllFields().Fields],
                 ColorizeByDuration = c.ColorizeByDuration,
                 ShowExpectedDropsPerShip = c.ShowExpectedDropsPerShip,
                 BackgroundColor = c.BackgroundColor,

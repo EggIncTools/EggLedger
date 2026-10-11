@@ -116,8 +116,15 @@
     height: 0.875rem;
 }
 
-.csync-soft-danger {
-    opacity: 0.8;
+.csync-danger {
+    color: var(--color-err);
+    border-color: color-mix(in srgb, var(--color-err) 45%, var(--color-border));
+}
+
+.csync-danger:hover:not(:disabled) {
+    color: var(--color-bg);
+    background-color: var(--color-err);
+    border-color: var(--color-err);
 }
 
 .csync-auto {

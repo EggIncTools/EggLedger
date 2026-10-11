@@ -1,3 +1,88 @@
+.mc {
+    container-type: inline-size;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    padding: 0.375rem 0.625rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    line-height: calc(1.25 / 0.875);
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.mc-embedded {
+    height: 100%;
+    padding: 0 0.5rem;
+    border-radius: 0;
+    background: transparent;
+    color: var(--color-fg);
+}
+
+.mc-check {
+    flex-shrink: 0;
+}
+
+.mc-btn {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.mc-f {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+
+.mc-ship {
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mc-muted {
+    color: var(--color-muted);
+    font-weight: 400;
+}
+
+.mc-ico,
+.mc ::deep .target-ico {
+    height: 1.5rem;
+    width: 1.5rem;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.mc-embedded .mc-ico,
+.mc-embedded ::deep .target-ico {
+    height: min(1.5rem, calc(var(--bar-h) - 0.4rem));
+    width: min(1.5rem, calc(var(--bar-h) - 0.4rem));
+}
+
+.mc-badge {
+    padding: 0 0.375rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    background-color: var(--color-darkerer);
+    color: var(--color-fg);
+}
+
 .mission-card-grid {
     display: flex;
     flex-direction: column;
@@ -59,11 +144,21 @@
     color: var(--color-muted);
 }
 
+.mission-item-btn .drop-count-badge,
+.mission-card-grid-btn .drop-count-badge {
+    margin-left: 0.5rem;
+}
+
+@media (min-width: 48rem) and (max-width: 79.9375rem) {
+    .mission-item-3 {
+        flex: 0 0 calc(50% - 10px);
+    }
+}
+
 .drop-count-badge {
     display: inline-flex;
     align-items: center;
     height: 1rem;
-    margin-left: 0.5rem;
     padding: 0 0.375rem;
     font-size: 0.75rem;
     line-height: 1rem;
@@ -73,8 +168,26 @@
     box-shadow: 0 0 0 1px var(--color-yellow-700);
 }
 
-@media (min-width: 48rem) and (max-width: 79.9375rem) {
-    .mission-item-3 {
-        flex: 0 0 calc(50% - 10px);
+@container (max-width: 18rem) {
+    .mc-r3 {
+        display: none;
+    }
+}
+
+@container (max-width: 11rem) {
+    .mc-r2 {
+        display: none;
+    }
+}
+
+@container (max-width: 6rem) {
+    .mc-r1 {
+        display: none;
+    }
+}
+
+@container (max-width: 2.25rem) {
+    .mc-r0 {
+        display: none;
     }
 }

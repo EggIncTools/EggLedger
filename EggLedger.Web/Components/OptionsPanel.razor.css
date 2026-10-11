@@ -24,6 +24,17 @@
     margin-right: 0.5rem;
 }
 
+.opts-row {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 0.25rem;
+}
+
+.opts-inline {
+    display: inline-flex;
+    align-items: center;
+}
+
 .opts-rule {
     margin: 1rem 0;
     width: 100%;

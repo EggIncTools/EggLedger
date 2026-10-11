@@ -204,6 +204,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+    min-width: 0;
     font-size: 0.75rem;
     line-height: calc(1 / 0.75);
 }

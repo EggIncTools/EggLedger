@@ -10,6 +10,7 @@ public class MissionCardConfigTests {
     public void Classic_HasCurrentDefaultFieldsEnabledInOriginalOrder() {
         var classic = MissionCardConfig.Classic;
         Assert.Equal(CardLayout.CompactRow, classic.Layout);
+        Assert.False(classic.UsesCards);
         Assert.True(classic.ColorizeByDuration);
         Assert.Null(classic.CustomCss);
 
@@ -20,8 +21,41 @@ public class MissionCardConfigTests {
             .ToArray();
 
         Assert.Equal(
-            [CardField.LaunchDate, CardField.LaunchTime, CardField.ShipName, CardField.LevelStars, CardField.Target, CardField.DropCount],
+            [CardField.LaunchDate, CardField.LaunchTime, CardField.ShipIcon, CardField.ShipName, CardField.LevelStars, CardField.Target, CardField.DropCount],
             enabledInOrder);
+    }
+
+    [Fact]
+    public void WithAllFields_AppendsMissingFieldsEnabledAfterExistingOrder() {
+        var legacy = MissionCardConfig.Classic with {
+            Fields = [new CardFieldSlot(CardField.ShipName, true, 0), new CardFieldSlot(CardField.Target, false, 1)]
+        };
+
+        var filled = legacy.WithAllFields();
+
+        Assert.Equal(Enum.GetValues<CardField>().Length, filled.Fields.Count);
+        Assert.Equal([CardField.ShipName, CardField.Target], filled.Fields.OrderBy(f => f.Order).Take(2).Select(f => f.Field));
+        Assert.All(filled.Fields.Skip(2), f => Assert.True(f.Enabled));
+        Assert.Equal(filled.Fields.Count, filled.Fields.Select(f => f.Order).Distinct().Count());
+        Assert.Same(filled, filled.WithAllFields());
+    }
+
+    [Fact]
+    public void ActivePreset_FillsMissingFields() {
+        var partial = MissionCardConfig.Classic with { Name = "Old", Fields = [new CardFieldSlot(CardField.ShipName, true, 0)] };
+        var set = new CardPresetSet([MissionCardConfig.Classic, partial], "Old");
+
+        Assert.Contains(set.ActivePreset().Fields, f => f.Field == CardField.ShipIcon && f.Enabled);
+    }
+
+    [Fact]
+    public void CalendarConfigs_UseCardsAndCarryNoUserStyling() {
+        foreach (var c in new[] { MissionCardConfig.CalendarDay, MissionCardConfig.CalendarWeek, MissionCardConfig.CalendarMonth, MissionCardConfig.Agenda }) {
+            Assert.True(c.UsesCards);
+            Assert.Null(c.CustomCss);
+            Assert.Null(c.BackgroundColor);
+            Assert.All(c.Fields, f => Assert.True(f.Enabled));
+        }
     }
 
     [Fact]

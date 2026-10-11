@@ -28,7 +28,7 @@
     } else {
         <div class="csync-row">
             <span class="csync-badge @BadgeClass">@BadgeText</span>
-            @if (_connected) {
+            @if (_connected && Platform.IsDesktop) {
                 @if (!string.IsNullOrEmpty(_avatarUrl)) {
                     <img class="csync-avatar" src="@_avatarUrl" alt="Account avatar"/>
                 }
@@ -60,12 +60,12 @@
 
         <div class="csync-row csync-gap">
             @if (!_connected) {
-                <button type="button" class="btn-secondary"
+                <button type="button" class="btn-mini"
                         disabled="@_authWaiting" @onclick="@(() => Platform.IsDesktop ? ConnectAsync() : ReconnectAsync())">
                     @(_authWaiting ? "Waiting for sign-in..." : "Connect account")
                 </button>
             } else {
-                <button type="button" class="btn-primary csync-icon-btn" disabled="@_syncInProgress" @onclick="SyncNowAsync">
+                <button type="button" class="btn-mini csync-icon-btn" disabled="@_syncInProgress" @onclick="SyncNowAsync">
                     @if (!_syncInProgress) {
                         <svg class="csync-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0l-4 4m4-4l4 4M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
@@ -73,7 +73,7 @@
                     }
                     @(_syncInProgress ? "Syncing..." : "Sync")
                 </button>
-                <button type="button" class="btn-secondary csync-icon-btn" disabled="@_restoreInProgress" @onclick="RestoreNowAsync">
+                <button type="button" class="btn-mini csync-icon-btn" disabled="@_restoreInProgress" @onclick="RestoreNowAsync">
                     @if (!_restoreInProgress) {
                         <svg class="csync-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16"/>
@@ -81,21 +81,21 @@
                     }
                     @(_restoreInProgress ? "Restoring..." : "Restore")
                 </button>
-                @if (_confirmingDelete) {
-                    <span class="csync-err">Delete all remote data?</span>
-                    <button type="button" class="btn-secondary" @onclick="() => _confirmingDelete = false">
-                        Cancel
-                    </button>
-                    <button type="button" class="btn-danger" disabled="@_deleteInProgress" @onclick="DeleteRemoteAsync">
-                        @(_deleteInProgress ? "Deleting..." : "Yes, delete")
-                    </button>
-                } else {
-                    <button type="button" class="btn-danger" @onclick="DisconnectAsync">
-                        Disconnect
-                    </button>
-                    @if (Platform.IsDesktop) {
-                        <button type="button" class="btn-danger csync-soft-danger" @onclick="() => _confirmingDelete = true">
-                            Delete Remote Data
+                @if (Platform.IsDesktop) {
+                    @if (_confirmingDelete) {
+                        <span class="csync-err">Delete all remote data?</span>
+                        <button type="button" class="btn-mini" @onclick="() => _confirmingDelete = false">
+                            Cancel
+                        </button>
+                        <button type="button" class="btn-mini csync-danger" disabled="@_deleteInProgress" @onclick="DeleteRemoteAsync">
+                            @(_deleteInProgress ? "Deleting..." : "Delete")
+                        </button>
+                    } else {
+                        <button type="button" class="btn-mini csync-danger" @onclick="DisconnectAsync">
+                            Disconnect
+                        </button>
+                        <button type="button" class="btn-mini csync-danger" @onclick="() => _confirmingDelete = true">
+                            Delete remote data
                         </button>
                     }
                 }

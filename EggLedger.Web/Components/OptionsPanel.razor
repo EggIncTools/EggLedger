@@ -5,34 +5,28 @@
 <div>
     <div class="opts-group">
         @if (ShowHeading) {
-            <span class="opts-title ledger-underline">Export</span>
-            <br/>
-        }
-        <div class="opts-item">
-            <span class="section-heading">CSV Export</span><br/>
-            <input id="autoExportCsvCheckbox" type="checkbox" class="ext-opt-check opts-check"
-                   checked="@Model.AutoExportCsv"
-                   @onchange="e => SetAsync(SettingsModel.KeyAutoExportCsv, b => Model.AutoExportCsv = b, e)"/>
-            <label for="autoExportCsvCheckbox" class="ext-opt-label">Auto-export CSV on fetch</label>
-        </div>
-        <div class="opts-item">
-            <span class="section-heading">XLSX Export</span><br/>
-            <input id="autoExportXlsxCheckbox" type="checkbox" class="ext-opt-check opts-check"
-                   checked="@Model.AutoExportXlsx"
-                   @onchange="e => SetAsync(SettingsModel.KeyAutoExportXlsx, b => Model.AutoExportXlsx = b, e)"/>
-            <label for="autoExportXlsxCheckbox" class="ext-opt-label">Auto-export XLSX on fetch</label>
-        </div>
-    </div>
-
-    <hr class="opts-rule"/>
-
-    <div class="opts-group">
-        @if (ShowHeading) {
             <span class="opts-title ledger-underline">Fetch Behavior</span>
             <br/>
         }
         <div class="opts-item">
-            <span class="section-heading">Parallel Download Workers</span><br/>
+            <span class="section-heading">Auto-export on Fetch</span>
+            <div class="opts-row">
+                <label class="ext-opt-label opts-inline">
+                    <input type="checkbox" class="ext-opt-check opts-check"
+                           checked="@Model.AutoExportCsv"
+                           @onchange="e => SetAsync(SettingsModel.KeyAutoExportCsv, b => Model.AutoExportCsv = b, e)"/>
+                    CSV
+                </label>
+                <label class="ext-opt-label opts-inline">
+                    <input type="checkbox" class="ext-opt-check opts-check"
+                           checked="@Model.AutoExportXlsx"
+                           @onchange="e => SetAsync(SettingsModel.KeyAutoExportXlsx, b => Model.AutoExportXlsx = b, e)"/>
+                    XLSX
+                </label>
+            </div>
+        </div>
+        <div class="opts-item">
+            <span class="section-heading">Parallel Download Workers</span>
             <WorkerCountSlider WorkerCount="Model.WorkerCount" WorkerCountChanged="SetWorkerAsync"
                                WarningRead="Model.WorkerCountWarningRead" DismissWarning="DismissWorkerWarningAsync"/>
         </div>

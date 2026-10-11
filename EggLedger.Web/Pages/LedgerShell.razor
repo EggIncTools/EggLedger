@@ -12,6 +12,7 @@
 @inject LedgerShellState Shell
 @inject ShipsViewState Ships
 @inject NavigationManager Nav
+@inject IJSRuntime Js
 
 <PageTitle>EggLedger - @ViewLabel(Shell.View)</PageTitle>
 
@@ -67,7 +68,7 @@
         Shell.Changed += OnShellChanged;
         Shell.Changed += OnShellRouteChanged;
         Ships.Changed += OnShipsRouteChanged;
-        _routeSync = new PathRouteSync(Nav, "/");
+        _routeSync = new PathRouteSync(Nav, Js, "/");
         _routeSync.Changed += OnRouteChanged;
         _routePath = "/" + Nav.ToBaseRelativePath(Nav.Uri).Split('?', '#')[0].Trim('/').ToLowerInvariant();
         ApplyRoute();

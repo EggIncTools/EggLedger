@@ -161,6 +161,22 @@
     padding: 2px;
 }
 
+.timeline-bar-body {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    overflow: hidden;
+    border-radius: 9999px;
+}
+
+.timeline-bar-cut-l .timeline-bar-body {
+    padding-left: 0.4rem;
+}
+
+.timeline-bar-cut-r .timeline-bar-body {
+    padding-right: 0.4rem;
+}
+
 .timeline-bar > :not(.tooltip-floating) {
     pointer-events: none;
 }

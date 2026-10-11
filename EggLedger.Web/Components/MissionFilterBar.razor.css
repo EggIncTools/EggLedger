@@ -13,10 +13,11 @@
     position: relative;
     display: flex;
     flex-direction: row;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     flex-grow: 1;
     align-items: center;
     gap: 0.5rem;
+    min-width: 0;
     padding: 0.25rem 0;
 }
 
