@@ -104,7 +104,6 @@ if (eggIdentitySession is not null) {
         return Task.CompletedTask;
     });
     builder.Services.AddSingleton(eggIdentitySession);
-    builder.Services.AddScoped<EggLedger.Web.Components.IProfilePanelSlot, EggLedger.Web.Server.Components.ProfilePanelSlot>();
     builder.Services.AddScoped<EggLedger.Web.Components.ICookieBannerSlot, EggLedger.Web.Server.Components.CookieBannerSlot>();
     builder.Services.AddScoped<EggLedger.Web.Components.ILoginActionsSlot, EggLedger.Web.Server.Components.LoginActionsSlot>();
 }

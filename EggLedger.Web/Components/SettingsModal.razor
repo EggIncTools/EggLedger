@@ -6,7 +6,6 @@
 @inject MissionQueryHandlers Queries
 @inject FetchOrchestrator Fetch
 @inject AccountLoader Loader
-@inject IServiceProvider Services
 
 <div class="setm-size">
 <ModalHost Open="true" OnClose="Close" Title="Settings" Width="ModalWidth.Custom">
@@ -37,8 +36,6 @@
     private readonly HashSet<string> _openSections = [];
     private bool _loaded;
     private IReadOnlyList<DatabaseAccount> _existing = [];
-
-    private IProfilePanelSlot? ProfileSlot => Services.GetService(typeof(IProfilePanelSlot)) as IProfilePanelSlot;
 
     private AccountDataPanel.FetchingCard? FetchingCardInfo =>
         !Fetch.IsIdle && Fetch.FetchingAccountId is { } id && Loader.Accounts.FirstOrDefault(a => a.Id == id) is { } info
@@ -78,8 +75,6 @@
             yield return ("storage", "Storage", StorageBody);
             yield return ("exports", "Export Management", ExportsBody);
             yield return ("menno", "Menno Data", MennoBody);
-        } else if (ProfileSlot is { } slot) {
-            yield return ("profile", "Profile", slot.Render());
         }
 
         yield return (GeneralSectionId, "General", GeneralBody);

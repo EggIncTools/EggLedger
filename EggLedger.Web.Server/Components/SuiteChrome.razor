@@ -1,0 +1,133 @@
+@using System.Globalization
+@using EggIdentity.Contract
+@using EggIdentity.UI
+@using EggIdentity.UI.Suite
+
+<CascadingValue Value="Templates" IsFixed="true">
+    <SuiteSwitcher Placement="SuitePlacement.Bar">
+        <SuiteAccount Placement="SuitePlacement.Bar"/>
+    </SuiteSwitcher>
+</CascadingValue>
+
+@code {
+    private SuiteProfileTemplates? _templates;
+    private string? _eid;
+    private string? _eidLabel;
+    private string? _seedEid;
+    private string? _seedLabel;
+
+    private SuiteProfileTemplates Templates => _templates ??= new() {
+        Avatar = AvatarBody,
+        Identities = IdentitiesBody,
+        Preferences = PreferencesBody,
+        Eid = EidBody,
+    };
+
+    private RenderFragment<SuiteProfileAvatarContext> AvatarBody => ctx => @<div class="prof-avatar-row">
+        @if (!string.IsNullOrEmpty(ctx.AvatarUrl)) {
+            <img class="prof-avatar" src="@ctx.AvatarUrl" alt="Profile picture"/>
+        } else {
+            <div class="prof-avatar"></div>
+        }
+        <div class="prof-avatar-side">
+            <span class="prof-username prof-strong">@ctx.Username</span>
+            @ctx.Upload
+            <span class="prof-small">PNG, JPEG, WebP or GIF, up to 2 MB.</span>
+        </div>
+    </div>;
+
+    private RenderFragment<SuiteProfileIdentitiesContext> IdentitiesBody => ctx => @<div class="prof-block">
+        <hr class="prof-rule"/>
+        <table class="prof-table">
+            <tbody>
+            @foreach (var item in ctx.Items) {
+                var id = item.Identity;
+                <tr class="prof-tr">
+                    <td class="prof-td prof-td-provider">
+                        <span class="prof-provider">
+                            <Icon Name="@item.ProviderIcon" Class="prof-provider-icon"/>
+                            @item.ProviderName
+                        </span>
+                    </td>
+                    <td class="prof-td prof-td-id">
+                        <span class="prof-identity">
+                            @if (!string.IsNullOrEmpty(id.Avatar)) {
+                                <Tooltip Text="@(item.IsAvatarSource ? "Current picture" : "Use this picture")">
+                                    <button type="button" class="@(item.IsAvatarSource ? "prof-pick prof-pick-current" : "prof-pick")" aria-label="Use this picture" @onclick="item.OnSelectAvatar">
+                                        <img class="prof-pick-img" src="@id.Avatar" alt=""/>
+                                    </button>
+                                </Tooltip>
+                            }
+                            <span class="prof-username">@(id.Username ?? id.Subject)</span>
+                            <span class="prof-small prof-dim prof-date">@id.LinkedAt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)</span>
+                        </span>
+                    </td>
+                    <td class="prof-td prof-td-action">
+                        @if (item.CanUnlink) {
+                            <button type="button" class="prof-chip prof-chip-unlink" @onclick="item.OnUnlink">Unlink</button>
+                        } else {
+                            <Tooltip Text="@(item.UnlinkReason ?? "Cannot unlink the last login")" Focusable="true">
+                                <span class="prof-small prof-dim prof-italic">Linked</span>
+                            </Tooltip>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+        <button type="button" class="prof-chip prof-chip-link prof-sync" @onclick="ctx.OnSync">Sync from provider</button>
+    </div>;
+
+    private RenderFragment<SuiteProfilePreferencesContext> PreferencesBody => ctx => @<div class="prof-block">
+        <hr class="prof-rule"/>
+        <span class="prof-heading ledger-underline">Preferences</span>
+        <div class="prof-prefs">
+            <label class="prof-field">
+                Timezone
+                <TimeZonePicker Value="@ctx.Timezone" ValueChanged="ctx.OnTimezone" Placeholder="Search timezone..."/>
+            </label>
+            <label class="prof-field">
+                Language
+                <LanguagePicker Value="@ctx.Language" ValueChanged="ctx.OnLanguage" Placeholder="Search language..."/>
+            </label>
+            <label class="prof-field">
+                Theme
+                <select class="prof-select" value="@ctx.Theme" @onchange="e => ctx.OnTheme.InvokeAsync(e.Value as string ?? ctx.Theme)">
+                    @foreach (var theme in ctx.Themes) {
+                        <option value="@theme">@theme</option>
+                    }
+                </select>
+            </label>
+            <label class="prof-field prof-check">
+                <input type="checkbox" checked="@ctx.ReducedMotion" @onchange="e => ctx.OnReducedMotion.InvokeAsync(e.Value is true)"/>
+                Reduce motion
+            </label>
+        </div>
+        <span class="prof-small">Saved on change. Will also take effect in other EggIdentity apps (e.g., EggIncognito).</span>
+    </div>;
+
+    private RenderFragment<SuiteProfileEidContext> EidBody => ctx => @<div class="prof-block">
+        @{ SeedEid(ctx); }
+        <hr class="prof-rule"/>
+        <span class="prof-heading ledger-underline">Active EID</span>
+        <div class="prof-prefs">
+            <label class="prof-field">
+                EID
+                <input class="prof-input" maxlength="@ctx.MaxEidLength" autocomplete="off" spellcheck="false" @bind="_eid"/>
+            </label>
+            <label class="prof-field">
+                Label
+                <input class="prof-input" maxlength="@ctx.MaxLabelLength" @bind="_eidLabel"/>
+            </label>
+            <button type="button" class="btn-secondary" @onclick="() => ctx.OnSave.InvokeAsync((_eid, _eidLabel))">Save</button>
+        </div>
+    </div>;
+
+    private void SeedEid(SuiteProfileEidContext ctx) {
+        if (_seedEid == ctx.Eid && _seedLabel == ctx.Label) return;
+        _seedEid = ctx.Eid;
+        _seedLabel = ctx.Label;
+        _eid = ctx.Eid;
+        _eidLabel = ctx.Label;
+    }
+}
