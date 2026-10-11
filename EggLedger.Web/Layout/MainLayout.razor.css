@@ -23,6 +23,22 @@
     --suite-font-size: 0.95rem;
     --suite-font-weight: 600;
     --suite-wordmark-text: inline;
+    --suite-account-align: center;
+    --suite-account-padding: 0;
+    --suite-account-bg: transparent;
+    --suite-account-border: none;
+    --suite-signin-bg: var(--color-ledger-login);
+    --suite-signin-hover-bg: var(--color-ledger-login-hover);
+    --suite-signin-color: var(--color-white);
+    --suite-signin-hover-color: var(--color-white);
+    --suite-signin-border: none;
+    --suite-signin-radius: 0.375rem;
+    --suite-signin-padding: 0.375rem 1rem;
+    --suite-signin-weight: 600;
+    --suite-panel-bg: var(--color-ledger-login-menu);
+    --suite-panel-border: 1px solid var(--color-ledger-login-menu-border);
+    --suite-item-hover-bg: var(--color-ledger-login);
+    --suite-item-hover-fg: var(--color-white);
 }
 
 .layout-suite-chrome {

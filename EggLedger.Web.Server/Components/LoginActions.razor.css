@@ -4,6 +4,20 @@
     align-items: center;
     justify-content: center;
     gap: 0.75rem;
+    --suite-signin-bg: var(--color-ledger-login);
+    --suite-signin-hover-bg: var(--color-ledger-login-hover);
+    --suite-signin-color: var(--color-white);
+    --suite-signin-hover-color: var(--color-white);
+    --suite-signin-border: none;
+    --suite-signin-radius: 0.375rem;
+    --suite-signin-padding: 0.625rem 1.25rem;
+    --suite-signin-size: 0.875rem;
+    --suite-signin-line-height: calc(1.25 / 0.875);
+    --suite-signin-weight: 600;
+    --suite-panel-bg: var(--color-ledger-login-menu);
+    --suite-panel-border: 1px solid var(--color-ledger-login-menu-border);
+    --suite-item-hover-bg: var(--color-ledger-login);
+    --suite-item-hover-fg: var(--color-white);
 }
 
 .login-btn {
