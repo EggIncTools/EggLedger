@@ -9,8 +9,11 @@
 
 .layout-suite {
     flex-shrink: 0;
+    font-size: 0.95rem;
     --suite-gap: 0.5rem;
     --suite-radius: 0.375rem;
+    --suite-font-size: 0.95rem;
+    --suite-font-weight: 600;
 }
 
 .layout-main {
