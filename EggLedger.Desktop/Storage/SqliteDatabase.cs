@@ -26,9 +26,7 @@ public sealed class SqliteDatabase : IDisposable {
     public static SqliteDatabase Open(string path, bool isConnectionString = false) {
         if (!isConnectionString && path != ":memory:") {
             var dir = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(dir)) {
-                Directory.CreateDirectory(dir);
-            }
+            if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
         }
 
         string connectionString;

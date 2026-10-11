@@ -26,9 +26,7 @@ public static partial class ColorPickerMath {
     public readonly record struct HslInt(int H, int S, int L);
 
     public static string NormalizeToHex(string? value) {
-        if (value is null) {
-            return Fallback;
-        }
+        if (value is null) return Fallback;
         if (HexRegexGen().IsMatch(value)) {
             return value.ToLowerInvariant();
         }

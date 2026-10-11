@@ -38,9 +38,7 @@ public sealed class DesktopAutoExporter(
             delivered.Add(Path.GetRelativePath(dataRootDir, path));
         }
 
-        if (model.ExportKeepCount > 0) {
-            ExportManagement.PruneForPlayer(_exportsDir, accountId, model.ExportKeepCount);
-        }
+        if (model.ExportKeepCount > 0) ExportManagement.PruneForPlayer(_exportsDir, accountId, model.ExportKeepCount);
         return delivered;
     }
 }

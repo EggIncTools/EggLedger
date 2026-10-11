@@ -23,9 +23,7 @@ public sealed class CloudSyncService(
 
     private async Task<T> ResilientAsync<T>(
         string opName, Func<CancellationToken, Task<T>> op, CancellationToken cancellationToken) {
-        if (!breaker.TryEnter()) {
-            throw new CloudSyncException($"{opName}: sync server unavailable right now, try again shortly");
-        }
+        if (!breaker.TryEnter()) throw new CloudSyncException($"{opName}: sync server unavailable right now, try again shortly");
         try {
             var result = await Deadline.RunAsync(
                 opName,
@@ -66,9 +64,7 @@ public sealed class CloudSyncService(
                 : throw new CloudSyncException($"auth init: server returned {(int)resp.StatusCode}");
         }, cancellationToken).ConfigureAwait(false);
 
-        if (init is null || string.IsNullOrEmpty(init.Url) || string.IsNullOrEmpty(init.State)) {
-            throw new CloudSyncException("auth init: malformed response");
-        }
+        if (init is null || string.IsNullOrEmpty(init.Url) || string.IsNullOrEmpty(init.State)) throw new CloudSyncException("auth init: malformed response");
 
         if (platform.IsDesktop) {
             await platform.OpenUrlAsync(init.Url);
@@ -103,9 +99,7 @@ public sealed class CloudSyncService(
     public async Task<CloudSession> ConnectViaLoginAsync(CancellationToken cancellationToken = default) {
         return await ResilientAsync("cloud-sync-connect", async ct => {
             using var resp = await http.PostAsync($"{ApiPrefix}/auth/session-from-login", content: null, ct).ConfigureAwait(false);
-            if (resp.StatusCode == HttpStatusCode.Unauthorized) {
-                throw new CloudSyncException("session-from-login: not logged in");
-            }
+            if (resp.StatusCode == HttpStatusCode.Unauthorized) throw new CloudSyncException("session-from-login: not logged in");
             if (!resp.IsSuccessStatusCode) {
                 throw new CloudSyncException($"session-from-login: server returned {(int)resp.StatusCode}");
             }
@@ -144,9 +138,7 @@ public sealed class CloudSyncService(
             req.Content = JsonContent.Create(new PutBlobRequest(ciphertext), options: Json);
 
             using var resp = await SendAuthedAsync(session, req, $"putBlob {name}: session expired - please reconnect", ct).ConfigureAwait(false);
-            if (!resp.IsSuccessStatusCode) {
-                throw new CloudSyncException($"putBlob {name}: server error {(int)resp.StatusCode}");
-            }
+            if (!resp.IsSuccessStatusCode) throw new CloudSyncException($"putBlob {name}: server error {(int)resp.StatusCode}");
         }, cancellationToken).ConfigureAwait(false);
     }
 
@@ -155,9 +147,7 @@ public sealed class CloudSyncService(
             using var req = new HttpRequestMessage(HttpMethod.Get, $"{ApiPrefix}/blobs/{Uri.EscapeDataString(name)}");
 
             using var resp = await SendAuthedAsync(session, req, $"getBlob {name}: session expired - please reconnect", ct).ConfigureAwait(false);
-            if (resp.StatusCode == HttpStatusCode.NotFound) {
-                throw new CloudSyncException($"getBlob {name}: not found (nothing synced yet?)");
-            }
+            if (resp.StatusCode == HttpStatusCode.NotFound) throw new CloudSyncException($"getBlob {name}: not found (nothing synced yet?)");
             return resp.IsSuccessStatusCode
                 ? await resp.Content.ReadFromJsonAsync<GetBlobResponse>(Json, ct).ConfigureAwait(false)
                     ?? throw new CloudSyncException($"getBlob {name}: malformed response")
@@ -190,9 +180,7 @@ public sealed class CloudSyncService(
         await ResilientAsync($"cloud-sync-delete-{name}", async ct => {
             using var req = new HttpRequestMessage(HttpMethod.Delete, $"{ApiPrefix}/blobs/{Uri.EscapeDataString(name)}");
             using var resp = await SendAuthedAsync(session, req, "deleteBlob: session expired - please reconnect", ct).ConfigureAwait(false);
-            if (!resp.IsSuccessStatusCode) {
-                throw new CloudSyncException($"deleteBlob {name}: server error {(int)resp.StatusCode}");
-            }
+            if (!resp.IsSuccessStatusCode) throw new CloudSyncException($"deleteBlob {name}: server error {(int)resp.StatusCode}");
         }, cancellationToken).ConfigureAwait(false);
     }
 
@@ -200,9 +188,7 @@ public sealed class CloudSyncService(
         await ResilientAsync("cloud-sync-delete-account", async ct => {
             using var req = new HttpRequestMessage(HttpMethod.Delete, $"{ApiPrefix}/user");
             using var resp = await SendAuthedAsync(session, req, "deleteAccount: session expired - please reconnect", ct).ConfigureAwait(false);
-            if (!resp.IsSuccessStatusCode) {
-                throw new CloudSyncException($"deleteAccount: server error {(int)resp.StatusCode}");
-            }
+            if (!resp.IsSuccessStatusCode) throw new CloudSyncException($"deleteAccount: server error {(int)resp.StatusCode}");
         }, cancellationToken).ConfigureAwait(false);
     }
 }

@@ -40,9 +40,7 @@ public sealed class PhysicalExportFileSystem : IExportFileSystem {
     public long? Size(string path) => File.Exists(path) ? new FileInfo(path).Length : null;
 
     public void Delete(string path) {
-        if (File.Exists(path)) {
-            File.Delete(path);
-        }
+        if (File.Exists(path)) File.Delete(path);
     }
 }
 
@@ -53,18 +51,14 @@ public static class ExportManagement {
     public static List<ExportGroup> ListGroups(string exportsDir, IExportFileSystem? fs = null) {
         fs ??= new PhysicalExportFileSystem();
         string missionsDir = Path.Combine(exportsDir, "missions");
-        if (fs.ListFiles(missionsDir) is not { } entries) {
-            return [];
-        }
+        if (fs.ListFiles(missionsDir) is not { } entries) return [];
 
         var pairsByEid = new Dictionary<string, Dictionary<string, FilePair>>(StringComparer.Ordinal);
         List<string> eidOrder = [];
 
         foreach (var entry in entries) {
             var m = ExportFileRe.Match(entry.Name);
-            if (!m.Success) {
-                continue;
-            }
+            if (!m.Success) continue;
             string eid = m.Groups[1].Value;
             string ts = m.Groups[2].Value;
             string ext = m.Groups[3].Value;
@@ -117,9 +111,7 @@ public static class ExportManagement {
         int keepCount,
         IExportFileSystem? fs = null) {
         fs ??= new PhysicalExportFileSystem();
-        if (keepCount <= 0) {
-            return (0, 0);
-        }
+        if (keepCount <= 0) return (0, 0);
         var groups = ListGroups(exportsDir, fs);
         List<FilePair> playerPairs = [];
         foreach (var g in groups) {
@@ -128,22 +120,16 @@ public static class ExportManagement {
                 break;
             }
         }
-        if (playerPairs.Count <= keepCount) {
-            return (0, 0);
-        }
+        if (playerPairs.Count <= keepCount) return (0, 0);
 
         int deletedCount = 0;
         long freedBytes = 0;
         var toDelete = playerPairs.GetRange(keepCount, playerPairs.Count - keepCount);
         foreach (var pair in toDelete) {
             foreach (var path in new[] { pair.CsvPath, pair.XlsxPath }) {
-                if (string.IsNullOrEmpty(path)) {
-                    continue;
-                }
+                if (string.IsNullOrEmpty(path)) continue;
                 var size = fs.Size(path);
-                if (size.HasValue) {
-                    freedBytes += size.Value;
-                }
+                if (size.HasValue) freedBytes += size.Value;
                 fs.Delete(path);
                 deletedCount++;
             }

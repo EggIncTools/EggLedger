@@ -11,13 +11,9 @@ public sealed class SettingsWriteCoordinator(
     public async Task SetAsync(string key, string value) {
         await settings.SetSettingAsync(key, value);
 
-        if (key == SettingsModel.KeyScreenshotSafety) {
-            screenshotSafety.Enabled = value == "true";
-        }
+        if (key == SettingsModel.KeyScreenshotSafety) screenshotSafety.Enabled = value == "true";
 
-        if (IsCloudSyncableKey(key)) {
-            await autoSync.NotifySettingsChangedAsync();
-        }
+        if (IsCloudSyncableKey(key)) await autoSync.NotifySettingsChangedAsync();
     }
 
     public static bool IsCloudSyncableKey(string key) {

@@ -3,58 +3,40 @@ using System.Globalization;
 
 namespace EggLedger.Domain.Reports;
 
-
 internal sealed class MissionRowPredicate(
     ReportDefinition def,
     ILookup<(string Player, string Mission), ArtifactDropRowData> dropsByMission) {
 
     public bool PassesFilters(MissionRowData m) {
         foreach (var c in def.Filters.And) {
-            if (!EvalMission(c, m)) {
-                return false;
-            }
+            if (!EvalMission(c, m)) return false;
         }
         foreach (var group in def.Filters.Or) {
             var any = false;
             var hadClause = false;
             foreach (var c in group) {
-                if (!IsMissionScope(c)) {
-                    continue;
-                }
+                if (!IsMissionScope(c)) continue;
                 hadClause = true;
-                if (EvalMission(c, m)) {
-                    any = true;
-                }
+                if (EvalMission(c, m)) any = true;
             }
-            if (hadClause && !any) {
-                return false;
-            }
+            if (hadClause && !any) return false;
         }
         return true;
     }
 
-
     public bool PassesArtifactFilters(ArtifactDropRowData d) {
         foreach (var c in def.Filters.And) {
-            if (IsArtifactScope(c) && !EvalArtifact(c, d)) {
-                return false;
-            }
+            if (IsArtifactScope(c) && !EvalArtifact(c, d)) return false;
         }
         foreach (var group in def.Filters.Or) {
             var any = false;
             var hadClause = false;
             foreach (var c in group) {
-                if (!IsArtifactScope(c)) {
-                    continue;
-                }
+                if (!IsArtifactScope(c)) continue;
                 hadClause = true;
-                if (EvalArtifact(c, d)) {
-                    any = true;
-                }
+                if (EvalArtifact(c, d)) any = true;
             }
-            if (hadClause && !any) {
-                return false;
-            }
+            if (hadClause && !any) return false;
         }
         return true;
     }
@@ -95,18 +77,14 @@ internal sealed class MissionRowPredicate(
     }
 
     private bool EvalDrops(FilterCondition c, MissionRowData m) {
-        if (c.Op is not "c" and not "dnc") {
-            return true;
-        }
+        if (c.Op is not "c" and not "dnc") return true;
         if (c.Val == "") {
             return true;
         }
         var parts = c.Val.Split('_');
 
         bool Matches(ArtifactDropRowData d) {
-            if (parts.Length > 0 && parts[0] != "%" && parts[0] != "" && d.ArtifactId.ToString(CultureInfo.InvariantCulture) != parts[0]) {
-                return false;
-            }
+            if (parts.Length > 0 && parts[0] != "%" && parts[0] != "" && d.ArtifactId.ToString(CultureInfo.InvariantCulture) != parts[0]) return false;
             if (parts.Length > 1 && parts[1] != "%" && parts[1] != "" && d.Level.ToString(CultureInfo.InvariantCulture) != parts[1]) {
                 return false;
             }
@@ -117,9 +95,7 @@ internal sealed class MissionRowPredicate(
     }
 
     private static bool CompareNumeric(FilterCondition c, long actual) {
-        if (c.Op is not ("=" or "!=" or ">" or "<" or ">=" or "<=")) {
-            return true;
-        }
+        if (c.Op is not ("=" or "!=" or ">" or "<" or ">=" or "<=")) return true;
         return !IsInt(c.Val) || CompareLong(c.Op, actual, long.Parse(c.Val, CultureInfo.InvariantCulture));
     }
 
@@ -131,15 +107,10 @@ internal sealed class MissionRowPredicate(
             case ">=":
             case "<=":
             case "=":
-                if (!TimeBucket.TryParseDateToUnix(c.Val, out target)) {
-                    return true;
-                }
+                if (!TimeBucket.TryParseDateToUnix(c.Val, out target)) return true;
                 break;
             case "d=":
-                if (!TimeBucket.TryParseDateToUnix(c.Val, out target)) {
-                    return true;
-                }
-                return actualUnix == target;
+                return !TimeBucket.TryParseDateToUnix(c.Val, out target) || actualUnix == target;
             default:
                 return true;
         }

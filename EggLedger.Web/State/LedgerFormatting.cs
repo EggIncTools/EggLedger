@@ -5,9 +5,7 @@ namespace EggLedger.Web.State;
 
 public static class LedgerFormatting {
     public static string FormatBytes(long bytes) {
-        if (bytes < 1024) {
-            return $"{bytes} B";
-        }
+        if (bytes < 1024) return $"{bytes} B";
         if (bytes < 1024 * 1024) {
             return $"{bytes / 1024.0:0.0} KB";
         }
@@ -24,20 +22,14 @@ public static class LedgerFormatting {
             .Select(x => x.acct)];
 
     public static string FormatTimeSince(double returnUnixSeconds, double nowUnixSeconds) {
-        if (returnUnixSeconds == 0) {
-            return "";
-        }
+        if (returnUnixSeconds == 0) return "";
         double diff = nowUnixSeconds - returnUnixSeconds;
-        if (diff <= 0) {
-            return "";
-        }
+        if (diff <= 0) return "";
         long totalMinutes = (long)Math.Floor(diff / 60);
         long days = totalMinutes / (60 * 24);
         long hours = totalMinutes % (60 * 24) / 60;
         long minutes = totalMinutes % 60;
-        if (days > 0) {
-            return hours > 0 ? $"{days}d{hours}h ago" : $"{days}d ago";
-        }
+        if (days > 0) return hours > 0 ? $"{days}d{hours}h ago" : $"{days}d ago";
         if (hours > 0) {
             return minutes > 0 ? $"{hours}h{minutes}m ago" : $"{hours}h ago";
         }
@@ -45,9 +37,7 @@ public static class LedgerFormatting {
     }
 
     public static IReadOnlyList<DatabaseAccount> FilterAccounts(IReadOnlyList<DatabaseAccount> accounts, string? query) {
-        if (string.IsNullOrEmpty(query)) {
-            return accounts;
-        }
+        if (string.IsNullOrEmpty(query)) return accounts;
         string q = query.ToLower(CultureInfo.InvariantCulture);
         return [.. accounts
             .Where(a =>
@@ -60,15 +50,11 @@ public static class LedgerFormatting {
 
     public static string EidProblem(string normalizedEid) {
         string v = normalizedEid;
-        if (v == "") {
-            return "";
-        }
+        if (v == "") return "";
         if (!v.StartsWith("EI", StringComparison.Ordinal)) {
             return "Player ID must start with \"EI\"";
         }
-        if (v.Length < 18) {
-            return "Player ID is too short (expected EI + 16 digits)";
-        }
+        if (v.Length < 18) return "Player ID is too short (expected EI + 16 digits)";
         if (v.Length > 18) {
             return "Player ID is too long (expected EI + 16 digits)";
         }
@@ -79,13 +65,9 @@ public static class LedgerFormatting {
         normalizedEid != "" && EidProblem(normalizedEid) == "";
 
     private static bool IsEiPlusSixteenDigits(string v) {
-        if (v.Length != 18 || v[0] != 'E' || v[1] != 'I') {
-            return false;
-        }
+        if (v.Length != 18 || v[0] != 'E' || v[1] != 'I') return false;
         for (int i = 2; i < 18; i++) {
-            if (!char.IsAsciiDigit(v[i])) {
-                return false;
-            }
+            if (!char.IsAsciiDigit(v[i])) return false;
         }
         return true;
     }

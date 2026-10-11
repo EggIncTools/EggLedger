@@ -25,9 +25,7 @@ public sealed class BrowserTimeZoneProvider(
     public async Task EnsureUpToDateAsync() => await browser.SyncAsync(await TryGetProfileTimeZoneAsync());
 
     private async Task<string?> TryGetProfileTimeZoneAsync() {
-        if (identity is null || string.IsNullOrEmpty(_sessionToken)) {
-            return null;
-        }
+        if (identity is null || string.IsNullOrEmpty(_sessionToken)) return null;
 
         try {
             var profile = await identity.GetProfileAsync(_sessionToken, CancellationToken.None);

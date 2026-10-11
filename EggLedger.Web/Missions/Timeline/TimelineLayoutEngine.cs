@@ -100,9 +100,7 @@ public static class TimelineLayoutEngine {
 
     private static (double Left, double Width, double PackLeft, double PackRight) ClipToWindow(
         long launchDt, long returnDt, long windowStart, double windowSpan, double minWidthFraction) {
-        if (windowSpan <= 0) {
-            return (0, 1, 0, 1);
-        }
+        if (windowSpan <= 0) return (0, 1, 0, 1);
         double packLeft = (launchDt - windowStart) / windowSpan;
         double packRight = (returnDt - windowStart) / windowSpan;
         double left = Math.Max(0, packLeft);
@@ -110,17 +108,13 @@ public static class TimelineLayoutEngine {
         double width = Math.Max(0, right - left);
         if (minWidthFraction > 0 && width < minWidthFraction) {
             width = Math.Min(minWidthFraction, 1);
-            if (left + width > 1) {
-                left = 1 - width;
-            }
+            if (left + width > 1) left = 1 - width;
         }
         return (left, width, packLeft, packRight);
     }
 
     private static double FillFraction(long launchDt, long returnDt, long windowStart, long windowEnd, long nowUnix, bool isActive) {
-        if (!isActive) {
-            return 1;
-        }
+        if (!isActive) return 1;
         long clipStart = Math.Max(launchDt, windowStart);
         long clipEnd = Math.Min(returnDt, windowEnd);
         return clipEnd <= clipStart ? 0 : Math.Clamp((double)(nowUnix - clipStart) / (clipEnd - clipStart), 0, 1);

@@ -66,9 +66,7 @@ public sealed class DropsViewState(
     public FilterFieldCtx FieldCtx => config.FieldCtx;
 
     public async Task EnsureInitializedAsync(Func<Func<Task>, Task> dispatch) {
-        if (_initialized) {
-            return;
-        }
+        if (_initialized) return;
 
         _initialized = true;
         _dispatch = dispatch;
@@ -100,16 +98,12 @@ public sealed class DropsViewState(
         }
 
         var dropsByMission = await pending;
-        if (generation != _loadGeneration) {
-            return;
-        }
+        if (generation != _loadGeneration) return;
 
         Loading = false;
 
         if (dropsByMission is null) {
-            if (filterGeneration == _filterGeneration) {
-                Data = null;
-            }
+            if (filterGeneration == _filterGeneration) Data = null;
 
             Changed?.Invoke();
             return;
@@ -117,14 +111,10 @@ public sealed class DropsViewState(
 
         var missions = await hub.GetMissionsAsync(id) ?? [];
         var data = await hub.GetLifetimeAggregateAsync(id);
-        if (generation != _loadGeneration) {
-            return;
-        }
+        if (generation != _loadGeneration) return;
 
         if (data is null) {
-            if (filterGeneration == _filterGeneration) {
-                Data = null;
-            }
+            if (filterGeneration == _filterGeneration) Data = null;
 
             Changed?.Invoke();
             return;
@@ -144,9 +134,7 @@ public sealed class DropsViewState(
             _matchedMissions = missions;
             await RecomputeMennoAsync(
                 () => generation == _loadGeneration && filterGeneration == _filterGeneration);
-            if (generation != _loadGeneration) {
-                return;
-            }
+            if (generation != _loadGeneration) return;
         }
 
         Changed?.Invoke();
@@ -172,9 +160,7 @@ public sealed class DropsViewState(
                 () => FilterMatching.MatchingIdsAsync(matcher, missions, filter.And, filter.Or));
 
             sw.Stop();
-            if (generation != _filterGeneration) {
-                return;
-            }
+            if (generation != _filterGeneration) return;
 
             var filteredDrops = _allDropsCache
                 .Where(kvp => matchedIds.Contains(kvp.Key))
@@ -186,9 +172,7 @@ public sealed class DropsViewState(
             var matched = missions.Where(m => matchedIds.Contains(m.MissiondId)).ToList();
             _matchedMissions = matched;
             await RecomputeMennoAsync(() => generation == _filterGeneration);
-            if (generation != _filterGeneration) {
-                return;
-            }
+            if (generation != _filterGeneration) return;
 
             var shown = matchedIds.Count;
             var filteredOut = missions.Count - shown;
@@ -197,9 +181,7 @@ public sealed class DropsViewState(
             Changed?.Invoke();
         } catch (Exception ex) {
             logger.LogDebug(ex, "drops filter failed for generation {Generation}", generation);
-            if (generation != _filterGeneration) {
-                return;
-            }
+            if (generation != _filterGeneration) return;
 
             ResultText = FilterMatching.FailedText;
             Applying = false;
@@ -222,9 +204,7 @@ public sealed class DropsViewState(
 
     public async Task SetSortAsync(LifetimeSortMethod method) {
         await _sortMethod.SetAsync(method);
-        if (Data is not null) {
-            LifetimeSorter.Sort(Data, SortMethod);
-        }
+        if (Data is not null) LifetimeSorter.Sort(Data, SortMethod);
 
         Changed?.Invoke();
     }
@@ -236,9 +216,7 @@ public sealed class DropsViewState(
     }
 
     private static (int Ship, int Duration, int Level, int Target)? SingleConfig(IReadOnlyList<DatabaseMission>? missions) {
-        if (missions is null || missions.Count == 0) {
-            return null;
-        }
+        if (missions is null || missions.Count == 0) return null;
 
         (int, int, int, int)? cfg = null;
         foreach (var m in missions) {
@@ -257,9 +235,7 @@ public sealed class DropsViewState(
         _ = _dispatch?.Invoke(LoadAsync);
 
     private void OnAccountInvalidated(string accountId) {
-        if (accountId == active.ActiveAccountId) {
-            _ = _dispatch?.Invoke(LoadAsync);
-        }
+        if (accountId == active.ActiveAccountId) _ = _dispatch?.Invoke(LoadAsync);
     }
 
     private async Task RecomputeMennoAsync(Func<bool> isCurrent) {
@@ -268,9 +244,7 @@ public sealed class DropsViewState(
             ? await LoadMennoAsync(cfg.Value)
             : null;
 
-        if (!isCurrent()) {
-            return;
-        }
+        if (!isCurrent()) return;
 
         AllowExpectedTotals = cfg is not null;
         MennoData = mennoData;
@@ -286,9 +260,7 @@ public sealed class DropsViewState(
 
         var configs = menno.GetData(cfg.Ship, cfg.Duration, cfg.Level, cfg.Target);
         var total = 0;
-        foreach (var c in configs) {
-            total += c.TotalDrops;
-        }
+        foreach (var c in configs) total += c.TotalDrops;
 
         return configs.Count > 0 ? new MissionMennoData { Configs = configs, TotalDropsCount = total } : null;
     }

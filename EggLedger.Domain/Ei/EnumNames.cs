@@ -30,9 +30,7 @@ internal static class EnumNames {
     private static Dictionary<string, long> NameMap(Type enumType) =>
         NameToValue.GetOrAdd(enumType, t => {
             var result = new Dictionary<string, long>();
-            foreach (var kv in Build(t)) {
-                result[kv.Value] = kv.Key;
-            }
+            foreach (var kv in Build(t)) result[kv.Value] = kv.Key;
             return result;
         });
 

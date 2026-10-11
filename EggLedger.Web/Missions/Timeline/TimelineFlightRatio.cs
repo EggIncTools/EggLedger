@@ -25,18 +25,14 @@ public static class TimelineFlightRatio {
         DateTimeOffset now) {
         long winStart = visibleStart.ToUnixTimeSeconds();
         long winEnd = Math.Min(visibleEnd.ToUnixTimeSeconds(), now.ToUnixTimeSeconds());
-        if (winEnd <= winStart) {
-            return null;
-        }
+        if (winEnd <= winStart) return null;
 
         long homeFlown = 0;
         long virtueFlown = 0;
         foreach (var m in missions) {
             long start = Math.Max(m.LaunchDT, winStart);
             long end = Math.Min(m.ReturnDT, winEnd);
-            if (end <= start) {
-                continue;
-            }
+            if (end <= start) continue;
             if (m.MissionType == (int)MissionInfo.MissionType.Virtue) {
                 virtueFlown += end - start;
             } else {
@@ -46,15 +42,11 @@ public static class TimelineFlightRatio {
 
         double denominator = AssumedConcurrency * (double)(winEnd - winStart);
         var slices = new List<FlightRatioSlice>(2);
-        if (homeFlown > 0) {
-            slices.Add(new FlightRatioSlice(false, homeFlown / denominator));
-        }
+        if (homeFlown > 0) slices.Add(new FlightRatioSlice(false, homeFlown / denominator));
         if (virtueFlown > 0) {
             slices.Add(new FlightRatioSlice(true, virtueFlown / denominator));
         }
-        if (slices.Count == 0) {
-            slices.Add(new FlightRatioSlice(false, 0));
-        }
+        if (slices.Count == 0) slices.Add(new FlightRatioSlice(false, 0));
         return slices;
     }
 
@@ -65,17 +57,13 @@ public static class TimelineFlightRatio {
         DateTimeOffset now) {
         long winStart = visibleStart.ToUnixTimeSeconds();
         long winEnd = Math.Min(visibleEnd.ToUnixTimeSeconds(), now.ToUnixTimeSeconds());
-        if (winEnd <= winStart) {
-            return null;
-        }
+        if (winEnd <= winStart) return null;
 
         var edges = new List<(long Time, int Delta)>();
         foreach (var m in missions) {
             long start = Math.Max(m.LaunchDT, winStart);
             long end = Math.Min(m.ReturnDT, winEnd);
-            if (end <= start) {
-                continue;
-            }
+            if (end <= start) continue;
             edges.Add((start, 1));
             edges.Add((end, -1));
         }

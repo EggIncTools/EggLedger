@@ -48,9 +48,7 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
         ?? cfg.IdentityWidgetUrl;
 
     private async Task<string?> LiveAsync(string key, CancellationToken ct) {
-        if (settings is null) {
-            return null;
-        }
+        if (settings is null) return null;
         try {
             var snapshot = await settings.GetAsync(ct);
             return snapshot.Value(key).Value is { Length: > 0 } value ? value : null;
@@ -78,9 +76,7 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
             new(Server.Auth.AuthScheme.RoleClaim, role),
             new(SessionClaims.Role, role),
         };
-        if (!string.IsNullOrEmpty(discordId)) {
-            claims.Add(new Claim(SessionClaims.DiscordId, discordId));
-        }
+        if (!string.IsNullOrEmpty(discordId)) claims.Add(new Claim(SessionClaims.DiscordId, discordId));
         return new ClaimsPrincipal(new ClaimsIdentity(claims, Server.Auth.AuthScheme.Cookie));
     }
 
@@ -272,14 +268,10 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
     }
 
     public async Task<bool> CompletePairingAsync(ClaimsPrincipal user, string state, CancellationToken ct) {
-        if (!await StateIsPending(state, ct)) {
-            return false;
-        }
+        if (!await StateIsPending(state, ct)) return false;
 
         var userIdClaim = user.FindFirst(Server.Auth.AuthScheme.UserIdClaim)?.Value;
-        if (!Guid.TryParse(userIdClaim, out var userId)) {
-            return false;
-        }
+        if (!Guid.TryParse(userIdClaim, out var userId)) return false;
 
         var username = user.Identity?.Name ?? "";
         var poll = await MintSessionAsync(userId, username, ct);
@@ -300,9 +292,7 @@ public sealed class AuthEndpoints(NpgsqlDataSource source, IDataProtectionProvid
         cmd.Parameters.AddWithValue(userId);
         try {
             var avatar = await cmd.ExecuteScalarAsync(ct) as string;
-            if (string.IsNullOrEmpty(avatar) || avatar.StartsWith("http", StringComparison.Ordinal)) {
-                return avatar ?? "";
-            }
+            if (string.IsNullOrEmpty(avatar) || avatar.StartsWith("http", StringComparison.Ordinal)) return avatar ?? "";
             var host = await IdentityWidgetUrlAsync(ct);
             return $"{host.TrimEnd('/')}/{avatar.TrimStart('/')}";
         } catch (Exception ex) {

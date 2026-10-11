@@ -11,9 +11,7 @@ public static class Role {
         int precision = earningsBonusCopy < 10.0 ? 2 : (earningsBonusCopy < 100.0 ? 1 : 0);
         var roles = LedgerData.LedgerData.Config.FarmerRoles;
         foreach (var role in roles) {
-            if ((ooms * 3) - precision == role.Oom) {
-                return (role.Color, role.Name, Format.Addendum(ooms), earningsBonusCopy, precision);
-            }
+            if ((ooms * 3) - precision == role.Oom) return (role.Color, role.Name, Format.Addendum(ooms), earningsBonusCopy, precision);
         }
         var last = roles[^1];
         return (last.Color, last.Name, Format.Addendum(last.Oom), earningsBonusCopy, precision);

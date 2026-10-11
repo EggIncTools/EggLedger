@@ -17,16 +17,12 @@ public sealed class HandshakeClient(HttpClient httpClient, ILogger<HandshakeClie
             try {
                 using var content = new StringContent("");
                 using var resp = await _httpClient.PostAsync(url, content, cancel).ConfigureAwait(false);
-                if (resp.IsSuccessStatusCode) {
-                    return true;
-                }
+                if (resp.IsSuccessStatusCode) return true;
             } catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException) {
                 _logger.LogDebug(ex, "update: handshake ping attempt {Attempt} failed", i + 1);
             }
 
-            if (cancel.IsCancellationRequested) {
-                return false;
-            }
+            if (cancel.IsCancellationRequested) return false;
             await Task.Delay(PingRetryDelay, cancel).ConfigureAwait(false);
         }
         return false;

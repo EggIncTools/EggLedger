@@ -183,14 +183,10 @@
     private string Subtitle {
         get {
             var parts = new List<string> { SubjectLabel, ModeLabel };
-            if (GroupByLabel.Length > 0) {
-                parts.Add(GroupByLabel);
-            }
+            if (GroupByLabel.Length > 0) parts.Add(GroupByLabel);
 
             var text = string.Join(" - ", parts);
-            if (SecondaryGroupByLabel.Length > 0) {
-                text += " x " + SecondaryGroupByLabel;
-            }
+            if (SecondaryGroupByLabel.Length > 0) text += " x " + SecondaryGroupByLabel;
 
             return text;
         }
@@ -239,9 +235,7 @@
     }
 
     private async Task ExportAsync() {
-        if (_result is null) {
-            return;
-        }
+        if (_result is null) return;
 
         var json = JsonSerializer.Serialize(Def, new JsonSerializerOptions { WriteIndented = true });
         await Downloader.DownloadJsonAsync(json, SafeFileName(Def.Name) + ".json");
@@ -256,9 +250,7 @@
 
     protected override async Task OnParametersSetAsync() {
         var key = Def.Id + ":" + Def.UpdatedAt;
-        if (key == _ranKey) {
-            return;
-        }
+        if (key == _ranKey) return;
 
         _ranKey = key;
         await RunAsync();
@@ -290,14 +282,10 @@
         }
 
         try {
-            if (!Menno.HasData) {
-                await Menno.EnsureLoadedAsync();
-            }
+            if (!Menno.HasData) await Menno.EnsureLoadedAsync();
 
             var items = Menno.CachedItems;
-            if (items is null) {
-                return;
-            }
+            if (items is null) return;
 
             _mennoResult = MennoService.ExecuteComparison(
                 Def, items, _result.RawRowLabels, _result.RawColLabels);

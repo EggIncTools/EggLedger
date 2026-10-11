@@ -51,9 +51,7 @@ public sealed class ReportsViewState(ActiveAccount active, IndexedDbReportStore 
         Actions?.ImportAsync(json) ?? Task.CompletedTask;
 
     public async Task EnsureInitializedAsync(Func<Func<Task>, Task> dispatch) {
-        if (_initialized) {
-            return;
-        }
+        if (_initialized) return;
 
         _initialized = true;
         _dispatch = dispatch;
@@ -80,9 +78,7 @@ public sealed class ReportsViewState(ActiveAccount active, IndexedDbReportStore 
         }
 
         var rows = await store.RetrieveAccountReportsAsync(id);
-        if (generation != _reportsLoadGeneration) {
-            return false;
-        }
+        if (generation != _reportsLoadGeneration) return false;
 
         Reports = [.. rows.Select(r => ReportMapping.ToDefinition(r, logger))];
         Changed?.Invoke();
@@ -98,9 +94,7 @@ public sealed class ReportsViewState(ActiveAccount active, IndexedDbReportStore 
         }
 
         var groups = await store.RetrieveAccountGroupsAsync(id);
-        if (generation != _loadGeneration) {
-            return false;
-        }
+        if (generation != _loadGeneration) return false;
 
         Groups = groups;
         Changed?.Invoke();
@@ -139,18 +133,14 @@ public sealed class ReportsViewState(ActiveAccount active, IndexedDbReportStore 
         }
 
         var groupId = await store.InsertReportGroupAsync(new ReportGroupRow { AccountId = id, Name = name });
-        if (await LoadGroupsAsync()) {
-            SelectedGroup = groupId;
-        }
+        if (await LoadGroupsAsync()) SelectedGroup = groupId;
 
         Changed?.Invoke();
     }
 
     public async Task DeleteGroupAsync(string id) {
         await store.DeleteReportGroupAsync(id);
-        if (SelectedGroup == id) {
-            SelectedGroup = null;
-        }
+        if (SelectedGroup == id) SelectedGroup = null;
 
         await LoadGroupsAsync();
     }
@@ -167,9 +157,7 @@ public sealed class ReportsViewState(ActiveAccount active, IndexedDbReportStore 
     }
 
     public async Task CommitRenameAsync(string groupId) {
-        if (RenamingGroupId != groupId) {
-            return;
-        }
+        if (RenamingGroupId != groupId) return;
 
         RenamingGroupId = null;
         var name = RenameGroupName.Trim();

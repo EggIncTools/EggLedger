@@ -21,22 +21,16 @@ public sealed class DesktopStorageService(string rootDir, IPlatformCapabilities 
 
     public Task BackupAsync(string destPath, bool db, bool exports, bool logs) {
         return Task.Run(() => {
-            if (db) {
-                CopyPart(StoragePart.Internal, destPath);
-            }
+            if (db) CopyPart(StoragePart.Internal, destPath);
             if (exports) {
                 CopyPart(StoragePart.Exports, destPath);
             }
-            if (logs) {
-                CopyPart(StoragePart.Logs, destPath);
-            }
+            if (logs) CopyPart(StoragePart.Logs, destPath);
         });
     }
 
     public async Task MoveAsync(string destPath) {
-        if (PathsEqual(destPath, GetDataRootDir())) {
-            throw new InvalidOperationException("destination is the current data root");
-        }
+        if (PathsEqual(destPath, GetDataRootDir())) throw new InvalidOperationException("destination is the current data root");
         await Task.Run(() => CopyAllAndWriteBootstrap(destPath));
         await _platform.RestartAppAsync();
     }
@@ -50,9 +44,7 @@ public sealed class DesktopStorageService(string rootDir, IPlatformCapabilities 
 
     private void CopyPart(StoragePart part, string destPath) {
         var source = SourceDir(part);
-        if (!Directory.Exists(source)) {
-            return;
-        }
+        if (!Directory.Exists(source)) return;
         StoragePaths.CopyDir(source, Path.Combine(destPath, SubDirName(part)));
     }
 

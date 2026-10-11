@@ -21,9 +21,7 @@ public static class JsonRowCodec {
             writer.WriteStartObject();
             for (var i = 0; i < reader.FieldCount; i++) {
                 var name = reader.GetName(i);
-                if (skipColumn is not null && skipColumn(name)) {
-                    continue;
-                }
+                if (skipColumn is not null && skipColumn(name)) continue;
                 writer.WritePropertyName(name);
                 WriteColumn(writer, reader, i, isBool(name), isBlob(name));
             }
@@ -105,9 +103,7 @@ public static class JsonRowCodec {
 
     public static (string where, object[] args) KeyPredicate(
         string table, string[] keyColumns, object key, Func<string, string> ident, Provider provider) {
-        if (keyColumns.Length == 1) {
-            return ($"{ident(keyColumns[0])} = {provider.KeyPlaceholder(0)}", [key]);
-        }
+        if (keyColumns.Length == 1) return ($"{ident(keyColumns[0])} = {provider.KeyPlaceholder(0)}", [key]);
         if (key is object[] parts && parts.Length == keyColumns.Length) {
             var where = string.Join(" AND ",
                 keyColumns.Select((c, i) => $"{ident(c)} = {provider.KeyPlaceholder(i)}"));

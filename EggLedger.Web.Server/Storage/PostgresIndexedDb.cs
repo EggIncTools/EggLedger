@@ -34,9 +34,7 @@ public sealed class PostgresIndexedDb(NpgsqlDataSource source, CurrentUser user)
     }
 
     public async ValueTask<T?> GetAsync<T>(string store, object key) {
-        if (await TryUserAsync().ConfigureAwait(false) is not { } user) {
-            return default;
-        }
+        if (await TryUserAsync().ConfigureAwait(false) is not { } user) return default;
         var meta = Meta(store);
         var (where, keyArgs) = KeyPredicate(meta, key);
         await using var conn = await _source.OpenConnectionAsync().ConfigureAwait(false);
@@ -49,9 +47,7 @@ public sealed class PostgresIndexedDb(NpgsqlDataSource source, CurrentUser user)
     }
 
     public async ValueTask<T[]> GetAllAsync<T>(string store) {
-        if (await TryUserAsync().ConfigureAwait(false) is not { } user) {
-            return [];
-        }
+        if (await TryUserAsync().ConfigureAwait(false) is not { } user) return [];
         var meta = Meta(store);
         await using var conn = await _source.OpenConnectionAsync().ConfigureAwait(false);
         await using var cmd = conn.CreateCommand();
@@ -62,9 +58,7 @@ public sealed class PostgresIndexedDb(NpgsqlDataSource source, CurrentUser user)
 
     public async ValueTask<T[]> GetAllByIndexAsync<T>(string store, string index, object value) {
         index = IndexedDbStores.ValidIndex(index);
-        if (await TryUserAsync().ConfigureAwait(false) is not { } user) {
-            return [];
-        }
+        if (await TryUserAsync().ConfigureAwait(false) is not { } user) return [];
         var meta = Meta(store);
         await using var conn = await _source.OpenConnectionAsync().ConfigureAwait(false);
         await using var cmd = conn.CreateCommand();
@@ -76,9 +70,7 @@ public sealed class PostgresIndexedDb(NpgsqlDataSource source, CurrentUser user)
 
     public async ValueTask<T[]> GetAllByIndexProjectedAsync<T>(string store, string index, object value) {
         index = IndexedDbStores.ValidIndex(index);
-        if (await TryUserAsync().ConfigureAwait(false) is not { } user) {
-            return [];
-        }
+        if (await TryUserAsync().ConfigureAwait(false) is not { } user) return [];
         var meta = Meta(store);
         var cols = string.Join(", ", RowColumns.Of<T>().Select(Ident));
         await using var conn = await _source.OpenConnectionAsync().ConfigureAwait(false);
@@ -110,9 +102,7 @@ public sealed class PostgresIndexedDb(NpgsqlDataSource source, CurrentUser user)
     }
 
     public async ValueTask<int> CountAsync(string store) {
-        if (await TryUserAsync().ConfigureAwait(false) is not { } user) {
-            return 0;
-        }
+        if (await TryUserAsync().ConfigureAwait(false) is not { } user) return 0;
         var meta = Meta(store);
         await using var conn = await _source.OpenConnectionAsync().ConfigureAwait(false);
         await using var cmd = conn.CreateCommand();
@@ -130,9 +120,7 @@ public sealed class PostgresIndexedDb(NpgsqlDataSource source, CurrentUser user)
         var values = new List<(string Param, object Value)> { ("p_user", user) };
         int p = 0;
         foreach (var prop in doc.RootElement.EnumerateObject()) {
-            if (meta.AutoIncrementColumn == prop.Name && prop.Value.ValueKind is JsonValueKind.Null) {
-                continue;
-            }
+            if (meta.AutoIncrementColumn == prop.Name && prop.Value.ValueKind is JsonValueKind.Null) continue;
             var param = "p" + p.ToString(CultureInfo.InvariantCulture);
             cols.Add(prop.Name);
             values.Add((param, JsonRowCodec.JsonToDbValue(
@@ -144,7 +132,6 @@ public sealed class PostgresIndexedDb(NpgsqlDataSource source, CurrentUser user)
         if (meta.AutoIncrementColumn is not null) {
             conflict = "";
         } else {
-
             var keyCols = new List<string> { "user_id" };
             keyCols.AddRange(meta.KeyColumns);
             var updates = cols
@@ -154,9 +141,7 @@ public sealed class PostgresIndexedDb(NpgsqlDataSource source, CurrentUser user)
         }
 
         await using var cmd = conn.CreateCommand();
-        if (tx is not null) {
-            cmd.Transaction = tx;
-        }
+        if (tx is not null) cmd.Transaction = tx;
         var colSql = string.Join(", ", cols.Select(Ident));
         var valSql = string.Join(", ", values.Select(v => "@" + v.Param));
         cmd.CommandText = $"INSERT INTO {meta.Table} ({colSql}) VALUES ({valSql}){conflict};";
@@ -173,9 +158,7 @@ public sealed class PostgresIndexedDb(NpgsqlDataSource source, CurrentUser user)
     private static async Task<T[]> ReadAllAsync<T>(StoreMeta meta, NpgsqlCommand cmd) {
         var result = new List<T>();
         await using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-        while (await reader.ReadAsync().ConfigureAwait(false)) {
-            result.Add(Materialize<T>(meta, reader));
-        }
+        while (await reader.ReadAsync().ConfigureAwait(false)) result.Add(Materialize<T>(meta, reader));
         return [.. result];
     }
 
@@ -188,11 +171,8 @@ public sealed class PostgresIndexedDb(NpgsqlDataSource source, CurrentUser user)
             skipColumn: name => name == "user_id");
 
     private static void BindKeyArgs(NpgsqlCommand cmd, object[] args) {
-        for (var i = 0; i < args.Length; i++) {
-            cmd.Parameters.AddWithValue("k" + i.ToString(CultureInfo.InvariantCulture), args[i] ?? DBNull.Value);
-        }
+        for (var i = 0; i < args.Length; i++) cmd.Parameters.AddWithValue("k" + i.ToString(CultureInfo.InvariantCulture), args[i] ?? DBNull.Value);
     }
-
 
     private static (string where, object[] args) KeyPredicate(StoreMeta meta, object key) =>
         JsonRowCodec.KeyPredicate(meta.Table, meta.KeyColumns, key, Ident, JsonRowCodec.Postgres);

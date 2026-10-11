@@ -22,9 +22,7 @@ public sealed class AppStateService {
     public event Action? Changed;
 
     private void Set<T>(ref T field, T value) {
-        if (EqualityComparer<T>.Default.Equals(field, value)) {
-            return;
-        }
+        if (EqualityComparer<T>.Default.Equals(field, value)) return;
 
         field = value;
         Changed?.Invoke();

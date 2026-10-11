@@ -7,24 +7,19 @@ public readonly record struct EmptyZone(int ColStart, int ColEnd, int RowStart, 
 public static class ReportGridLayout {
     public const int GridCols = 8;
 
-
     public static (int W, int H) ClampDims(int gridW, int gridH) =>
         (Math.Min(Math.Max(gridW, 1), GridCols), Math.Min(Math.Max(gridH, 1), 8));
 
     public static void MarkOccupied(HashSet<(int, int)> occupied, int col, int row, int w, int h) {
         for (int rr = row; rr < row + h; rr++) {
-            for (int cc = col; cc < col + w; cc++) {
-                occupied.Add((cc, rr));
-            }
+            for (int cc = col; cc < col + w; cc++) occupied.Add((cc, rr));
         }
     }
 
     public static bool CellsFit(HashSet<(int, int)> occupied, int c, int r, int w, int h) {
         for (int rr = r; rr < r + h; rr++) {
             for (int cc = c; cc < c + w; cc++) {
-                if (occupied.Contains((cc, rr))) {
-                    return false;
-                }
+                if (occupied.Contains((cc, rr))) return false;
             }
         }
         return true;
@@ -38,9 +33,7 @@ public static class ReportGridLayout {
                 c = 1;
                 r++;
             }
-            if (CellsFit(occupied, c, r, w, h)) {
-                return (c, r);
-            }
+            if (CellsFit(occupied, c, r, w, h)) return (c, r);
             c++;
         }
     }
@@ -79,17 +72,13 @@ public static class ReportGridLayout {
         int zoneFirst = (targetRow - 1) * GridCols + runStart;
         int best = -1;
         foreach (var cp in cardPositions) {
-            if ((cp.Row - 1) * GridCols + cp.Col < zoneFirst) {
-                best = Math.Max(best, cp.Idx);
-            }
+            if ((cp.Row - 1) * GridCols + cp.Col < zoneFirst) best = Math.Max(best, cp.Idx);
         }
         return best;
     }
 
     public static int FindInsertIndexForZone(IReadOnlyList<ReportDefinition> defs, EmptyZone zone, int fromIdx) {
-        if (fromIdx < 0 || fromIdx >= defs.Count) {
-            return fromIdx;
-        }
+        if (fromIdx < 0 || fromIdx >= defs.Count) return fromIdx;
         var draggedDef = defs[fromIdx];
 
         var withoutDragged = defs.Where((_, i) => i != fromIdx).ToList();
@@ -98,15 +87,11 @@ public static class ReportGridLayout {
         for (int insertPos = 0; insertPos <= withoutDragged.Count; insertPos++) {
             var (col, row, occupied) = SimulatePlacement([.. withoutDragged.Take(insertPos)]);
             var (placedCol, placedRow) = FindPlacement(occupied, dw, dh, col, row);
-            if (placedCol == zone.ColStart && placedRow == zone.RowStart) {
-                return insertPos;
-            }
+            if (placedCol == zone.ColStart && placedRow == zone.RowStart) return insertPos;
         }
 
         int insertAt = zone.InsertAfter;
-        if (fromIdx <= insertAt) {
-            insertAt--;
-        }
+        if (fromIdx <= insertAt) insertAt--;
         return Math.Max(insertAt + 1, 0);
     }
 
@@ -129,9 +114,7 @@ public static class ReportGridLayout {
 
     public static List<EmptyZone> ComputeEmptyZones(IReadOnlyList<ReportDefinition> defs) {
         var (cardPositions, occupied) = BuildOccupancyFromLayout(defs);
-        if (cardPositions.Count == 0) {
-            return [];
-        }
+        if (cardPositions.Count == 0) return [];
         int maxRow = cardPositions.Max(p => p.Row + p.H - 1);
         return [.. Enumerable.Range(1, maxRow).SelectMany(r => RowEmptyZones(r, occupied, cardPositions))];
     }

@@ -118,9 +118,7 @@ public sealed class ReportResult : IEquatable<ReportResult> {
     public List<long>? MissionCountMatrix { get; set; }
 
     public bool Equals(ReportResult? other) {
-        if (other is null) {
-            return false;
-        }
+        if (other is null) return false;
         return ReferenceEquals(this, other) || IsFloat == other.IsFloat
             && Is2D == other.Is2D
             && Weight == other.Weight
@@ -139,7 +137,6 @@ public sealed class ReportResult : IEquatable<ReportResult> {
 
     public override bool Equals(object? obj) => Equals(obj as ReportResult);
 
-
     public override int GetHashCode() {
         var h = new HashCode();
         h.Add(IsFloat);
@@ -156,9 +153,7 @@ public sealed class ReportResult : IEquatable<ReportResult> {
         a.Count == b.Count && a.SequenceEqual(b);
 
     private static bool NullableSeqEqual<T>(List<T>? a, List<T>? b) {
-        if (a is null) {
-            return b is null;
-        }
+        if (a is null) return b is null;
         return b is not null && a.Count == b.Count && a.SequenceEqual(b);
     }
 }

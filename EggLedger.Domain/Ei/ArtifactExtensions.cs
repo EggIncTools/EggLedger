@@ -44,9 +44,7 @@ public static class ArtifactExtensions {
     public static ArtifactSpec.Name CorrespondingFragment(this ArtifactSpec.Name a) {
         string target = EnumNames.ProtoName(a);
         foreach (var (fragment, stone) in Config.StoneFragmentMap) {
-            if (stone == target && EnumNames.TryValue<ArtifactSpec.Name>(fragment, out var val)) {
-                return val;
-            }
+            if (stone == target && EnumNames.TryValue<ArtifactSpec.Name>(fragment, out var val)) return val;
         }
         return ArtifactSpec.Name.Unknown;
     }
@@ -60,9 +58,7 @@ public static class ArtifactExtensions {
     }
 
     private static string EffectTableValue(ArtifactSpec a) {
-        if (!a.ShouldSerializename()) {
-            return "";
-        }
+        if (!a.ShouldSerializename()) return "";
         if (!Config.ArtifactEffects.TryGetValue(EnumNames.ProtoName(a.name), out var effects)
             || !a.ShouldSerializelevel() || (int)a.level >= effects.Length) {
             return "";
@@ -73,32 +69,24 @@ public static class ArtifactExtensions {
 
     public static string CombinedEffectString(this ArtifactSpec a) {
         var v = EffectTableValue(a);
-        if (v == "") {
-            return "";
-        }
+        if (v == "") return "";
         if (v.StartsWith("!!", StringComparison.Ordinal)) {
             return v;
         }
         var generic = a.GenericBenefitString();
         if (generic != "") {
-            if (generic.Contains("[^b]", StringComparison.Ordinal)) {
-                return ReplaceFirst(generic, "[^b]", "[" + v + "]");
-            }
+            if (generic.Contains("[^b]", StringComparison.Ordinal)) return ReplaceFirst(generic, "[^b]", "[" + v + "]");
             if (generic.Contains("[+^b]", StringComparison.Ordinal)) {
                 return ReplaceFirst(generic, "[+^b]", "[+" + v + "]");
             }
-            if (generic.Contains("[-^b]", StringComparison.Ordinal)) {
-                return ReplaceFirst(generic, "[-^b]", "[-" + v + "]");
-            }
+            if (generic.Contains("[-^b]", StringComparison.Ordinal)) return ReplaceFirst(generic, "[-^b]", "[-" + v + "]");
         }
         return "[" + v + "]";
     }
 
     public static string DisplayTierName(this ArtifactSpec a, bool includeSpace) {
         var tierName = a.TierName();
-        if (tierName == "REGULAR") {
-            return "";
-        }
+        if (tierName == "REGULAR") return "";
         return includeSpace ? tierName + " " : tierName;
     }
 
@@ -114,7 +102,6 @@ public static class ArtifactExtensions {
     public static string GameName(this ArtifactSpec a) {
         string baseName = "";
         switch (a.name) {
-
             case ArtifactSpec.Name.LunarTotem:
             case ArtifactSpec.Name.NeodymiumMedallion:
             case ArtifactSpec.Name.BeakOfMidas:
@@ -228,14 +215,10 @@ public static class ArtifactExtensions {
     }
 
     public static string TierName(this ArtifactSpec a) {
-        if (!a.ShouldSerializename() || !a.ShouldSerializelevel()) {
-            return "?";
-        }
+        if (!a.ShouldSerializename() || !a.ShouldSerializelevel()) return "?";
         if (Config.ArtifactTierNames.TryGetValue(EnumNames.ProtoName(a.name), out var names)) {
             int idx = (int)a.level;
-            if (idx >= 0 && idx < names.Length) {
-                return names[idx];
-            }
+            if (idx >= 0 && idx < names.Length) return names[idx];
         }
         return "?";
     }
@@ -245,9 +228,7 @@ public static class ArtifactExtensions {
 
     public static string Display(this ArtifactSpec a) {
         string s = $"{a.CasedName()} (T{a.TierNumber()})";
-        if ((int)a.rarity > 0) {
-            s += $", {a.rarity.Display()}";
-        }
+        if ((int)a.rarity > 0) s += $", {a.rarity.Display()}";
         return s;
     }
 
@@ -278,9 +259,7 @@ public static class ArtifactExtensions {
             ("tau ceti", "Tau Ceti"),
             ("Tau ceti", "Tau Ceti"),
         };
-        foreach (var (from, to) in replacements) {
-            n = n.Replace(from, to);
-        }
+        foreach (var (from, to) in replacements) n = n.Replace(from, to);
         return n;
     }
 

@@ -54,9 +54,7 @@
 
         if (Processes.Count < 3) {
             foreach (var proc in Processes) {
-                if (proc.Status == ProcessStatus.Running && _autoExpanded.Add(proc.Id)) {
-                    _expanded.Add(proc.Id);
-                }
+                if (proc.Status == ProcessStatus.Running && _autoExpanded.Add(proc.Id)) _expanded.Add(proc.Id);
             }
         }
 
@@ -70,9 +68,7 @@
 
     private async Task TickAsync(PeriodicTimer ticker) {
         while (await ticker.WaitForNextTickAsync()) {
-            if (_disposed) {
-                return;
-            }
+            if (_disposed) return;
             await InvokeAsync(StateHasChanged);
         }
     }
@@ -83,9 +79,7 @@
     }
 
     private void Toggle(string id) {
-        if (!_expanded.Remove(id)) {
-            _expanded.Add(id);
-        }
+        if (!_expanded.Remove(id)) _expanded.Add(id);
     }
 
     private string RelativeTime(DateTimeOffset startedAt) {

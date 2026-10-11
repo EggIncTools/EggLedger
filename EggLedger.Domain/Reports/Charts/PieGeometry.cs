@@ -11,9 +11,7 @@ public static class PieGeometry {
 
     public static List<PieItem> BuildItems(IReadOnlyList<string> labels, IReadOnlyList<double> values) {
         double total = values.Sum();
-        if (total == 0) {
-            return [];
-        }
+        if (total == 0) return [];
 
         List<PieItem> items = [.. labels.Select((l, i) => new PieItem(l, i < values.Count ? values[i] : 0))];
 
@@ -49,9 +47,7 @@ public static class PieGeometry {
         IReadOnlyDictionary<string, string> labelColors) {
         var items = BuildItems(labels, values);
         var slices = new List<PieSlice>(items.Count);
-        if (items.Count == 0) {
-            return slices;
-        }
+        if (items.Count == 0) return slices;
 
         double total = items.Sum(i => i.Value);
         var autoColors = SliceColors.AutoSliceColors(baseColor, items.Count);

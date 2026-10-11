@@ -7,9 +7,7 @@ public sealed class IndexedDbReportRunner(IReportSourceCache sources, IWeightDat
     private readonly IWeightData _weights = weights ?? throw new ArgumentNullException(nameof(weights));
 
     public async Task<ReportResult> RunReportAsync(ReportDefinition def, string accountId) {
-        if (def.AccountId != accountId) {
-            def.AccountId = accountId;
-        }
+        if (def.AccountId != accountId) def.AccountId = accountId;
 
         var source = await _sources.GetAsync(accountId).ConfigureAwait(false);
         var runner = new InMemoryReportRunner(_weights, time);

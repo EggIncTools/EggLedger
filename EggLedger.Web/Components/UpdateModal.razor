@@ -53,23 +53,17 @@
         new MarkdownPipelineBuilder().UseAdvancedExtensions().DisableHtml().Build();
 
     protected override void OnInitialized() {
-        if (!Platform.IsDesktop) {
-            return;
-        }
+        if (!Platform.IsDesktop) return;
 
         UpdateStatus.Changed += OnStatusChanged;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender) {
-        if (firstRender && Platform.IsDesktop && UpdateStatus.Phase == UpdatePhase.UpToDate) {
-            await UpdateStatus.CheckForUpdatesAsync();
-        }
+        if (firstRender && Platform.IsDesktop && UpdateStatus.Phase == UpdatePhase.UpToDate) await UpdateStatus.CheckForUpdatesAsync();
     }
 
     public void Open() {
-        if (!string.IsNullOrEmpty(UpdateStatus.AvailableVersion)) {
-            _open = true;
-        }
+        if (!string.IsNullOrEmpty(UpdateStatus.AvailableVersion)) _open = true;
     }
 
     private void OnStatusChanged() {
@@ -94,9 +88,7 @@
     }
 
     public void Dispose() {
-        if (Platform.IsDesktop) {
-            UpdateStatus.Changed -= OnStatusChanged;
-        }
+        if (Platform.IsDesktop) UpdateStatus.Changed -= OnStatusChanged;
     }
 
 }

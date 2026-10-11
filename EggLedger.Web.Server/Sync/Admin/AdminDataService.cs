@@ -55,9 +55,7 @@ public sealed class AdminDataService(NpgsqlDataSource source, IdentityApiClient 
 
     public async Task<IReadOnlyList<AdminUser>> GetUsersAsync(CancellationToken ct = default) {
         lock (_cacheGate) {
-            if (_cache is { } cached && cached.ExpiresAt > time.GetUtcNow()) {
-                return cached.Users;
-            }
+            if (_cache is { } cached && cached.ExpiresAt > time.GetUtcNow()) return cached.Users;
         }
 
         var users = await LoadUsersAsync(ct).ConfigureAwait(false);

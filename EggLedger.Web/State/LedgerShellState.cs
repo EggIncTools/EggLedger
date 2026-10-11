@@ -21,9 +21,7 @@ public sealed class LedgerShellState {
     public bool SettingsOpen {
         get;
         set {
-            if (field == value) {
-                return;
-            }
+            if (field == value) return;
 
             field = value;
             Changed?.Invoke();
@@ -33,9 +31,7 @@ public sealed class LedgerShellState {
     public bool AboutOpen {
         get;
         set {
-            if (field == value) {
-                return;
-            }
+            if (field == value) return;
 
             field = value;
             Changed?.Invoke();
@@ -45,9 +41,7 @@ public sealed class LedgerShellState {
     public LegalDocument? Legal {
         get;
         set {
-            if (field == value) {
-                return;
-            }
+            if (field == value) return;
 
             field = value;
             Changed?.Invoke();
@@ -57,9 +51,7 @@ public sealed class LedgerShellState {
     public bool SupportOpen {
         get;
         set {
-            if (field == value) {
-                return;
-            }
+            if (field == value) return;
 
             field = value;
             Changed?.Invoke();
@@ -77,9 +69,7 @@ public sealed class LedgerShellState {
         AccountPopoverRequested?.Invoke();
 
     public void SetView(LedgerView view) {
-        if (View == view) {
-            return;
-        }
+        if (View == view) return;
 
         View = view;
         Changed?.Invoke();

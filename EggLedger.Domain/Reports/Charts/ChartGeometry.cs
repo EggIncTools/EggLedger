@@ -24,9 +24,7 @@ public static partial class ChartGeometry {
             : [.. values.Select(v => (double)v)];
 
     public static List<ChartPoint> Points(IReadOnlyList<double> values, IReadOnlyList<string> labels, double w, double h) {
-        if (values.Count < 2) {
-            return [];
-        }
+        if (values.Count < 2) return [];
         double max = Math.Max(values.Max(), 1);
         double xStep = (w - PadLeft - PadRight) / (values.Count - 1);
         double yRange = h - PadTop - PadBottom;
@@ -41,9 +39,7 @@ public static partial class ChartGeometry {
         string.Join(" ", points.Select(p => Fmt(p.X) + "," + Fmt(p.Y)));
 
     public static string AreaPath(IReadOnlyList<ChartPoint> points, double h) {
-        if (points.Count < 2) {
-            return "";
-        }
+        if (points.Count < 2) return "";
         double baseline = PadTop + (h - PadTop - PadBottom);
         var line = string.Join(" ", points.Select((p, i) => (i == 0 ? "M" : "L") + Fmt(p.X) + "," + Fmt(p.Y)));
         var last = points[^1];
@@ -52,17 +48,13 @@ public static partial class ChartGeometry {
     }
 
     public static List<ChartPoint> ThinLabels(IReadOnlyList<ChartPoint> points) {
-        if (points.Count <= MaxLabels) {
-            return [.. points];
-        }
+        if (points.Count <= MaxLabels) return [.. points];
         int step = (int)Math.Ceiling((double)points.Count / MaxLabels);
         return [.. points.Where((_, i) => i % step == 0 || i == points.Count - 1)];
     }
 
     public static List<YTick> YTicks(double max, double h, bool isFloat) {
-        if (max == 0) {
-            return [];
-        }
+        if (max == 0) return [];
         double yRange = h - PadTop - PadBottom;
         double[] fracs = [0.33, 0.67, 1.0];
         return [.. fracs.Select(frac => new YTick(
@@ -101,9 +93,7 @@ public static partial class ChartGeometry {
         int hueDenominator,
         (string Label, string Color)? otherSentinel) {
         int n = colLabels.Count;
-        if (n == 0) {
-            return [];
-        }
+        if (n == 0) return [];
         string baseHex = baseColor.StartsWith('#') && baseColor.Length == 7 ? baseColor : "#6366f1";
         var (h, s, _) = SliceColors.HexToHsl(baseHex);
 

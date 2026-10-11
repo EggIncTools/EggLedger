@@ -22,19 +22,13 @@ public sealed class FirstLoginBackfill(
     private readonly IDataProtector _keyProtector = dataProtection.CreateProtector("EggLedger.EncryptionKey");
 
     public async Task RunIfNeededAsync(CancellationToken ct = default) {
-        if (await user.GetUserIdAsync().ConfigureAwait(false) is not { } userId) {
-            return;
-        }
+        if (await user.GetUserIdAsync().ConfigureAwait(false) is not { } userId) return;
 
         var known = await accounts.GetKnownAccountsAsync().ConfigureAwait(false);
-        if (known.Count > 0) {
-            return;
-        }
+        if (known.Count > 0) return;
 
         var encKey = await EncryptionKeyAsync(userId, ct).ConfigureAwait(false);
-        if (string.IsNullOrEmpty(encKey)) {
-            return;
-        }
+        if (string.IsNullOrEmpty(encKey)) return;
 
         await RestoreAccountsAsync(userId, encKey, ct).ConfigureAwait(false);
         await RestoreSettingsAsync(userId, encKey, ct).ConfigureAwait(false);
@@ -44,46 +38,32 @@ public sealed class FirstLoginBackfill(
     private async Task RestoreAccountsAsync(Guid userId, string encKey, CancellationToken ct) {
         var list = await DecryptBlobAsync<List<AccountInfo>>(userId, encKey, CloudSyncBlobs.AccountsBlob, ct)
             .ConfigureAwait(false);
-        if (list is null) {
-            return;
-        }
-        foreach (var acct in list) {
-            await accounts.AddKnownAccountAsync(acct).ConfigureAwait(false);
-        }
+        if (list is null) return;
+        foreach (var acct in list) await accounts.AddKnownAccountAsync(acct).ConfigureAwait(false);
     }
 
     private async Task RestoreSettingsAsync(Guid userId, string encKey, CancellationToken ct) {
         var blob = await DecryptBlobAsync<CloudSyncableSettings>(userId, encKey, CloudSyncBlobs.SettingsBlob, ct)
             .ConfigureAwait(false);
-        if (blob is not null) {
-            await settings.SetSettingsAsync(CloudSyncBlobs.UnpackSettings(blob)).ConfigureAwait(false);
-        }
+        if (blob is not null) await settings.SetSettingsAsync(CloudSyncBlobs.UnpackSettings(blob)).ConfigureAwait(false);
     }
 
     private async Task RestoreReportsAsync(Guid userId, string encKey, CancellationToken ct) {
         var blob = await DecryptBlobAsync<CloudReportsBlob>(userId, encKey, CloudSyncBlobs.ReportsBlob, ct)
             .ConfigureAwait(false);
-        if (blob is null) {
-            return;
-        }
+        if (blob is null) return;
         var existingGroups = (await reports.RetrieveAccountGroupsAsync("").ConfigureAwait(false)).Select(g => g.Id).ToList();
         var existingReports = new List<string>();
         var (groups, rows) = CloudSyncBlobs.SelectReportsToImport(blob, existingGroups, existingReports);
-        foreach (var g in groups) {
-            await reports.InsertReportGroupAsync(g).ConfigureAwait(false);
-        }
-        foreach (var r in rows) {
-            await reports.InsertReportAsync(r).ConfigureAwait(false);
-        }
+        foreach (var g in groups) await reports.InsertReportGroupAsync(g).ConfigureAwait(false);
+        foreach (var r in rows) await reports.InsertReportAsync(r).ConfigureAwait(false);
     }
 
     private async Task<string?> EncryptionKeyAsync(Guid userId, CancellationToken ct) {
         await using var cmd = source.CreateCommand("SELECT encryption_key FROM users WHERE user_id = $1");
         cmd.Parameters.AddWithValue(userId);
         var result = await cmd.ExecuteScalarAsync(ct).ConfigureAwait(false);
-        if (result is not string { Length: > 0 } stored) {
-            return null;
-        }
+        if (result is not string { Length: > 0 } stored) return null;
 
         try {
             return _keyProtector.Unprotect(stored);
@@ -101,9 +81,7 @@ public sealed class FirstLoginBackfill(
             var result = await cmd.ExecuteScalarAsync(ct).ConfigureAwait(false);
             ciphertext = result as string;
         }
-        if (string.IsNullOrEmpty(ciphertext)) {
-            return default;
-        }
+        if (string.IsNullOrEmpty(ciphertext)) return default;
         try {
             var plaintext = await cipher.DecryptAsync(encKey, ciphertext, ct).ConfigureAwait(false);
             return JsonSerializer.Deserialize<T>(plaintext, Json);

@@ -127,9 +127,7 @@ public static class FilterFields {
 
     public static FilterFieldDef? GetReportField(string key) {
         foreach (var f in ReportFilterFields) {
-            if (f.Key == key) {
-                return f;
-            }
+            if (f.Key == key) return f;
         }
         return null;
     }

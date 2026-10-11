@@ -7,9 +7,7 @@ public static class SliceColors {
     private const string DefaultBase = "#6366f1";
 
     public static (double H, double S, double L) HexToHsl(string hex) {
-        if (!IsHexColor(hex)) {
-            hex = DefaultBase;
-        }
+        if (!IsHexColor(hex)) hex = DefaultBase;
         double rv = ParseByte(hex, 1) / 255.0;
         double gv = ParseByte(hex, 3) / 255.0;
         double bv = ParseByte(hex, 5) / 255.0;
@@ -43,9 +41,7 @@ public static class SliceColors {
     }
 
     public static Dictionary<string, string> ParseLabelColors(string? raw) {
-        if (string.IsNullOrEmpty(raw)) {
-            return [with(StringComparer.Ordinal)];
-        }
+        if (string.IsNullOrEmpty(raw)) return [with(StringComparer.Ordinal)];
         try {
             var parsed = JsonSerializer.Deserialize<Dictionary<string, string>>(raw);
             return parsed ?? [with(StringComparer.Ordinal)];
@@ -59,9 +55,7 @@ public static class SliceColors {
         string baseColor,
         IReadOnlyList<string> chartLabels,
         IReadOnlyDictionary<string, string> labelColorsMap) {
-        if (labelColorsMap.TryGetValue(label, out var overridden) && !string.IsNullOrEmpty(overridden)) {
-            return overridden;
-        }
+        if (labelColorsMap.TryGetValue(label, out var overridden) && !string.IsNullOrEmpty(overridden)) return overridden;
         int idx = IndexOf(chartLabels, label);
         var colors = AutoSliceColors(baseColor, chartLabels.Count);
         return idx >= 0 && idx < colors.Count ? colors[idx] : baseColor;
@@ -69,28 +63,21 @@ public static class SliceColors {
 
     private static int IndexOf(IReadOnlyList<string> list, string value) {
         for (int i = 0; i < list.Count; i++) {
-            if (list[i] == value) {
-                return i;
-            }
+            if (list[i] == value) return i;
         }
         return -1;
     }
 
     private static bool IsHexColor(string? hex) {
-        if (hex is null || hex.Length != 7 || hex[0] != '#') {
-            return false;
-        }
+        if (hex is null || hex.Length != 7 || hex[0] != '#') return false;
         for (int i = 1; i < 7; i++) {
-            if (!Uri.IsHexDigit(hex[i])) {
-                return false;
-            }
+            if (!Uri.IsHexDigit(hex[i])) return false;
         }
         return true;
     }
 
     private static int ParseByte(string hex, int start) =>
         int.Parse(hex.AsSpan(start, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
-
 
     private static double Mod(double a, double n) {
         double r = a % n;

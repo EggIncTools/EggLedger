@@ -23,9 +23,7 @@ public sealed class AccountLoader(
 
         if (!_loaded) {
             var activeId = await store.GetActiveAccountIdAsync().ConfigureAwait(false);
-            if (string.IsNullOrEmpty(activeId) && suite?.ActiveEid is { } suiteEid && Accounts.Any(a => a.Id == suiteEid)) {
-                activeId = suiteEid;
-            }
+            if (string.IsNullOrEmpty(activeId) && suite?.ActiveEid is { } suiteEid && Accounts.Any(a => a.Id == suiteEid)) activeId = suiteEid;
             if (!string.IsNullOrEmpty(activeId)) {
                 _persisting = true;
                 active.SetActive(activeId);
@@ -41,15 +39,11 @@ public sealed class AccountLoader(
     }
 
     private void OnActiveChanged() {
-        if (_persisting) {
-            return;
-        }
+        if (_persisting) return;
 
         var id = active.ActiveAccountId;
         _ = store.SetActiveAccountIdAsync(id ?? "");
-        if (suite is not null) {
-            _ = suite.SetActiveEidAsync(id, Accounts.FirstOrDefault(a => a.Id == id)?.Nickname);
-        }
+        if (suite is not null) _ = suite.SetActiveEidAsync(id, Accounts.FirstOrDefault(a => a.Id == id)?.Nickname);
     }
 
     public void Dispose() {

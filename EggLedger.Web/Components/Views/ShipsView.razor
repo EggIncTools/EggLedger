@@ -150,9 +150,7 @@
     }
 
     private void SelectAllMulti() {
-        foreach (var m in State.TabFiltered ?? Array.Empty<DatabaseMission>()) {
-            State.MultiSelectedIds.Add(m.MissiondId);
-        }
+        foreach (var m in State.TabFiltered ?? Array.Empty<DatabaseMission>()) State.MultiSelectedIds.Add(m.MissiondId);
     }
 
     private void DeselectAllMulti() {
@@ -160,22 +158,16 @@
     }
 
     public async Task ResortAsync(MissionSortMethod method) {
-        if (_overlay is not null) {
-            await _overlay.ReSortAsync(method);
-        }
+        if (_overlay is not null) await _overlay.ReSortAsync(method);
     }
 
     private async Task ViewMissionAsync(string missionId) {
         State.SetMissionBeingViewed(missionId);
-        if (_overlay is not null) {
-            await _overlay.OpenAsync(missionId);
-        }
+        if (_overlay is not null) await _overlay.OpenAsync(missionId);
     }
 
     private async Task ViewRowAsync(IReadOnlyList<string> missionIds) {
-        if (missionIds.Count == 0 || _overlay is null) {
-            return;
-        }
+        if (missionIds.Count == 0 || _overlay is null) return;
 
         if (missionIds.Count == 1) {
             await ViewMissionAsync(missionIds[0]);
@@ -188,9 +180,7 @@
 
     public void Dispose() {
         State.Changed -= OnStateChanged;
-        if (ReferenceEquals(State.Actions, this)) {
-            State.Actions = null;
-        }
+        if (ReferenceEquals(State.Actions, this)) State.Actions = null;
     }
 
 }

@@ -38,9 +38,7 @@ if (isSubProd) {
 }
 var fencedGetter = LedgerClonePlan.Fence.Wrap(Environment.GetEnvironmentVariable);
 foreach (var entry in LedgerClonePlan.Fence.Report()) {
-    if (entry.Fenced) {
-        await Console.Error.WriteLineAsync($"eggledger: sub-prod fence forced {entry.EnvKey} empty");
-    }
+    if (entry.Fenced) await Console.Error.WriteLineAsync($"eggledger: sub-prod fence forced {entry.EnvKey} empty");
 }
 
 var settingsRegistry = AppConfig.Registry;
@@ -48,9 +46,7 @@ var bootstrapSettings = new SettingsSnapshot(
     settingsRegistry, new Dictionary<string, string?>(StringComparer.Ordinal), null, fencedGetter);
 var cfg = AppConfig.From(bootstrapSettings);
 var hasDb = !string.IsNullOrEmpty(cfg.DatabaseUrl);
-if (hasDb && isSubProd) {
-    SubProdGuard.EnsureDatabase(cfg.DatabaseUrl, LedgerClonePlan.TargetDatabase);
-}
+if (hasDb && isSubProd) SubProdGuard.EnsureDatabase(cfg.DatabaseUrl, LedgerClonePlan.TargetDatabase);
 var build = new VerifyInfo { Name = "EggLedger", Sha256 = cfg.BuildSha, Version = AppVersionInfo.Current, Date = cfg.BuildDate };
 var startedAt = TimeProvider.System.GetUtcNow();
 
@@ -65,11 +61,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(o => {
     o.KnownIPNetworks.Clear();
     o.KnownProxies.Clear();
     o.ForwardLimit = null;
-    foreach (var cidr in cfg.TrustedProxyNetworks) {
-        if (System.Net.IPNetwork.TryParse(cidr, out var net)) {
-            o.KnownIPNetworks.Add(net);
-        }
-    }
+    foreach (var cidr in cfg.TrustedProxyNetworks) if (System.Net.IPNetwork.TryParse(cidr, out var net)) o.KnownIPNetworks.Add(net);
 });
 
 var eggIdentitySession = SessionCookieOptions.FromEnvironment();
@@ -100,9 +92,7 @@ var authBuilder = authentication
                 return;
             }
             var identity = ctx.HttpContext.RequestServices.GetService<EggIdentity.Client.IdentityApiClient>();
-            if (identity is not null) {
-                await AuthentikAspNetAuth.OnValidatePrincipalCheckRevoked(ctx, identity, EggLedger.Web.Server.Auth.AuthScheme.UserIdClaim, EggLedger.Web.Server.Auth.AuthScheme.RoleClaim);
-            }
+            if (identity is not null) await AuthentikAspNetAuth.OnValidatePrincipalCheckRevoked(ctx, identity, EggLedger.Web.Server.Auth.AuthScheme.UserIdClaim, EggLedger.Web.Server.Auth.AuthScheme.RoleClaim);
             MirrorEggIdentityRoleClaim(ctx);
         };
     });
@@ -110,9 +100,7 @@ var authBuilder = authentication
 if (eggIdentitySession is not null) {
     authBuilder.AddEggIdentitySession(eggIdentitySession, onValidated: (principal, _, _) => {
         var userId = principal.EggIdentityUserId();
-        if (userId is not null && principal.Identity is System.Security.Claims.ClaimsIdentity id) {
-            id.AddClaim(new System.Security.Claims.Claim(EggLedger.Web.Server.Auth.AuthScheme.UserIdClaim, userId.Value.ToString()));
-        }
+        if (userId is not null && principal.Identity is System.Security.Claims.ClaimsIdentity id) id.AddClaim(new System.Security.Claims.Claim(EggLedger.Web.Server.Auth.AuthScheme.UserIdClaim, userId.Value.ToString()));
         return Task.CompletedTask;
     });
     builder.Services.AddSingleton(eggIdentitySession);
@@ -246,20 +234,14 @@ static string SelfBaseFromUrls() {
 }
 
 static void MirrorEggIdentityRoleClaim(Microsoft.AspNetCore.Authentication.Cookies.CookieValidatePrincipalContext ctx) {
-    if (ctx.Principal?.Identity is not System.Security.Claims.ClaimsIdentity id) {
-        return;
-    }
+    if (ctx.Principal?.Identity is not System.Security.Claims.ClaimsIdentity id) return;
     var role = id.FindFirst(EggLedger.Web.Server.Auth.AuthScheme.RoleClaim)?.Value;
     var mirror = id.FindFirst(SessionClaims.Role);
-    if (mirror?.Value == role) {
-        return;
-    }
+    if (mirror?.Value == role) return;
     if (mirror is not null) {
         id.RemoveClaim(mirror);
     }
-    if (role is not null) {
-        id.AddClaim(new System.Security.Claims.Claim(SessionClaims.Role, role));
-    }
+    if (role is not null) id.AddClaim(new System.Security.Claims.Claim(SessionClaims.Role, role));
     ctx.ShouldRenew = true;
 }
 
@@ -321,10 +303,7 @@ app.UseRouting();
 app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
-if (hasDb) {
-
-    app.UseMiddleware<EggLedger.Web.Server.Sync.Auth.LoginCallbackMiddleware>();
-}
+if (hasDb) app.UseMiddleware<EggLedger.Web.Server.Sync.Auth.LoginCallbackMiddleware>();
 
 app.UseEggIdentityFallback();
 
@@ -337,9 +316,7 @@ app.Map("/egg-api/{**rest}", async (HttpContext ctx, IHttpClientFactory factory,
         using var ms = new MemoryStream();
         await ctx.Request.Body.CopyToAsync(ms);
         req.Content = new ByteArrayContent(ms.ToArray());
-        if (ctx.Request.ContentType is { } ct) {
-            req.Content.Headers.TryAddWithoutValidation("Content-Type", ct);
-        }
+        if (ctx.Request.ContentType is { } ct) req.Content.Headers.TryAddWithoutValidation("Content-Type", ct);
     }
     using var upstream = await client.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ctx.RequestAborted);
     ctx.Response.StatusCode = (int)upstream.StatusCode;
@@ -398,9 +375,7 @@ if (hasDb) {
     app.Lifetime.ApplicationStarted.Register(() =>
         _ = Task.Run(() => mergeRemapper.RunAsync(app.Lifetime.ApplicationStopping)));
 
-    if (settingsCache is not null && settingsDataSource is not null) {
-        _ = new SettingsChangeListener(settingsDataSource, settingsCache).RunAsync(app.Lifetime.ApplicationStopping);
-    }
+    if (settingsCache is not null && settingsDataSource is not null) _ = new SettingsChangeListener(settingsDataSource, settingsCache).RunAsync(app.Lifetime.ApplicationStopping);
 
     Api.Map(app, cfg, build);
 

@@ -9,9 +9,7 @@ public sealed class IndexedDbReportStore(IIndexedDb db, TimeProvider time) {
     private long Now() => time.GetUtcNow().ToUnixTimeSeconds();
 
     public static string NormalizeFiltersJson(string? s) {
-        if (string.IsNullOrWhiteSpace(s)) {
-            return """{"and":[],"or":[]}""";
-        }
+        if (string.IsNullOrWhiteSpace(s)) return """{"and":[],"or":[]}""";
         using var doc = JsonDocument.Parse(s);
         using var buffer = new MemoryStream();
         using (var writer = new Utf8JsonWriter(buffer, CompactWriter)) {
@@ -37,9 +35,7 @@ public sealed class IndexedDbReportStore(IIndexedDb db, TimeProvider time) {
     public async Task UpdateReportAsync(ReportRow r) {
         long createdAt = r.CreatedAt;
         var existing = await db.GetAsync<ReportRow>(IndexedDbStores.Reports, r.Id);
-        if (existing is not null) {
-            createdAt = existing.CreatedAt;
-        }
+        if (existing is not null) createdAt = existing.CreatedAt;
         var row = r with {
             Filters = NormalizeFiltersJson(r.Filters),
             NormalizeBy = NormalizeByOrDefault(r.NormalizeBy),
@@ -68,9 +64,7 @@ public sealed class IndexedDbReportStore(IIndexedDb db, TimeProvider time) {
     public async Task ReorderReportsAsync(IReadOnlyList<string> ids) {
         for (int i = 0; i < ids.Count; i++) {
             var row = await db.GetAsync<ReportRow>(IndexedDbStores.Reports, ids[i]);
-            if (row is null) {
-                continue;
-            }
+            if (row is null) continue;
             await db.PutAsync(IndexedDbStores.Reports, row with { SortOrder = i });
         }
     }
@@ -85,30 +79,22 @@ public sealed class IndexedDbReportStore(IIndexedDb db, TimeProvider time) {
     public async Task UpdateReportGroupAsync(ReportGroupRow r) {
         var existing = await db.GetAsync<ReportGroupRow>(IndexedDbStores.ReportGroups, r.Id);
 
-        if (existing is null) {
-            return;
-        }
+        if (existing is null) return;
         await db.PutAsync(IndexedDbStores.ReportGroups, existing with { Name = r.Name, SortOrder = r.SortOrder });
     }
 
     public async Task DeleteReportGroupAsync(string id) {
         var members = await RetrieveReportsByGroupAsync(id);
-        foreach (var m in members) {
-            await db.PutAsync(IndexedDbStores.Reports, m with { GroupId = "" });
-        }
+        foreach (var m in members) await db.PutAsync(IndexedDbStores.Reports, m with { GroupId = "" });
         await db.DeleteAsync(IndexedDbStores.ReportGroups, id);
     }
 
     public async Task DeleteAllForAccountAsync(string accountId) {
         var reports = await db.GetAllByIndexAsync<ReportRow>(IndexedDbStores.Reports, IndexedDbStores.AccountIdIndex, accountId);
-        foreach (var r in reports) {
-            await db.DeleteAsync(IndexedDbStores.Reports, r.Id);
-        }
+        foreach (var r in reports) await db.DeleteAsync(IndexedDbStores.Reports, r.Id);
 
         var groups = await db.GetAllByIndexAsync<ReportGroupRow>(IndexedDbStores.ReportGroups, IndexedDbStores.AccountIdIndex, accountId);
-        foreach (var g in groups) {
-            await db.DeleteAsync(IndexedDbStores.ReportGroups, g.Id);
-        }
+        foreach (var g in groups) await db.DeleteAsync(IndexedDbStores.ReportGroups, g.Id);
     }
 
     public async Task<IReadOnlyList<ReportGroupRow>> RetrieveAccountGroupsAsync(string accountId) {
@@ -128,9 +114,7 @@ public sealed class IndexedDbReportStore(IIndexedDb db, TimeProvider time) {
 
     public async Task SetReportGroupAsync(string reportId, string groupId) {
         var row = await db.GetAsync<ReportRow>(IndexedDbStores.Reports, reportId);
-        if (row is null) {
-            return;
-        }
+        if (row is null) return;
         await db.PutAsync(IndexedDbStores.Reports, row with { GroupId = groupId });
     }
 }

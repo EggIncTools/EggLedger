@@ -88,9 +88,7 @@
 
     protected override void OnInitialized() {
         AppStateSvc.Changed += OnStateChanged;
-        if (Platform.IsDesktop) {
-            UpdateStatus.Changed += OnStateChanged;
-        }
+        if (Platform.IsDesktop) UpdateStatus.Changed += OnStateChanged;
     }
 
     private void OnStateChanged() {
@@ -103,9 +101,7 @@
 
     public void Dispose() {
         AppStateSvc.Changed -= OnStateChanged;
-        if (Platform.IsDesktop) {
-            UpdateStatus.Changed -= OnStateChanged;
-        }
+        if (Platform.IsDesktop) UpdateStatus.Changed -= OnStateChanged;
     }
 
 }

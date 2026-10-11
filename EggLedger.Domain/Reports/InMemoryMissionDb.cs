@@ -12,7 +12,6 @@ internal sealed class InMemoryMissionDb : IMissionDb {
     private const string AirtimeSumMarker = "SUM(CAST(m.return_timestamp - m.start_timestamp AS REAL) / 3600.0)";
     private const string FuelSumMarker = "SUM(f.amount)";
 
-
     private const string ArtifactJoinMarker = "JOIN mission m ON d.mission_id = m.mission_id";
     private const string CountMarker = "COUNT(*)";
     private const string GroupByMarker = "GROUP BY ";
@@ -23,7 +22,6 @@ internal sealed class InMemoryMissionDb : IMissionDb {
     private readonly List<FuelRowData> _fuel;
     private readonly IWeightData _weights;
     private readonly TimeProvider _time;
-
 
     private readonly ILookup<(string Player, string Mission), ArtifactDropRowData> _dropsByMission;
     private readonly ILookup<(string Player, string Mission), FuelRowData> _fuelByMission;
@@ -49,9 +47,7 @@ internal sealed class InMemoryMissionDb : IMissionDb {
     }
 
     public IReadOnlyList<object?[]> Query(string sql, IReadOnlyList<object?> args) {
-        if (sql.Contains(FuelSumMarker, StringComparison.Ordinal)) {
-            return FuelAggregate();
-        }
+        if (sql.Contains(FuelSumMarker, StringComparison.Ordinal)) return FuelAggregate();
 
         var weighted = sql.Contains(CapWeightMarker, StringComparison.Ordinal);
         var hasBucket = sql.Contains(BucketMarker, StringComparison.Ordinal);
@@ -61,21 +57,15 @@ internal sealed class InMemoryMissionDb : IMissionDb {
         var joinDrops = sql.Contains(ArtifactJoinMarker, StringComparison.Ordinal);
 
         if (weighted) {
-            if (hasBucket && hasGrp) {
-                return WeightedTimePivot();
-            }
+            if (hasBucket && hasGrp) return WeightedTimePivot();
             if (hasBucket) {
                 return WeightedTimeSeries();
             }
             return _def.SecondaryGroupBy != "" ? WeightedPivot() : WeightedAggregate();
         }
 
-        if (hasBucket && hasGrp) {
-            return TimePivotCount(joinDrops);
-        }
-        if (hasBucket) {
-            return TimeSeriesCount(joinDrops);
-        }
+        if (hasBucket && hasGrp) return TimePivotCount(joinDrops);
+        if (hasBucket) return TimeSeriesCount(joinDrops);
 
         if (airtimeDenom) {
             return _def.SecondaryGroupBy != "" && Is2DAirtimeQuery(sql)
@@ -90,11 +80,8 @@ internal sealed class InMemoryMissionDb : IMissionDb {
         return Is2DCountQuery(sql) ? Count2D(joinDrops) : Count1D(joinDrops);
     }
 
-
     private bool Is2DCountQuery(string sql) {
-        if (_def.SecondaryGroupBy == "") {
-            return false;
-        }
+        if (_def.SecondaryGroupBy == "") return false;
         var col1 = QueryBuilder.GroupByColumn(_def.GroupBy);
         var col2 = QueryBuilder.GroupByColumn(_def.SecondaryGroupBy);
         return col1 != "" && col2 != ""
@@ -102,24 +89,18 @@ internal sealed class InMemoryMissionDb : IMissionDb {
     }
 
     private bool Is2DAirtimeQuery(string sql) {
-        if (_def.SecondaryGroupBy == "") {
-            return false;
-        }
+        if (_def.SecondaryGroupBy == "") return false;
         var col2 = QueryBuilder.GroupByColumn(_def.SecondaryGroupBy);
         return col2 != "" && sql.Contains("CAST(" + col2 + " AS TEXT), SUM", StringComparison.Ordinal);
     }
 
-
     private IEnumerable<MissionRowData> FilteredMissions() =>
         _missions.Where(m => m.PlayerId == _def.AccountId && _predicate.PassesFilters(m));
-
 
     private IEnumerable<(MissionRowData M, ArtifactDropRowData D)> FilteredJoin() {
         foreach (var m in FilteredMissions()) {
             foreach (var d in _dropsByMission[(m.PlayerId, m.MissionId)]) {
-                if (d.DropIndex >= 0 && _predicate.PassesArtifactFilters(d)) {
-                    yield return (m, d);
-                }
+                if (d.DropIndex >= 0 && _predicate.PassesArtifactFilters(d)) yield return (m, d);
             }
         }
     }
@@ -130,9 +111,7 @@ internal sealed class InMemoryMissionDb : IMissionDb {
         var order = new List<string>();
         foreach (var key in GroupKeys1D(col, joinDrops)) {
             ref var cur = ref CollectionsMarshal.GetValueRefOrAddDefault(counts, key, out var exists);
-            if (!exists) {
-                order.Add(key);
-            }
+            if (!exists) order.Add(key);
             cur++;
         }
 
@@ -150,14 +129,10 @@ internal sealed class InMemoryMissionDb : IMissionDb {
         var sums = new Dictionary<string, double>(StringComparer.Ordinal);
         var order = new List<string>();
         foreach (var m in FilteredMissions()) {
-            if (MissionFuelTotal(m) is not double amount) {
-                continue;
-            }
+            if (MissionFuelTotal(m) is not double amount) continue;
             var key = ColValue(m, col);
             ref var cur = ref CollectionsMarshal.GetValueRefOrAddDefault(sums, key, out var exists);
-            if (!exists) {
-                order.Add(key);
-            }
+            if (!exists) order.Add(key);
             cur += amount;
         }
         return [.. order
@@ -169,9 +144,7 @@ internal sealed class InMemoryMissionDb : IMissionDb {
 
     private double? MissionFuelTotal(MissionRowData m) {
         var recorded = _fuelByMission[(m.PlayerId, m.MissionId)];
-        if (recorded.Any()) {
-            return recorded.Sum(f => f.Amount);
-        }
+        if (recorded.Any()) return recorded.Sum(f => f.Amount);
         var synthesized = ShipFuelCosts.For(m.Ship, m.DurationType);
         return synthesized.Count > 0 ? synthesized.Sum(f => f.Amount) : null;
     }
@@ -184,9 +157,7 @@ internal sealed class InMemoryMissionDb : IMissionDb {
         foreach (var (k1, k2) in GroupKeys2D(col1, col2, joinDrops)) {
             var key = (k1, k2);
             ref var cur = ref CollectionsMarshal.GetValueRefOrAddDefault(counts, key, out var exists);
-            if (!exists) {
-                order.Add(key);
-            }
+            if (!exists) order.Add(key);
             cur++;
         }
 
@@ -204,9 +175,7 @@ internal sealed class InMemoryMissionDb : IMissionDb {
         foreach (var m in AirtimeRows(joinDrops, col, null)) {
             var key = ColValue(m, col);
             ref var cur = ref CollectionsMarshal.GetValueRefOrAddDefault(sums, key, out var exists);
-            if (!exists) {
-                order.Add(key);
-            }
+            if (!exists) order.Add(key);
             cur += (m.ReturnTimestamp - m.StartTimestamp) / 3600.0;
         }
         return [.. order.Select(k => new object?[] { k, sums[k] })];
@@ -220,9 +189,7 @@ internal sealed class InMemoryMissionDb : IMissionDb {
         foreach (var m in AirtimeRows(joinDrops, col1, col2)) {
             var key = (ColValue(m, col1), ColValue(m, col2));
             ref var cur = ref CollectionsMarshal.GetValueRefOrAddDefault(sums, key, out var exists);
-            if (!exists) {
-                order.Add(key);
-            }
+            if (!exists) order.Add(key);
             cur += (m.ReturnTimestamp - m.StartTimestamp) / 3600.0;
         }
         return [.. order.Select(k => new object?[] { k.K1, k.K2, sums[k] })];
@@ -267,9 +234,7 @@ internal sealed class InMemoryMissionDb : IMissionDb {
         foreach (var (m, d) in WeightedJoin()) {
             var key = (col.StartsWith("d.", StringComparison.Ordinal) ? ColValueDrop(d, col) : ColValue(m, col), d.ArtifactId, d.Level);
             ref var cur = ref CollectionsMarshal.GetValueRefOrAddDefault(groups, key, out var exists);
-            if (!exists) {
-                order.Add(key);
-            }
+            if (!exists) order.Add(key);
             cur += CapWeight(m);
         }
         var rows = order
@@ -290,9 +255,7 @@ internal sealed class InMemoryMissionDb : IMissionDb {
             var k2 = col2.StartsWith("d.", StringComparison.Ordinal) ? ColValueDrop(d, col2) : ColValue(m, col2);
             var key = (k1, k2, d.ArtifactId, d.Level);
             ref var cur = ref CollectionsMarshal.GetValueRefOrAddDefault(groups, key, out var exists);
-            if (!exists) {
-                order.Add(key);
-            }
+            if (!exists) order.Add(key);
             cur += CapWeight(m);
         }
 
@@ -308,9 +271,7 @@ internal sealed class InMemoryMissionDb : IMissionDb {
         foreach (var (m, d) in WeightedBucketJoin()) {
             var key = (BucketLabel(m.StartTimestamp), d.ArtifactId, d.Level);
             ref var cur = ref CollectionsMarshal.GetValueRefOrAddDefault(groups, key, out var exists);
-            if (!exists) {
-                order.Add(key);
-            }
+            if (!exists) order.Add(key);
             cur += CapWeight(m);
         }
 
@@ -329,9 +290,7 @@ internal sealed class InMemoryMissionDb : IMissionDb {
             var grp = col2.StartsWith("d.", StringComparison.Ordinal) ? ColValueDrop(d, col2) : ColValue(m, col2);
             var key = (BucketLabel(m.StartTimestamp), grp, d.ArtifactId, d.Level);
             ref var cur = ref CollectionsMarshal.GetValueRefOrAddDefault(groups, key, out var exists);
-            if (!exists) {
-                order.Add(key);
-            }
+            if (!exists) order.Add(key);
             cur += CapWeight(m);
         }
         var rows = order
@@ -342,17 +301,12 @@ internal sealed class InMemoryMissionDb : IMissionDb {
         return rows;
     }
 
-
     private IEnumerable<string> GroupKeys1D(string col, bool joinDrops) {
         if (joinDrops || col.StartsWith("d.", StringComparison.Ordinal)) {
-            foreach (var (m, d) in FilteredJoin()) {
-                yield return col.StartsWith("d.", StringComparison.Ordinal) ? ColValueDrop(d, col) : ColValue(m, col);
-            }
+            foreach (var (m, d) in FilteredJoin()) yield return col.StartsWith("d.", StringComparison.Ordinal) ? ColValueDrop(d, col) : ColValue(m, col);
             yield break;
         }
-        foreach (var m in FilteredMissions()) {
-            yield return ColValue(m, col);
-        }
+        foreach (var m in FilteredMissions()) yield return ColValue(m, col);
     }
 
     private IEnumerable<(string, string)> GroupKeys2D(string col1, string col2, bool joinDrops) {
@@ -367,11 +321,8 @@ internal sealed class InMemoryMissionDb : IMissionDb {
             }
             yield break;
         }
-        foreach (var m in FilteredMissions()) {
-            yield return (ColValue(m, col1), ColValue(m, col2));
-        }
+        foreach (var m in FilteredMissions()) yield return (ColValue(m, col1), ColValue(m, col2));
     }
-
 
     private IEnumerable<MissionRowData> FilteredBucketRows(bool joinDrops) =>
         joinDrops
@@ -382,24 +333,17 @@ internal sealed class InMemoryMissionDb : IMissionDb {
         var needJoin = joinDrops || col2.StartsWith("d.", StringComparison.Ordinal);
         if (needJoin) {
             foreach (var (m, d) in FilteredJoin()) {
-                if (InCustomWindow(m)) {
-                    yield return (m, d);
-                }
+                if (InCustomWindow(m)) yield return (m, d);
             }
             yield break;
         }
-        foreach (var m in FilteredMissions().Where(InCustomWindow)) {
-            yield return (m, null);
-        }
+        foreach (var m in FilteredMissions().Where(InCustomWindow)) yield return (m, null);
     }
-
 
     private IEnumerable<(MissionRowData M, ArtifactDropRowData D)> WeightedJoin() {
         var family = new HashSet<long>(_weights.FamilyAfxIds(_def.FamilyWeight).Select(i => (long)i));
         foreach (var (m, d) in FilteredJoin()) {
-            if (family.Contains(d.ArtifactId)) {
-                yield return (m, d);
-            }
+            if (family.Contains(d.ArtifactId)) yield return (m, d);
         }
     }
 
@@ -417,7 +361,6 @@ internal sealed class InMemoryMissionDb : IMissionDb {
             return c != 0 ? c : CompareCol(col2, x.B, y.B);
         });
 
-
     private static int CompareCol(string col, string a, string b) =>
         !col.EndsWith("spec_type", StringComparison.Ordinal)
             && long.TryParse(a, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var ia)
@@ -429,13 +372,9 @@ internal sealed class InMemoryMissionDb : IMissionDb {
         TimeBucket.Format(_def.TimeBucket, _def.CustomBucketUnit, unixSeconds);
 
     private bool InCustomWindow(MissionRowData m) {
-        if (_def.TimeBucket != "custom") {
-            return true;
-        }
+        if (_def.TimeBucket != "custom") return true;
         var (cond, modifier) = QueryBuilder.CustomWindowCondition(_def.CustomBucketN, _def.CustomBucketUnit);
-        if (cond == "" || modifier is not string mod) {
-            return true;
-        }
+        if (cond == "" || modifier is not string mod) return true;
         var cutoff = TimeBucket.NowMinus(mod, _time);
         return m.StartTimestamp >= cutoff;
     }

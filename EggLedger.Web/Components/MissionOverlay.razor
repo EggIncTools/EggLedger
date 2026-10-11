@@ -186,9 +186,7 @@
         _isLoading = false;
         _paneDirection = PaneDirection.None;
         _data = await BuildAsync(missionId);
-        if (_data is null) {
-            return;
-        }
+        if (_data is null) return;
 
         _open = true;
         StateHasChanged();
@@ -220,16 +218,12 @@
         await Task.Yield();
 
         var byId = new Dictionary<string, DatabaseMission>(FilteredMissions.Count, StringComparer.Ordinal);
-        foreach (var m in FilteredMissions) {
-            byId.TryAdd(m.MissiondId, m);
-        }
+        foreach (var m in FilteredMissions) byId.TryAdd(m.MissiondId, m);
         var bulk = AccountId is null ? null : await Hub.GetDropsAsync(AccountId);
         long lastRender = Stopwatch.GetTimestamp();
 
         foreach (var id in missionIds) {
-            if (_multi != multi) {
-                return;
-            }
+            if (_multi != multi) return;
             if (byId.TryGetValue(id, out var mission)) {
                 var drops = bulk is not null && bulk.TryGetValue(id, out var cached) && cached.Count > 0
                     ? cached
@@ -247,9 +241,7 @@
             }
         }
 
-        if (_multi != multi) {
-            return;
-        }
+        if (_multi != multi) return;
         StateHasChanged();
         await Task.Yield();
 
@@ -257,12 +249,8 @@
         _isLoading = false;
         StateHasChanged();
 
-        if (multi.Count > MaxSeparate) {
-            return;
-        }
-        foreach (var data in multi) {
-            await PopulateMennoAsync(data.MissionInfo, data);
-        }
+        if (multi.Count > MaxSeparate) return;
+        foreach (var data in multi) await PopulateMennoAsync(data.MissionInfo, data);
         StateHasChanged();
     }
 
@@ -272,9 +260,7 @@
     }
 
     private void RebuildCombined(MissionSortMethod method) {
-        if (_multi is null) {
-            return;
-        }
+        if (_multi is null) return;
 
         Func<IEnumerable<DropLike>, List<DropLike>> sortFn = method == MissionSortMethod.Iv
             ? DropSorter.InventoryVisualizerSort
@@ -286,18 +272,11 @@
     }
 
     public async Task ReSortAsync(MissionSortMethod method) {
-        if (!_open) {
-            return;
-        }
-
-        if (_data is not null) {
-            MissionDetailBuilder.ApplySortMethod(_data, method);
-        }
+        if (!_open) return;
+        if (_data is not null) MissionDetailBuilder.ApplySortMethod(_data, method);
 
         if (_multi is not null) {
-            foreach (var d in _multi) {
-                MissionDetailBuilder.ApplySortMethod(d, method);
-            }
+            foreach (var d in _multi) MissionDetailBuilder.ApplySortMethod(d, method);
 
             RebuildCombined(method);
         }
@@ -314,9 +293,7 @@
     }
 
     private async Task PopulateMennoForAsync(string missionId) {
-        if (_data is null) {
-            return;
-        }
+        if (_data is null) return;
 
         var mission = FindMission(missionId);
         if (mission is not null) {
@@ -327,9 +304,7 @@
 
     private async Task<ViewMissionData?> BuildAsync(string missionId) {
         var mission = FindMission(missionId);
-        if (mission is null) {
-            return null;
-        }
+        if (mission is null) return null;
 
         var drops = AccountId is null
             ? null
@@ -346,9 +321,7 @@
     }
 
     private async Task PopulateMennoAsync(DatabaseMission mission, ViewMissionData data) {
-        if (!ShowExpectedDrops) {
-            return;
-        }
+        if (!ShowExpectedDrops) return;
 
         try {
             await Menno.EnsureLoadedAsync();
@@ -360,18 +333,14 @@
         var (ship, duration, level, target) = MissionDetailBuilder.MennoParams(mission);
         var configs = Menno.GetData(ship, duration, level, target);
         var total = 0;
-        foreach (var c in configs) {
-            total += c.TotalDrops;
-        }
+        foreach (var c in configs) total += c.TotalDrops;
 
         data.MennoData = new MissionMennoData { Configs = configs, TotalDropsCount = total };
     }
 
     private DatabaseMission? FindMission(string missionId) {
         foreach (var m in FilteredMissions) {
-            if (m.MissiondId == missionId) {
-                return m;
-            }
+            if (m.MissiondId == missionId) return m;
         }
 
         return null;

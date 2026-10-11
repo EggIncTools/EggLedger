@@ -414,9 +414,7 @@
     }
 
     private void OnDisplayModeChanged(ChangeEventArgs e) {
-        if (_form is null) {
-            return;
-        }
+        if (_form is null) return;
 
         _form.DisplayMode = e.Value?.ToString() ?? "bar";
         _form.ChartType = "";
@@ -424,9 +422,7 @@
 
     private IReadOnlyList<string> ChartLabels {
         get {
-            if (_form is null || _form.DisplayMode is not ("pie" or "bar")) {
-                return Array.Empty<string>();
-            }
+            if (_form is null || _form.DisplayMode is not ("pie" or "bar")) return Array.Empty<string>();
 
             return _editingResultLabels.Count > 0 ? _editingResultLabels : _form.LabelColorsMap.Keys.ToList();
         }
@@ -437,9 +433,7 @@
     }
 
     private void SetLabelColor(string label, ChangeEventArgs e) {
-        if (_form is null) {
-            return;
-        }
+        if (_form is null) return;
 
         _form.LabelColorsMap[label] = e.Value?.ToString() ?? _form.Color;
     }
@@ -457,9 +451,7 @@
     }
 
     private Task OnGuidedApplyAsync(ReportBuilderGuided.GuidedResult result) {
-        if (_form is null) {
-            return Task.CompletedTask;
-        }
+        if (_form is null) return Task.CompletedTask;
 
         _form.Name = result.Name;
         _form.Subject = result.Subject;
@@ -474,9 +466,7 @@
     }
 
     private async Task SaveAsync() {
-        if (_form is null || string.IsNullOrWhiteSpace(_form.Name)) {
-            return;
-        }
+        if (_form is null || string.IsNullOrWhiteSpace(_form.Name)) return;
 
         var def = BuildDefinition(_form);
         def.Weight = Weight.ClassifyWeight(def, Time);

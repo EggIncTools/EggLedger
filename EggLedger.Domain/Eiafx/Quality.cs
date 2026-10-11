@@ -24,21 +24,15 @@ public static class Quality {
     }
 
     private static Dictionary<SpecKey, double> Map() {
-        if (_baseQuality is { } existing) {
-            return existing;
-        }
+        if (_baseQuality is { } existing) return existing;
 
         lock (Gate) {
-            if (_baseQuality is { } locked) {
-                return locked;
-            }
+            if (_baseQuality is { } locked) return locked;
 
             var parameters = EiafxConfig.Config.artifact_parameters;
             var m = new Dictionary<SpecKey, double>(parameters.Count);
             foreach (var art in parameters) {
-                if (art.Spec is not { } s) {
-                    continue;
-                }
+                if (art.Spec is not { } s) continue;
                 m[new SpecKey(s.name, s.level, s.rarity)] = art.BaseQuality;
             }
             _baseQuality = m;

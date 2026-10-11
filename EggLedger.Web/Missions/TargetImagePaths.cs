@@ -4,9 +4,7 @@ namespace EggLedger.Web.Missions;
 
 public static class TargetImagePaths {
     public static (string? Path, string Alt) Resolve(string? target) {
-        if (string.IsNullOrEmpty(target) || target == "UNKNOWN") {
-            return (null, "");
-        }
+        if (string.IsNullOrEmpty(target) || target == "UNKNOWN") return (null, "");
 
         var t = ArtifactNameFixups.ApplyDisplayNameOverrides(target.ToUpperInvariant());
         var tier = 4;
@@ -15,9 +13,7 @@ public static class TargetImagePaths {
             tier = 1;
         }
 
-        if (t is "GOLD_METEORITE" or "TAU_CETI_GEODE" or "SOLAR_TITANIUM") {
-            tier = 3;
-        }
+        if (t is "GOLD_METEORITE" or "TAU_CETI_GEODE" or "SOLAR_TITANIUM") tier = 3;
 
         return (ContentPaths.Asset($"images/artifacts/{t}/{t}_{tier}.png"), t);
     }

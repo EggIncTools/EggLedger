@@ -9,9 +9,7 @@ public static class SqlPlaceholderBinder {
         var idx = 0;
         while (true) {
             var pos = result.IndexOf('?', StringComparison.Ordinal);
-            if (pos < 0) {
-                break;
-            }
+            if (pos < 0) break;
             var name = "@" + paramPrefix + idx.ToString(CultureInfo.InvariantCulture);
             result = result.Remove(pos, 1).Insert(pos, name);
             cmd.Parameters.AddWithValue(name, idx < args.Count ? args[idx] ?? DBNull.Value : DBNull.Value);

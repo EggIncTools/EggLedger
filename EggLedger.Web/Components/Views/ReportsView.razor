@@ -98,21 +98,15 @@
     }
 
     public async Task NewReportAsync() {
-        if (_builder is not null) {
-            await _builder.OpenForCreateAsync();
-        }
+        if (_builder is not null) await _builder.OpenForCreateAsync();
     }
 
     private async Task OpenEdit(ReportDefinition def) {
-        if (_builder is not null) {
-            await _builder.OpenForEditAsync(def);
-        }
+        if (_builder is not null) await _builder.OpenForEditAsync(def);
     }
 
     private async Task OnSavedAsync() {
-        if (_grid is not null) {
-            await _grid.ReloadAsync();
-        }
+        if (_grid is not null) await _grid.ReloadAsync();
     }
 
     private async Task GroupKeyDown(KeyboardEventArgs e) {
@@ -133,9 +127,7 @@
 
     private async Task DeleteGroupAsync(string id) {
         await State.DeleteGroupAsync(id);
-        if (_grid is not null) {
-            await _grid.ReloadAsync();
-        }
+        if (_grid is not null) await _grid.ReloadAsync();
     }
 
     public Task ExportAllAsync() {
@@ -156,9 +148,7 @@
     public void Dispose() {
         State.Changed -= OnStateChanged;
         Menno.Changed -= OnStateChanged;
-        if (ReferenceEquals(State.Actions, this)) {
-            State.Actions = null;
-        }
+        if (ReferenceEquals(State.Actions, this)) State.Actions = null;
     }
 
 }

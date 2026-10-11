@@ -113,9 +113,7 @@
                 new("dubcap", "Only dub-cap missions", new WebCondition("dubcap", "true", "")),
                 new("extended", "Only extended missions", new WebCondition("duration", "=", "2"))
             };
-            if (_intent == "artifacts") {
-                opts.Add(new QuickFilterOption("legendary", "Only legendary artifacts", new WebCondition("artifact_rarity", "=", "3")));
-            }
+            if (_intent == "artifacts") opts.Add(new QuickFilterOption("legendary", "Only legendary artifacts", new WebCondition("artifact_rarity", "=", "3")));
 
             return opts;
         }
@@ -125,14 +123,8 @@
 
     private int DisplayStep {
         get {
-            if (_intent != "time") {
-                return _step;
-            }
-
-            if (_step == 1) {
-                return 1;
-            }
-
+            if (_intent != "time") return _step;
+            if (_step == 1) return 1;
             return _step == 3 ? 2 : 3;
         }
     }
@@ -175,9 +167,7 @@
             return;
         }
 
-        if (_step == 2) {
-            _step = 1;
-        }
+        if (_step == 2) _step = 1;
     }
 
     private void AutoName() {
@@ -194,15 +184,11 @@
     }
 
     private async Task OnNameKeyDown(KeyboardEventArgs e) {
-        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(_reportName)) {
-            await Apply();
-        }
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(_reportName)) await Apply();
     }
 
     private async Task Apply() {
-        if (string.IsNullOrWhiteSpace(_reportName)) {
-            return;
-        }
+        if (string.IsNullOrWhiteSpace(_reportName)) return;
 
         var and = QuickFilterOptions
             .Where(q => _quickFilters.Contains(q.Key))

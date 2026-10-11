@@ -39,7 +39,6 @@ public sealed class MissionFilterMatcherTests {
 
     private static IReadOnlyList<IReadOnlyList<FilterCondition>?> NoOr() => [];
 
-
     [Theory]
     [InlineData(MissionInfo.Spaceship.ChickenOne, "=", "0", true)]
     [InlineData(MissionInfo.Spaceship.ChickenNine, "=", "0", false)]
@@ -81,7 +80,6 @@ public sealed class MissionFilterMatcherTests {
         var m = Mission(targetInt: target);
         Assert.Equal(expected, await Matcher().TestMissionAgainstFilterAsync(m, C("target", op, val)));
     }
-
 
     [Theory]
     [InlineData(true, "true", true)]
@@ -153,7 +151,6 @@ public sealed class MissionFilterMatcherTests {
         Assert.False(await Matcher().TestMissionAgainstFilterAsync(m, C("", "=", "1")));
         Assert.False(await Matcher().TestMissionAgainstFilterAsync(m, C("ship", "", "1")));
     }
-
 
     private static IReadOnlyList<PossibleMission> DropConfigs() => [
         new PossibleMission {

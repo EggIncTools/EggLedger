@@ -8,9 +8,7 @@ public sealed class ProcessRunner : IProcessRunner {
             FileName = exe,
             UseShellExecute = false,
         };
-        foreach (var arg in args) {
-            psi.ArgumentList.Add(arg);
-        }
+        foreach (var arg in args) psi.ArgumentList.Add(arg);
         Process.Start(psi);
         return Task.CompletedTask;
     }

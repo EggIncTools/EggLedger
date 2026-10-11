@@ -8,7 +8,6 @@ public class ExecuteTests {
         private readonly Dictionary<string, IReadOnlyList<object?[]>> _byPrefix = [with(StringComparer.Ordinal)];
         public List<(string sql, IReadOnlyList<object?> args)> Calls { get; } = [];
 
-
         public FakeDb On(string contains, IReadOnlyList<object?[]> rows) {
             _byPrefix[contains] = rows;
             return this;

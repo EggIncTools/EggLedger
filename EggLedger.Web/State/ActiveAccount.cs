@@ -6,9 +6,7 @@ public sealed class ActiveAccount {
 
     public void SetActive(string? id) {
         var normalized = string.IsNullOrEmpty(id) ? null : id;
-        if (normalized == ActiveAccountId) {
-            return;
-        }
+        if (normalized == ActiveAccountId) return;
 
         ActiveAccountId = normalized;
         Changed?.Invoke();

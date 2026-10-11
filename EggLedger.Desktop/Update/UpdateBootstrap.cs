@@ -46,9 +46,7 @@ public sealed class UpdateBootstrap(IProcessProbe probe, BinaryReplacement repla
     private static (string Key, string Value) SplitArg(string[] args, ref int i) {
         var arg = args[i];
         var eq = arg.IndexOf('=', StringComparison.Ordinal);
-        if (eq >= 0) {
-            return (arg[..eq], arg[(eq + 1)..]);
-        }
+        if (eq >= 0) return (arg[..eq], arg[(eq + 1)..]);
 
         if (arg.StartsWith("--", StringComparison.Ordinal) && i + 1 < args.Length && !args[i + 1].StartsWith("--", StringComparison.Ordinal)) {
             i++;
@@ -61,15 +59,11 @@ public sealed class UpdateBootstrap(IProcessProbe probe, BinaryReplacement repla
         var self = selfPath ?? Environment.ProcessPath ?? "";
         var exeDir = string.IsNullOrEmpty(self) ? "" : (Path.GetDirectoryName(self) ?? "");
 
-        if (!string.IsNullOrEmpty(exeDir)) {
-            _replacement.CleanStaleBinaries(exeDir, self);
-        }
+        if (!string.IsNullOrEmpty(exeDir)) _replacement.CleanStaleBinaries(exeDir, self);
 
         var parsed = ParseArgs(args);
         var (run, oldPid, oldPath) = BinaryNaming.DecideReplace(self, parsed.ReplacePid, parsed.ReplacePath);
-        if (!run) {
-            return false;
-        }
+        if (!run) return false;
 
         RunTakeover(self, oldPid, oldPath, parsed.HandshakePort, parsed.HandshakeToken);
         return true;
@@ -82,24 +76,14 @@ public sealed class UpdateBootstrap(IProcessProbe probe, BinaryReplacement repla
             client.PingOldReadyAsync(handshakePort, handshakeToken).GetAwaiter().GetResult();
         }
 
-        if (oldPid > 0) {
-            ProcessWait.WaitForExit(_probe, oldPid, OldExitWaitTimeout);
-        }
-
-        if (string.IsNullOrEmpty(self) || string.IsNullOrEmpty(oldPath)) {
-            return;
-        }
+        if (oldPid > 0) ProcessWait.WaitForExit(_probe, oldPid, OldExitWaitTimeout);
+        if (string.IsNullOrEmpty(self) || string.IsNullOrEmpty(oldPath)) return;
 
         var exeDir = Path.GetDirectoryName(oldPath) ?? "";
         var (release, ok) = _replacement.AcquireLock(Path.Combine(exeDir, BinaryReplacement.LockFileName));
-        if (!ok) {
-            return;
-        }
+        if (!ok) return;
         try {
-            if (BinaryReplacement.SameFile(self, oldPath)) {
-
-                return;
-            }
+            if (BinaryReplacement.SameFile(self, oldPath)) return;
 
             var attempts = oldPid == 0 ? RenameRetryAttemptsUnknownPid : RenameRetryAttemptsKnownPid;
             var delay = oldPid == 0 ? RenameRetryDelayUnknownPid : RenameRetryDelayKnownPid;

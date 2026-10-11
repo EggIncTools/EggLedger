@@ -13,7 +13,6 @@ public sealed class BinaryReplacement(IProcessProbe probe, ILogger<BinaryReplace
     public static bool RenameWithRetry(string src, string dst, int attempts, TimeSpan delay, ILogger? logger = null) {
         for (var i = 0; i < attempts; i++) {
             try {
-
                 File.Move(src, dst, overwrite: true);
                 return true;
             } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) {
@@ -37,16 +36,11 @@ public sealed class BinaryReplacement(IProcessProbe probe, ILogger<BinaryReplace
 
         var f = TryCreate();
         if (f is null) {
-
-            if (TryReadPid(lockPath, out var pid) && _probe.Exists(pid)) {
-                return (null, false);
-            }
+            if (TryReadPid(lockPath, out var pid) && _probe.Exists(pid)) return (null, false);
 
             TryDelete(lockPath, _logger);
             f = TryCreate();
-            if (f is null) {
-                return (null, false);
-            }
+            if (f is null) return (null, false);
         }
 
         using (f) {
@@ -57,9 +51,7 @@ public sealed class BinaryReplacement(IProcessProbe probe, ILogger<BinaryReplace
 
         var released = false;
         void Release() {
-            if (released) {
-                return;
-            }
+            if (released) return;
             released = true;
             TryDelete(lockPath, _logger);
         }
@@ -77,22 +69,13 @@ public sealed class BinaryReplacement(IProcessProbe probe, ILogger<BinaryReplace
                 continue;
             }
             foreach (var match in matches) {
-                if (SameFile(match, selfPath, _logger)) {
-                    continue;
-                }
+                if (SameFile(match, selfPath, _logger)) continue;
                 TryDelete(match, _logger);
             }
         }
 
         var lockPath = Path.Combine(exeDir, LockFileName);
-        if (TryReadPid(lockPath, out var pid)) {
-            if (!_probe.Exists(pid)) {
-                TryDelete(lockPath, _logger);
-            }
-        } else if (File.Exists(lockPath)) {
-
-            TryDelete(lockPath, _logger);
-        }
+        if (TryReadPid(lockPath, out var pid) ? !_probe.Exists(pid) : File.Exists(lockPath)) TryDelete(lockPath, _logger);
     }
 
     public static bool SameFile(string a, string b, ILogger? logger = null) {

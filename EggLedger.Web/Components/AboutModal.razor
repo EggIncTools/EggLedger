@@ -205,9 +205,7 @@
     [Parameter] public EventCallback OnClose { get; set; }
 
     protected override void OnInitialized() {
-        if (Platform.IsDesktop) {
-            UpdateStatus.Changed += OnUpdateChanged;
-        }
+        if (Platform.IsDesktop) UpdateStatus.Changed += OnUpdateChanged;
     }
 
     private void OnUpdateChanged() {
@@ -229,9 +227,7 @@
     }
 
     public void Dispose() {
-        if (Platform.IsDesktop) {
-            UpdateStatus.Changed -= OnUpdateChanged;
-        }
+        if (Platform.IsDesktop) UpdateStatus.Changed -= OnUpdateChanged;
     }
 
 }

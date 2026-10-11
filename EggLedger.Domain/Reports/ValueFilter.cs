@@ -2,9 +2,7 @@ namespace EggLedger.Domain.Reports;
 
 public static class ValueFilter {
     public static ReportResult Apply(ReportResult result, string op, double threshold) {
-        if (string.IsNullOrEmpty(op) || result.Is2D) {
-            return result;
-        }
+        if (string.IsNullOrEmpty(op) || result.Is2D) return result;
 
         Func<double, bool> keep = op switch {
             ">" => v => v > threshold,

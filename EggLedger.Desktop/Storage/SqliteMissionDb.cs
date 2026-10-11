@@ -28,9 +28,7 @@ public sealed class SqliteMissionDb : IMissionDb {
             int columnCount = reader.FieldCount;
             while (reader.Read()) {
                 var row = new object?[columnCount];
-                for (var i = 0; i < columnCount; i++) {
-                    row[i] = ReadValue(reader, i);
-                }
+                for (var i = 0; i < columnCount; i++) row[i] = ReadValue(reader, i);
                 rows.Add(row);
             }
             return rows;
@@ -38,13 +36,9 @@ public sealed class SqliteMissionDb : IMissionDb {
     }
 
     private static object? ReadValue(SqliteDataReader reader, int i) {
-        if (reader.IsDBNull(i)) {
-            return null;
-        }
+        if (reader.IsDBNull(i)) return null;
         var type = reader.GetFieldType(i);
-        if (type == typeof(long)) {
-            return reader.GetInt64(i);
-        }
+        if (type == typeof(long)) return reader.GetInt64(i);
         if (type == typeof(double)) {
             return reader.GetDouble(i);
         }

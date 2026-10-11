@@ -85,9 +85,7 @@ public sealed class ShipsViewState(
         MissionViewOptions.TabFilteredMissions(InFlight, Opts.MissionTypeTab) ?? [];
 
     public async Task EnsureInitializedAsync(Func<Func<Task>, Task> dispatch) {
-        if (_initialized) {
-            return;
-        }
+        if (_initialized) return;
 
         _initialized = true;
         _dispatch = dispatch;
@@ -132,16 +130,12 @@ public sealed class ShipsViewState(
 
         IReadOnlyList<DatabaseMission> missions = await pending ?? [];
         IReadOnlyList<DatabaseMission> inFlight = await pendingInFlight ?? [];
-        if (generation != _loadGeneration) {
-            return;
-        }
+        if (generation != _loadGeneration) return;
 
         AllMissions = missions;
         InFlight = inFlight;
         HasBothTypes = MissionViewOptions.HasBothMissionTypes(missions);
-        if (!HasBothTypes) {
-            Opts.MissionTypeTab = null;
-        }
+        if (!HasBothTypes) Opts.MissionTypeTab = null;
 
         _matcher = new MissionFilterMatcher(
             config.DurationConfigs,
@@ -149,9 +143,7 @@ public sealed class ShipsViewState(
             DropsFetcher,
             timeZones.TimeZone);
 
-        if (filterGeneration == _filterGeneration) {
-            Filtered = missions;
-        }
+        if (filterGeneration == _filterGeneration) Filtered = missions;
 
         Regroup();
         Loading = false;
@@ -159,9 +151,7 @@ public sealed class ShipsViewState(
     }
 
     public async Task ApplyFilterAsync(MissionFilterBar.LegacyFilter filter) {
-        if (AllMissions is not { } missions || _matcher is not { } matcher || active.ActiveAccountId is not { } id) {
-            return;
-        }
+        if (AllMissions is not { } missions || _matcher is not { } matcher || active.ActiveAccountId is not { } id) return;
 
         var generation = ++_filterGeneration;
         Applying = true;
@@ -179,9 +169,7 @@ public sealed class ShipsViewState(
 
             var (result, dropCounts) = await ProjectMatchesAsync(matcher, missions, matchedIds, countableDrop);
             sw.Stop();
-            if (generation != _filterGeneration) {
-                return;
-            }
+            if (generation != _filterGeneration) return;
 
             DropCounts = dropCounts;
             Filtered = result;
@@ -195,9 +183,7 @@ public sealed class ShipsViewState(
             Changed?.Invoke();
         } catch (Exception ex) {
             logger.LogDebug(ex, "ships filter failed for generation {Generation}", generation);
-            if (generation != _filterGeneration) {
-                return;
-            }
+            if (generation != _filterGeneration) return;
 
             ResultText = FilterMatching.FailedText;
             Applying = false;
@@ -211,9 +197,7 @@ public sealed class ShipsViewState(
     private static DropMatch? CountableDrop(MissionFilterBar.LegacyFilter filter) {
         foreach (var fc in filter.And) {
             var typed = FilterCodec.FromLegacyCondition(fc);
-            if (typed is { Field: FilterField.Drops, Operator: FilterOperator.Contains, Value: DropFilterValue d }) {
-                return d.Match;
-            }
+            if (typed is { Field: FilterField.Drops, Operator: FilterOperator.Contains, Value: DropFilterValue d }) return d.Match;
         }
 
         return null;
@@ -227,19 +211,13 @@ public sealed class ShipsViewState(
         var result = new List<DatabaseMission>();
         var counts = new Dictionary<string, int>();
         foreach (var mission in missions) {
-            if (!matchedIds.Contains(mission.MissiondId)) {
-                continue;
-            }
+            if (!matchedIds.Contains(mission.MissiondId)) continue;
 
             result.Add(mission);
-            if (countableDrop is null) {
-                continue;
-            }
+            if (countableDrop is null) continue;
 
             var count = await matcher.CountMatchingDropsAsync(mission, countableDrop);
-            if (count > 0) {
-                counts[mission.MissiondId] = count;
-            }
+            if (count > 0) counts[mission.MissiondId] = count;
         }
 
         return (result, counts);
@@ -269,15 +247,11 @@ public sealed class ShipsViewState(
     }
 
     public int CountOfType(int type) {
-        if (Filtered is null) {
-            return 0;
-        }
+        if (Filtered is null) return 0;
 
         var n = 0;
         foreach (var m in Filtered) {
-            if (m.MissionType == type) {
-                n++;
-            }
+            if (m.MissionType == type) n++;
         }
 
         return n;
@@ -299,9 +273,7 @@ public sealed class ShipsViewState(
 
     public async Task ToggleSortByDropCountAsync(ChangeEventArgs e) {
         await SetOptAsync(MissionViewOptions.KeySortByDropCount, b => Opts.SortByDropCount = b, e);
-        if (Opts.SortByDropCount && Opts.MultiViewMode == MultiViewMode.Row) {
-            await SetMultiViewAsync(MultiViewMode.Off);
-        }
+        if (Opts.SortByDropCount && Opts.MultiViewMode == MultiViewMode.Row) await SetMultiViewAsync(MultiViewMode.Off);
 
         Regroup();
         Changed?.Invoke();
@@ -310,9 +282,7 @@ public sealed class ShipsViewState(
     public async Task SetSortMethodAsync(MissionSortMethod method) {
         Opts.SortMethod = method;
         await settings.SetSettingAsync(MissionViewOptions.KeySortMethod, MissionViewOptions.SortMethodToString(method));
-        if (Actions is { } actions) {
-            await actions.ResortAsync(method);
-        }
+        if (Actions is { } actions) await actions.ResortAsync(method);
 
         Changed?.Invoke();
     }
@@ -327,9 +297,7 @@ public sealed class ShipsViewState(
         _ = _dispatch?.Invoke(LoadAsync);
 
     private void OnAccountInvalidated(string accountId) {
-        if (accountId == active.ActiveAccountId) {
-            _ = _dispatch?.Invoke(LoadAsync);
-        }
+        if (accountId == active.ActiveAccountId) _ = _dispatch?.Invoke(LoadAsync);
     }
 
     private async Task<IReadOnlyList<MissionDrop>?> DropsFetcher(string accountId, string missionId) {
@@ -363,9 +331,7 @@ public sealed class ShipsViewState(
         }
 
         var valid = new HashSet<string>();
-        foreach (var m in Filtered) {
-            valid.Add(m.MissiondId);
-        }
+        foreach (var m in Filtered) valid.Add(m.MissiondId);
 
         MultiSelectedIds.RemoveWhere(id => !valid.Contains(id));
     }

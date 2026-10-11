@@ -30,9 +30,7 @@ public sealed class IndexedDbAccountStore(IndexedDbSettings settings, ILogger<In
         var all = await settings.GetAllSettingsAsync();
         var list = Deserialize(all);
         int removed = list.RemoveAll(a => a.Id == id);
-        if (removed > 0) {
-            await settings.SetSettingAsync(KnownAccountsKey, Serialize(list));
-        }
+        if (removed > 0) await settings.SetSettingAsync(KnownAccountsKey, Serialize(list));
     }
 
     public async Task<string?> GetActiveAccountIdAsync() {
@@ -44,9 +42,7 @@ public sealed class IndexedDbAccountStore(IndexedDbSettings settings, ILogger<In
         await settings.SetSettingAsync(ActiveAccountKey, id ?? "");
 
     private List<AccountInfo> Deserialize(Dictionary<string, string> all) {
-        if (!all.TryGetValue(KnownAccountsKey, out var raw) || string.IsNullOrEmpty(raw)) {
-            return [];
-        }
+        if (!all.TryGetValue(KnownAccountsKey, out var raw) || string.IsNullOrEmpty(raw)) return [];
         try {
             var rows = JsonSerializer.Deserialize<List<AccountInfoRow>>(raw, Rows.JsonOptions);
             return rows is null

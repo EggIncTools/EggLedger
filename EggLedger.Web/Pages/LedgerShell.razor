@@ -97,9 +97,7 @@
     }
 
     protected override void OnAfterRender(bool firstRender) {
-        if (!firstRender || _routeSync is null) {
-            return;
-        }
+        if (!firstRender || _routeSync is null) return;
 
         _routeSync.Start();
         if (_routePath == "/") {
@@ -114,9 +112,7 @@
     }
 
     private void ApplyRoute() {
-        if (_routePath == "/") {
-            return;
-        }
+        if (_routePath == "/") return;
 
         if (RouteTarget(_routePath) is not { } target) {
             Nav.NavigateTo(_routePath, replace: true);
@@ -179,9 +175,7 @@
 
     internal static RouteMatch? RouteTarget(string path) {
         var segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        if (segments.Length == 0) {
-            return null;
-        }
+        if (segments.Length == 0) return null;
 
         switch (segments[0]) {
             case "settings":
@@ -285,26 +279,11 @@
     }
 
     private string? ModalSlug() {
-        if (Shell.SettingsOpen) {
-            return "settings";
-        }
-
-        if (Shell.AboutOpen) {
-            return "about";
-        }
-
-        if (Shell.Legal == LegalDocument.Terms) {
-            return "terms";
-        }
-
-        if (Shell.Legal == LegalDocument.Privacy) {
-            return "privacy";
-        }
-
-        if (Shell.SupportOpen) {
-            return "support";
-        }
-
+        if (Shell.SettingsOpen) return "settings";
+        if (Shell.AboutOpen) return "about";
+        if (Shell.Legal == LegalDocument.Terms) return "terms";
+        if (Shell.Legal == LegalDocument.Privacy) return "privacy";
+        if (Shell.SupportOpen) return "support";
         return null;
     }
 
@@ -321,27 +300,21 @@
     }
 
     private void OnShellRouteChanged() {
-        if (_applyingRoute || _routeSync is null) {
-            return;
-        }
+        if (_applyingRoute || _routeSync is null) return;
 
         _routePath = CurrentPath();
         _routeSync.Push(_routePath);
     }
 
     private void OnShipsRouteChanged() {
-        if (_applyingRoute || _routeSync is null) {
-            return;
-        }
+        if (_applyingRoute || _routeSync is null) return;
 
         _routePath = CurrentPath();
         _routeSync.Replace(_routePath);
     }
 
     private void OnRouteChanged() {
-        if (_routeSync is not null) {
-            _routePath = "/" + string.Join('/', _routeSync.Segments).ToLowerInvariant();
-        }
+        if (_routeSync is not null) _routePath = "/" + string.Join('/', _routeSync.Segments).ToLowerInvariant();
 
         ApplyRoute();
         InvokeAsync(StateHasChanged);

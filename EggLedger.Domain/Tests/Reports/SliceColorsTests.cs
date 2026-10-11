@@ -2,7 +2,6 @@ using EggLedger.Domain.Reports.Charts;
 
 namespace EggLedger.Domain.Tests.Reports;
 
-
 public class SliceColorsTests {
     [Fact]
     public void HexToHsl_MatchesVue() {

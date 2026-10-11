@@ -131,9 +131,7 @@ public sealed class UpdateService(
         DateTimeOffset? LastCheckedAt, string? KnownTag, string? KnownNotes);
 
     private async Task<UpdateCheckSnapshot> ReadSnapshotAsync() {
-        if (_settings is null) {
-            return default;
-        }
+        if (_settings is null) return default;
 
         var all = await _settings.GetAllSettingsAsync().ConfigureAwait(false);
         DateTimeOffset? lastCheckedAt = null;
@@ -149,9 +147,7 @@ public sealed class UpdateService(
     }
 
     private async Task WriteSnapshotAsync(string latestTag, string latestNotes) {
-        if (_settings is null) {
-            return;
-        }
+        if (_settings is null) return;
 
         await _settings.SetSettingsAsync(new Dictionary<string, string> {
             [LastUpdateCheckAtKey] = _time.GetUtcNow().ToString("O", CultureInfo.InvariantCulture),
@@ -230,13 +226,9 @@ public sealed class UpdateService(
         var hsTimeout = handshakeTimeout ?? DefaultHandshakeTimeout;
         var oldExitDelay = exitDelay ?? OldExitDelay;
         var exePath = _exePath();
-        if (string.IsNullOrEmpty(exePath)) {
-            return false;
-        }
+        if (string.IsNullOrEmpty(exePath)) return false;
         var tempPath = NewBinaryTempPath(exePath);
-        if (!File.Exists(tempPath)) {
-            return false;
-        }
+        if (!File.Exists(tempPath)) return false;
 
         var token = HandshakeToken.New();
         HandshakeListener? listener = null;
@@ -272,13 +264,9 @@ public sealed class UpdateService(
         var dir = Path.GetDirectoryName(exePath) ?? "";
         var name = Path.GetFileName(exePath);
         var isExe = name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase);
-        if (isExe) {
-            name = name[..^4];
-        }
+        if (isExe) name = name[..^4];
         name += BinaryNaming.NewBinarySuffix;
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-            name += ".exe";
-        }
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) name += ".exe";
         return Path.Combine(dir, name);
     }
 
@@ -298,11 +286,8 @@ public sealed class UpdateService(
         SetPhase(UpdatePhase.Failed);
     }
 
-
     private static bool VerifySha256(string path, string? expected) {
-        if (string.IsNullOrEmpty(expected)) {
-            return true;
-        }
+        if (string.IsNullOrEmpty(expected)) return true;
         using var stream = File.OpenRead(path);
         var hash = System.Security.Cryptography.SHA256.HashData(stream);
         var hex = Convert.ToHexStringLower(hash);

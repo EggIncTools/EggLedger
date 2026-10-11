@@ -41,9 +41,7 @@ public static class FilterMatching {
         IReadOnlyList<IReadOnlyList<WebCondition>?> or) {
         var matched = new HashSet<string>(StringComparer.Ordinal);
         foreach (var mission in missions) {
-            if (await matcher.MissionMatchesFilterAsync(mission, and, or).ConfigureAwait(false)) {
-                matched.Add(mission.MissiondId);
-            }
+            if (await matcher.MissionMatchesFilterAsync(mission, and, or).ConfigureAwait(false)) matched.Add(mission.MissiondId);
         }
 
         return matched;

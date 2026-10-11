@@ -16,30 +16,22 @@ public static class QueryBuilder {
 
         void AddCond(FilterCondition c) {
             var (clause, cargs) = ConditionToSql(c);
-            if (clause == "") {
-                return;
-            }
+            if (clause == "") return;
             clauses.Add(clause);
             args.AddRange(cargs);
         }
 
-        foreach (var c in filters.And) {
-            AddCond(c);
-        }
+        foreach (var c in filters.And) AddCond(c);
 
         foreach (var group in filters.Or) {
             List<string> orParts = [];
             foreach (var c in group) {
                 var (clause, cargs) = ConditionToSql(c);
-                if (clause == "") {
-                    continue;
-                }
+                if (clause == "") continue;
                 orParts.Add(clause);
                 args.AddRange(cargs);
             }
-            if (orParts.Count > 0) {
-                clauses.Add("(" + string.Join(" OR ", orParts) + ")");
-            }
+            if (orParts.Count > 0) clauses.Add("(" + string.Join(" OR ", orParts) + ")");
         }
 
         return clauses.Count == 0 ? ("", []) : (string.Join(" AND ", clauses), args);
@@ -74,9 +66,7 @@ public static class QueryBuilder {
                     ? ("m.is_bugged_cap = 1", [])
                     : ("m.is_bugged_cap = 0", []);
             case "drops":
-                if (c.Op is not "c" and not "dnc") {
-                    return ("", []);
-                }
+                if (c.Op is not "c" and not "dnc") return ("", []);
                 if (c.Val == "") {
                     return ("", []);
                 }
@@ -86,20 +76,14 @@ public static class QueryBuilder {
                 List<string> preds = [];
                 List<object?> qargs = [];
                 for (var i = 0; i < cols.Length; i++) {
-                    if (i >= parts.Length || parts[i] == "%" || parts[i] == "") {
-                        continue;
-                    }
+                    if (i >= parts.Length || parts[i] == "%" || parts[i] == "") continue;
                     preds.Add("AND " + cols[i] + " = ?");
                     qargs.Add(parts[i]);
                 }
                 var inner = "SELECT 1 FROM artifact_drops WHERE mission_id = m.mission_id AND player_id = m.player_id";
-                foreach (var p in preds) {
-                    inner += " " + p;
-                }
+                foreach (var p in preds) inner += " " + p;
                 var exists = "EXISTS (" + inner + ")";
-                if (c.Op == "dnc") {
-                    exists = "NOT " + exists;
-                }
+                if (c.Op == "dnc") exists = "NOT " + exists;
                 return (exists, qargs);
         }
 
@@ -113,19 +97,10 @@ public static class QueryBuilder {
         }
 
         if (MissionFieldToColumn.TryGetValue(c.TopLevel, out var mcol)) {
-            switch (c.Op) {
-                case "=":
-                case "!=":
-                case ">":
-                case "<":
-                case ">=":
-                case "<=":
-                    if (!IsInt(c.Val)) {
-                        return ("", []);
-                    }
-                    return ($"{mcol} {c.Op} ?", [c.Val]);
-            }
-            return ("", []);
+            return c.Op switch {
+                "=" or "!=" or ">" or "<" or ">=" or "<=" => IsInt(c.Val) ? ($"{mcol} {c.Op} ?", [c.Val]) : ("", []),
+                _ => ("", []),
+            };
         }
 
         if (ArtifactFieldToColumn.TryGetValue(c.TopLevel, out var acol)) {
@@ -141,14 +116,10 @@ public static class QueryBuilder {
                         case "artifact_spec_type":
                             break;
                         case "artifact_quality":
-                            if (!IsFloat(c.Val)) {
-                                return ("", []);
-                            }
+                            if (!IsFloat(c.Val)) return ("", []);
                             break;
                         default:
-                            if (!IsInt(c.Val)) {
-                                return ("", []);
-                            }
+                            if (!IsInt(c.Val)) return ("", []);
                             break;
                     }
                     return ($"{acol} {c.Op} ?", [c.Val]);
@@ -188,9 +159,7 @@ public static class QueryBuilder {
     }
 
     public static (string cond, object? modifier) CustomWindowCondition(int n, string unit) {
-        if (n <= 0) {
-            return ("", null);
-        }
+        if (n <= 0) return ("", null);
         string modifier;
         switch (unit) {
             case "day":
@@ -229,13 +198,9 @@ public static class QueryBuilder {
             }
 
             var where = Where;
-            if (ArtifactSrc) {
-                where += " AND d.drop_index >= 0";
-            }
+            if (ArtifactSrc) where += " AND d.drop_index >= 0";
             if (ExtraWhere is not null) {
-                foreach (var c in ExtraWhere) {
-                    where += " AND " + c;
-                }
+                foreach (var c in ExtraWhere) where += " AND " + c;
             }
 
             return "\n" + in_ + "SELECT " + SelectCols +
@@ -245,7 +210,6 @@ public static class QueryBuilder {
                 "\n" + in_ + "ORDER BY " + OrderBy;
         }
     }
-
 
     private const string WeightedCapWeightSelect = "SUM(CASE WHEN m.nominal_capacity > 0 AND m.capacity > 0\n" +
         "                        THEN CAST(m.nominal_capacity AS REAL) / CAST(m.capacity AS REAL)\n" +
@@ -305,12 +269,8 @@ public static class QueryBuilder {
         }
         var col1 = GroupByColumn(def.GroupBy);
         var col2 = GroupByColumn(def.SecondaryGroupBy);
-        if (col1 == "") {
-            throw new InvalidOperationException($"unsupported group-by dimension \"{def.GroupBy}\"");
-        }
-        if (col2 == "") {
-            throw new InvalidOperationException($"unsupported secondary group-by dimension \"{def.SecondaryGroupBy}\"");
-        }
+        if (col1 == "") throw new InvalidOperationException($"unsupported group-by dimension \"{def.GroupBy}\"");
+        if (col2 == "") throw new InvalidOperationException($"unsupported secondary group-by dimension \"{def.SecondaryGroupBy}\"");
         var outArgs = new List<object?>(args);
         var needsArtifactJoin = col1.StartsWith("d.", StringComparison.Ordinal) || col2.StartsWith("d.", StringComparison.Ordinal);
         var query = new QueryBuilderSpec {
@@ -327,9 +287,7 @@ public static class QueryBuilder {
     public static (string query, List<object?> args) BuildTimePivotQuery(
         ReportDefinition def, string baseWhere, IReadOnlyList<object?> args) {
         var col2 = GroupByColumn(def.SecondaryGroupBy);
-        if (col2 == "") {
-            throw new InvalidOperationException($"unsupported secondary group-by dimension \"{def.SecondaryGroupBy}\"");
-        }
+        if (col2 == "") throw new InvalidOperationException($"unsupported secondary group-by dimension \"{def.SecondaryGroupBy}\"");
 
         var format = TimeBucketFormat(def.TimeBucket, def.CustomBucketUnit);
         var bucketExpr = "strftime('" + format + "', datetime(m.start_timestamp, 'unixepoch'))";
@@ -359,9 +317,7 @@ public static class QueryBuilder {
     }
 
     public static (string clause, List<object?> args) FamilyWeightClause(IReadOnlyList<int> ids) {
-        if (ids.Count == 0) {
-            return ("", []);
-        }
+        if (ids.Count == 0) return ("", []);
         var placeholders = new string[ids.Count];
         var args = new List<object?>(ids.Count);
         for (var i = 0; i < ids.Count; i++) {
@@ -397,12 +353,8 @@ public static class QueryBuilder {
         string fwClause, IReadOnlyList<object?> fwArgs) {
         var col1 = GroupByColumn(def.GroupBy);
         var col2 = GroupByColumn(def.SecondaryGroupBy);
-        if (col1 == "") {
-            throw new InvalidOperationException($"unsupported group-by dimension \"{def.GroupBy}\"");
-        }
-        if (col2 == "") {
-            throw new InvalidOperationException($"unsupported secondary group-by dimension \"{def.SecondaryGroupBy}\"");
-        }
+        if (col1 == "") throw new InvalidOperationException($"unsupported group-by dimension \"{def.GroupBy}\"");
+        if (col2 == "") throw new InvalidOperationException($"unsupported secondary group-by dimension \"{def.SecondaryGroupBy}\"");
 
         var args = new List<object?>(baseArgs);
         args.AddRange(fwArgs);
@@ -456,9 +408,7 @@ public static class QueryBuilder {
         ReportDefinition def, string baseWhere, IReadOnlyList<object?> baseArgs,
         string fwClause, IReadOnlyList<object?> fwArgs) {
         var col2 = GroupByColumn(def.SecondaryGroupBy);
-        if (col2 == "") {
-            throw new InvalidOperationException($"unsupported secondary group-by dimension \"{def.SecondaryGroupBy}\"");
-        }
+        if (col2 == "") throw new InvalidOperationException($"unsupported secondary group-by dimension \"{def.SecondaryGroupBy}\"");
 
         var args = new List<object?>(baseArgs);
         args.AddRange(fwArgs);

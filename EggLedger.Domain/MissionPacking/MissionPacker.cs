@@ -30,9 +30,7 @@ public sealed class MissionPacker : IMissionCompiler {
                 } else {
                     var levels = new float[levelCount + 1];
                     float bump = duration.LevelCapacityBump;
-                    for (int level = 0; level <= levelCount; level++) {
-                        levels[level] = capacity + (bump * level);
-                    }
+                    for (int level = 0; level <= levelCount; level++) levels[level] = capacity + (bump * level);
                     byDuration[duration.DurationType] = levels;
                 }
             }
@@ -71,14 +69,10 @@ public sealed class MissionPacker : IMissionCompiler {
         double returnTimestamp = startTimestamp + durationSeconds;
 
         int target = -1;
-        if (info.ShouldSerializeTargetArtifact()) {
-            target = (int)info.TargetArtifact;
-        }
+        if (info.ShouldSerializeTargetArtifact()) target = (int)info.TargetArtifact;
 
         float nominalCap = 0;
-        if (TryGetShipCapacities(ship, durationType, out var caps) && level < caps.Length) {
-            nominalCap = caps[level];
-        }
+        if (TryGetShipCapacities(ship, durationType, out var caps) && level < caps.Length) nominalCap = caps[level];
         bool isDubCap = nominalCap > 0 && (float)capacity >= nominalCap * 1.7f;
         bool isBuggedCap = startTimestamp is > BuggedCapLower and < BuggedCapUpper;
 
@@ -101,9 +95,7 @@ public sealed class MissionPacker : IMissionCompiler {
         var durationType = (MissionInfo.DurationType)meta.DurationType;
 
         float nominalCap = 0;
-        if (TryGetShipCapacities(ship, durationType, out var caps) && meta.Level < caps.Length) {
-            nominalCap = caps[meta.Level];
-        }
+        if (TryGetShipCapacities(ship, durationType, out var caps) && meta.Level < caps.Length) nominalCap = caps[meta.Level];
 
         string target = "";
         int targetInt = -1;
@@ -142,9 +134,7 @@ public sealed class MissionPacker : IMissionCompiler {
         long returnDt = launch + (long)Math.Floor(info.DurationSeconds);
 
         float nominalCap = 0;
-        if (TryGetShipCapacities(info.Ship, info.duration_type, out var caps) && (int)info.Level < caps.Length) {
-            nominalCap = caps[(int)info.Level];
-        }
+        if (TryGetShipCapacities(info.Ship, info.duration_type, out var caps) && (int)info.Level < caps.Length) nominalCap = caps[(int)info.Level];
 
         var mission = new DatabaseMission {
             LaunchDT = launch,
@@ -170,9 +160,7 @@ public sealed class MissionPacker : IMissionCompiler {
         int missionType = dbMissionType;
         if (missionType == -1) {
             var info = mission.Info;
-            if (info is not null) {
-                missionType = (int)info.Type;
-            }
+            if (info is not null) missionType = (int)info.Type;
         }
         return missionType;
     }
@@ -182,18 +170,14 @@ public sealed class MissionPacker : IMissionCompiler {
 
     public DatabaseMission CompileMissionInformation(CompleteMissionResponse completeMissionResponse) {
         var info = completeMissionResponse.Info;
-        if (info is null) {
-            return new DatabaseMission();
-        }
+        if (info is null) return new DatabaseMission();
 
         long launch = (long)info.StartTimeDerived;
 
         long returnDt = launch + (long)Math.Floor(info.DurationSeconds);
 
         float nominalCap = 0;
-        if (TryGetShipCapacities(info.Ship, info.duration_type, out var caps) && (int)info.Level < caps.Length) {
-            nominalCap = caps[(int)info.Level];
-        }
+        if (TryGetShipCapacities(info.Ship, info.duration_type, out var caps) && (int)info.Level < caps.Length) nominalCap = caps[(int)info.Level];
         int mType = ResolveMissionType(-1, completeMissionResponse);
 
         var mission = new DatabaseMission {
@@ -220,14 +204,10 @@ public sealed class MissionPacker : IMissionCompiler {
     }
 
     public bool IsDubCap(CompleteMissionResponse mission) {
-        if (mission.Info is null) {
-            return false;
-        }
+        if (mission.Info is null) return false;
         var info = mission.Info;
         int level = (int)info.Level;
-        if (!TryGetShipCapacities(info.Ship, info.duration_type, out var caps) || level >= caps.Length) {
-            return false;
-        }
+        if (!TryGetShipCapacities(info.Ship, info.duration_type, out var caps) || level >= caps.Length) return false;
         float nominalCapacity = caps[level];
         return (float)info.Capacity >= nominalCapacity * 1.7f;
     }

@@ -3,7 +3,6 @@ using EggLedger.Domain.Reports;
 
 namespace EggLedger.Domain.Tests.Reports;
 
-
 public class WeightTests {
     private static string Ago(int days) =>
         DateTime.Now.AddDays(-days).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
@@ -104,7 +103,6 @@ public class WeightTests {
         };
         Assert.Equal("MEDIUM", Weight.ClassifyWeight(def));
     }
-
 
     [Fact]
     public void DateWindow_NoFilter_TreatedAsLarge_TimeSeriesHeavy() {

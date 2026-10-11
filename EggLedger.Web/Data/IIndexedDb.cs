@@ -7,7 +7,6 @@ public interface IIndexedDb {
     ValueTask<T[]> GetAllAsync<T>(string store);
     ValueTask<T[]> GetAllByIndexAsync<T>(string store, string index, object value);
 
-
     ValueTask<T[]> GetAllByIndexProjectedAsync<T>(string store, string index, object value);
     ValueTask DeleteAsync(string store, object key);
     ValueTask ClearAsync(string store);

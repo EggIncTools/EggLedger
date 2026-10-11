@@ -267,14 +267,10 @@
                 }
             }
         } catch (OperationCanceledException) {
-            if (_pollCts is not null && _pollCts.IsCancellationRequested && !_disposed) {
-                await SessionStore.ClearPendingAuthStateAsync();
-            }
+            if (_pollCts is not null && _pollCts.IsCancellationRequested && !_disposed) await SessionStore.ClearPendingAuthStateAsync();
         } finally {
             _authWaiting = false;
-            if (!_disposed) {
-                await InvokeAsync(StateHasChanged);
-            }
+            if (!_disposed) await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -321,9 +317,7 @@
     }
 
     private async Task SyncNowAsync() {
-        if (_session is null) {
-            return;
-        }
+        if (_session is null) return;
 
         _syncInProgress = true;
         _syncError = "";
@@ -356,9 +350,7 @@
     }
 
     private async Task RestoreNowAsync() {
-        if (_session is null) {
-            return;
-        }
+        if (_session is null) return;
 
         _restoreInProgress = true;
         _restoreError = "";
@@ -366,9 +358,7 @@
         try {
             try {
                 var remoteAccounts = await Cloud.GetBlobAsync<List<AccountInfo>>(_session, CloudSyncBlobs.AccountsBlob);
-                foreach (var acct in remoteAccounts ?? []) {
-                    await Accounts.AddKnownAccountAsync(acct);
-                }
+                foreach (var acct in remoteAccounts ?? []) await Accounts.AddKnownAccountAsync(acct);
             } catch (CloudSyncException ex) {
                 Logger.LogDebug(ex, "cloud sync restore found no accounts blob");
                 /* nothing synced yet */
@@ -378,9 +368,7 @@
 
             try {
                 var remoteSettings = await Cloud.GetBlobAsync<CloudSyncableSettings>(_session, CloudSyncBlobs.SettingsBlob);
-                if (remoteSettings is not null) {
-                    await Settings.SetSettingsAsync(CloudSyncBlobs.UnpackSettings(remoteSettings));
-                }
+                if (remoteSettings is not null) await Settings.SetSettingsAsync(CloudSyncBlobs.UnpackSettings(remoteSettings));
             } catch (CloudSyncException ex) {
                 Logger.LogDebug(ex, "cloud sync restore found no settings blob");
                 /* nothing synced yet */
@@ -390,9 +378,7 @@
 
             try {
                 var remoteReports = await Cloud.GetBlobAsync<CloudReportsBlob>(_session, CloudSyncBlobs.ReportsBlob);
-                if (remoteReports is not null) {
-                    await ImportReportsAsync(remoteReports);
-                }
+                if (remoteReports is not null) await ImportReportsAsync(remoteReports);
             } catch (CloudSyncException ex) {
                 Logger.LogDebug(ex, "cloud sync restore found no reports blob");
                 /* nothing synced yet */
@@ -415,44 +401,29 @@
         var existingReportIds = new HashSet<string>(StringComparer.Ordinal);
         foreach (var g in remote.Groups ?? []) {
             var local = await Reports.RetrieveReportGroupAsync(g.Id);
-            if (local is not null) {
-                existingGroupIds.Add(g.Id);
-            }
+            if (local is not null) existingGroupIds.Add(g.Id);
         }
 
         foreach (var r in remote.Reports ?? []) {
             var local = await Reports.RetrieveReportAsync(r.Id);
-            if (local is not null) {
-                existingReportIds.Add(r.Id);
-            }
+            if (local is not null) existingReportIds.Add(r.Id);
         }
 
         var (groups, reports) = CloudSyncBlobs.SelectReportsToImport(remote, existingGroupIds, existingReportIds);
-        foreach (var g in groups) {
-            await Reports.InsertReportGroupAsync(g);
-        }
-
-        foreach (var r in reports) {
-            await Reports.InsertReportAsync(r);
-        }
+        foreach (var g in groups) await Reports.InsertReportGroupAsync(g);
+        foreach (var r in reports) await Reports.InsertReportAsync(r);
     }
 
 
     private async Task DeleteAllRemoteBlobsAsync() {
-        if (_session is null) {
-            return;
-        }
+        if (_session is null) return;
 
         var blobs = await Cloud.ListBlobsAsync(_session);
-        foreach (var blob in blobs) {
-            await Cloud.DeleteBlobAsync(_session, blob.Name);
-        }
+        foreach (var blob in blobs) await Cloud.DeleteBlobAsync(_session, blob.Name);
     }
 
     private async Task DeleteRemoteAsync() {
-        if (_session is null) {
-            return;
-        }
+        if (_session is null) return;
 
         _deleteInProgress = true;
         _deleteError = "";
@@ -472,14 +443,10 @@
     }
 
     public async Task AutoSyncIfEnabledAsync() {
-        if (!_autoSync || !_connected || _session is null || _syncInProgress) {
-            return;
-        }
+        if (!_autoSync || !_connected || _session is null || _syncInProgress) return;
 
         await SyncNowAsync();
-        if (!string.IsNullOrEmpty(_syncError)) {
-            throw new CloudSyncException(_syncError);
-        }
+        if (!string.IsNullOrEmpty(_syncError)) throw new CloudSyncException(_syncError);
     }
 
     public ValueTask DisposeAsync() {

@@ -15,15 +15,11 @@ public static class MissionExtensions {
     public static string GetDurationString(this MissionInfo d) => GetDurationString(d.DurationSeconds);
 
     public static string GetDurationString(double seconds) {
-        if (seconds == 0) {
-            return "0m";
-        }
+        if (seconds == 0) return "0m";
         if (seconds < 60) {
             return $"{(int)seconds}s";
         }
-        if (seconds < 3600) {
-            return $"{(int)(seconds / 60)}m";
-        }
+        if (seconds < 3600) return $"{(int)(seconds / 60)}m";
         return seconds < 86400
             ? string.Format(
                 CultureInfo.InvariantCulture,
@@ -71,9 +67,7 @@ public static class MissionExtensions {
             var status = mission.status;
             if (status is MissionInfo.Status.Complete or MissionInfo.Status.Archived) {
                 var id = mission.Identifier;
-                if (seen.Add(id)) {
-                    completed.Add(mission);
-                }
+                if (seen.Add(id)) completed.Add(mission);
             }
         }
 

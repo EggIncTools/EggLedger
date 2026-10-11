@@ -33,14 +33,8 @@ public sealed class LoginCallbackMiddleware(RequestDelegate next, ILogger<LoginC
     internal static string BuildRedirectTarget(PathString path, IQueryCollection query) {
         var clean = new QueryBuilder();
         foreach (var (key, value) in query) {
-            if (key is "code" or "error") {
-                continue;
-            }
-            foreach (var v in value) {
-                if (v is not null) {
-                    clean.Add(key, v);
-                }
-            }
+            if (key is "code" or "error") continue;
+            foreach (var v in value) if (v is not null) clean.Add(key, v);
         }
         return path + clean.ToQueryString();
     }

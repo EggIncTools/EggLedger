@@ -64,12 +64,8 @@ public partial class LogLine {
     private static void AddColored(List<LogRun> runs, string body, string color) {
         var parts = body.Split(EidBarToken);
         for (var p = 0; p < parts.Length; p++) {
-            if (parts[p].Length > 0) {
-                runs.Add(new(LogRunKind.Text, parts[p], color));
-            }
-            if (p < parts.Length - 1) {
-                runs.Add(new(LogRunKind.EidBar, ""));
-            }
+            if (parts[p].Length > 0) runs.Add(new(LogRunKind.Text, parts[p], color));
+            if (p < parts.Length - 1) runs.Add(new(LogRunKind.EidBar, ""));
         }
     }
 

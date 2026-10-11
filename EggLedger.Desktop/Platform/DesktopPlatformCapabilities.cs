@@ -64,9 +64,7 @@ public sealed class DesktopPlatformCapabilities(IProcessRunner processRunner, ID
     public string DataRootDir => StoragePaths.ResolveDataRootDir(StoragePaths.DefaultRootDir());
 
     private static OSPlatform CurrentPlatform() {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-            return OSPlatform.Windows;
-        }
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return OSPlatform.Windows;
         return RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? OSPlatform.OSX : OSPlatform.Linux;
     }
 }

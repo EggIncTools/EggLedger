@@ -80,9 +80,7 @@ public static class ReportMapping {
     };
 
     public static ReportFilters ParseFilters(string? json, ILogger? logger = null) {
-        if (string.IsNullOrWhiteSpace(json)) {
-            return new ReportFilters();
-        }
+        if (string.IsNullOrWhiteSpace(json)) return new ReportFilters();
         try {
             return JsonSerializer.Deserialize<ReportFilters>(json, FilterOptions) ?? new ReportFilters();
         } catch (JsonException ex) {

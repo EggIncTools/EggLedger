@@ -158,9 +158,7 @@
             new LaneGroupDef<object>(MissionItemTemplate, LaneMinRem: 1.65, LaneGapRem: 0.15, HeaderRem: 0),
         ];
 
-        if (GameEvents.IsConfigured) {
-            _ = LoadEventsAsync();
-        }
+        if (GameEvents.IsConfigured) _ = LoadEventsAsync();
     }
 
     private async Task LoadEventsAsync() {
@@ -189,9 +187,7 @@
             return;
         }
 
-        if (_grid is not null) {
-            await _grid.ResetScrollAsync();
-        }
+        if (_grid is not null) await _grid.ResetScrollAsync();
     }
 
     private void Recompute() {
@@ -230,13 +226,8 @@
         UpdatePanBounds(tz);
 
         var windows = new List<(DateTimeOffset Start, DateTimeOffset End)> { (_visibleStart, _visibleEnd) };
-        for (var i = 0; i < CenterSlot; i++) {
-            windows.Insert(0, TimelineWindow.Compute(windows[0].Start.AddHours(-1), _zoom, tz));
-        }
-
-        for (var i = 0; i < StripSlots - 1 - CenterSlot; i++) {
-            windows.Add(TimelineWindow.Compute(windows[^1].End.AddHours(1), _zoom, tz));
-        }
+        for (var i = 0; i < CenterSlot; i++) windows.Insert(0, TimelineWindow.Compute(windows[0].Start.AddHours(-1), _zoom, tz));
+        for (var i = 0; i < StripSlots - 1 - CenterSlot; i++) windows.Add(TimelineWindow.Compute(windows[^1].End.AddHours(1), _zoom, tz));
 
         var center = CenterSlot;
         _centerHourTicks = [];
@@ -248,9 +239,7 @@
     private PeriodSlot<object> BuildPeriod(DateTimeOffset start, DateTimeOffset end, bool isCenter, TimeZoneInfo tz, DateTimeOffset now) {
         int? primaryMonth = _zoom == TimelineZoom.Month ? TimeZoneInfo.ConvertTime(_center, tz).Month : null;
         var timelineRows = TimelineRows.Build(_zoom, start, end);
-        if (isCenter && _zoom == TimelineZoom.Day && timelineRows.Count > 0) {
-            _centerHourTicks = TimelineTicks.HourTicks(timelineRows[0].Start, timelineRows[0].End, tz);
-        }
+        if (isCenter && _zoom == TimelineZoom.Day && timelineRows.Count > 0) _centerHourTicks = TimelineTicks.HourTicks(timelineRows[0].Start, timelineRows[0].End, tz);
 
         var rows = timelineRows.Select(row => BuildRow(row, tz, now, primaryMonth)).ToList();
         return new PeriodSlot<object>(rows, start.UtcTicks);
@@ -277,9 +266,7 @@
 
         var eventLanes = ToObjectLanes(GroupLanes(eventBars, b => b.Lane));
         var missionLanes = ToObjectLanes(GroupLanes(bars, b => b.Lane));
-        if (missionLanes.Count == 0) {
-            missionLanes = [Array.Empty<object>()];
-        }
+        if (missionLanes.Count == 0) missionLanes = [Array.Empty<object>()];
 
         return new CalendarRow<object>(
             cellLabels,
@@ -345,9 +332,7 @@
 
     private string AirtimeTooltip {
         get {
-            if (_occupancyHours is not { Count: > 0 } hours) {
-                return "";
-            }
+            if (_occupancyHours is not { Count: > 0 } hours) return "";
 
             return string.Join("\n", hours
                 .Select((h, ships) => FormattableString.Invariant($"{ships} in flight: {h:0.#}h"))
@@ -371,9 +356,7 @@
     }
 
     private void Pan(int direction) {
-        if (!CanPan(direction)) {
-            return;
-        }
+        if (!CanPan(direction)) return;
 
         _center += (_visibleEnd - _visibleStart) * direction;
         Recompute();
@@ -403,15 +386,11 @@
     private long? EarliestLaunchUnixSeconds() {
         long? min = null;
         foreach (var m in AllMissions) {
-            if (min is null || m.LaunchDT < min) {
-                min = m.LaunchDT;
-            }
+            if (min is null || m.LaunchDT < min) min = m.LaunchDT;
         }
 
         foreach (var m in InFlightMissions) {
-            if (min is null || m.LaunchDT < min) {
-                min = m.LaunchDT;
-            }
+            if (min is null || m.LaunchDT < min) min = m.LaunchDT;
         }
 
         return min;
@@ -419,9 +398,7 @@
 
     private double? FilteredOutRatio {
         get {
-            if (_flightSlicesAll is not { Count: > 0 } allSlices) {
-                return null;
-            }
+            if (_flightSlicesAll is not { Count: > 0 } allSlices) return null;
 
             var allTotal = allSlices.Sum(s => s.Ratio);
             var filteredTotal = _flightSlices?.Sum(s => s.Ratio) ?? 0;
@@ -455,9 +432,7 @@
     }
 
     private void SetHoveredMissionId(string? missionId) {
-        if (_hoveredMissionId == missionId) {
-            return;
-        }
+        if (_hoveredMissionId == missionId) return;
 
         _hoveredMissionId = missionId;
     }

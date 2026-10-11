@@ -8,20 +8,14 @@ public static class Weight {
 
         if (def.SecondaryGroupBy != "" && def.Mode == "time_series") {
             var eitherIsArtifact = IsArtifactDimension(def.GroupBy) || IsArtifactDimension(def.SecondaryGroupBy);
-            if (eitherIsArtifact) {
-                return HasDateFilter(def.Filters) ? "MEDIUM" : "HEAVY";
-            }
-            if (!HasDateFilter(def.Filters)) {
-                return "HEAVY";
-            }
+            if (eitherIsArtifact) return HasDateFilter(def.Filters) ? "MEDIUM" : "HEAVY";
+            if (!HasDateFilter(def.Filters)) return "HEAVY";
             return DateFilterWindowDays(def.Filters, clock) > 90 ? "HEAVY" : "MEDIUM";
         }
 
         if (def.SecondaryGroupBy != "") {
             var eitherIsArtifact = IsArtifactDimension(def.GroupBy) || IsArtifactDimension(def.SecondaryGroupBy);
-            if (eitherIsArtifact) {
-                return HasDateFilter(def.Filters) ? "MEDIUM" : "HEAVY";
-            }
+            if (eitherIsArtifact) return HasDateFilter(def.Filters) ? "MEDIUM" : "HEAVY";
             return "LOW";
         }
 
@@ -30,9 +24,7 @@ public static class Weight {
                 var days = CustomBucketDays(def.CustomBucketN, def.CustomBucketUnit);
                 return days > 90 ? "HEAVY" : "MEDIUM";
             }
-            if (!HasDateFilter(def.Filters)) {
-                return "HEAVY";
-            }
+            if (!HasDateFilter(def.Filters)) return "HEAVY";
             var d = DateFilterWindowDays(def.Filters, clock);
             return d > 90 ? "HEAVY" : "MEDIUM";
         }
@@ -49,15 +41,11 @@ public static class Weight {
 
     private static bool HasDateFilter(ReportFilters f) {
         foreach (var c in f.And) {
-            if (c.TopLevel is "launchDT" or "returnDT") {
-                return true;
-            }
+            if (c.TopLevel is "launchDT" or "returnDT") return true;
         }
         foreach (var group in f.Or) {
             foreach (var c in group) {
-                if (c.TopLevel is "launchDT" or "returnDT") {
-                    return true;
-                }
+                if (c.TopLevel is "launchDT" or "returnDT") return true;
             }
         }
         return false;
@@ -68,9 +56,7 @@ public static class Weight {
         List<FilterCondition> all = [.. f.And, .. f.Or.SelectMany(g => g)];
         var now = clock.GetUtcNow().UtcDateTime;
         foreach (var c in all) {
-            if (c.TopLevel is not "launchDT" and not "returnDT") {
-                continue;
-            }
+            if (c.TopLevel is not "launchDT" and not "returnDT") continue;
             if (c.Op is not ">" and not ">=") {
                 continue;
             }
@@ -79,9 +65,7 @@ public static class Weight {
                 continue;
             }
             var days = (int)((now - t).TotalHours / 24);
-            if (days < minDays) {
-                minDays = days;
-            }
+            if (days < minDays) minDays = days;
         }
         return minDays;
     }
@@ -92,15 +76,11 @@ public static class Weight {
         }
 
         foreach (var c in f.And) {
-            if (IsArtifactField(c.TopLevel)) {
-                return true;
-            }
+            if (IsArtifactField(c.TopLevel)) return true;
         }
         foreach (var group in f.Or) {
             foreach (var c in group) {
-                if (IsArtifactField(c.TopLevel)) {
-                    return true;
-                }
+                if (IsArtifactField(c.TopLevel)) return true;
             }
         }
         return false;

@@ -39,9 +39,7 @@ public static class Api {
         app.MapPost("/api/v1/auth/session-from-login", auth.SessionFromLogin);
 
         VerifyEndpoint.Map(app, build);
-        if (!string.IsNullOrEmpty(cfg.MennoFunctionKey)) {
-            app.MapPost("/api/v1/menno/submit", menno.Submit);
-        }
+        if (!string.IsNullOrEmpty(cfg.MennoFunctionKey)) app.MapPost("/api/v1/menno/submit", menno.Submit);
 
         MapAuthed(app, ["PUT"], "/api/v1/blobs/{name}", store,
             c => blobs.Put(c, (string)c.Request.RouteValues["name"]!));

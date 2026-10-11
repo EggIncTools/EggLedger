@@ -13,6 +13,7 @@
     <PackageReference Include="EggIdentity.Admin" />
     <PackageReference Include="EggIdentity.Auth" />
     <PackageReference Include="EggIdentity.Bot" />
+    <PackageReference Include="EggIdentity.Brand" />
     <PackageReference Include="EggIdentity.Core" />
     <PackageReference Include="EggIdentity.Data" />
     <PackageReference Include="EggIdentity.Web" />

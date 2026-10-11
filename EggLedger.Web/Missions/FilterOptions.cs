@@ -91,9 +91,7 @@ public static class FilterOptions {
     public static List<FilterOption> GetArtifactNameFilterOptions(IReadOnlyList<PossibleArtifact> artifactConfigs) {
         var representatives = new Dictionary<int, PossibleArtifact>();
         foreach (var a in artifactConfigs) {
-            if (!representatives.TryGetValue(a.Name, out var existing) || a.Level < existing.Level) {
-                representatives[a.Name] = a;
-            }
+            if (!representatives.TryGetValue(a.Name, out var existing) || a.Level < existing.Level) representatives[a.Name] = a;
         }
         List<FilterOption> result = [.. representatives.Values.Select(a => new FilterOption {
             Text = a.DisplayName,
@@ -188,9 +186,7 @@ public static class FilterOptions {
             var groupKey = familyId.ToString(CultureInfo.InvariantCulture);
             var familyDisplayName = FamilyDisplayName(tierMap, tierOrder);
             var totalCount = 0;
-            foreach (var rarities in tierMap.Values) {
-                totalCount += rarities.Count;
-            }
+            foreach (var rarities in tierMap.Values) totalCount += rarities.Count;
 
             if (advanced && totalCount > 1) {
                 result.Add(new FilterOption {
@@ -241,9 +237,7 @@ public static class FilterOptions {
     private static string FamilyDisplayName(Dictionary<int, List<PossibleArtifact>> tierMap, List<int> tierOrder) {
         foreach (var tier in tierOrder) {
             foreach (var a in tierMap[tier]) {
-                if (!a.DisplayName.Contains("fragment", StringComparison.OrdinalIgnoreCase)) {
-                    return a.DisplayName;
-                }
+                if (!a.DisplayName.Contains("fragment", StringComparison.OrdinalIgnoreCase)) return a.DisplayName;
             }
         }
         return tierMap[tierOrder[0]][0].DisplayName;

@@ -7,9 +7,7 @@ public static class AppVersionInfo {
         get {
             var info = Assembly.GetEntryAssembly()?
                 .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-            if (string.IsNullOrEmpty(info)) {
-                return "";
-            }
+            if (string.IsNullOrEmpty(info)) return "";
             var plus = info.IndexOf('+', StringComparison.Ordinal);
             return plus >= 0 ? info[..plus] : info;
         }

@@ -30,9 +30,7 @@ public static class SqliteMigrationRunner {
         int current = GetUserVersion(connection);
 
         foreach (var (version, sql) in migrations) {
-            if (version <= current || version > targetVersion) {
-                continue;
-            }
+            if (version <= current || version > targetVersion) continue;
             ApplyOne(connection, version, sql);
             current = version;
         }
@@ -45,7 +43,6 @@ public static class SqliteMigrationRunner {
             cmd.CommandText = sql;
             cmd.ExecuteNonQuery();
         }
-
 
         using (var setVersion = connection.CreateCommand()) {
             setVersion.Transaction = tx;
@@ -69,13 +66,9 @@ public static class SqliteMigrationRunner {
         List<(int Version, string Sql)> result = [];
 
         foreach (var name in assembly.GetManifestResourceNames()) {
-            if (!name.Contains(prefix, StringComparison.Ordinal) || !name.EndsWith(".up.sql", StringComparison.Ordinal)) {
-                continue;
-            }
+            if (!name.Contains(prefix, StringComparison.Ordinal) || !name.EndsWith(".up.sql", StringComparison.Ordinal)) continue;
             var match = FileNamePattern.Match(name);
-            if (!match.Success || !string.Equals(match.Groups["set"].Value, set, StringComparison.Ordinal)) {
-                continue;
-            }
+            if (!match.Success || !string.Equals(match.Groups["set"].Value, set, StringComparison.Ordinal)) continue;
             int version = int.Parse(match.Groups["num"].Value, CultureInfo.InvariantCulture);
             result.Add((version, ReadResource(assembly, name)));
         }

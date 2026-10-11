@@ -19,9 +19,7 @@ public static class AccountFactory {
         int totalTE = 0;
         var virtue = backup.virtue;
         if (virtue?.EovEarneds is { } eov) {
-            foreach (var v in eov) {
-                totalTE += (int)v;
-            }
+            foreach (var v in eov) totalTE += (int)v;
         }
 
         return new AccountInfo {

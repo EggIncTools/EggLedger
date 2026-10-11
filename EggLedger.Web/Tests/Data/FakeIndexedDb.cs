@@ -4,7 +4,6 @@ namespace EggLedger.Web.Tests.Data;
 
 public sealed class FakeIndexedDb : IIndexedDb {
 
-
     private readonly Lock _gate = new();
     private readonly Dictionary<string, List<object>> _stores = [];
     private long _nextId;

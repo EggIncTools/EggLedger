@@ -6,7 +6,6 @@ namespace EggLedger.Web.Missions.Model;
 public static class FilterCodec {
     public static Condition? FromLegacyCondition(WebCondition c) => ParseCondition(c.TopLevel, c.Op, c.Val);
 
-
     public static Condition? ParseCondition(string topLevel, string op, string val) {
         var c = new WebCondition(topLevel, op, val);
         return string.IsNullOrEmpty(c.TopLevel) ? null : c.TopLevel switch {

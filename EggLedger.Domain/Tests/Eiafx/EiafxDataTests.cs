@@ -26,7 +26,6 @@ public class EiafxDataTests {
     public void CraftingWeights_LunarTotemT3_Is118() =>
         Assert.Equal(118.0, EiafxData.CraftingWeights[(0, 3)]);
 
-
     [Fact]
     public void FamilyAfxIds_TachyonStone() {
         Assert.True(EiafxData.FamilyAfxIds.TryGetValue("tachyon-stone", out var ids));
@@ -38,7 +37,6 @@ public class EiafxDataTests {
         Assert.Equal("puzzle-cube", EiafxData.Families[0].Id);
         Assert.Equal("Puzzle cube", EiafxData.Families[0].Name);
     }
-
 
     [Fact]
     public void EiafxWeightData_CraftingWeight_FallsBackToOne() {

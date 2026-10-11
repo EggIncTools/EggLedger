@@ -105,9 +105,7 @@
         get {
             var sum = 0;
             if (Items is not null) {
-                foreach (var i in Items) {
-                    sum += i.Count;
-                }
+                foreach (var i in Items) sum += i.Count;
             }
 
             return sum;
@@ -185,19 +183,12 @@
 
 
     private (long Seen, long Total)? DropCalcs(DropLike item) {
-        if (MennoData?.Configs is null) {
-            return null;
-        }
+        if (MennoData?.Configs is null) return null;
 
         foreach (var c in MennoData.Configs) {
             var ac = c.ArtifactConfiguration;
-            if (ac?.ArtifactType is null || ac.ArtifactRarity is null) {
-                continue;
-            }
-
-            if (ac.ArtifactType.Id == item.Id && ac.ArtifactLevel == item.Level && ac.ArtifactRarity.Id == item.Rarity) {
-                return (c.TotalDrops, MennoData.TotalDropsCount);
-            }
+            if (ac?.ArtifactType is null || ac.ArtifactRarity is null) continue;
+            if (ac.ArtifactType.Id == item.Id && ac.ArtifactLevel == item.Level && ac.ArtifactRarity.Id == item.Rarity) return (c.TotalDrops, MennoData.TotalDropsCount);
         }
 
         return null;
@@ -206,9 +197,7 @@
 
     private string ExpectedPerShip(DropLike item) {
         var calc = DropCalcs(item);
-        if (calc is null || calc.Value.Total == 0) {
-            return "";
-        }
+        if (calc is null || calc.Value.Total == 0) return "";
 
         var v = (double)calc.Value.Seen / calc.Value.Total * MissionTotalDrops;
         return v.ToString("0.000", CultureInfo.InvariantCulture);

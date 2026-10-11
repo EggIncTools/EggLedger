@@ -2,7 +2,6 @@ using EggLedger.Domain.Reports;
 
 namespace EggLedger.Domain.Tests.Reports;
 
-
 public class MennoComparisonTests {
     private static ReportResult Heatmap2D(
         List<double> matrix,

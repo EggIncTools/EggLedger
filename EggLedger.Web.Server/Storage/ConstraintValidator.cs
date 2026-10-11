@@ -13,13 +13,9 @@ public sealed class ConstraintValidator(NpgsqlDataSource source, TimeProvider ti
     public async Task RunAsync(CancellationToken ct) {
         try {
             var pending = await PendingAsync(ct);
-            if (pending.Count == 0) {
-                return;
-            }
+            if (pending.Count == 0) return;
             logger.LogInformation("constraints: {Count} foreign key(s) not validated, validating in background", pending.Count);
-            foreach (var (table, name) in pending) {
-                await ValidateAsync(table, name, ct);
-            }
+            foreach (var (table, name) in pending) await ValidateAsync(table, name, ct);
         } catch (OperationCanceledException ex) {
             logger.LogDebug(ex, "constraints: background validation cancelled");
         } catch (Exception ex) {
@@ -32,9 +28,7 @@ public sealed class ConstraintValidator(NpgsqlDataSource source, TimeProvider ti
         await using var conn = await source.OpenConnectionAsync(ct);
         await using var cmd = new NpgsqlCommand(PendingSql, conn);
         await using var reader = await cmd.ExecuteReaderAsync(ct);
-        while (await reader.ReadAsync(ct)) {
-            rows.Add((reader.GetString(0), reader.GetString(1)));
-        }
+        while (await reader.ReadAsync(ct)) rows.Add((reader.GetString(0), reader.GetString(1)));
         return rows;
     }
 

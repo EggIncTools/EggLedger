@@ -97,14 +97,8 @@
     private readonly string _anchorId = "tt-" + Guid.NewGuid().ToString("N");
     private string CapModifierClass {
         get {
-            if (RecolorBC && Bar.Mission.IsBuggedCap) {
-                return "timeline-bar-buggedcap";
-            }
-
-            if (RecolorDC && Bar.Mission.IsDubCap) {
-                return "timeline-bar-dubcap";
-            }
-
+            if (RecolorBC && Bar.Mission.IsBuggedCap) return "timeline-bar-buggedcap";
+            if (RecolorDC && Bar.Mission.IsDubCap) return "timeline-bar-dubcap";
             return "";
         }
     }

@@ -16,9 +16,7 @@ public sealed class DesktopExportService(
     public async Task<List<ExportGroup>> ListAsync() {
         var dir = _exportsDir;
         var groups = await Task.Run(() => ExportManagement.ListGroups(dir, _fs));
-        if (accountLookup is null || groups.Count == 0) {
-            return groups;
-        }
+        if (accountLookup is null || groups.Count == 0) return groups;
         var accounts = await accountLookup();
         var byId = accounts
             .GroupBy(a => a.Id, StringComparer.Ordinal)
@@ -49,11 +47,7 @@ public sealed class DesktopExportService(
     public Task DeleteAsync(IEnumerable<string> paths) {
         var snapshot = paths.ToList();
         return Task.Run(() => {
-            foreach (var path in snapshot) {
-                if (!string.IsNullOrEmpty(path)) {
-                    _fs.Delete(path);
-                }
-            }
+            foreach (var path in snapshot) if (!string.IsNullOrEmpty(path)) _fs.Delete(path);
         });
     }
 }

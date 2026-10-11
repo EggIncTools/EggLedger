@@ -52,9 +52,7 @@
 
     private List<string> DisplayCols() {
         var raw = Result.ColLabels.ToList();
-        if (raw.Count <= MaxCols + 1) {
-            return raw;
-        }
+        if (raw.Count <= MaxCols + 1) return raw;
 
         var kept = raw.Take(MaxCols).ToList();
         kept.Add("Other");
@@ -82,10 +80,7 @@
     }
 
     private double BarWidth(double v, double max) {
-        if (IsPct) {
-            return v;
-        }
-
+        if (IsPct) return v;
         return max == 0 ? 0 : v / max * 100;
     }
 
@@ -94,9 +89,7 @@
     }
 
     private string CellLabel(double v) {
-        if (IsPct) {
-            return v.ToString("0.0", CultureInfo.InvariantCulture) + "%";
-        }
+        if (IsPct) return v.ToString("0.0", CultureInfo.InvariantCulture) + "%";
 
         return v % 1 == 0
             ? ((long)v).ToString(CultureInfo.InvariantCulture)
@@ -104,9 +97,7 @@
     }
 
     private List<string> ColColors(List<string> cols) {
-        if (RawColCount == 0) {
-            return [];
-        }
+        if (RawColCount == 0) return [];
 
         return ChartGeometry.SeriesColors(
             cols,

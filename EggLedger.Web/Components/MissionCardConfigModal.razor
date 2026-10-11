@@ -162,9 +162,7 @@
         var ordered = _form.Fields.OrderBy(f => f.Order).ToList();
         var idx = ordered.FindIndex(f => f.Field == slot.Field);
         var newIdx = idx + delta;
-        if (newIdx < 0 || newIdx >= ordered.Count) {
-            return;
-        }
+        if (newIdx < 0 || newIdx >= ordered.Count) return;
 
         (ordered[idx], ordered[newIdx]) = (ordered[newIdx], ordered[idx]);
         for (var i = 0; i < ordered.Count; i++) {
@@ -179,9 +177,7 @@
 
     private async Task Save() {
         ValidateCss();
-        if (_cssError is not null) {
-            return;
-        }
+        if (_cssError is not null) return;
 
         var updated = _form.ToConfig();
         var others = PresetSet.Presets.Where(p => p.Name != _editingPresetName).ToList();
@@ -218,9 +214,7 @@
     }
 
     private async Task ConfirmNaming() {
-        if (!CanConfirmNaming || _pendingNameAction is not { } action) {
-            return;
-        }
+        if (!CanConfirmNaming || _pendingNameAction is not { } action) return;
 
         var name = _pendingNameInput.Trim();
         if (PresetSet.Presets.Any(p => p.Name == name) && !(action == NameAction.Rename && name == _editingPresetName)) {
@@ -254,9 +248,7 @@
     }
 
     private async Task Delete() {
-        if (_editingPresetName == "Classic") {
-            return;
-        }
+        if (_editingPresetName == "Classic") return;
 
         var remaining = PresetSet.Presets.Where(p => p.Name != _editingPresetName).ToList();
         _editingPresetName = "Classic";

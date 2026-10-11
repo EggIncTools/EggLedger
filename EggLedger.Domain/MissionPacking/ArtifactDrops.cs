@@ -19,9 +19,7 @@ public static class ArtifactDrops {
         var drops = new List<ArtifactDrop>(artifacts.Count);
         for (int i = 0; i < artifacts.Count; i++) {
             var spec = artifacts[i].Spec;
-            if (spec is null) {
-                continue;
-            }
+            if (spec is null) continue;
             string name = EnumNames.ProtoName(spec.name);
             string specType = name.Contains("_FRAGMENT", StringComparison.Ordinal)
                 ? "StoneFragment"

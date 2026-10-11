@@ -34,23 +34,18 @@ public static class EiafxData {
         return Parse(cfg);
     }
 
-
     private static ParsedData Parse(ArtifactDataConfig cfg) {
         var families = cfg.Families ?? [];
 
         var tierMap = new Dictionary<(int, int), TierData>();
         foreach (var fam in families) {
-            foreach (var t in fam.Tiers ?? []) {
-                tierMap[(t.AfxId, t.AfxLevel)] = t;
-            }
+            foreach (var t in fam.Tiers ?? []) tierMap[(t.AfxId, t.AfxLevel)] = t;
         }
 
         var memo = new Dictionary<(int, int), double>();
         double ComputeWeight(int afxId, int afxLevel) {
             var key = (afxId, afxLevel);
-            if (memo.TryGetValue(key, out var cached)) {
-                return cached;
-            }
+            if (memo.TryGetValue(key, out var cached)) return cached;
             if (!tierMap.TryGetValue(key, out var t) || t.Recipe is null or { Count: 0 }) {
                 memo[key] = 1.0;
                 return 1.0;
@@ -58,16 +53,12 @@ public static class EiafxData {
 
             memo[key] = 0;
             var w = 0.0;
-            foreach (var ing in t.Recipe) {
-                w += ing.Count * ComputeWeight(ing.AfxId, ing.AfxLevel);
-            }
+            foreach (var ing in t.Recipe) w += ing.Count * ComputeWeight(ing.AfxId, ing.AfxLevel);
             memo[key] = w;
             return w;
         }
 
-        foreach (var (afxId, afxLevel) in tierMap.Keys) {
-            ComputeWeight(afxId, afxLevel);
-        }
+        foreach (var (afxId, afxLevel) in tierMap.Keys) ComputeWeight(afxId, afxLevel);
 
         var fids = families
             .GroupBy(f => f.Id)

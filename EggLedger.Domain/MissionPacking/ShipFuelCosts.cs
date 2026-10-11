@@ -14,9 +14,7 @@ public static class ShipFuelCosts {
 
     public static double TotalFor(long ship, long durationType) {
         double total = 0;
-        foreach (var entry in For(ship, durationType)) {
-            total += entry.Amount;
-        }
+        foreach (var entry in For(ship, durationType)) total += entry.Amount;
         return total;
     }
 
@@ -76,9 +74,7 @@ public static class ShipFuelCosts {
         MissionInfo.DurationType durationType,
         params (Egg Egg, double Amount)[] fuels) {
         var entries = new FuelEntry[fuels.Length];
-        for (int i = 0; i < fuels.Length; i++) {
-            entries[i] = new FuelEntry(i, (int)fuels[i].Egg, fuels[i].Amount);
-        }
+        for (int i = 0; i < fuels.Length; i++) entries[i] = new FuelEntry(i, (int)fuels[i].Egg, fuels[i].Amount);
         table[((long)ship, (long)durationType)] = entries;
     }
 }

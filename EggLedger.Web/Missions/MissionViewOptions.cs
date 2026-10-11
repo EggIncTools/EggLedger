@@ -24,7 +24,6 @@ public sealed class MissionViewOptions {
     public const string KeyRecolorDC = "mission_recolor_dc";
     public const string KeyRecolorBC = "mission_recolor_bc";
 
-
     public bool ViewByDate { get; set; }
     public bool ViewMissionTimes { get; set; } = true;
     public MultiViewMode MultiViewMode { get; set; } = MultiViewMode.Off;
@@ -36,9 +35,7 @@ public sealed class MissionViewOptions {
     public int? MissionTypeTab { get; set; }
 
     public static bool HasBothMissionTypes(IReadOnlyList<DatabaseMission>? missions) {
-        if (missions is null || missions.Count == 0) {
-            return false;
-        }
+        if (missions is null || missions.Count == 0) return false;
         bool home = false;
         bool virtue = false;
         foreach (var m in missions) {
@@ -78,27 +75,19 @@ public sealed class MissionViewOptions {
         method == MissionSortMethod.Iv ? "iv" : "default";
 
     public void LoadFrom(IReadOnlyDictionary<string, string> settings) {
-        if (settings.TryGetValue(KeyViewByDate, out var vbd)) {
-            ViewByDate = ParseBool(vbd, ViewByDate);
-        }
+        if (settings.TryGetValue(KeyViewByDate, out var vbd)) ViewByDate = ParseBool(vbd, ViewByDate);
         if (settings.TryGetValue(KeyViewTimes, out var vt)) {
             ViewMissionTimes = ParseBool(vt, ViewMissionTimes);
         }
-        if (settings.TryGetValue(KeyMultiViewMode, out var mvm)) {
-            MultiViewMode = ParseMultiViewMode(mvm);
-        }
+        if (settings.TryGetValue(KeyMultiViewMode, out var mvm)) MultiViewMode = ParseMultiViewMode(mvm);
         if (settings.TryGetValue(KeySortMethod, out var sm)) {
             SortMethod = ParseSortMethod(sm);
         }
-        if (settings.TryGetValue(KeySortByDropCount, out var sdc)) {
-            SortByDropCount = ParseBool(sdc, SortByDropCount);
-        }
+        if (settings.TryGetValue(KeySortByDropCount, out var sdc)) SortByDropCount = ParseBool(sdc, SortByDropCount);
         if (settings.TryGetValue(KeyRecolorDC, out var rdc)) {
             RecolorDC = ParseBool(rdc, RecolorDC);
         }
-        if (settings.TryGetValue(KeyRecolorBC, out var rbc)) {
-            RecolorBC = ParseBool(rbc, RecolorBC);
-        }
+        if (settings.TryGetValue(KeyRecolorBC, out var rbc)) RecolorBC = ParseBool(rbc, RecolorBC);
     }
 
     private static bool ParseBool(string raw, bool fallback) =>

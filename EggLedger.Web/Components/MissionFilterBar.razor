@@ -296,9 +296,7 @@
 
     private async Task OnAdvancedDropsToggled(ChangeEventArgs e) {
         _optionCache.Remove("drops");
-        if (_advancedDropsSetting is { } setting) {
-            await setting.SetAsync(e.Value is true);
-        }
+        if (_advancedDropsSetting is { } setting) await setting.SetAsync(e.Value is true);
     }
 
     private List<FilterOption> OptionsFor(FilterFieldDef def) {

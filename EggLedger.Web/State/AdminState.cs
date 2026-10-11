@@ -1,6 +1,5 @@
 namespace EggLedger.Web.State;
 
-
 public sealed class AdminState {
     public bool IsAdmin {
         get;

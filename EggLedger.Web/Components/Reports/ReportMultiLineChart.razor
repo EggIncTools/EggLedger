@@ -101,9 +101,7 @@
     private List<List<ChartPoint>> AllSeriesPoints() {
         var nR = BucketCount;
         var result = new List<List<ChartPoint>>();
-        if (nR < 2) {
-            return result;
-        }
+        if (nR < 2) return result;
 
         var max = Math.Max(GlobalMax(), 1);
         var xStep = (W - ChartGeometry.PadLeft - ChartGeometry.PadRight) / (nR - 1);
@@ -126,9 +124,7 @@
     }
 
     private List<YTick> BuildTicks(double max) {
-        if (max == 0) {
-            return [];
-        }
+        if (max == 0) return [];
 
         var yRange = H - ChartGeometry.PadTop - ChartGeometry.PadBottom;
         var ci = CultureInfo.InvariantCulture;

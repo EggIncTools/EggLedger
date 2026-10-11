@@ -37,9 +37,7 @@
 
     protected override async Task OnParametersSetAsync() {
         var key = AccountId + ":" + View;
-        if (key == _loadedKey) {
-            return;
-        }
+        if (key == _loadedKey) return;
 
         _loadedKey = key;
         await LoadAsync();
@@ -86,18 +84,12 @@
             ReportDefinition? def = null;
             if (pin.Kind == PinnedReportKinds.Template) {
                 def = ReportTemplates.Find(pin.RefId);
-                if (def is not null) {
-                    def.AccountId = AccountId;
-                }
+                if (def is not null) def.AccountId = AccountId;
             } else {
                 var row = await ReportStore.RetrieveReportAsync(pin.RefId);
-                if (row is not null) {
-                    def = ReportMapping.ToDefinition(row, Logger);
-                }
+                if (row is not null) def = ReportMapping.ToDefinition(row, Logger);
             }
-            if (def is null) {
-                continue;
-            }
+            if (def is null) continue;
             resolvedPins.Add(pin);
             defs.Add(def);
         }
@@ -117,15 +109,11 @@
 
     private async Task OnPickAsync(FilterOption opt) {
         var parts = opt.Value.Split(':', 2);
-        if (parts.Length != 2) {
-            return;
-        }
+        if (parts.Length != 2) return;
 
         var kind = parts[0] == "template" ? PinnedReportKinds.Template : PinnedReportKinds.User;
         var refId = parts[1];
-        if (_pins.Exists(p => p.Kind == kind && p.RefId == refId)) {
-            return;
-        }
+        if (_pins.Exists(p => p.Kind == kind && p.RefId == refId)) return;
 
         await PinStore.InsertAsync(new PinnedReportRow {
             AccountId = AccountId,

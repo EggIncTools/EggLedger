@@ -68,17 +68,9 @@
 
     private string? InlineStyle() {
         var styles = new List<string>();
-        if (!string.IsNullOrEmpty(Config.BackgroundColor)) {
-            styles.Add($"background-color:{Config.BackgroundColor}");
-        }
-
-        if (!string.IsNullOrEmpty(Config.BorderColor)) {
-            styles.Add($"border:1px solid {Config.BorderColor}");
-        }
-
-        if (!string.IsNullOrEmpty(Config.AccentColor)) {
-            styles.Add($"border-left:4px solid {Config.AccentColor}");
-        }
+        if (!string.IsNullOrEmpty(Config.BackgroundColor)) styles.Add($"background-color:{Config.BackgroundColor}");
+        if (!string.IsNullOrEmpty(Config.BorderColor)) styles.Add($"border:1px solid {Config.BorderColor}");
+        if (!string.IsNullOrEmpty(Config.AccentColor)) styles.Add($"border-left:4px solid {Config.AccentColor}");
 
         return styles.Count == 0 ? null : string.Join(";", styles);
     }
@@ -214,17 +206,9 @@
     };
 
     private string RowColorClass(bool altMode, string fallback) {
-        if (IsBeingViewed) {
-            return altMode ? "text-selectedmissiondarker" : "text-selectedmission";
-        }
-
-        if (RecolorBC && Mission.IsBuggedCap) {
-            return altMode ? "text-buggedcapdarker" : "text-buggedcap";
-        }
-
-        if (RecolorDC && Mission.IsDubCap) {
-            return altMode ? "text-dubcapdarker" : "text-dubcap";
-        }
+        if (IsBeingViewed) return altMode ? "text-selectedmissiondarker" : "text-selectedmission";
+        if (RecolorBC && Mission.IsBuggedCap) return altMode ? "text-buggedcapdarker" : "text-buggedcap";
+        if (RecolorDC && Mission.IsDubCap) return altMode ? "text-dubcapdarker" : "text-dubcap";
 
         return fallback;
     }

@@ -6,7 +6,6 @@ using Npgsql;
 namespace EggLedger.Web.Server.Auth;
 
 public sealed class PostgresXmlRepository(NpgsqlDataSource source) : IXmlRepository {
-
     private static readonly RetryOptions RetryOpts = new() {
         MaxAttempts = 3,
         BaseDelay = TimeSpan.FromMilliseconds(100),
@@ -20,9 +19,7 @@ public sealed class PostgresXmlRepository(NpgsqlDataSource source) : IXmlReposit
         List<XElement> elements = [];
         using var cmd = source.CreateCommand("SELECT xml FROM data_protection_keys");
         using var reader = cmd.ExecuteReader();
-        while (reader.Read()) {
-            elements.Add(XElement.Parse(reader.GetString(0)));
-        }
+        while (reader.Read()) elements.Add(XElement.Parse(reader.GetString(0)));
         return elements;
     }
 

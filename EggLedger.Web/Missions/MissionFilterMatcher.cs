@@ -12,7 +12,6 @@ public sealed class MissionFilterMatcher {
     private readonly ShipDropsFetcher _fetchDrops;
     private readonly TimeZoneInfo _timeZone;
 
-
     private readonly Dictionary<int, PossibleMission> _shipConfigs;
     private readonly Dictionary<int, Dictionary<int, DurationConfig>> _durByShip;
     private readonly FilterEvaluator<DatabaseMission, FilterField> _evaluator;
@@ -53,7 +52,6 @@ public sealed class MissionFilterMatcher {
     public static DateTime LedgerDate(long timestampSeconds, TimeZoneInfo timeZone) =>
         TimeZoneInfo.ConvertTimeFromUtc(DateTimeOffset.FromUnixTimeSeconds(timestampSeconds).UtcDateTime, timeZone);
 
-
     public Task<bool> MatchesAsync(DatabaseMission mission, MissionFilter filter) =>
         _evaluator.MatchesAsync(mission, filter);
 
@@ -67,9 +65,7 @@ public sealed class MissionFilterMatcher {
         e is null ? null : Convert.ToInt32(e.Value, CultureInfo.InvariantCulture);
 
     private static bool DropSatisfies(DropMatch m, MissionDrop drop) {
-        if (m.Name is { } name && name != drop.Id) {
-            return false;
-        }
+        if (m.Name is { } name && name != drop.Id) return false;
         if (m.Level is { } level && level != drop.Level) {
             return false;
         }
@@ -78,9 +74,7 @@ public sealed class MissionFilterMatcher {
 
     private async Task<bool> MatchesDropAsync(DatabaseMission mission, FilterOperator op, DropMatch m) {
         var count = await MatchingDropCountOrNullAsync(mission, m).ConfigureAwait(false);
-        if (count is null) {
-            return false;
-        }
+        if (count is null) return false;
 
         bool anySatisfies = count > 0;
         return op == FilterOperator.NotContains ? !anySatisfies : anySatisfies;
@@ -93,33 +87,23 @@ public sealed class MissionFilterMatcher {
         var shipConfig = mission.Ship is { } shipEnum
             ? FindShipConfig(Convert.ToInt32(shipEnum, CultureInfo.InvariantCulture))
             : null;
-        if (shipConfig is null) {
-            return null;
-        }
+        if (shipConfig is null) return null;
         var durConfig = mission.DurationType is { } durEnum
             ? FindDurConfig(shipConfig, Convert.ToInt32(durEnum, CultureInfo.InvariantCulture))
             : null;
-        if (durConfig is null) {
-            return null;
-        }
+        if (durConfig is null) return null;
 
         if (m.Quality is { } q) {
             double maxQual = durConfig.MaxQuality + durConfig.LevelQualityBump * mission.Level;
-            if (q > maxQual || durConfig.MinQuality > q) {
-                return 0;
-            }
+            if (q > maxQual || durConfig.MinQuality > q) return 0;
         }
 
         var allDrops = await _fetchDrops(_accountId, mission.MissiondId).ConfigureAwait(false);
-        if (allDrops is null) {
-            return null;
-        }
+        if (allDrops is null) return null;
 
         int count = 0;
         foreach (var drop in allDrops) {
-            if (DropSatisfies(m, drop)) {
-                count++;
-            }
+            if (DropSatisfies(m, drop)) count++;
         }
         return count;
     }
@@ -132,16 +116,12 @@ public sealed class MissionFilterMatcher {
         return _durByShip.TryGetValue(shipKey, out var durs) && durs.TryGetValue(duration, out var d) ? d : null;
     }
 
-
     public async Task<bool> TestMissionAgainstFilterAsync(DatabaseMission mission, FilterCondition filter) {
 
-        if (string.IsNullOrEmpty(filter.TopLevel) || string.IsNullOrEmpty(filter.Op)) {
-            return false;
-        }
+        if (string.IsNullOrEmpty(filter.TopLevel) || string.IsNullOrEmpty(filter.Op)) return false;
         var typed = FilterCodec.FromLegacyCondition(filter);
         return typed is null || await MatchesAsync(mission, typed).ConfigureAwait(false);
     }
-
 
     public async Task<bool> MissionMatchesFilterAsync(
         DatabaseMission mission,

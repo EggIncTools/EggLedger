@@ -183,9 +183,7 @@
     }
 
     private static string Sanitize(string name) {
-        if (string.IsNullOrWhiteSpace(name)) {
-            return "account";
-        }
+        if (string.IsNullOrWhiteSpace(name)) return "account";
 
         var chars = name.Select(c => char.IsLetterOrDigit(c) ? c : '_').ToArray();
         return new string(chars);

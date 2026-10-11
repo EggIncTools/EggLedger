@@ -72,9 +72,7 @@ public sealed class LedgerDataHub : IDisposable {
         TaskCompletionSource<IReadOnlySet<string>> completion;
         lock (_gate) {
             entry = Touch(accountId);
-            if (entry.FilterMatches.TryGetValue(filterHash, out var hit)) {
-                return hit;
-            }
+            if (entry.FilterMatches.TryGetValue(filterHash, out var hit)) return hit;
 
             completion = new TaskCompletionSource<IReadOnlySet<string>>(
                 TaskCreationOptions.RunContinuationsAsynchronously);
@@ -101,9 +99,7 @@ public sealed class LedgerDataHub : IDisposable {
     }
 
     public void AttachFetch(FetchOrchestrator fetch) {
-        if (_detachFetch is not null) {
-            return;
-        }
+        if (_detachFetch is not null) return;
 
         fetch.FetchSucceeded += Invalidate;
         _detachFetch = () => fetch.FetchSucceeded -= Invalidate;
@@ -122,13 +118,8 @@ public sealed class LedgerDataHub : IDisposable {
         TaskCompletionSource<T?> completion;
         lock (_gate) {
             slot = pick(Touch(accountId));
-            if (slot.HasValue && _time.GetUtcNow().UtcDateTime - slot.LoadedAt < _ttl) {
-                return Task.FromResult(slot.Value);
-            }
-
-            if (slot.InFlight is { } pending) {
-                return pending;
-            }
+            if (slot.HasValue && _time.GetUtcNow().UtcDateTime - slot.LoadedAt < _ttl) return Task.FromResult(slot.Value);
+            if (slot.InFlight is { } pending) return pending;
 
             completion = new TaskCompletionSource<T?>(TaskCreationOptions.RunContinuationsAsynchronously);
             slot.InFlight = completion.Task;
@@ -186,9 +177,7 @@ public sealed class LedgerDataHub : IDisposable {
     }
 
     private static void ClearInFlight<T>(CacheSlot<T> slot, TaskCompletionSource<T?> completion) where T : class {
-        if (ReferenceEquals(slot.InFlight, completion.Task)) {
-            slot.InFlight = null;
-        }
+        if (ReferenceEquals(slot.InFlight, completion.Task)) slot.InFlight = null;
     }
 
     private AccountEntry Touch(string accountId) {

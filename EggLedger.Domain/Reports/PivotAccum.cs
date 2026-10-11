@@ -14,9 +14,7 @@ internal sealed class PivotAccum {
         public List<LabelEntry> Entries { get; } = [];
 
         public void Add(string display, string rawVal) {
-            if (!_seen.Add(display)) {
-                return;
-            }
+            if (!_seen.Add(display)) return;
             Entries.Add(new LabelEntry(display, rawVal));
         }
     }
@@ -40,12 +38,8 @@ internal sealed class PivotAccum {
         var rowEntries = _rows.Entries;
         var colEntries = _cols.Entries;
 
-        if (sortRows) {
-            StableSort(rowEntries, rowGroupBy);
-        }
-        if (sortCols) {
-            StableSort(colEntries, colGroupBy);
-        }
+        if (sortRows) StableSort(rowEntries, rowGroupBy);
+        if (sortCols) StableSort(colEntries, colGroupBy);
 
         var nR = rowEntries.Count;
         var nC = colEntries.Count;
@@ -64,9 +58,7 @@ internal sealed class PivotAccum {
 
         var matrix = new double[nR * nC];
         for (var r = 0; r < nR; r++) {
-            if (!_cells.TryGetValue(rowLabels[r], out var cellRow)) {
-                continue;
-            }
+            if (!_cells.TryGetValue(rowLabels[r], out var cellRow)) continue;
             for (var c = 0; c < nC; c++) {
                 cellRow.TryGetValue(colLabels[c], out var v);
                 matrix[(r * nC) + c] = v;
@@ -75,14 +67,11 @@ internal sealed class PivotAccum {
         return new Finalized(rowLabels, colLabels, rawRowLabels, rawColLabels, matrix);
     }
 
-
     private static void StableSort(List<LabelEntry> entries, string groupBy) {
         var ordered = entries
             .Select((e, i) => (e, i))
             .OrderBy(x => x, Comparer<(LabelEntry e, int i)>.Create((a, b) => {
-                if (Labels.LabelSortLess(groupBy, a.e.RawVal, b.e.RawVal)) {
-                    return -1;
-                }
+                if (Labels.LabelSortLess(groupBy, a.e.RawVal, b.e.RawVal)) return -1;
                 return Labels.LabelSortLess(groupBy, b.e.RawVal, a.e.RawVal) ? 1 : a.i.CompareTo(b.i);
             }))
             .Select(x => x.e)

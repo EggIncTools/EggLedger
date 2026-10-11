@@ -2,7 +2,6 @@ using EggLedger.Domain.Reports.Charts;
 
 namespace EggLedger.Domain.Tests.Reports;
 
-
 public class PieGeometryTests {
     [Fact]
     public void SlicePath_HalfCircle_MatchesVue() {

@@ -16,14 +16,10 @@ public abstract class AutoExporterBase(
         var all = await settings.GetAllSettingsAsync().ConfigureAwait(false);
         var model = new SettingsModel();
         model.LoadFrom(all);
-        if (!model.AutoExportCsv && !model.AutoExportXlsx) {
-            return [];
-        }
+        if (!model.AutoExportCsv && !model.AutoExportXlsx) return [];
 
         var responses = await store.GetPlayerCompleteMissionsAsync(accountId).ConfigureAwait(false);
-        if (responses is null || responses.Count == 0) {
-            return [];
-        }
+        if (responses is null || responses.Count == 0) return [];
 
         List<Mission> missions = [.. responses.Select(Mission.FromResponse)];
         var accounts = await queries.GetExistingDataAsync().ConfigureAwait(false);
@@ -39,9 +35,7 @@ public abstract class AutoExporterBase(
         CancellationToken cancellationToken);
 
     protected static string SanitizeName(string name) {
-        if (string.IsNullOrWhiteSpace(name)) {
-            return "account";
-        }
+        if (string.IsNullOrWhiteSpace(name)) return "account";
 
         var chars = name.Select(c => char.IsLetterOrDigit(c) ? c : '_').ToArray();
         return new string(chars);

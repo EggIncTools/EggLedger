@@ -22,9 +22,7 @@ public sealed class FilterDraft {
         var or = new List<IReadOnlyList<WebCondition>?>();
 
         foreach (var row in Rows) {
-            if (!IsComplete(row.Cond)) {
-                continue;
-            }
+            if (!IsComplete(row.Cond)) continue;
 
             and.Add(CloneOf(row.Cond));
             var siblings = row.Or.Where(IsComplete).Select(CloneOf).ToList();
@@ -39,9 +37,7 @@ public sealed class FilterDraft {
         IReadOnlyList<WebCondition>? and,
         IReadOnlyList<IReadOnlyList<WebCondition>?>? or) {
         Rows.Clear();
-        if (and is null) {
-            return;
-        }
+        if (and is null) return;
 
         for (var i = 0; i < and.Count; i++) {
             var row = new FilterDraftRow();
@@ -60,16 +56,12 @@ public sealed class FilterDraft {
     }
 
     public void EnsureTrailingRow() {
-        if (Rows.Count == 0 || IsComplete(Rows[^1].Cond)) {
-            Rows.Add(new FilterDraftRow());
-        }
+        if (Rows.Count == 0 || IsComplete(Rows[^1].Cond)) Rows.Add(new FilterDraftRow());
     }
 
     public void RemoveRow(int index) {
         Rows.RemoveAt(index);
-        if (Rows.Count == 0) {
-            Rows.Add(new FilterDraftRow());
-        }
+        if (Rows.Count == 0) Rows.Add(new FilterDraftRow());
     }
 
     private static WebCondition CloneOf(WebCondition c) =>

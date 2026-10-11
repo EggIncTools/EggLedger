@@ -4,30 +4,22 @@ namespace EggLedger.Domain.Export;
 
 public static class GoFloat {
     public static string FormatF(double v) {
-        if (double.IsNaN(v)) {
-            return "NaN";
-        }
+        if (double.IsNaN(v)) return "NaN";
         if (double.IsPositiveInfinity(v)) {
             return "+Inf";
         }
-        if (double.IsNegativeInfinity(v)) {
-            return "-Inf";
-        }
+        if (double.IsNegativeInfinity(v)) return "-Inf";
 
         string s = v.ToString("R", CultureInfo.InvariantCulture);
         return s.IndexOf('E') < 0 && s.IndexOf('e') < 0 ? s : ExpandExponential(s);
     }
 
     public static string FormatG(double v) {
-        if (double.IsNaN(v)) {
-            return "NaN";
-        }
+        if (double.IsNaN(v)) return "NaN";
         if (double.IsPositiveInfinity(v)) {
             return "+Inf";
         }
-        if (double.IsNegativeInfinity(v)) {
-            return "-Inf";
-        }
+        if (double.IsNegativeInfinity(v)) return "-Inf";
 
         string shortest = v.ToString("R", CultureInfo.InvariantCulture);
 
@@ -62,29 +54,23 @@ public static class GoFloat {
         string digits = intPart + fracPart;
         int pointPos = intPart.Length + exp;
 
-        string result = pointPos <= 0
-            ? "0." + new string('0', -pointPos) + digits
-            : pointPos >= digits.Length ? digits + new string('0', pointPos - digits.Length) :
-                digits[..pointPos] + "." + digits[pointPos..];
-        result = TrimDecimal(result);
+        string result = TrimDecimal(pointPos switch {
+            <= 0 => "0." + new string('0', -pointPos) + digits,
+            _ when pointPos >= digits.Length => digits + new string('0', pointPos - digits.Length),
+            _ => digits[..pointPos] + "." + digits[pointPos..],
+        });
         return neg ? "-" + result : result;
     }
 
     private static string TrimDecimal(string s) {
-        if (s.IndexOf('.') < 0) {
-            return s;
-        }
+        if (s.IndexOf('.') < 0) return s;
         s = s.TrimEnd('0');
-        if (s.EndsWith('.')) {
-            s = s[..^1];
-        }
+        if (s.EndsWith('.')) s = s[..^1];
         return s;
     }
 
     private static string NormalizeG(double v, string shortest) {
-        if (v == 0) {
-            return shortest;
-        }
+        if (v == 0) return shortest;
 
         string plain = shortest.IndexOfAny(['E', 'e']) >= 0 ? ExpandExponential(shortest) : shortest;
         string abs = plain.StartsWith('-') ? plain[1..] : plain;
@@ -100,9 +86,7 @@ public static class GoFloat {
         } else {
 
             int lead = 0;
-            while (lead < fracPart.Length && fracPart[lead] == '0') {
-                lead++;
-            }
+            while (lead < fracPart.Length && fracPart[lead] == '0') lead++;
             exp = -(lead + 1);
         }
 
@@ -111,13 +95,9 @@ public static class GoFloat {
 
     private static string ToGoExponential(bool neg, string intPart, string fracPart, int exp) {
         string digits = (intPart + fracPart).TrimStart('0');
-        if (digits.Length == 0) {
-            digits = "0";
-        }
+        if (digits.Length == 0) digits = "0";
         digits = digits.TrimEnd('0');
-        if (digits.Length == 0) {
-            digits = "0";
-        }
+        if (digits.Length == 0) digits = "0";
 
         string mantissa = digits.Length == 1
             ? digits

@@ -25,13 +25,9 @@ public static class MennoDecode {
             throw new MennoSchemaException("Menno data response was not valid JSON or did not match the expected shape", ex);
         }
 
-        if (items is null || items.Count == 0) {
-            throw new MennoSchemaException("Menno data response was empty or schema has changed");
-        }
+        if (items is null || items.Count == 0) throw new MennoSchemaException("Menno data response was empty or schema has changed");
 
-        for (int i = 0; i < items.Count; i++) {
-            Validate(items[i], i);
-        }
+        for (int i = 0; i < items.Count; i++) Validate(items[i], i);
         return items;
     }
 
@@ -86,13 +82,9 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null,
     public event Action? Changed;
 
     public Task<IReadOnlyList<ConfigurationItem>> EnsureLoadedAsync(CancellationToken cancellationToken = default) {
-        if (_cache is { Count: > 0 } cached) {
-            return Task.FromResult<IReadOnlyList<ConfigurationItem>>(cached);
-        }
+        if (_cache is { Count: > 0 } cached) return Task.FromResult<IReadOnlyList<ConfigurationItem>>(cached);
         lock (_gate) {
-            if (_cache is { Count: > 0 } cachedLocked) {
-                return Task.FromResult<IReadOnlyList<ConfigurationItem>>(cachedLocked);
-            }
+            if (_cache is { Count: > 0 } cachedLocked) return Task.FromResult<IReadOnlyList<ConfigurationItem>>(cachedLocked);
             if (_inFlight is null) {
                 IsLoading = true;
                 Changed?.Invoke();
@@ -116,14 +108,10 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null,
     }
 
     private async Task<IReadOnlyList<ConfigurationItem>?> TryLoadStoredAsync(CancellationToken cancellationToken) {
-        if (store is null) {
-            return null;
-        }
+        if (store is null) return null;
         try {
             var bytes = await store.LoadAsync(cancellationToken).ConfigureAwait(false);
-            if (bytes is null || bytes.Length == 0) {
-                return null;
-            }
+            if (bytes is null || bytes.Length == 0) return null;
             var items = MennoDecode.Decode(bytes);
             _cache = items;
             return items;
@@ -142,9 +130,7 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null,
 
         var items = MennoDecode.Decode(bytes);
         _cache = items;
-        if (store is not null) {
-            await store.SaveAsync(bytes, cancellationToken).ConfigureAwait(false);
-        }
+        if (store is not null) await store.SaveAsync(bytes, cancellationToken).ConfigureAwait(false);
         return items;
     }
 
@@ -161,13 +147,9 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null,
     public const int NoTarget = 10000;
 
     public IReadOnlyList<ConfigurationItem> GetData(int shipId, int durationId, int level, int targetId) {
-        if (_cache is not { Count: > 0 } items) {
-            return [];
-        }
+        if (_cache is not { Count: > 0 } items) return [];
         var matches = Filter(items, shipId, durationId, level, targetId);
-        if (matches.Count == 0 && targetId != NoTarget) {
-            matches = Filter(items, shipId, durationId, level, NoTarget);
-        }
+        if (matches.Count == 0 && targetId != NoTarget) matches = Filter(items, shipId, durationId, level, NoTarget);
         return matches;
     }
 
@@ -185,24 +167,16 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null,
         IReadOnlyList<ConfigurationItem> items,
         IReadOnlyList<string> rawRowLabels,
         IReadOnlyList<string> rawColLabels) {
-        if (!def.MennoEnabled) {
-            return null;
-        }
+        if (!def.MennoEnabled) return null;
         if (def.Subject != "artifacts") {
             return null;
         }
-        if (!Report.MennoComparableGroupBy(def.GroupBy) || !Report.MennoComparableGroupBy(def.SecondaryGroupBy)) {
-            return null;
-        }
-        if (items.Count == 0 || rawRowLabels.Count == 0 || rawColLabels.Count == 0) {
-            return null;
-        }
+        if (!Report.MennoComparableGroupBy(def.GroupBy) || !Report.MennoComparableGroupBy(def.SecondaryGroupBy)) return null;
+        if (items.Count == 0 || rawRowLabels.Count == 0 || rawColLabels.Count == 0) return null;
 
         var rowMatcher = MatcherFor(def.GroupBy);
         var colMatcher = MatcherFor(def.SecondaryGroupBy);
-        if (rowMatcher is null || colMatcher is null) {
-            return null;
-        }
+        if (rowMatcher is null || colMatcher is null) return null;
 
         var familySet = FamilyAfxIdSet(def.FamilyWeight);
 
@@ -254,13 +228,9 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null,
 
         foreach (var item in items) {
             for (int r = 0; r < nR; r++) {
-                if (!rowMatcher(item, rawRowLabels[r])) {
-                    continue;
-                }
+                if (!rowMatcher(item, rawRowLabels[r])) continue;
                 for (int c = 0; c < nC; c++) {
-                    if (!colMatcher(item, rawColLabels[c])) {
-                        continue;
-                    }
+                    if (!colMatcher(item, rawColLabels[c])) continue;
                     int idx = (r * nC) + c;
                     if (!isPct) {
                         double itemCap = LevelAdjustedCapacityFor(
@@ -277,9 +247,7 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null,
                                 (artifactTypeId, item.ArtifactConfiguration.ArtifactLevel), out var found)
                                 ? found
                                 : 0;
-                            if (cw > 0) {
-                                w = cw;
-                            }
+                            if (cw > 0) w = cw;
                         }
                         familyDrops[idx] += item.TotalDrops * w;
                     }
@@ -354,44 +322,32 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null,
                         durId = ParseIntOrZero(rawColLabels[c]);
                     }
                     double nominalSecs = DurationSecondsFor(shipId, durId);
-                    if (nominalSecs > 0) {
-                        airtimeMatrixValues![idx] = fd / estMissions / (nominalSecs / 3600.0);
-                    }
+                    if (nominalSecs > 0) airtimeMatrixValues![idx] = fd / estMissions / (nominalSecs / 3600.0);
                 }
             }
         }
 
-        if (isPct) {
-            Matrix.Apply2DPctNormalization(matrixValues, nR, nC, pctMode);
-        }
+        if (isPct) Matrix.Apply2DPctNormalization(matrixValues, nR, nC, pctMode);
 
         return (matrixValues, airtimeMatrixValues);
     }
 
     internal static IReadOnlyList<ConfigurationItem> FilterByReportConditions(
         ReportDefinition def, IReadOnlyList<ConfigurationItem> items) {
-        if (def.Filters.And.Count == 0 && def.Filters.Or.Count == 0) {
-            return items;
-        }
+        if (def.Filters.And.Count == 0 && def.Filters.Or.Count == 0) return items;
         var result = new List<ConfigurationItem>(items.Count);
         foreach (var item in items) {
-            if (PassesReportFilters(def, item)) {
-                result.Add(item);
-            }
+            if (PassesReportFilters(def, item)) result.Add(item);
         }
         return result;
     }
 
     private static bool PassesReportFilters(ReportDefinition def, ConfigurationItem item) {
         foreach (var c in def.Filters.And) {
-            if (!EvalCondition(c, item)) {
-                return false;
-            }
+            if (!EvalCondition(c, item)) return false;
         }
         foreach (var group in def.Filters.Or) {
-            if (group.Count == 0) {
-                continue;
-            }
+            if (group.Count == 0) continue;
             var any = false;
             foreach (var c in group) {
                 if (EvalCondition(c, item)) {
@@ -399,9 +355,7 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null,
                     break;
                 }
             }
-            if (!any) {
-                return false;
-            }
+            if (!any) return false;
         }
         return true;
     }
@@ -422,9 +376,7 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null,
     }
 
     private static bool CompareNumeric(FilterCondition c, long actual) {
-        if (c.Op is not ("=" or "!=" or ">" or "<" or ">=" or "<=")) {
-            return true;
-        }
+        if (c.Op is not ("=" or "!=" or ">" or "<" or ">=" or "<=")) return true;
         return !TryInt(c.Val, out var target) || c.Op switch {
             "=" => actual == target,
             "!=" => actual != target,
@@ -438,7 +390,6 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null,
 
     private delegate bool MennoMatcher(ConfigurationItem item, string rawVal);
 
-
     private static MennoMatcher? MatcherFor(string groupBy) => groupBy switch {
         "ship_type" => (item, raw) => TryInt(raw, out var v) && item.ShipConfiguration!.ShipType!.Id == v,
         "duration_type" => (item, raw) => TryInt(raw, out var v) && item.ShipConfiguration!.ShipDurationType!.Id == v,
@@ -451,9 +402,7 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null,
     };
 
     private static HashSet<int>? FamilyAfxIdSet(string familyWeight) {
-        if (familyWeight == "") {
-            return null;
-        }
+        if (familyWeight == "") return null;
         return EiafxData.FamilyAfxIds.TryGetValue(familyWeight, out var ids) ? [.. ids] : null;
     }
 
@@ -461,15 +410,11 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null,
         var ship = (MissionInfo.Spaceship)shipId;
         var dur = (MissionInfo.DurationType)durationId;
         foreach (var mp in EiafxConfig.Config.mission_parameters) {
-            if (mp.Ship != ship) {
-                continue;
-            }
+            if (mp.Ship != ship) continue;
             foreach (var d in mp.Durations) {
                 if (d.DurationType == dur) {
                     double cap = d.Capacity + (d.LevelCapacityBump * (double)level);
-                    if (cap > 0) {
-                        return cap;
-                    }
+                    if (cap > 0) return cap;
                 }
             }
         }
@@ -480,13 +425,9 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null,
         var ship = (MissionInfo.Spaceship)shipId;
         var dur = (MissionInfo.DurationType)durationId;
         foreach (var mp in EiafxConfig.Config.mission_parameters) {
-            if (mp.Ship != ship) {
-                continue;
-            }
+            if (mp.Ship != ship) continue;
             foreach (var d in mp.Durations) {
-                if (d.DurationType == dur) {
-                    return d.Seconds;
-                }
+                if (d.DurationType == dur) return d.Seconds;
             }
         }
         return 0;

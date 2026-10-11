@@ -2,7 +2,6 @@ using EggLedger.Domain.Reports;
 
 namespace EggLedger.Domain.Tests.Reports;
 
-
 public class ReportGridLayoutTests {
     private static ReportDefinition Def(int w, int h) => new() { GridW = w, GridH = h };
 

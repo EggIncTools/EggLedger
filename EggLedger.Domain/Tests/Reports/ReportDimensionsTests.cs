@@ -2,7 +2,6 @@ using EggLedger.Domain.Reports;
 
 namespace EggLedger.Domain.Tests.Reports;
 
-
 public class ReportDimensionsTests {
     [Fact]
     public void Mission_HasExpectedValuesAndLabels() {

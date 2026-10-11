@@ -14,8 +14,6 @@ public sealed class EggLedgerBotHostedService(BotConfig config, ILogger<EggLedge
     }
 
     public async Task StopAsync(CancellationToken cancellationToken) {
-        if (Bot is not null) {
-            await Bot.DisposeAsync();
-        }
+        if (Bot is not null) await Bot.DisposeAsync();
     }
 }

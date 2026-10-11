@@ -33,9 +33,7 @@ public static class ArchiveExtraction {
 
         TarEntry? entry;
         while ((entry = tar.GetNextEntry()) is not null) {
-            if (entry.EntryType is not (TarEntryType.RegularFile or TarEntryType.V7RegularFile)) {
-                continue;
-            }
+            if (entry.EntryType is not (TarEntryType.RegularFile or TarEntryType.V7RegularFile)) continue;
             if (entry.Length <= 0 || entry.DataStream is null) {
                 continue;
             }
@@ -52,9 +50,7 @@ public static class ArchiveExtraction {
 
         ZipArchiveEntry? target = null;
         foreach (var entry in zip.Entries) {
-            if (IsDirectoryEntry(entry)) {
-                continue;
-            }
+            if (IsDirectoryEntry(entry)) continue;
             if (entry.FullName.Contains("/MacOS/", StringComparison.Ordinal)) {
                 target = entry;
                 break;
@@ -63,9 +59,7 @@ public static class ArchiveExtraction {
 
         if (target is null) {
             foreach (var entry in zip.Entries) {
-                if (IsDirectoryEntry(entry)) {
-                    continue;
-                }
+                if (IsDirectoryEntry(entry)) continue;
                 if (Path.GetExtension(entry.FullName).Length == 0) {
                     target = entry;
                     break;
@@ -73,9 +67,7 @@ public static class ArchiveExtraction {
             }
         }
 
-        if (target is null) {
-            throw new InvalidOperationException("no suitable binary found in zip archive");
-        }
+        if (target is null) throw new InvalidOperationException("no suitable binary found in zip archive");
 
         using var src = target.Open();
         using var dst = new FileStream(destPath, FileMode.Create, FileAccess.Write, FileShare.None);
@@ -86,9 +78,7 @@ public static class ArchiveExtraction {
         entry.FullName.EndsWith('/') || string.IsNullOrEmpty(entry.Name);
 
     private static void SetExecutableBit(string path) {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-            return;
-        }
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
         File.SetUnixFileMode(path, ExecutableMode);
     }
 }

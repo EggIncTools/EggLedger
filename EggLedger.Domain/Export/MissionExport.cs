@@ -21,9 +21,7 @@ public static class MissionExport {
     private static int MaxArtifactCount(IReadOnlyList<Mission> missions) {
         int max = 0;
         foreach (var m in missions) {
-            if (m.ArtifactNames.Count > max) {
-                max = m.ArtifactNames.Count;
-            }
+            if (m.ArtifactNames.Count > max) max = m.ArtifactNames.Count;
         }
         return max;
     }
@@ -48,9 +46,7 @@ public static class MissionExport {
             m.Capacity.ToString(CultureInfo.InvariantCulture),
             Mission.GetNamedTarget(m.TargetArtifact),
         };
-        for (int i = 0; i < mac; i++) {
-            row.Add(i < m.ArtifactNames.Count ? m.ArtifactNames[i] : "");
-        }
+        for (int i = 0; i < mac; i++) row.Add(i < m.ArtifactNames.Count ? m.ArtifactNames[i] : "");
         return row;
     }
 
@@ -58,9 +54,7 @@ public static class MissionExport {
         int mac = MaxArtifactCount(missions);
         var sb = new StringBuilder();
         WriteCsvRecord(sb, BuildHeader(mac));
-        foreach (var m in missions) {
-            WriteCsvRecord(sb, BuildCsvRow(m, mac));
-        }
+        foreach (var m in missions) WriteCsvRecord(sb, BuildCsvRow(m, mac));
         return Encoding.UTF8.GetBytes(sb.ToString());
     }
 
@@ -72,21 +66,13 @@ public static class MissionExport {
 
         int maxArtifactNameLen = 0;
         foreach (var m in missions) {
-            foreach (var name in m.ArtifactNames) {
-                if (name.Length > maxArtifactNameLen) {
-                    maxArtifactNameLen = name.Length;
-                }
-            }
+            foreach (var name in m.ArtifactNames) if (name.Length > maxArtifactNameLen) maxArtifactNameLen = name.Length;
         }
         double artifactColWidth = maxArtifactNameLen + 5;
 
         var colWidths = new double[ColumnDefs.Length + mac];
-        for (int i = 0; i < ColumnDefs.Length; i++) {
-            colWidths[i] = ColumnDefs[i].Width;
-        }
-        for (int i = 0; i < mac; i++) {
-            colWidths[ColumnDefs.Length + i] = artifactColWidth;
-        }
+        for (int i = 0; i < ColumnDefs.Length; i++) colWidths[i] = ColumnDefs[i].Width;
+        for (int i = 0; i < mac; i++) colWidths[ColumnDefs.Length + i] = artifactColWidth;
 
         using var ms = new MemoryStream();
         using (var w = XlsxWriter.New(ms)) {
@@ -107,9 +93,7 @@ public static class MissionExport {
                     XlsxCell.Number(m.Capacity),
                     XlsxCell.String(Mission.GetNamedTarget(m.TargetArtifact)),
                 };
-                for (int i = 0; i < mac; i++) {
-                    row.Add(XlsxCell.String(i < m.ArtifactNames.Count ? m.ArtifactNames[i] : ""));
-                }
+                for (int i = 0; i < mac; i++) row.Add(XlsxCell.String(i < m.ArtifactNames.Count ? m.ArtifactNames[i] : ""));
                 w.WriteRow(row);
             }
             w.Close();
@@ -124,18 +108,14 @@ public static class MissionExport {
 
     private static void WriteCsvRecord(StringBuilder sb, List<string> fields) {
         for (int i = 0; i < fields.Count; i++) {
-            if (i > 0) {
-                sb.Append(',');
-            }
+            if (i > 0) sb.Append(',');
             sb.Append(QuoteCsvField(fields[i]));
         }
         sb.Append("\r\n");
     }
 
     private static string QuoteCsvField(string field) {
-        if (!NeedsQuoting(field)) {
-            return field;
-        }
+        if (!NeedsQuoting(field)) return field;
         var sb = new StringBuilder(field.Length + 2);
         sb.Append('"');
         foreach (char c in field) {

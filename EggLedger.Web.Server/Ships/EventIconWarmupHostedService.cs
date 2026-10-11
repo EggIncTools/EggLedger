@@ -4,9 +4,7 @@ namespace EggLedger.Web.Server.Ships;
 
 public sealed class EventIconWarmupHostedService(GameEventsService events, EventIconCache icons, ILogger<EventIconWarmupHostedService> logger) : IHostedService {
     public Task StartAsync(CancellationToken cancellationToken) {
-        if (!events.IsConfigured || !icons.IsConfigured) {
-            return Task.CompletedTask;
-        }
+        if (!events.IsConfigured || !icons.IsConfigured) return Task.CompletedTask;
 
         _ = Task.Run(() => WarmAsync(cancellationToken), CancellationToken.None);
         return Task.CompletedTask;

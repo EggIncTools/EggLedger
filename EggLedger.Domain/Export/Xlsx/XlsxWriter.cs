@@ -51,9 +51,7 @@ public sealed class XlsxWriter : IDisposable {
     }
 
     public void Close() {
-        if (_closed) {
-            return;
-        }
+        if (_closed) return;
         if (!_sheetStarted) {
             StartSheet();
             _sheetStarted = true;
@@ -90,9 +88,7 @@ public sealed class XlsxWriter : IDisposable {
     }
 
     private void WriteStaticEntries() {
-        foreach (var (name, content) in StaticEntries) {
-            WriteEntry(name, content);
-        }
+        foreach (var (name, content) in StaticEntries) WriteEntry(name, content);
     }
 
     private void WriteEntry(string name, string content) {

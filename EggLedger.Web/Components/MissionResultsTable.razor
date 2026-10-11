@@ -181,9 +181,7 @@
             return;
         }
 
-        if (!SelectedIds.Remove(missionId)) {
-            SelectedIds.Add(missionId);
-        }
+        if (!SelectedIds.Remove(missionId)) SelectedIds.Add(missionId);
 
         _lastToggledId = missionId;
         await OnSelectionChanged.InvokeAsync();
@@ -198,24 +196,15 @@
         var fromIndex = -1;
         var toIndex = -1;
         for (var i = 0; i < order.Count; i++) {
-            if (order[i].MissiondId == fromId) {
-                fromIndex = i;
-            }
-
-            if (order[i].MissiondId == toId) {
-                toIndex = i;
-            }
+            if (order[i].MissiondId == fromId) fromIndex = i;
+            if (order[i].MissiondId == toId) toIndex = i;
         }
 
-        if (fromIndex < 0 || toIndex < 0) {
-            return false;
-        }
+        if (fromIndex < 0 || toIndex < 0) return false;
 
         var start = Math.Min(fromIndex, toIndex);
         var end = Math.Max(fromIndex, toIndex);
-        for (var i = start; i <= end; i++) {
-            SelectedIds.Add(order[i].MissiondId);
-        }
+        for (var i = start; i <= end; i++) SelectedIds.Add(order[i].MissiondId);
 
         return true;
     }
@@ -226,14 +215,10 @@
 
     private bool AllExpanded {
         get {
-            if (Grouping is null) {
-                return true;
-            }
+            if (Grouping is null) return true;
 
             foreach (var y in Grouping.Arrays.Year) {
-                if (!y.Enabled) {
-                    return false;
-                }
+                if (!y.Enabled) return false;
             }
 
             return true;
@@ -241,30 +226,22 @@
     }
 
     private async Task ToggleAll() {
-        if (Grouping is null) {
-            return;
-        }
+        if (Grouping is null) return;
 
         SetAll(!AllExpanded);
         await NotifyAsync();
     }
 
     private void SetAll(bool enabled) {
-        foreach (var y in Grouping!.Arrays.Year) {
-            y.Enabled = enabled;
-        }
+        foreach (var y in Grouping!.Arrays.Year) y.Enabled = enabled;
 
         foreach (var months in Grouping.Arrays.Month) {
-            foreach (var mo in months) {
-                mo.Enabled = enabled;
-            }
+            foreach (var mo in months) mo.Enabled = enabled;
         }
 
         foreach (var yearDays in Grouping.Arrays.Day) {
             foreach (var monthDays in yearDays) {
-                foreach (var d in monthDays) {
-                    d.Enabled = enabled;
-                }
+                foreach (var d in monthDays) d.Enabled = enabled;
             }
         }
     }
@@ -288,11 +265,7 @@
     }
 
     private int? GetDropCount(string missionId) {
-        if (DropCounts is not null && DropCounts.TryGetValue(missionId, out var count)) {
-            return count;
-        }
-
-        return null;
+        return DropCounts is not null && DropCounts.TryGetValue(missionId, out var count) ? count : null;
     }
 
     private async Task NotifyAsync() {

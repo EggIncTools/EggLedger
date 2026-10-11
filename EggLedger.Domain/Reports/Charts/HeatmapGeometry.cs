@@ -29,15 +29,11 @@ public static class HeatmapGeometry {
         double globalMax,
         string? normalizeBy,
         double? colorValue) {
-        if (colorValue is double cv) {
-            return Math.Max(0.12, cv > 0 ? Math.Min(cv / 2, 1) : 0);
-        }
+        if (colorValue is double cv) return Math.Max(0.12, cv > 0 ? Math.Min(cv / 2, 1) : 0);
         if (IsPct(normalizeBy)) {
             return Math.Max(0.12, value / 100);
         }
-        if (normalizeBy == "ratio") {
-            return Math.Max(0.12, Math.Min(value / 2, 1));
-        }
+        if (normalizeBy == "ratio") return Math.Max(0.12, Math.Min(value / 2, 1));
         return Math.Max(0.12, globalMax > 0 ? value / globalMax : 0);
     }
 
@@ -74,33 +70,21 @@ public static class HeatmapGeometry {
     }
 
     public static string DisplayValue(double value, string? normalizeBy, bool belowThreshold) {
-        if (belowThreshold) {
-            return "-";
-        }
+        if (belowThreshold) return "-";
         if (normalizeBy == "ratio") {
             return value == 0 ? "-" : "x" + value.ToString("0.00", CultureInfo.InvariantCulture);
         }
-        if (value == 0) {
-            return "0";
-        }
-        if (IsPct(normalizeBy)) {
-            return value.ToString("0.0", CultureInfo.InvariantCulture) + "%";
-        }
+        if (value == 0) return "0";
+        if (IsPct(normalizeBy)) return value.ToString("0.0", CultureInfo.InvariantCulture) + "%";
         return value % 1 == 0
             ? ((long)value).ToString(CultureInfo.InvariantCulture)
             : value.ToString("0.00", CultureInfo.InvariantCulture);
     }
 
     public static string SecondaryDisplayValue(double value, string? normalizeBy, bool belowThreshold) {
-        if (belowThreshold) {
-            return "";
-        }
-        if (value == 0) {
-            return "0";
-        }
-        if (IsPct(normalizeBy)) {
-            return value.ToString("0.0", CultureInfo.InvariantCulture) + "%";
-        }
+        if (belowThreshold) return "";
+        if (value == 0) return "0";
+        if (IsPct(normalizeBy)) return value.ToString("0.0", CultureInfo.InvariantCulture) + "%";
         return value % 1 == 0
             ? ((long)value).ToString(CultureInfo.InvariantCulture)
             : value.ToString("0.00", CultureInfo.InvariantCulture);

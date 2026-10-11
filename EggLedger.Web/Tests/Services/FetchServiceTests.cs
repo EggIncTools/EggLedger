@@ -66,7 +66,6 @@ public sealed class FetchServiceTests {
         return ToApiBody(fc);
     }
 
-
     private static string InProgressFirstContactBody(params (string Id, MissionInfo.Status Status)[] inProgress) {
         var afxdb = new ArtifactsDB();
         foreach (var (id, status) in inProgress) {
@@ -89,7 +88,6 @@ public sealed class FetchServiceTests {
         };
         return ToApiBody(fc);
     }
-
 
     private static string InvalidFirstContactBody() {
         var fc = new EggIncFirstContactResponse();
@@ -120,7 +118,6 @@ public sealed class FetchServiceTests {
         return Convert.ToBase64String(authBytes.ToArray());
     }
 
-
     private sealed class RoutingHandler(string firstContactBody, Func<string, string?> completeMission) : HttpMessageHandler {
         public int FirstContactHits;
         public readonly List<string> CompleteMissionRequests = [];
@@ -148,7 +145,6 @@ public sealed class FetchServiceTests {
 
         private static HttpResponseMessage Ok(string? body) =>
             new(System.Net.HttpStatusCode.OK) { Content = new StringContent(body ?? "") };
-
 
         private static string ExtractMissionId(string form) {
             const string prefix = "data=";
@@ -423,7 +419,6 @@ public sealed class FetchServiceTests {
             CompletePayload = gzipped.ToArray(),
         };
     }
-
 
     private sealed class SynchronousProgress<T>(Action<T> handler) : IProgress<T> {
         public void Report(T value) => handler(value);

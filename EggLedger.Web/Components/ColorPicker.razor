@@ -70,9 +70,7 @@
     private void Close() => _open = false;
 
     private void OnKeyDown(KeyboardEventArgs e) {
-        if (e.Key == "Escape") {
-            _open = false;
-        }
+        if (e.Key == "Escape") _open = false;
     }
 
     private void SyncFromHex(string hex) {

@@ -34,9 +34,7 @@ public static class MissionGrouper {
         IReadOnlyList<DatabaseMission>? missions,
         Func<long, DateTime> ledgerDate,
         bool collapseOlderSections) {
-        if (missions is null || missions.Count == 0) {
-            return new MissionGrouping { AllVisible = true };
-        }
+        if (missions is null || missions.Count == 0) return new MissionGrouping { AllVisible = true };
 
         var byDay = MissionDateBucketing.ByDay(missions, ledgerDate);
 

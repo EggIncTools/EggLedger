@@ -7,9 +7,7 @@ public sealed class CloudAutoSyncCoordinator(ToastService toast, CircuitBreaker 
     public event Func<Task>? Triggered;
 
     public async Task NotifySettingsChangedAsync() {
-        if (Triggered is null) {
-            return;
-        }
+        if (Triggered is null) return;
 
         if (breaker.State == CircuitState.Open) {
             PushUnreachableToast();

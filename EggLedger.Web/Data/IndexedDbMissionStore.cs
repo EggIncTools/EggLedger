@@ -18,9 +18,7 @@ public sealed class IndexedDbMissionStore(IIndexedDb db, IApiPayloadDecoder deco
     }
 
     public async Task<IReadOnlyList<KnownAccount>> GetKnownAccountsAsync() {
-        if (accounts is null) {
-            return [];
-        }
+        if (accounts is null) return [];
         var known = await accounts.GetKnownAccountsAsync().ConfigureAwait(false);
         return [.. known.Select(a => a.ToKnownAccount())];
     }
@@ -50,13 +48,9 @@ public sealed class IndexedDbMissionStore(IIndexedDb db, IApiPayloadDecoder deco
     public async Task<CompleteMissionResponse?> GetCompleteMissionAsync(string playerId, string missionId) {
 
         var key = DecodeKey(playerId, missionId);
-        if (DecodeCacheGet(key) is { } hit) {
-            return hit;
-        }
+        if (DecodeCacheGet(key) is { } hit) return hit;
         var row = await db.GetAsync<MissionRow>(IndexedDbStores.Mission, new object[] { playerId, missionId }).ConfigureAwait(false);
-        if (row is null) {
-            return null;
-        }
+        if (row is null) return null;
         try {
             var decoded = await DecodeAsync(row).ConfigureAwait(false);
             DecodeCachePut(key, decoded);
@@ -90,9 +84,7 @@ public sealed class IndexedDbMissionStore(IIndexedDb db, IApiPayloadDecoder deco
             for (int start = 0; start < rows.Count; start += batch) {
                 int end = Math.Min(start + batch, rows.Count);
                 var tasks = new Task[end - start];
-                foreach (int idx in Enumerable.Range(start, end - start)) {
-                    tasks[idx - start] = Assign(idx);
-                }
+                foreach (int idx in Enumerable.Range(start, end - start)) tasks[idx - start] = Assign(idx);
                 await Task.WhenAll(tasks).ConfigureAwait(false);
             }
             return result;
@@ -115,9 +107,7 @@ public sealed class IndexedDbMissionStore(IIndexedDb db, IApiPayloadDecoder deco
 
     private CompleteMissionResponse? DecodeCacheGet(string key) {
         lock (_decodeGate) {
-            if (!_decodeIndex.TryGetValue(key, out var node)) {
-                return null;
-            }
+            if (!_decodeIndex.TryGetValue(key, out var node)) return null;
             _decodeLru.Remove(node);
             _decodeLru.AddFirst(node);
             return node.Value.Value;
@@ -268,9 +258,7 @@ public sealed class IndexedDbMissionStore(IIndexedDb db, IApiPayloadDecoder deco
             var existing = await db.GetAsync<BackupRow>(IndexedDbStores.Backup, playerId);
             if (existing is not null) {
                 double gapSeconds = timestamp - existing.RecordedAt;
-                if (gapSeconds < minimumGap.TotalSeconds) {
-                    return;
-                }
+                if (gapSeconds < minimumGap.TotalSeconds) return;
             }
         }
 
@@ -342,9 +330,7 @@ public sealed class IndexedDbMissionStore(IIndexedDb db, IApiPayloadDecoder deco
         var keep = new HashSet<string>(StringComparer.Ordinal);
         var rows = new List<object>(missions.Count);
         foreach (var mission in missions) {
-            if (!keep.Add(mission.MissiondId)) {
-                continue;
-            }
+            if (!keep.Add(mission.MissiondId)) continue;
             rows.Add(new InFlightMissionRow {
                 PlayerId = playerId,
                 MissionId = mission.MissiondId,
@@ -354,9 +340,7 @@ public sealed class IndexedDbMissionStore(IIndexedDb db, IApiPayloadDecoder deco
         }
 
         try {
-            if (rows.Count > 0) {
-                await db.PutManyAsync(IndexedDbStores.InFlightMission, rows).ConfigureAwait(false);
-            }
+            if (rows.Count > 0) await db.PutManyAsync(IndexedDbStores.InFlightMission, rows).ConfigureAwait(false);
 
             var stored = await db
                 .GetAllByIndexAsync<InFlightMissionRow>(IndexedDbStores.InFlightMission, IndexedDbStores.PlayerIdIndex, playerId)
@@ -396,9 +380,7 @@ public sealed class IndexedDbMissionStore(IIndexedDb db, IApiPayloadDecoder deco
                 logger?.LogDebug(ex, "in-flight mission payload unreadable for {MissionId}", row.MissionId);
                 continue;
             }
-            if (mission is not null) {
-                result.Add(mission);
-            }
+            if (mission is not null) result.Add(mission);
         }
 
         result.Sort((a, b) => a.LaunchDT.CompareTo(b.LaunchDT));
@@ -417,7 +399,6 @@ public sealed class IndexedDbMissionStore(IIndexedDb db, IApiPayloadDecoder deco
         var rows = await db.GetAllByIndexAsync<MissionRow>(IndexedDbStores.Mission, IndexedDbStores.PlayerIdIndex, playerId);
         return [.. rows];
     }
-
 
     private async Task<List<MissionMetaRow>> PlayerMetaRowsAsync(string playerId) {
         var rows = await db.GetAllByIndexProjectedAsync<MissionMetaRow>(IndexedDbStores.Mission, IndexedDbStores.PlayerIdIndex, playerId);
@@ -443,22 +424,16 @@ public sealed class IndexedDbMissionStore(IIndexedDb db, IApiPayloadDecoder deco
 
         var dropRows = await db.GetAllByIndexAsync<ArtifactDropRow>(IndexedDbStores.ArtifactDrops, IndexedDbStores.PlayerIdIndex, playerId).ConfigureAwait(false);
         foreach (var row in dropRows) {
-            if (row.Id is { } id) {
-                await db.DeleteAsync(IndexedDbStores.ArtifactDrops, id).ConfigureAwait(false);
-            }
+            if (row.Id is { } id) await db.DeleteAsync(IndexedDbStores.ArtifactDrops, id).ConfigureAwait(false);
         }
 
         var fuelRows = await db.GetAllByIndexAsync<FuelRow>(IndexedDbStores.MissionFuel, IndexedDbStores.PlayerIdIndex, playerId).ConfigureAwait(false);
         foreach (var row in fuelRows) {
-            if (row.Id is { } id) {
-                await db.DeleteAsync(IndexedDbStores.MissionFuel, id).ConfigureAwait(false);
-            }
+            if (row.Id is { } id) await db.DeleteAsync(IndexedDbStores.MissionFuel, id).ConfigureAwait(false);
         }
 
         var inFlightRows = await db.GetAllByIndexAsync<InFlightMissionRow>(IndexedDbStores.InFlightMission, IndexedDbStores.PlayerIdIndex, playerId).ConfigureAwait(false);
-        foreach (var row in inFlightRows) {
-            await db.DeleteAsync(IndexedDbStores.InFlightMission, new object[] { playerId, row.MissionId }).ConfigureAwait(false);
-        }
+        foreach (var row in inFlightRows) await db.DeleteAsync(IndexedDbStores.InFlightMission, new object[] { playerId, row.MissionId }).ConfigureAwait(false);
 
         await db.DeleteAsync(IndexedDbStores.Backup, playerId).ConfigureAwait(false);
     }

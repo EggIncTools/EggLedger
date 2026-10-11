@@ -128,18 +128,14 @@ public static class CloudSyncBlobs {
         var groups = new List<ReportGroupRow>();
         var seenGroups = new HashSet<string>(existingGroupIds, StringComparer.Ordinal);
         foreach (var g in remote.Groups ?? []) {
-            if (string.IsNullOrEmpty(g.Id) || !seenGroups.Add(g.Id)) {
-                continue;
-            }
+            if (string.IsNullOrEmpty(g.Id) || !seenGroups.Add(g.Id)) continue;
             groups.Add(g.ToRow());
         }
 
         var reports = new List<ReportRow>();
         var seenReports = new HashSet<string>(existingReportIds, StringComparer.Ordinal);
         foreach (var d in remote.Reports ?? []) {
-            if (string.IsNullOrEmpty(d.Id) || !seenReports.Add(d.Id)) {
-                continue;
-            }
+            if (string.IsNullOrEmpty(d.Id) || !seenReports.Add(d.Id)) continue;
             reports.Add(ReportMapping.ToRow(d));
         }
 

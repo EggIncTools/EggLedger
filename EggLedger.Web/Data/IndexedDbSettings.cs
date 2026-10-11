@@ -5,9 +5,7 @@ public sealed class IndexedDbSettings(IIndexedDb db) {
     private Dictionary<string, string>? _cache;
 
     public async Task<Dictionary<string, string>> GetAllSettingsAsync() {
-        if (_cache is { } cached) {
-            return [with(cached)];
-        }
+        if (_cache is { } cached) return [with(cached)];
 
         var rows = await _db.GetAllAsync<SettingRow>(IndexedDbStores.Settings);
         var result = rows.ToDictionary(row => row.Key, row => row.Value);
@@ -17,9 +15,7 @@ public sealed class IndexedDbSettings(IIndexedDb db) {
 
     public async Task SetSettingAsync(string key, string value) {
         await _db.PutAsync(IndexedDbStores.Settings, new SettingRow { Key = key, Value = value });
-        if (_cache is { } cached) {
-            cached[key] = value;
-        }
+        if (_cache is { } cached) cached[key] = value;
     }
 
     public async Task RemoveSettingAsync(string key) {
@@ -31,9 +27,7 @@ public sealed class IndexedDbSettings(IIndexedDb db) {
         var rows = settings.Select(kv => (object)new SettingRow { Key = kv.Key, Value = kv.Value });
         await _db.PutManyAsync(IndexedDbStores.Settings, rows);
         if (_cache is { } cached) {
-            foreach (var kv in settings) {
-                cached[kv.Key] = kv.Value;
-            }
+            foreach (var kv in settings) cached[kv.Key] = kv.Value;
         }
     }
 }

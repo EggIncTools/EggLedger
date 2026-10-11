@@ -76,9 +76,7 @@ public sealed class HandshakeListener : IDisposable {
             }
 
             response.StatusCode = (int)HttpStatusCode.OK;
-            if (Interlocked.CompareExchange(ref _handoffDone, 1, 0) == 0) {
-                _served.TrySetResult();
-            }
+            if (Interlocked.CompareExchange(ref _handoffDone, 1, 0) == 0) _served.TrySetResult();
         } finally {
             try {
                 response.Close();

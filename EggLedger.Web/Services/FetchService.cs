@@ -94,9 +94,7 @@ public sealed class FetchService(ApiClient api, IndexedDbMissionStore store, Ind
         Info(string.Create(CultureInfo.InvariantCulture,
             $"found &148c32<{completed.Count} completed> missions, &148c32<{fc.GetInProgressMissions().Count} in-progress> missions, &148c32<{toFetch.Count} to fetch>"));
 
-        if (cancellationToken.IsCancellationRequested) {
-            return Interrupt();
-        }
+        if (cancellationToken.IsCancellationRequested) return Interrupt();
 
         var saved = await settings.GetAllSettingsAsync().ConfigureAwait(false);
         var failures = new List<FailedMission>();
@@ -116,9 +114,7 @@ public sealed class FetchService(ApiClient api, IndexedDbMissionStore store, Ind
                     lock (failures) {
                         failures.Add(fm);
                     }
-                    if (!cancelled) {
-                        Log(fm.Reason, true, fm.MissionId);
-                    }
+                    if (!cancelled) Log(fm.Reason, true, fm.MissionId);
                 },
                 (missionId, text) => {
                     Interlocked.Increment(ref retried);
@@ -126,9 +122,7 @@ public sealed class FetchService(ApiClient api, IndexedDbMissionStore store, Ind
                 },
                 cancellationToken).ConfigureAwait(false);
 
-            if (interrupted) {
-                return Interrupt();
-            }
+            if (interrupted) return Interrupt();
 
             int failedCount = Volatile.Read(ref failed);
             if (failedCount > 0) {
@@ -166,9 +160,7 @@ public sealed class FetchService(ApiClient api, IndexedDbMissionStore store, Ind
     private void EmitSaveMessages(string playerId, Backup backup, AccountInfo account, Action<string> info, Action<string> error) {
         var (roleColor, roleName, _, _, _) = Role.RoleFromEB(backup.GetEarningsBonus());
         var fetched = $"successfully fetched backup for &7a7a7a<{playerId}>";
-        if (!string.IsNullOrEmpty(account.Nickname)) {
-            fetched += $" (&{roleColor}<{account.Nickname}>)";
-        }
+        if (!string.IsNullOrEmpty(account.Nickname)) fetched += $" (&{roleColor}<{account.Nickname}>)";
         info(fetched);
 
         var eggs = account.TeCount > 0
@@ -237,9 +229,7 @@ public sealed class FetchService(ApiClient api, IndexedDbMissionStore store, Ind
         var tasks = new List<Task>(missions.Count);
 
         foreach (var (id, start) in missions) {
-            if (cancellationToken.IsCancellationRequested) {
-                break;
-            }
+            if (cancellationToken.IsCancellationRequested) break;
             await sem.WaitAsync(CancellationToken.None).ConfigureAwait(false);
             if (cancellationToken.IsCancellationRequested) {
                 sem.Release();

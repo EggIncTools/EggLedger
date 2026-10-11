@@ -39,7 +39,6 @@ public static class LifetimeAggregator {
         };
     }
 
-
     public static List<DropLike> MergeDropArrays(IEnumerable<IReadOnlyList<DropLike>> arrays) {
         var map = new Dictionary<string, DropLike>();
         var order = new List<string>();
@@ -67,7 +66,6 @@ public static class LifetimeAggregator {
         }
         return [.. order.Select(key => map[key])];
     }
-
 
     private sealed class Bucket {
         public List<DropLike> Items { get; } = [];

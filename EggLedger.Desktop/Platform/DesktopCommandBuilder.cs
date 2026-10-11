@@ -4,24 +4,15 @@ namespace EggLedger.Desktop.Platform;
 
 public static class DesktopCommandBuilder {
     public static (string Exe, string[] Args) BuildOpenCommand(OSPlatform platform, string path) {
-        if (platform == OSPlatform.Windows) {
-            return ("explorer.exe", [path]);
-        }
-        if (platform == OSPlatform.OSX) {
-            return ("open", [path]);
-        }
+        if (platform == OSPlatform.Windows) return ("explorer.exe", [path]);
+        if (platform == OSPlatform.OSX) return ("open", [path]);
         return ("xdg-open", [path]);
     }
 
     public static (string Exe, string[] Args) BuildOpenInFolderCommand(OSPlatform platform, string path) {
-        if (platform == OSPlatform.Windows) {
-            return ("explorer.exe", ["/select," + path]);
-        }
-        if (platform == OSPlatform.OSX) {
-            return ("open", ["-R", path]);
-        }
-        var dir = Path.GetDirectoryName(path) ?? path;
-        return ("xdg-open", [dir]);
+        if (platform == OSPlatform.Windows) return ("explorer.exe", ["/select," + path]);
+        if (platform == OSPlatform.OSX) return ("open", ["-R", path]);
+        return ("xdg-open", [Path.GetDirectoryName(path) ?? path]);
     }
 
     public static (string Exe, string[] Args) BuildRestartCommand(string exePath)

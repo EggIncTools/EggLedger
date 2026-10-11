@@ -187,9 +187,7 @@
     }
 
     private string RingClass(FilterOption o) {
-        if (RarityRing && o.Rarity is { } r) {
-            return $"popup-ring bg-r-{r}";
-        }
+        if (RarityRing && o.Rarity is { } r) return $"popup-ring bg-r-{r}";
 
         return o.ImagePath == "icon_help.webp" ? "popup-ring popup-ring-help" : "";
     }

@@ -14,9 +14,7 @@ public static class Labels {
     private static string ArtifactDisplayName(int v) {
         var protoName = EnumNames.ProtoName((ArtifactSpec.Name)v);
         foreach (var t in Config.ArtifactTargets) {
-            if (t.Name == protoName) {
-                return t.DisplayName;
-            }
+            if (t.Name == protoName) return t.DisplayName;
         }
         return ((ArtifactSpec.Name)v).CasedName();
     }
@@ -29,9 +27,7 @@ public static class Labels {
         if (NumericGroupBys.Contains(groupBy)) {
             var okA = long.TryParse(rawA, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var a);
             var okB = long.TryParse(rawB, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var b);
-            if (okA && okB) {
-                return a < b;
-            }
+            if (okA && okB) return a < b;
         }
         return string.CompareOrdinal(rawA, rawB) < 0;
     }
@@ -53,27 +49,17 @@ public static class Labels {
                 return ((MissionInfo.MissionType)ParseInt()).Display();
             case "mission_target":
                 var v = ParseInt();
-                if (v < 0) {
-                    return "None (Pre 1.27)";
-                }
-                if (v == 0) {
-                    return "Untargeted";
-                }
+                if (v < 0) return "None (Pre 1.27)";
+                if (v == 0) return "Untargeted";
                 return ArtifactDisplayName(v);
             case "artifact_name":
                 return ArtifactDisplayName(ParseInt());
             case "rarity":
                 var ri = ParseInt();
-                if (ri >= 0 && ri < RarityNames.Length) {
-                    return RarityNames[ri];
-                }
-                return rawVal;
+                return ri >= 0 && ri < RarityNames.Length ? RarityNames[ri] : rawVal;
             case "tier":
                 var ti = ParseInt();
-                if (ti >= 0 && ti < TierNames.Length) {
-                    return TierNames[ti];
-                }
-                return rawVal;
+                return ti >= 0 && ti < TierNames.Length ? TierNames[ti] : rawVal;
             case "spec_type":
                 return rawVal;
             case "time_bucket":

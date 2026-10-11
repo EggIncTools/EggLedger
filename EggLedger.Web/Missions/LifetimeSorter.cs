@@ -40,21 +40,11 @@ public static class LifetimeSorter {
         DropSorter.StableSort(collection, CountComparer);
 
     private static int CountComparer(DropLike a, DropLike b) {
-        if (a.Count != b.Count) {
-            return a.Count > b.Count ? -1 : 1;
-        }
-        if (a.Level != b.Level) {
-            return a.Level > b.Level ? -1 : 1;
-        }
-        if (a.Rarity != b.Rarity) {
-            return a.Rarity > b.Rarity ? -1 : 1;
-        }
-        if (a.Id != b.Id) {
-            return a.Id > b.Id ? -1 : 1;
-        }
-        if (a.Quality != b.Quality) {
-            return a.Quality < b.Quality ? -1 : 1;
-        }
+        if (a.Count != b.Count) return a.Count > b.Count ? -1 : 1;
+        if (a.Level != b.Level) return a.Level > b.Level ? -1 : 1;
+        if (a.Rarity != b.Rarity) return a.Rarity > b.Rarity ? -1 : 1;
+        if (a.Id != b.Id) return a.Id > b.Id ? -1 : 1;
+        if (a.Quality != b.Quality) return a.Quality < b.Quality ? -1 : 1;
         return 0;
     }
 

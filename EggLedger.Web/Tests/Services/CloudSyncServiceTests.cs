@@ -19,7 +19,6 @@ public sealed class CloudSyncServiceTests {
 
     private static CloudSession Session() => new(Token, "user#1", "https://cdn/avatar.png", HexKey);
 
-
     private sealed class FakeNavigation : INavigation {
         public string? LastUrl { get; private set; }
         public void NavigateTo(string url) => LastUrl = url;

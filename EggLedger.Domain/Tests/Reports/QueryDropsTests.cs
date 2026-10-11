@@ -2,7 +2,6 @@ using EggLedger.Domain.Reports;
 
 namespace EggLedger.Domain.Tests.Reports;
 
-
 public class QueryDropsTests {
     public static IEnumerable<object?[]> Cases() => new[] {
         new object?[] {

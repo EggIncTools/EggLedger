@@ -116,18 +116,14 @@ internal static class Program {
         _ = Task.Run(async () => {
             await PollGameEventsAsync(events, initial: true).ConfigureAwait(false);
             using var timer = new PeriodicTimer(GameEventsPollInterval);
-            while (await timer.WaitForNextTickAsync().ConfigureAwait(false)) {
-                await PollGameEventsAsync(events, initial: false).ConfigureAwait(false);
-            }
+            while (await timer.WaitForNextTickAsync().ConfigureAwait(false)) await PollGameEventsAsync(events, initial: false).ConfigureAwait(false);
         });
     }
 
     private static async Task PollGameEventsAsync(
         EggLedger.Web.Services.GameEventsService events, bool initial) {
         try {
-            if (initial) {
-                await events.EnsureLoadedAsync().ConfigureAwait(false);
-            }
+            if (initial) await events.EnsureLoadedAsync().ConfigureAwait(false);
             await events.RefreshAsync().ConfigureAwait(false);
         } catch (Exception ex) {
             Log("game events poll failed: " + ex.Message);
@@ -145,7 +141,6 @@ internal static class Program {
             Console.Error.WriteLine("failed to write fatal log: " + ex);
         }
     }
-
 
     private static Uri CloudSyncBaseAddress() => new("https://eggledger.egginc.tools/");
 

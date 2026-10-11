@@ -32,21 +32,15 @@ public sealed partial class SemVersion : IComparable<SemVersion>, IEquatable<Sem
 
     public static bool TryParse(string? input, out SemVersion? version) {
         version = null;
-        if (input is null) {
-            return false;
-        }
+        if (input is null) return false;
 
         var match = VersionRegex().Match(input);
-        if (!match.Success) {
-            return false;
-        }
+        if (!match.Success) return false;
 
         var segmentsStr = match.Groups[1].Value.Split('.');
         var segments = new long[segmentsStr.Length];
         for (var i = 0; i < segmentsStr.Length; i++) {
-            if (!long.TryParse(segmentsStr[i], NumberStyles.Integer, CultureInfo.InvariantCulture, out var val)) {
-                return false;
-            }
+            if (!long.TryParse(segmentsStr[i], NumberStyles.Integer, CultureInfo.InvariantCulture, out var val)) return false;
             segments[i] = val;
         }
 
@@ -57,9 +51,7 @@ public sealed partial class SemVersion : IComparable<SemVersion>, IEquatable<Sem
         }
 
         var pre = match.Groups[7].Value;
-        if (pre.Length == 0) {
-            pre = match.Groups[4].Value;
-        }
+        if (pre.Length == 0) pre = match.Groups[4].Value;
 
         var metadata = match.Groups[10].Value;
 
@@ -75,14 +67,10 @@ public sealed partial class SemVersion : IComparable<SemVersion>, IEquatable<Sem
     public string Canonical() {
         var sb = new StringBuilder();
         for (var i = 0; i < _segments.Length; i++) {
-            if (i > 0) {
-                sb.Append('.');
-            }
+            if (i > 0) sb.Append('.');
             sb.Append(_segments[i].ToString(CultureInfo.InvariantCulture));
         }
-        if (Prerelease.Length > 0) {
-            sb.Append('-').Append(Prerelease);
-        }
+        if (Prerelease.Length > 0) sb.Append('-').Append(Prerelease);
         if (Metadata.Length > 0) {
             sb.Append('+').Append(Metadata);
         }
@@ -92,9 +80,7 @@ public sealed partial class SemVersion : IComparable<SemVersion>, IEquatable<Sem
     public int CompareTo(SemVersion? other) {
         ArgumentNullException.ThrowIfNull(other);
 
-        if (Canonical() == other.Canonical()) {
-            return 0;
-        }
+        if (Canonical() == other.Canonical()) return 0;
 
         var self = _segments;
         var oth = other._segments;
@@ -102,9 +88,7 @@ public sealed partial class SemVersion : IComparable<SemVersion>, IEquatable<Sem
         if (SegmentsEqual(self, oth)) {
             var preSelf = Prerelease;
             var preOther = other.Prerelease;
-            if (preSelf.Length == 0 && preOther.Length == 0) {
-                return 0;
-            }
+            if (preSelf.Length == 0 && preOther.Length == 0) return 0;
             if (preSelf.Length == 0) {
                 return 1;
             }
@@ -116,22 +100,16 @@ public sealed partial class SemVersion : IComparable<SemVersion>, IEquatable<Sem
         var hS = Math.Max(lenSelf, lenOther);
         for (var i = 0; i < hS; i++) {
             if (i > lenSelf - 1) {
-                if (!AllZero(oth, i)) {
-                    return -1;
-                }
+                if (!AllZero(oth, i)) return -1;
                 break;
             }
             if (i > lenOther - 1) {
-                if (!AllZero(self, i)) {
-                    return 1;
-                }
+                if (!AllZero(self, i)) return 1;
                 break;
             }
             var lhs = self[i];
             var rhs = oth[i];
-            if (lhs == rhs) {
-                continue;
-            }
+            if (lhs == rhs) continue;
             return lhs < rhs ? -1 : 1;
         }
 
@@ -149,9 +127,7 @@ public sealed partial class SemVersion : IComparable<SemVersion>, IEquatable<Sem
     public override int GetHashCode() {
 
         var hash = new HashCode();
-        foreach (var s in _segments) {
-            hash.Add(s);
-        }
+        foreach (var s in _segments) hash.Add(s);
         hash.Add(Prerelease);
         return hash.ToHashCode();
     }
@@ -159,31 +135,22 @@ public sealed partial class SemVersion : IComparable<SemVersion>, IEquatable<Sem
     public override string ToString() => Canonical();
 
     private static bool SegmentsEqual(long[] a, long[] b) {
-        if (a.Length != b.Length) {
-            return false;
-        }
+        if (a.Length != b.Length) return false;
         for (var i = 0; i < a.Length; i++) {
-            if (a[i] != b[i]) {
-                return false;
-            }
+            if (a[i] != b[i]) return false;
         }
         return true;
     }
 
     private static bool AllZero(long[] segs, int from) {
         for (var i = from; i < segs.Length; i++) {
-            if (segs[i] != 0) {
-                return false;
-            }
+            if (segs[i] != 0) return false;
         }
         return true;
     }
 
-
     private static int ComparePrereleases(string v, string other) {
-        if (v == other) {
-            return 0;
-        }
+        if (v == other) return 0;
 
         var selfParts = v.Split('.');
         var otherParts = other.Split('.');
@@ -193,38 +160,25 @@ public sealed partial class SemVersion : IComparable<SemVersion>, IEquatable<Sem
             var partSelf = i < selfParts.Length ? selfParts[i] : "";
             var partOther = i < otherParts.Length ? otherParts[i] : "";
             var c = ComparePart(partSelf, partOther);
-            if (c != 0) {
-                return c;
-            }
+            if (c != 0) return c;
         }
         return 0;
     }
 
-
     private static int ComparePart(string preSelf, string preOther) {
-        if (preSelf == preOther) {
-            return 0;
-        }
+        if (preSelf == preOther) return 0;
 
         var selfNumeric = long.TryParse(preSelf, NumberStyles.Integer, CultureInfo.InvariantCulture, out var selfInt);
         var otherNumeric = long.TryParse(preOther, NumberStyles.Integer, CultureInfo.InvariantCulture, out var otherInt);
 
-        if (preSelf.Length == 0) {
-            return otherNumeric ? -1 : 1;
-        }
-        if (preOther.Length == 0) {
-            return selfNumeric ? 1 : -1;
-        }
+        if (preSelf.Length == 0) return otherNumeric ? -1 : 1;
+        if (preOther.Length == 0) return selfNumeric ? 1 : -1;
 
-        if (selfNumeric && !otherNumeric) {
-            return -1;
-        }
+        if (selfNumeric && !otherNumeric) return -1;
         if (!selfNumeric && otherNumeric) {
             return 1;
         }
-        if (!selfNumeric && !otherNumeric && string.CompareOrdinal(preSelf, preOther) > 0) {
-            return 1;
-        }
+        if (!selfNumeric && !otherNumeric && string.CompareOrdinal(preSelf, preOther) > 0) return 1;
         return selfNumeric && otherNumeric && selfInt > otherInt ? 1 : -1;
     }
 }

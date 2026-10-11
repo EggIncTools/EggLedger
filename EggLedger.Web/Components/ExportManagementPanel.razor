@@ -123,9 +123,7 @@
 
     private List<FilePair> ToPrune {
         get {
-            if (_keepCount <= 0) {
-                return [];
-            }
+            if (_keepCount <= 0) return [];
 
             return [.. _groups.SelectMany(g => g.Pairs.Skip(_keepCount))];
         }
@@ -141,13 +139,8 @@
             long total = 0;
             foreach (var g in _groups) {
                 foreach (var p in g.Pairs) {
-                    if (!string.IsNullOrEmpty(p.CsvPath) && _selected.Contains(p.CsvPath)) {
-                        total += p.CsvSize;
-                    }
-
-                    if (!string.IsNullOrEmpty(p.XlsxPath) && _selected.Contains(p.XlsxPath)) {
-                        total += p.XlsxSize;
-                    }
+                    if (!string.IsNullOrEmpty(p.CsvPath) && _selected.Contains(p.CsvPath)) total += p.CsvSize;
+                    if (!string.IsNullOrEmpty(p.XlsxPath) && _selected.Contains(p.XlsxPath)) total += p.XlsxSize;
                 }
             }
 
@@ -170,9 +163,7 @@
     private async Task LoadFilesAsync() {
         _groups = await Exports.ListAsync();
         _collapsed.Clear();
-        foreach (var g in _groups) {
-            _collapsed.Add(g.Eid);
-        }
+        foreach (var g in _groups) _collapsed.Add(g.Eid);
     }
 
     private static long GroupSize(ExportGroup g) {
@@ -180,15 +171,11 @@
     }
 
     private void ToggleCollapse(string eid) {
-        if (!_collapsed.Remove(eid)) {
-            _collapsed.Add(eid);
-        }
+        if (!_collapsed.Remove(eid)) _collapsed.Add(eid);
     }
 
     private void TogglePath(string path) {
-        if (!_selected.Remove(path)) {
-            _selected.Add(path);
-        }
+        if (!_selected.Remove(path)) _selected.Add(path);
     }
 
     private async Task OnKeepCountChangeAsync(ChangeEventArgs e) {

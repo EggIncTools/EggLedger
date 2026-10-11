@@ -54,6 +54,8 @@ csharp_style_prefer_null_check_over_type_check = true:warning
 csharp_style_conditional_expression_over_assignment = true:suggestion
 
 csharp_prefer_braces = when_multiline:warning
+dotnet_style_allow_multiple_blank_lines_experimental = false:warning
+dotnet_style_allow_statement_immediately_after_block_experimental = false:suggestion
 csharp_prefer_simple_using_statement = true:warning
 csharp_style_prefer_method_group_conversion = true:silent
 

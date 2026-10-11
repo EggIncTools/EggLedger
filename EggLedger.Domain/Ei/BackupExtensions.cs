@@ -6,9 +6,7 @@ public static class BackupExtensions {
     public static double Sum<T>(IEnumerable<T>? slice, Func<T, double> toFloat) {
         double total = 0;
         if (slice is not null) {
-            foreach (var v in slice) {
-                total += toFloat(v);
-            }
+            foreach (var v in slice) total += toFloat(v);
         }
         return total;
     }
@@ -18,9 +16,7 @@ public static class BackupExtensions {
             return new InvalidOperationException(
                 $"/ei/first_contact: error_code {fc.ErrorCode}");
         }
-        if (fc.Backup?.game is null) {
-            return new InvalidOperationException("backup is empty");
-        }
+        if (fc.Backup?.game is null) return new InvalidOperationException("backup is empty");
         if (fc.Backup.settings is null) {
             return new InvalidOperationException("backup settings is empty");
         }

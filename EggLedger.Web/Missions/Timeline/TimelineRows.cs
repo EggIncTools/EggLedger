@@ -14,9 +14,7 @@ public static class TimelineRows {
         var monthStartDate = DateOnly.FromDateTime(visibleStart.DateTime);
         var firstRowDate = TimelineGridAnchor.GridWeekStartDate(monthStartDate);
         var rows = new List<TimelineRow>();
-        for (var rowDate = firstRowDate; TimelineGridAnchor.GridDayStartForDate(rowDate) < visibleEnd; rowDate = rowDate.AddDays(7)) {
-            rows.Add(new TimelineRow(TimelineGridAnchor.GridDayStartForDate(rowDate), TimelineGridAnchor.GridDayStartForDate(rowDate.AddDays(7)), true));
-        }
+        for (var rowDate = firstRowDate; TimelineGridAnchor.GridDayStartForDate(rowDate) < visibleEnd; rowDate = rowDate.AddDays(7)) rows.Add(new TimelineRow(TimelineGridAnchor.GridDayStartForDate(rowDate), TimelineGridAnchor.GridDayStartForDate(rowDate.AddDays(7)), true));
         return rows;
     }
 }

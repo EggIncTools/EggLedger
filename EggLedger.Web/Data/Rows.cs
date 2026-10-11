@@ -40,7 +40,6 @@ public sealed record MissionRow {
     public int NominalCapacity { get; init; }
 }
 
-
 public sealed record MissionMetaRow {
     [JsonPropertyName("player_id")] public string PlayerId { get; init; } = "";
     [JsonPropertyName("mission_id")] public string MissionId { get; init; } = "";

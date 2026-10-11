@@ -26,9 +26,7 @@ public sealed class IndexedDbPinnedReportStore(IIndexedDb db, TimeProvider time)
         var current = await RetrieveAsync(accountId, view);
         var byId = current.ToDictionary(r => r.Id);
         for (int i = 0; i < ids.Count; i++) {
-            if (byId.TryGetValue(ids[i], out var row)) {
-                await _db.PutAsync(IndexedDbStores.PinnedReports, row with { SortOrder = i });
-            }
+            if (byId.TryGetValue(ids[i], out var row)) await _db.PutAsync(IndexedDbStores.PinnedReports, row with { SortOrder = i });
         }
     }
 }

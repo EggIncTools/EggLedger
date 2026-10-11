@@ -132,9 +132,7 @@
 
     private async Task ToggleStorageVisibleAsync() {
         var hidden = !Model.StorageFolderHidden;
-        if (_storagePath.Length > 0) {
-            await Platform.SetFolderHiddenAsync(_storagePath, hidden);
-        }
+        if (_storagePath.Length > 0) await Platform.SetFolderHiddenAsync(_storagePath, hidden);
 
         Model.StorageFolderHidden = hidden;
         await OnSetting.InvokeAsync((SettingsModel.KeyStorageFolderHidden, SettingsModel.FormatBool(hidden)));

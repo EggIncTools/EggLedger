@@ -58,9 +58,7 @@ public sealed class ReportSourceCache : IReportSourceCache, IDisposable {
 
     public void AttachHub(LedgerDataHub hub) {
         ArgumentNullException.ThrowIfNull(hub);
-        if (_detachHub is not null) {
-            return;
-        }
+        if (_detachHub is not null) return;
 
         hub.AccountInvalidated += Invalidate;
         _detachHub = () => hub.AccountInvalidated -= Invalidate;

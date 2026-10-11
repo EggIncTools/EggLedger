@@ -18,7 +18,6 @@ public sealed class ReportParityTests {
         public IReadOnlyList<int> FamilyAfxIds(string familyId) => _ids;
     }
 
-
     private static MissionRowData M(
         string id, int ship, int duration, long start, long ret,
         int cap = 1, int nominal = 1, int target = 0, int type = 0,

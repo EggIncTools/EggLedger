@@ -87,9 +87,7 @@
     }
 
     private void Toggle(string id) {
-        if (!_openSections.Remove(id)) {
-            _openSections.Add(id);
-        }
+        if (!_openSections.Remove(id)) _openSections.Add(id);
     }
 
     private void OnFetchChanged() {

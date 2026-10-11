@@ -96,9 +96,7 @@
     private async Task OnDropAsync(int targetIndex) {
         var from = _draggingIndex;
         _draggingIndex = null;
-        if (from is null || from == targetIndex) {
-            return;
-        }
+        if (from is null || from == targetIndex) return;
 
         var ids = _defs.Select(d => d.Id).ToList();
         var moved = ids[from.Value];
@@ -120,9 +118,7 @@
     }
 
     public async Task ImportAsync(string json) {
-        if (string.IsNullOrWhiteSpace(json)) {
-            return;
-        }
+        if (string.IsNullOrWhiteSpace(json)) return;
 
         try {
             var defs = ParseImportedDefinitions(json);
@@ -132,9 +128,7 @@
                 def.SortOrder = 0;
                 def.CreatedAt = 0;
                 def.UpdatedAt = 0;
-                if (GroupFilter is not null) {
-                    def.GroupId = GroupFilter;
-                }
+                if (GroupFilter is not null) def.GroupId = GroupFilter;
 
                 await Store.InsertReportAsync(ReportMapping.ToRow(def));
             }
@@ -152,9 +146,7 @@
 
     private static List<ReportDefinition> ParseImportedDefinitions(string json) {
         var trimmed = json.TrimStart();
-        if (trimmed.StartsWith('[')) {
-            return JsonSerializer.Deserialize<List<ReportDefinition>>(json) ?? [];
-        }
+        if (trimmed.StartsWith('[')) return JsonSerializer.Deserialize<List<ReportDefinition>>(json) ?? [];
 
         var single = JsonSerializer.Deserialize<ReportDefinition>(json);
         return single is null ? [] : [single];

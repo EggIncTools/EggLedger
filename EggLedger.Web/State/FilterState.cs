@@ -23,9 +23,7 @@ public sealed class FilterState {
     }
 
     public FilterDraft GetDraft(string key) {
-        if (_drafts.TryGetValue(key, out var existing)) {
-            return existing;
-        }
+        if (_drafts.TryGetValue(key, out var existing)) return existing;
 
         var draft = new FilterDraft();
         _drafts[key] = draft;

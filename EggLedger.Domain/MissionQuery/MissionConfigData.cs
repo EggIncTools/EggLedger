@@ -27,9 +27,7 @@ public static class MissionConfigData {
             int maxLevels = mission.LevelMissionRequirements?.Length ?? 0;
             foreach (var d in mission.Durations) {
                 double comped = d.MaxQuality + (d.LevelQualityBump * maxLevels);
-                if (comped > maxQuality) {
-                    maxQuality = comped;
-                }
+                if (comped > maxQuality) maxQuality = comped;
             }
         }
         return maxQuality;

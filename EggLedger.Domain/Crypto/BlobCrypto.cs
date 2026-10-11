@@ -32,9 +32,7 @@ public static class BlobCrypto {
         var key = DecodeKey(hexKey);
 
         var data = Convert.FromBase64String(b64);
-        if (data.Length < NonceSize + TagSize) {
-            throw new CryptographicException("blob too short");
-        }
+        if (data.Length < NonceSize + TagSize) throw new CryptographicException("blob too short");
 
         var nonce = new byte[NonceSize];
         Buffer.BlockCopy(data, 0, nonce, 0, NonceSize);

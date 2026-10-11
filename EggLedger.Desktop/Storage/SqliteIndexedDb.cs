@@ -128,8 +128,6 @@ public sealed class SqliteIndexedDb : IIndexedDb {
     }
 
     private void Upsert(StoreMeta meta, object value, SqliteTransaction? tx = null) {
-
-
         using var doc = JsonSerializer.SerializeToDocument(value, value.GetType(), JsonOpts);
         List<(string Col, JsonElement Val)> props = [.. doc.RootElement.EnumerateObject()
             .Where(prop => meta.AutoIncrementColumn != prop.Name || prop.Value.ValueKind is not JsonValueKind.Null)
@@ -137,21 +135,14 @@ public sealed class SqliteIndexedDb : IIndexedDb {
 
         var connection = Conn(meta);
         using var cmd = connection.CreateCommand();
-        if (tx is not null) {
-            cmd.Transaction = tx;
-        }
+        if (tx is not null) cmd.Transaction = tx;
 
         var cols = props.Select(p => p.Col).ToList();
         var placeholders = props.Select((_, i) => "@p" + i.ToString(CultureInfo.InvariantCulture)).ToList();
-
-        if (meta.UpsertByDelete) {
-
-            DeleteByKey(meta, props, connection, tx);
-        }
+        if (meta.UpsertByDelete) DeleteByKey(meta, props, connection, tx);
 
         string conflict;
         if (meta.AutoIncrementColumn is not null || meta.UpsertByDelete) {
-
             conflict = "";
         } else {
             var updates = cols
@@ -162,18 +153,14 @@ public sealed class SqliteIndexedDb : IIndexedDb {
 
         cmd.CommandText =
             $"INSERT INTO {meta.Table} ({string.Join(", ", cols)}) VALUES ({string.Join(", ", placeholders)}){conflict};";
-        for (var i = 0; i < props.Count; i++) {
-            cmd.Parameters.AddWithValue(placeholders[i], JsonRowCodec.JsonToDbValue(props[i].Val, meta.BlobColumns.Contains(props[i].Col), JsonRowCodec.Sqlite));
-        }
+        for (var i = 0; i < props.Count; i++) cmd.Parameters.AddWithValue(placeholders[i], JsonRowCodec.JsonToDbValue(props[i].Val, meta.BlobColumns.Contains(props[i].Col), JsonRowCodec.Sqlite));
         cmd.ExecuteNonQuery();
     }
 
     private static void DeleteByKey(
         StoreMeta meta, List<(string Col, JsonElement Val)> props, SqliteConnection connection, SqliteTransaction? tx) {
         using var del = connection.CreateCommand();
-        if (tx is not null) {
-            del.Transaction = tx;
-        }
+        if (tx is not null) del.Transaction = tx;
         var clauses = new List<string>(meta.KeyColumns.Length);
         var k = 0;
         foreach (var keyCol in meta.KeyColumns) {
@@ -190,9 +177,7 @@ public sealed class SqliteIndexedDb : IIndexedDb {
     private static T[] ReadAll<T>(StoreMeta meta, SqliteCommand cmd) {
         var result = new List<T>();
         using var reader = cmd.ExecuteReader();
-        while (reader.Read()) {
-            result.Add(Materialize<T>(meta, reader));
-        }
+        while (reader.Read()) result.Add(Materialize<T>(meta, reader));
         return [.. result];
     }
 
@@ -210,7 +195,6 @@ public sealed class SqliteIndexedDb : IIndexedDb {
         _stores.TryGetValue(store, out var meta)
             ? meta
             : throw new ArgumentException($"unknown store {store}", nameof(store));
-
 
     private static (string where, object[] args) KeyPredicate(StoreMeta meta, object key) =>
         JsonRowCodec.KeyPredicate(meta.Table, meta.KeyColumns, key, c => c, JsonRowCodec.Sqlite);
@@ -278,9 +262,7 @@ public sealed class SqliteIndexedDb : IIndexedDb {
 
                 var name = reader.GetString(1);
                 var declaredType = reader.IsDBNull(2) ? "" : reader.GetString(2);
-                if (declaredType.Equals("BLOB", StringComparison.OrdinalIgnoreCase)) {
-                    meta.BlobColumns.Add(name);
-                }
+                if (declaredType.Equals("BLOB", StringComparison.OrdinalIgnoreCase)) meta.BlobColumns.Add(name);
             }
         }
     }

@@ -7,9 +7,7 @@ public static class BinaryNaming {
 
     public static bool IsNewBinaryName(string path) {
         var baseName = Path.GetFileName(path);
-        if (baseName.EndsWith(ExeExt, StringComparison.Ordinal)) {
-            baseName = baseName[..^ExeExt.Length];
-        }
+        if (baseName.EndsWith(ExeExt, StringComparison.Ordinal)) baseName = baseName[..^ExeExt.Length];
         return baseName.EndsWith(NewBinarySuffix, StringComparison.Ordinal);
     }
 
@@ -21,9 +19,7 @@ public static class BinaryNaming {
             ext = ExeExt;
             baseName = baseName[..^ExeExt.Length];
         }
-        if (baseName.EndsWith(NewBinarySuffix, StringComparison.Ordinal)) {
-            baseName = baseName[..^NewBinarySuffix.Length];
-        }
+        if (baseName.EndsWith(NewBinarySuffix, StringComparison.Ordinal)) baseName = baseName[..^NewBinarySuffix.Length];
         return Path.Combine(dir, baseName + ext);
     }
 
@@ -31,13 +27,9 @@ public static class BinaryNaming {
         string self, int replacePid, string replacePath) {
         var hasFlags = replacePid != 0 && !string.IsNullOrEmpty(replacePath);
         var isNew = !string.IsNullOrEmpty(self) && IsNewBinaryName(self);
-        if (!isNew && !hasFlags) {
-            return (false, 0, "");
-        }
+        if (!isNew && !hasFlags) return (false, 0, "");
         var oldPath = replacePath;
-        if (string.IsNullOrEmpty(oldPath)) {
-            oldPath = CanonicalPathFromNew(self);
-        }
+        if (string.IsNullOrEmpty(oldPath)) oldPath = CanonicalPathFromNew(self);
         return (true, replacePid, oldPath);
     }
 }

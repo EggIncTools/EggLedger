@@ -55,9 +55,7 @@ public sealed record MissionCardConfig(
 
     public MissionCardConfig WithAllFields() {
         var missing = Enum.GetValues<CardField>().Where(f => Fields.All(s => s.Field != f)).ToList();
-        if (missing.Count == 0) {
-            return this;
-        }
+        if (missing.Count == 0) return this;
 
         var next = Fields.Count == 0 ? 0 : Fields.Max(s => s.Order) + 1;
         return this with { Fields = [.. Fields, .. missing.Select((f, i) => new CardFieldSlot(f, true, next + i))] };

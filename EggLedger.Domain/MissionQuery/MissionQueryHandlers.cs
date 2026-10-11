@@ -11,9 +11,7 @@ public sealed class MissionQueryHandlers(IMissionStore store, IArtifactQuality q
         List<DatabaseAccount> result = [];
         foreach (var acct in await store.GetKnownAccountsAsync()) {
             var stats = await store.GetPlayerMissionStatsAsync(acct.Id);
-            if (stats is not { } s) {
-                continue;
-            }
+            if (stats is not { } s) continue;
             if (s.Count > 0) {
                 result.Add(new DatabaseAccount {
                     Id = acct.Id,
@@ -34,19 +32,13 @@ public sealed class MissionQueryHandlers(IMissionStore store, IArtifactQuality q
 
         int? pending = await store.CountPendingFilterColsAsync(eid);
 
-        if (pending is 0) {
-            return await store.GetPlayerMissionMetaAsync(eid);
-        }
+        if (pending is 0) return await store.GetPlayerMissionMetaAsync(eid);
 
         var complete = await store.GetPlayerCompleteMissionsAsync(eid);
-        if (complete is null) {
-            return null;
-        }
+        if (complete is null) return null;
         List<IMissionRow> missions = [.. complete.Select(compiler.CompileMissionInformation)];
 
-        if (pending is > 0) {
-            store.QueueFilterColBackfill(eid);
-        }
+        if (pending is > 0) store.QueueFilterColBackfill(eid);
 
         return missions;
     }
@@ -73,22 +65,14 @@ public sealed class MissionQueryHandlers(IMissionStore store, IArtifactQuality q
     public async Task<Dictionary<string, List<MissionDrop>>?> GetAllPlayerDropsAsync(string playerId) {
 
         var stored = await store.GetStoredPlayerDropsAsync(playerId);
-        if (stored is null) {
-            return null;
-        }
+        if (stored is null) return null;
         var missionIds = await store.GetCompleteMissionIdsAsync(playerId);
-        if (missionIds is null) {
-            return null;
-        }
+        if (missionIds is null) return null;
 
         var result = new Dictionary<string, List<MissionDrop>>();
-        foreach (var id in missionIds) {
-            result[id] = [];
-        }
+        foreach (var id in missionIds) result[id] = [];
         foreach (var d in stored) {
-            if (d.DropIndex < 0) {
-                continue;
-            }
+            if (d.DropIndex < 0) continue;
             var spec = new ArtifactSpec {
                 name = (ArtifactSpec.Name)d.ArtifactId,
                 level = (ArtifactSpec.Level)d.Level,

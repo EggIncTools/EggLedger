@@ -18,7 +18,6 @@ public class InMemoryReportRunnerTests {
         public IReadOnlyList<int> FamilyAfxIds(string familyId) => ids;
     }
 
-
     private sealed class FakeDb : IMissionDb {
         private readonly List<(string Key, IReadOnlyList<object?[]> Rows)> _byKey = [];
 
@@ -69,7 +68,6 @@ public class InMemoryReportRunnerTests {
             SpecType = spec,
         };
 
-
     private static object?[][] Group1D(IEnumerable<MissionRowData> rows, Func<MissionRowData, string> key) {
         Dictionary<string, long> counts = [with(StringComparer.Ordinal)];
         List<string> order = [];
@@ -87,7 +85,6 @@ public class InMemoryReportRunnerTests {
             .ThenBy(x => x.i)
             .Select(x => new object?[] { x.k, x.c })];
     }
-
 
     private static object?[][] Group2D(
         IEnumerable<MissionRowData> rows, Func<MissionRowData, string> k1, Func<MissionRowData, string> k2) {
@@ -443,7 +440,6 @@ public class InMemoryReportRunnerTests {
         Assert.Equal(["Chicken Nine", "Chicken One"], result.Labels);
         Assert.DoesNotContain(2_000_000.0, result.FloatValues);
     }
-
 
     private static object?[][] Group1DRaw(IEnumerable<string> keys) {
         Dictionary<string, long> counts = [with(StringComparer.Ordinal)];

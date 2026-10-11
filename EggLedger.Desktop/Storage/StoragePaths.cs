@@ -20,9 +20,7 @@ public static class StoragePaths {
 
     public static string ResolveInternalDir(string rootDir) {
         var cfg = ReadBootstrapConfig();
-        if (cfg.DataRootDir != "") {
-            return Path.Combine(cfg.DataRootDir, "internal");
-        }
+        if (cfg.DataRootDir != "") return Path.Combine(cfg.DataRootDir, "internal");
         return cfg.InternalDir != "" ? cfg.InternalDir : Path.Combine(rootDir, "internal");
     }
 
@@ -47,9 +45,7 @@ public static class StoragePaths {
 
     public static void WriteBootstrapConfig(string dataRootDir) {
         var path = BootstrapPath();
-        if (path == "") {
-            throw new FileNotFoundException("user config dir is unavailable");
-        }
+        if (path == "") throw new FileNotFoundException("user config dir is unavailable");
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         var json = JsonSerializer.Serialize(new BootstrapConfig { DataRootDir = dataRootDir }, JsonOpts);
         File.WriteAllText(path, json);
@@ -57,9 +53,7 @@ public static class StoragePaths {
 
     public static BootstrapConfig ReadBootstrapConfig() {
         var path = BootstrapPath();
-        if (path == "" || !File.Exists(path)) {
-            return new BootstrapConfig();
-        }
+        if (path == "" || !File.Exists(path)) return new BootstrapConfig();
         try {
             var data = File.ReadAllText(path);
             return JsonSerializer.Deserialize<BootstrapConfig>(data, JsonOpts) ?? new BootstrapConfig();

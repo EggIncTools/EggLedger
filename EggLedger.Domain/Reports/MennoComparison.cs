@@ -6,9 +6,7 @@ public static class MennoComparison {
     public const string DualValue = "dual_value";
 
     public static bool ShouldRender(ReportDefinition def, ReportResult? userResult, ReportResult? mennoResult) {
-        if (def is null || !def.MennoEnabled) {
-            return false;
-        }
+        if (def is null || !def.MennoEnabled) return false;
         if (def.DisplayMode != "heatmap") {
             return false;
         }
@@ -16,9 +14,7 @@ public static class MennoComparison {
     }
 
     public static ReportResult MennoAirtimeResult(ReportDefinition def, ReportResult mennoResult) {
-        if (def.NormalizeBy != "airtime") {
-            return mennoResult;
-        }
+        if (def.NormalizeBy != "airtime") return mennoResult;
         var avm = mennoResult.AirtimeMatrixValues;
         return avm is null or { Count: 0 } ? mennoResult : Clone(mennoResult, matrixValues: [.. avm]);
     }

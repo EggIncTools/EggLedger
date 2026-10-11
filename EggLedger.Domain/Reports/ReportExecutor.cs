@@ -11,9 +11,7 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
     public ReportResult ExecuteReport(ReportDefinition def) {
         var (whereClause, filterArgs) = QueryBuilder.BuildWhereClause(def.Filters);
         var baseWhere = "m.player_id = ?";
-        if (whereClause != "") {
-            baseWhere += " AND " + whereClause;
-        }
+        if (whereClause != "") baseWhere += " AND " + whereClause;
         List<object?> args = [def.AccountId];
         args.AddRange(filterArgs);
         var baseArgs = new List<object?>(args);
@@ -22,9 +20,7 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
             var ids = _weights.FamilyAfxIds(def.FamilyWeight);
             var (fwClause, fwArgs) = QueryBuilder.FamilyWeightClause(ids);
             if (fwClause != "") {
-                if (def.SecondaryGroupBy != "" && def.Mode == "time_series") {
-                    return ExecuteWeightedTimePivot(def, baseWhere, args, fwClause, fwArgs);
-                }
+                if (def.SecondaryGroupBy != "" && def.Mode == "time_series") return ExecuteWeightedTimePivot(def, baseWhere, args, fwClause, fwArgs);
                 if (def.SecondaryGroupBy != "") {
                     return ExecuteWeightedPivot(def, baseWhere, args, baseArgs, fwClause, fwArgs);
                 }
@@ -34,9 +30,7 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
             }
         }
 
-        if (def.SecondaryGroupBy != "" && def.Mode == "time_series") {
-            return ExecuteTimePivotReport(def, baseWhere, args);
-        }
+        if (def.SecondaryGroupBy != "" && def.Mode == "time_series") return ExecuteTimePivotReport(def, baseWhere, args);
         return def.SecondaryGroupBy != ""
             ? ExecutePivotReport(def, baseWhere, args, baseArgs)
             : ExecuteSimpleReport(def, baseWhere, args, baseArgs);
@@ -79,17 +73,13 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
 
         if (def.NormalizeBy != "" && def.NormalizeBy != ReportDefaults.NormalizeNone && def.Mode == "aggregate") {
             var groupCol = QueryBuilder.GroupByColumn(def.GroupBy);
-            if (groupCol == "" || groupCol.StartsWith("d.", StringComparison.Ordinal)) {
-                return new ReportResult { Labels = labels, Values = values, Weight = def.Weight };
-            }
+            if (groupCol == "" || groupCol.StartsWith("d.", StringComparison.Ordinal)) return new ReportResult { Labels = labels, Values = values, Weight = def.Weight };
             var denomMap = Denom1D(groupCol, def.NormalizeBy, baseWhere, baseArgs);
 
             var floatValues = Enumerable.Repeat(0d, values.Count).ToList();
             for (var i = 0; i < rawLabels.Count; i++) {
                 denomMap.TryGetValue(rawLabels[i], out var denom);
-                if (denom > 0) {
-                    floatValues[i] = values[i] / denom;
-                }
+                if (denom > 0) floatValues[i] = values[i] / denom;
             }
             return new ReportResult {
                 Labels = labels,
@@ -133,9 +123,7 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
                 for (var r = 0; r < f.RowLabels.Count; r++) {
                     for (var c = 0; c < nC; c++) {
                         var d = Denom(denomMap, f.RowLabels[r], f.ColLabels[c]);
-                        if (d > 0) {
-                            matrixValues[(r * nC) + c] /= d;
-                        }
+                        if (d > 0) matrixValues[(r * nC) + c] /= d;
                     }
                 }
             }
@@ -171,15 +159,11 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
         var matrixValues = f.Matrix;
         var nC = f.ColLabels.Count;
 
-        if (bucketLabels.Count > 0) {
-            (bucketLabels, matrixValues) = TimeFill.FillTimePivotGaps(def.TimeBucket, def.CustomBucketUnit, bucketLabels, nC, matrixValues);
-        }
+        if (bucketLabels.Count > 0) (bucketLabels, matrixValues) = TimeFill.FillTimePivotGaps(def.TimeBucket, def.CustomBucketUnit, bucketLabels, nC, matrixValues);
         var nR = bucketLabels.Count;
 
         var pctMode = def.NormalizeBy;
-        if (pctMode is "row_pct" or "col_pct" or "global_pct") {
-            Matrix.Apply2DPctNormalization(matrixValues, nR, nC, pctMode);
-        }
+        if (pctMode is "row_pct" or "col_pct" or "global_pct") Matrix.Apply2DPctNormalization(matrixValues, nR, nC, pctMode);
 
         return new ReportResult {
             RowLabels = bucketLabels,
@@ -206,9 +190,7 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
             var level = AsLong(row[2]);
             var capWeight = AsDouble(row[3]);
             var w = _weights.CraftingWeight(artifactId, level);
-            if (seen.Add(rawLabel)) {
-                rawOrder.Add(rawLabel);
-            }
+            if (seen.Add(rawLabel)) rawOrder.Add(rawLabel);
             CollectionsMarshal.GetValueRefOrAddDefault(accum, rawLabel, out _) += capWeight * w;
         }
 
@@ -224,17 +206,13 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
             if (groupCol != "" && !groupCol.StartsWith("d.", StringComparison.Ordinal)) {
                 var denomMap = Denom1D(groupCol, def.NormalizeBy, baseWhere, baseArgs);
                 for (var i = 0; i < rawOrder.Count; i++) {
-                    if (denomMap.TryGetValue(rawOrder[i], out var d) && d > 0) {
-                        floatValues[i] /= d;
-                    }
+                    if (denomMap.TryGetValue(rawOrder[i], out var d) && d > 0) floatValues[i] /= d;
                 }
             }
         }
 
         StableSortFloatDescending(floatValues);
-        for (var i = 0; i < rawOrder.Count; i++) {
-            labels[i] = Labels.FormatLabel(def.GroupBy, rawOrder[i]);
-        }
+        for (var i = 0; i < rawOrder.Count; i++) labels[i] = Labels.FormatLabel(def.GroupBy, rawOrder[i]);
 
         return new ReportResult {
             Labels = labels,
@@ -314,7 +292,6 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
     private static List<long> BuildMissionCountMatrix(Dictionary<string, Dictionary<string, double>> mcMap, List<string> rowLabels, List<string> colLabels) =>
         [.. rowLabels.SelectMany(r => colLabels.Select(c => (long)Denom(mcMap, r, c)))];
 
-
     private List<double>? ApplyWeightedPivotNormalization(ReportDefinition def, double[] matrixValues, List<string> rowLabels, List<string> colLabels, Dictionary<string, Dictionary<string, double>> mcMap, string baseWhere, List<object?> baseArgs) {
         var pctMode = def.NormalizeBy;
         List<double>? rawPerMissionValues = null;
@@ -332,9 +309,7 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
                     for (var r = 0; r < rowLabels.Count; r++) {
                         for (var c = 0; c < nC; c++) {
                             var d = Denom(mcMap, rowLabels[r], colLabels[c]);
-                            if (d > 0) {
-                                rpm[(r * nC) + c] /= d;
-                            }
+                            if (d > 0) rpm[(r * nC) + c] /= d;
                         }
                     }
                     rawPerMissionValues = [.. rpm];
@@ -344,9 +319,7 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
                 for (var r = 0; r < rowLabels.Count; r++) {
                     for (var c = 0; c < nC; c++) {
                         var d = Denom(denomMap, rowLabels[r], colLabels[c]);
-                        if (d > 0) {
-                            matrixValues[(r * nC) + c] /= d;
-                        }
+                        if (d > 0) matrixValues[(r * nC) + c] /= d;
                     }
                 }
             }
@@ -368,9 +341,7 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
             var level = AsLong(row[2]);
             var capWeight = AsDouble(row[3]);
             var w = _weights.CraftingWeight(artifactId, level);
-            if (seen.Add(rawBucket)) {
-                buckets.Add(rawBucket);
-            }
+            if (seen.Add(rawBucket)) buckets.Add(rawBucket);
             CollectionsMarshal.GetValueRefOrAddDefault(accum, rawBucket, out _) += capWeight * w;
         }
 
@@ -408,15 +379,11 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
         var matrixValues = f.Matrix;
         var nC = f.ColLabels.Count;
 
-        if (bucketLabels.Count > 0) {
-            (bucketLabels, matrixValues) = TimeFill.FillTimePivotGaps(def.TimeBucket, def.CustomBucketUnit, bucketLabels, nC, matrixValues);
-        }
+        if (bucketLabels.Count > 0) (bucketLabels, matrixValues) = TimeFill.FillTimePivotGaps(def.TimeBucket, def.CustomBucketUnit, bucketLabels, nC, matrixValues);
         var nR = bucketLabels.Count;
 
         var pctMode = def.NormalizeBy;
-        if (pctMode is "row_pct" or "col_pct" or "global_pct") {
-            Matrix.Apply2DPctNormalization(matrixValues, nR, nC, pctMode);
-        }
+        if (pctMode is "row_pct" or "col_pct" or "global_pct") Matrix.Apply2DPctNormalization(matrixValues, nR, nC, pctMode);
 
         return new ReportResult {
             RowLabels = bucketLabels,
@@ -478,9 +445,7 @@ public sealed class ReportExecutor(IMissionDb db, IWeightData weights) {
             .ThenBy(x => x.i)
             .Select(x => x.v)
             .ToList();
-        for (var i = 0; i < values.Count; i++) {
-            values[i] = ordered[i];
-        }
+        for (var i = 0; i < values.Count; i++) values[i] = ordered[i];
     }
 
     private static string AsString(object? v) => v switch {

@@ -80,9 +80,7 @@ public sealed class FetchOrchestrator(
     }
 
     private void ScheduleAutoHide() {
-        if (TerminalState is null) {
-            return;
-        }
+        if (TerminalState is null) return;
 
         _autoHideTimer?.Dispose();
         _autoHideTimer = new Timer(_ => ClearFetchContent(), null, AutoHideGracePeriod, Timeout.InfiniteTimeSpan);
@@ -125,16 +123,12 @@ public sealed class FetchOrchestrator(
         ResetRunState();
         Flush();
 
-        if (previousTimer is not null) {
-            await previousTimer.DisposeAsync().ConfigureAwait(false);
-        }
+        if (previousTimer is not null) await previousTimer.DisposeAsync().ConfigureAwait(false);
 
         await settings.SetSettingAsync(InProgressKeyPrefix + accountId, "1").ConfigureAwait(false);
 
         var progress = new Progress<FetchProgress>(p => {
-            if (_cts != cts) {
-                return;
-            }
+            if (_cts != cts) return;
             Apply(p);
         });
 
@@ -150,9 +144,7 @@ public sealed class FetchOrchestrator(
 
         await settings.RemoveSettingAsync(InProgressKeyPrefix + accountId).ConfigureAwait(false);
 
-        if (_cts != cts) {
-            return;
-        }
+        if (_cts != cts) return;
 
         lock (_gate) {
             ApplyStages(result, ExportedFiles);
@@ -160,14 +152,10 @@ public sealed class FetchOrchestrator(
         TerminalState = result;
         HasFetchContent = true;
         appState.PipelineState = TerminalState;
-        if (!LogExpanded) {
-            ScheduleAutoHide();
-        }
+        if (!LogExpanded) ScheduleAutoHide();
         Flush();
 
-        if (result == AppState.Success) {
-            FetchSucceeded?.Invoke(accountId);
-        }
+        if (result == AppState.Success) FetchSucceeded?.Invoke(accountId);
     }
 
     internal void Apply(FetchProgress p) {
@@ -183,23 +171,15 @@ public sealed class FetchOrchestrator(
             }
 
             var now = _time.GetUtcNow();
-            if (p.LogText is { } text) {
-                ApplyLog(p, text, now);
-            }
+            if (p.LogText is { } text) ApplyLog(p, text, now);
             if (p is { MissionId: { } id, Segment: { } segment, SegmentStatus: { } status }) {
                 ApplySegment(id, p.MissionLabel, segment, status, now);
             }
-            if (p.Segment is null && p.LogText is null && (TerminalState is null || p.State == AppState.Success)) {
-                ApplyStages(p.State, p.ExportedFiles);
-            }
-            if (Progress is { Total: > 0 } || _log.Count > 0) {
-                HasFetchContent = true;
-            }
+            if (p.Segment is null && p.LogText is null && (TerminalState is null || p.State == AppState.Success)) ApplyStages(p.State, p.ExportedFiles);
+            if (Progress is { Total: > 0 } || _log.Count > 0) HasFetchContent = true;
         }
 
-        if (TerminalState is null) {
-            appState.PipelineState = p.State;
-        }
+        if (TerminalState is null) appState.PipelineState = p.State;
         if (terminal) {
             Flush();
         } else {
@@ -211,18 +191,12 @@ public sealed class FetchOrchestrator(
         var entry = new FetchLogEntry(now, text, p.LogIsError);
         if (!p.LogRowOnly) {
             _log.Add(entry);
-            if (_log.Count > LogCap) {
-                _log.RemoveRange(0, _log.Count - LogCap);
-            }
+            if (_log.Count > LogCap) _log.RemoveRange(0, _log.Count - LogCap);
         }
-        if (p.MissionId is not { } id) {
-            return;
-        }
+        if (p.MissionId is not { } id) return;
         var row = Row(id, p.MissionLabel, now);
         row.Logs.Add(entry);
-        if (row.Logs.Count > RowLogCap) {
-            row.Logs.RemoveRange(0, row.Logs.Count - RowLogCap);
-        }
+        if (row.Logs.Count > RowLogCap) row.Logs.RemoveRange(0, row.Logs.Count - RowLogCap);
         if (p.LogIsError && !p.LogRowOnly) {
             row.Status = ProcessStatus.Failed;
             row.EndedAt ??= now;
@@ -232,9 +206,7 @@ public sealed class FetchOrchestrator(
     private void ApplySegment(string id, string? label, string segment, SegmentStatus status, DateTimeOffset now) {
         var row = Row(id, label, now);
         int index = Array.FindIndex(row.Segments, s => s.Name == segment);
-        if (index >= 0) {
-            row.Segments[index] = row.Segments[index] with { Status = status };
-        }
+        if (index >= 0) row.Segments[index] = row.Segments[index] with { Status = status };
         if (status == SegmentStatus.Active) {
             CurrentMissionLabel = row.Label;
         }
@@ -256,9 +228,7 @@ public sealed class FetchOrchestrator(
     private void ApplyStages(AppState state, IReadOnlyList<string> exported) {
         switch (state) {
             case AppState.FetchingSave:
-                if (SaveStage == StageStatus.Pending) {
-                    SaveStage = StageStatus.Active;
-                }
+                if (SaveStage == StageStatus.Pending) SaveStage = StageStatus.Active;
                 break;
             case AppState.FetchingMissions:
                 SaveStage = StageStatus.Done;
@@ -305,9 +275,7 @@ public sealed class FetchOrchestrator(
 
     private void MarkDirty() {
         lock (_gate) {
-            if (_flushPending) {
-                return;
-            }
+            if (_flushPending) return;
             _flushPending = true;
             _flushTimer ??= _time.CreateTimer(_ => Flush(), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
             _flushTimer.Change(FlushInterval, Timeout.InfiniteTimeSpan);

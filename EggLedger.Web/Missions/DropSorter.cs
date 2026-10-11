@@ -42,7 +42,6 @@ public static class DropSorter {
     public static List<DropLike> InventoryVisualizerSort(IEnumerable<DropLike> collection) =>
         StableSort(collection, IvComparer);
 
-
     internal static List<DropLike> StableSort(IEnumerable<DropLike> collection, Comparison<DropLike> cmp) {
         List<(DropLike Item, int Index)> indexed = [.. collection.Select((item, i) => (item, i))];
         indexed.Sort((a, b) => {
@@ -53,31 +52,17 @@ public static class DropSorter {
     }
 
     private static int CombedComparer(DropLike a, DropLike b) {
-        if (a.Level != b.Level) {
-            return a.Level > b.Level ? -1 : 1;
-        }
-        if (a.Rarity != b.Rarity) {
-            return a.Rarity > b.Rarity ? -1 : 1;
-        }
-        if (a.Id != b.Id) {
-            return a.Id > b.Id ? -1 : 1;
-        }
-        if (a.Quality != b.Quality) {
-            return a.Quality < b.Quality ? -1 : 1;
-        }
+        if (a.Level != b.Level) return a.Level > b.Level ? -1 : 1;
+        if (a.Rarity != b.Rarity) return a.Rarity > b.Rarity ? -1 : 1;
+        if (a.Id != b.Id) return a.Id > b.Id ? -1 : 1;
+        if (a.Quality != b.Quality) return a.Quality < b.Quality ? -1 : 1;
         return 0;
     }
 
     private static int IvComparer(DropLike a, DropLike b) {
-        if (a.Rarity != b.Rarity) {
-            return a.Rarity > b.Rarity ? -1 : 1;
-        }
-        if (a.IvOrder != b.IvOrder) {
-            return a.IvOrder > b.IvOrder ? -1 : 1;
-        }
-        if (a.Level != b.Level) {
-            return a.Level > b.Level ? -1 : 1;
-        }
+        if (a.Rarity != b.Rarity) return a.Rarity > b.Rarity ? -1 : 1;
+        if (a.IvOrder != b.IvOrder) return a.IvOrder > b.IvOrder ? -1 : 1;
+        if (a.Level != b.Level) return a.Level > b.Level ? -1 : 1;
         return 0;
     }
 }

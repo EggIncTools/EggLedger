@@ -242,9 +242,7 @@
 
     private async Task LoadWorkerCountAsync() {
         var all = await SettingsStore.GetAllSettingsAsync();
-        if (all.TryGetValue(SettingsModel.KeyWorkerCount, out var raw) && int.TryParse(raw, out var n)) {
-            _workerCount = SettingsModel.ClampWorkerCount(n);
-        }
+        if (all.TryGetValue(SettingsModel.KeyWorkerCount, out var raw) && int.TryParse(raw, out var n)) _workerCount = SettingsModel.ClampWorkerCount(n);
     }
 
     private async Task SetWorkerCountAsync(int n) {
@@ -253,16 +251,12 @@
     }
 
     protected override void OnAfterRender(bool firstRender) {
-        if (firstRender && IsLoggedIn) {
-            ReopenSettingsAfterLinkReturn();
-        }
+        if (firstRender && IsLoggedIn) ReopenSettingsAfterLinkReturn();
     }
 
     private void ReopenSettingsAfterLinkReturn() {
         var query = new Uri(Nav.Uri).Query;
-        if (query.Length == 0 || !LinkResultQueryKeys.Any(query.Contains)) {
-            return;
-        }
+        if (query.Length == 0 || !LinkResultQueryKeys.Any(query.Contains)) return;
 
         var cleanUri = new Uri(Nav.GetUriWithQueryParameters(new Dictionary<string, object?> {
             ["linked"] = null,
@@ -275,15 +269,11 @@
     }
 
     private async Task ResumeIncompleteFetchAsync() {
-        if (!Fetch.IsIdle) {
-            return;
-        }
+        if (!Fetch.IsIdle) return;
 
         var incomplete = await FetchOrchestrator.GetIncompleteAccountsAsync(SettingsStore);
         var knownIds = AppStateSvc.KnownAccounts.Select(a => a.Id).ToHashSet();
-        if (incomplete.Find(knownIds.Contains) is { } resumeId) {
-            _ = StartFetchFor(resumeId);
-        }
+        if (incomplete.Find(knownIds.Contains) is { } resumeId) _ = StartFetchFor(resumeId);
     }
 
     private void OnStateChanged() {
@@ -305,9 +295,7 @@
         _existing = await Queries.GetExistingDataAsync();
 
     private async Task StartFetch() {
-        if (Active.ActiveAccountId is not { } id) {
-            return;
-        }
+        if (Active.ActiveAccountId is not { } id) return;
 
         await StartFetchFor(id);
     }

@@ -21,7 +21,6 @@ public class BlobCryptoTests {
             ?? throw new InvalidOperationException("fixture deserialized to null");
     }
 
-
     [Fact]
     public void Decrypt_GoProducedBlob_RecoversPlaintext() {
         var fx = LoadFixture();
@@ -39,7 +38,6 @@ public class BlobCryptoTests {
         Assert.Equal(pt, back);
     }
 
-
     [Fact]
     public void EncryptDecrypt_EmptyPlaintext_RoundTrips() {
         var fx = LoadFixture();
@@ -47,14 +45,12 @@ public class BlobCryptoTests {
         Assert.Empty(BlobCrypto.Decrypt(fx.Key, blob));
     }
 
-
     [Fact]
     public void Encrypt_UsesRandomNonce() {
         var fx = LoadFixture();
         var pt = Encoding.UTF8.GetBytes("same input");
         Assert.NotEqual(BlobCrypto.Encrypt(fx.Key, pt), BlobCrypto.Encrypt(fx.Key, pt));
     }
-
 
     [Fact]
     public void Decrypt_TamperedBlob_Throws() {

@@ -19,9 +19,7 @@ public static partial class CustomCssSanitizer {
         }
 
         error = FindProblem(rawCss, DecodeCssEscapes(rawCss));
-        if (error is not null) {
-            return false;
-        }
+        if (error is not null) return false;
 
         scopedCss = $".{ScopeClassFor(presetName)} {{\n{rawCss}\n}}";
         return true;

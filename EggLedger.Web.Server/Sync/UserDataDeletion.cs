@@ -51,9 +51,7 @@ public static class UserDataDeletion {
             "SELECT t FROM unnest(@names::text[]) AS t WHERE to_regclass(quote_ident(t)) IS NOT NULL";
         cmd.Parameters.AddWithValue("names", StoredDataTables);
         await using var reader = await cmd.ExecuteReaderAsync(ct).ConfigureAwait(false);
-        while (await reader.ReadAsync(ct).ConfigureAwait(false)) {
-            live.Add(reader.GetString(0));
-        }
+        while (await reader.ReadAsync(ct).ConfigureAwait(false)) live.Add(reader.GetString(0));
 
         return [.. StoredDataTables.Where(live.Contains)];
     }

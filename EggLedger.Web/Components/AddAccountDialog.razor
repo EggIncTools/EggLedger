@@ -57,9 +57,7 @@
     }
 
     private async Task Submit() {
-        if (!IsValid) {
-            return;
-        }
+        if (!IsValid) return;
 
         _loading = true;
         _error = "";

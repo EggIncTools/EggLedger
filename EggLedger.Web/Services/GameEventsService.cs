@@ -31,9 +31,7 @@ public sealed record GameEvent {
     public DateTimeOffset EndsAt => FromUnixSeconds(EndTimestamp);
 
     private static DateTimeOffset FromUnixSeconds(double seconds) {
-        if (double.IsNaN(seconds)) {
-            return DateTimeOffset.UnixEpoch;
-        }
+        if (double.IsNaN(seconds)) return DateTimeOffset.UnixEpoch;
         const double minSeconds = -62135596800d;
         const double maxSeconds = 253402300799d;
         return DateTimeOffset.UnixEpoch.AddSeconds(Math.Clamp(seconds, minSeconds, maxSeconds));
@@ -121,9 +119,7 @@ public sealed class GameEventsService {
         _clock = clock ?? TimeProvider.System;
         _apiKey = string.IsNullOrWhiteSpace(apiKey) ? null : apiKey.Trim();
 
-        if (string.IsNullOrWhiteSpace(baseUrl)) {
-            return;
-        }
+        if (string.IsNullOrWhiteSpace(baseUrl)) return;
         var trimmed = baseUrl.Trim().TrimEnd('/');
         var candidate = trimmed + EndpointPath;
         if (!Uri.TryCreate(candidate, UriKind.Absolute, out _)) {
@@ -165,9 +161,7 @@ public sealed class GameEventsService {
         var matches = new List<GameEvent>();
         lock (_gate) {
             foreach (var candidate in _events.Values) {
-                if (candidate.StartTimestamp <= seconds && seconds <= candidate.EndTimestamp) {
-                    matches.Add(candidate);
-                }
+                if (candidate.StartTimestamp <= seconds && seconds <= candidate.EndTimestamp) matches.Add(candidate);
             }
         }
         matches.Sort(NewestFirst);
@@ -200,32 +194,22 @@ public sealed class GameEventsService {
     }
 
     public Task EnsureLoadedAsync(CancellationToken cancellationToken = default) {
-        if (!IsConfigured) {
-            return Task.CompletedTask;
-        }
+        if (!IsConfigured) return Task.CompletedTask;
         lock (_gate) {
-            if (_loaded) {
-                return Task.CompletedTask;
-            }
+            if (_loaded) return Task.CompletedTask;
             if (_inFlight is { IsCompleted: false } running) {
                 return running;
             }
-            if (_clock.GetUtcNow() < _nextAllowedRefresh) {
-                return Task.CompletedTask;
-            }
+            if (_clock.GetUtcNow() < _nextAllowedRefresh) return Task.CompletedTask;
             _inFlight = Task.Run(() => RunAsync(fromStore: true, cancellationToken), CancellationToken.None);
             return _inFlight;
         }
     }
 
     public Task RefreshAsync(CancellationToken cancellationToken = default) {
-        if (!IsConfigured) {
-            return Task.CompletedTask;
-        }
+        if (!IsConfigured) return Task.CompletedTask;
         lock (_gate) {
-            if (_inFlight is { IsCompleted: false } running) {
-                return running;
-            }
+            if (_inFlight is { IsCompleted: false } running) return running;
             if (_clock.GetUtcNow() < _nextAllowedRefresh) {
                 return Task.CompletedTask;
             }
@@ -240,42 +224,28 @@ public sealed class GameEventsService {
         try {
             servedFromStore = fromStore
                 && await TryLoadStoredAsync(cancellationToken).ConfigureAwait(false);
-            if (servedFromStore) {
-                return;
-            }
+            if (servedFromStore) return;
             reachable = await FetchAsync(cancellationToken).ConfigureAwait(false);
         } finally {
-            if (!servedFromStore) {
-                Gate(TimeSpan.Zero);
-            }
-            if (servedFromStore || reachable) {
-                _loaded = true;
-            }
+            if (!servedFromStore) Gate(TimeSpan.Zero);
+            if (servedFromStore || reachable) _loaded = true;
         }
     }
 
     private void Gate(TimeSpan penalty) {
         var candidate = _clock.GetUtcNow() + (penalty > RefreshFloor ? penalty : RefreshFloor);
         lock (_gate) {
-            if (candidate > _nextAllowedRefresh) {
-                _nextAllowedRefresh = candidate;
-            }
+            if (candidate > _nextAllowedRefresh) _nextAllowedRefresh = candidate;
         }
     }
 
     private async Task<bool> TryLoadStoredAsync(CancellationToken cancellationToken) {
-        if (_store is null) {
-            return false;
-        }
+        if (_store is null) return false;
         try {
             var bytes = await _store.LoadAsync(cancellationToken).ConfigureAwait(false);
-            if (bytes is null || bytes.Length == 0) {
-                return false;
-            }
+            if (bytes is null || bytes.Length == 0) return false;
             var parsed = Parse(bytes);
-            if (parsed is null || parsed.Events.Count == 0) {
-                return false;
-            }
+            if (parsed is null || parsed.Events.Count == 0) return false;
             Merge(parsed.Events);
             return true;
         } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) {
@@ -293,27 +263,18 @@ public sealed class GameEventsService {
         for (int page = 0; page < MaxPages; page++) {
             var response = await GetPageAsync(after, offset, cancellationToken).ConfigureAwait(false);
             if (response is null) {
-                if (collected.Count == 0) {
-                    return reachedServer;
-                }
+                if (collected.Count == 0) return reachedServer;
                 break;
             }
             reachedServer = true;
             collected.AddRange(response.Events);
-            if (response.Events.Count == 0 || collected.Count >= response.Total) {
-                break;
-            }
+            if (response.Events.Count == 0 || collected.Count >= response.Total) break;
             offset += PageLimit;
         }
 
         bool changed = Merge(collected);
-        if (changed) {
-            await SaveAsync(cancellationToken).ConfigureAwait(false);
-        }
-
-        if (reachedServer) {
-            await FetchPredictionsAsync(cancellationToken).ConfigureAwait(false);
-        }
+        if (changed) await SaveAsync(cancellationToken).ConfigureAwait(false);
+        if (reachedServer) await FetchPredictionsAsync(cancellationToken).ConfigureAwait(false);
 
         return reachedServer;
     }
@@ -321,9 +282,7 @@ public sealed class GameEventsService {
     private async Task FetchPredictionsAsync(CancellationToken cancellationToken) {
         var uri = string.Create(CultureInfo.InvariantCulture, $"{_baseUrl}{PredictionsPath}?horizon={PredictionHorizonDays}");
         using var request = new HttpRequestMessage(HttpMethod.Get, uri);
-        if (_apiKey is not null) {
-            request.Headers.TryAddWithoutValidation(ApiKeyHeader, _apiKey);
-        }
+        if (_apiKey is not null) request.Headers.TryAddWithoutValidation(ApiKeyHeader, _apiKey);
 
         try {
             using var response = await _http.SendAsync(request, cancellationToken).ConfigureAwait(false);
@@ -334,9 +293,7 @@ public sealed class GameEventsService {
 
             var set = await JsonSerializer.DeserializeAsync<EventPredictionSet>(
                 await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false), Json, cancellationToken).ConfigureAwait(false);
-            if (set is null) {
-                return;
-            }
+            if (set is null) return;
 
             lock (_gate) {
                 _predictions = [.. set.Predictions.Where(p => !string.IsNullOrEmpty(p.Type) && p.PredictedEnd > p.PredictedStart)];
@@ -349,14 +306,10 @@ public sealed class GameEventsService {
     private double? ComputeAfter() {
         double newest;
         lock (_gate) {
-            if (_events.Count == 0) {
-                return null;
-            }
+            if (_events.Count == 0) return null;
             newest = _events.Values.Max(candidate => candidate.StartTimestamp);
         }
-        if (double.IsInfinity(newest) || double.IsNaN(newest)) {
-            return null;
-        }
+        if (double.IsInfinity(newest) || double.IsNaN(newest)) return null;
         double nowSeconds = _clock.GetUtcNow().ToUnixTimeMilliseconds() / 1000.0;
         double cursor = Math.Min(newest, nowSeconds) - MergeWindow.TotalSeconds;
         return cursor > 0 ? cursor : 0;
@@ -365,9 +318,7 @@ public sealed class GameEventsService {
     private async Task<GameEventsResponse?> GetPageAsync(
         double? after, int offset, CancellationToken cancellationToken) {
         using var request = new HttpRequestMessage(HttpMethod.Get, BuildRequestUri(after, offset));
-        if (_apiKey is not null) {
-            request.Headers.TryAddWithoutValidation(ApiKeyHeader, _apiKey);
-        }
+        if (_apiKey is not null) request.Headers.TryAddWithoutValidation(ApiKeyHeader, _apiKey);
 
         try {
             using var response = await _http.SendAsync(request, cancellationToken).ConfigureAwait(false);
@@ -400,9 +351,7 @@ public sealed class GameEventsService {
 
             var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
             var parsed = Parse(bytes);
-            if (parsed is null) {
-                Gate(TimeSpan.Zero);
-            }
+            if (parsed is null) Gate(TimeSpan.Zero);
             return parsed;
         } catch (Exception ex) when (ex is HttpRequestException or IOException) {
             _logger?.LogWarning(ex, "game events request to {BaseUrl} failed", _baseUrl);
@@ -435,31 +384,23 @@ public sealed class GameEventsService {
         }
 
         var header = response.Headers.RetryAfter;
-        if (header?.Delta is { } delta && delta > TimeSpan.Zero) {
-            return ClampWait(delta.TotalSeconds);
-        }
+        if (header?.Delta is { } delta && delta > TimeSpan.Zero) return ClampWait(delta.TotalSeconds);
         if (header?.Date is { } date) {
             var untilDate = date - _clock.GetUtcNow();
-            if (untilDate > TimeSpan.Zero) {
-                return ClampWait(untilDate.TotalSeconds);
-            }
+            if (untilDate > TimeSpan.Zero) return ClampWait(untilDate.TotalSeconds);
         }
         return DefaultRetryAfter;
     }
 
     private static TimeSpan ClampWait(double seconds) {
-        if (double.IsNaN(seconds) || seconds <= 0) {
-            return DefaultRetryAfter;
-        }
+        if (double.IsNaN(seconds) || seconds <= 0) return DefaultRetryAfter;
         return seconds >= MaxRetryAfter.TotalSeconds ? MaxRetryAfter : TimeSpan.FromSeconds(seconds);
     }
 
     private Uri BuildRequestUri(double? after, int offset) {
         var query = new StringBuilder(_endpoint);
         query.Append("?limit=").Append(PageLimit.ToString(CultureInfo.InvariantCulture));
-        if (after is { } value) {
-            query.Append("&after=").Append(value.ToString("R", CultureInfo.InvariantCulture));
-        }
+        if (after is { } value) query.Append("&after=").Append(value.ToString("R", CultureInfo.InvariantCulture));
         if (offset > 0) {
             query.Append("&offset=").Append(offset.ToString(CultureInfo.InvariantCulture));
         }
@@ -479,17 +420,11 @@ public sealed class GameEventsService {
         bool changed = false;
         lock (_gate) {
             foreach (var candidate in incoming) {
-                if (string.IsNullOrEmpty(candidate.Id)) {
-                    continue;
-                }
+                if (string.IsNullOrEmpty(candidate.Id)) continue;
                 var key = new GameEventKey(candidate.Id, candidate.StartTimestamp);
                 if (_events.TryGetValue(key, out var existing)) {
-                    if (existing.IsDeviceSourced && !candidate.IsDeviceSourced) {
-                        continue;
-                    }
-                    if (existing == candidate) {
-                        continue;
-                    }
+                    if (existing.IsDeviceSourced && !candidate.IsDeviceSourced) continue;
+                    if (existing == candidate) continue;
                 }
                 _events[key] = candidate;
                 changed = true;
@@ -499,9 +434,7 @@ public sealed class GameEventsService {
     }
 
     private async Task SaveAsync(CancellationToken cancellationToken) {
-        if (_store is null) {
-            return;
-        }
+        if (_store is null) return;
         var snapshot = Snapshot();
         try {
             var payload = JsonSerializer.SerializeToUtf8Bytes(

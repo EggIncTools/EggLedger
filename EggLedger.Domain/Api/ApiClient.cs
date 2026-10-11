@@ -129,9 +129,7 @@ public sealed partial class ApiClient(
 
     private static string ChainText(Exception ex) {
         var parts = new List<string>();
-        for (Exception? e = ex; e is not null; e = e.InnerException) {
-            parts.Add($"{e.GetType().Name}: {e.Message}");
-        }
+        for (Exception? e = ex; e is not null; e = e.InnerException) parts.Add($"{e.GetType().Name}: {e.Message}");
         return string.Join(" -> ", parts);
     }
 

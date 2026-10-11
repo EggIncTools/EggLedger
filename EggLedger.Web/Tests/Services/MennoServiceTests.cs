@@ -21,7 +21,6 @@ public sealed class MennoServiceTests {
         return ms.ToArray();
     }
 
-
     private sealed class GzipHandler(byte[] rawBody) : HttpMessageHandler {
         private readonly byte[] _gzipped = Gzip(rawBody);
         public int Hits;

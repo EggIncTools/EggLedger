@@ -11,9 +11,7 @@ public sealed class IpRateLimiter(int maxPerWindow, TimeSpan window, TimeProvide
         var cutoff = now - window;
         var q = _hits.GetOrAdd(ip, _ => new Queue<DateTimeOffset>());
         lock (q) {
-            while (q.Count > 0 && q.Peek() < cutoff) {
-                q.Dequeue();
-            }
+            while (q.Count > 0 && q.Peek() < cutoff) q.Dequeue();
             if (q.Count >= maxPerWindow) {
                 return false;
             }

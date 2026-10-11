@@ -4,7 +4,6 @@ namespace EggLedger.Web.Settings;
 
 public sealed class SettingsModel {
 
-
     public const string KeyAutoRefreshMenno = "auto_refresh_menno_pref";
     public const string KeyLastMennoRefresh = "last_menno_data_refresh_at";
     public const string KeyWorkerCount = "worker_count";
