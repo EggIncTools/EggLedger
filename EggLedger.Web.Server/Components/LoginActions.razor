@@ -1,0 +1,43 @@
+@inject ConsentReader Consent
+@inject ConsentOptions ConsentConfig
+@inject ViewerCookies Cookies
+@using EggIdentity.Consent
+@using EggIdentity.UI
+@using EggIdentity.UI.Suite
+@implements IDisposable
+
+<div class="login-actions">
+    @if (FunctionalAllowed) {
+        <SuiteAccount Placement="SuitePlacement.Inline"/>
+    } else {
+        <button type="button" class="login-btn" disabled>Sign in</button>
+    }
+</div>
+@if (!FunctionalAllowed) {
+    <p class="login-note">
+        @if (Consent.Current is null) {
+            <span>Choose "Accept all" or enable Functional cookies in the banner to log in.</span>
+        } else {
+            <span>Logging in needs functional cookies.</span>
+            <button type="button" class="login-consent-btn" @onclick="AllowFunctional">Allow functional cookies</button>
+        }
+    </p>
+}
+
+@code {
+    private bool FunctionalAllowed => Consent.Allows(ConsentCategory.Functional);
+
+    protected override void OnInitialized() => Consent.Changed += OnConsentChanged;
+
+    private void OnConsentChanged(object? sender, EventArgs e) => _ = InvokeAsync(StateHasChanged);
+
+    private void AllowFunctional() {
+        var now = DateTimeOffset.FromUnixTimeSeconds(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+        var state = new ConsentState(true, Consent.Current?.Analytics ?? false, ConsentConfig.PolicyVersion, now);
+        Cookies.Set(ConsentCookie.Name, ConsentCookie.Format(state));
+        Consent.Set(state);
+    }
+
+    public void Dispose() => Consent.Changed -= OnConsentChanged;
+
+}

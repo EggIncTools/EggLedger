@@ -41,6 +41,23 @@
     overflow: hidden;
 }
 
+.ledger-surface ::deep .overview-add-btn {
+    padding: 0.625rem 1.25rem;
+    border: 0;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    line-height: calc(1.25 / 0.875);
+    font-weight: 600;
+    color: var(--color-white);
+    background-color: var(--color-ledger-login);
+    transition: background-color var(--motion-base) var(--ease-standard);
+    cursor: pointer;
+}
+
+.ledger-surface ::deep .overview-add-btn:hover {
+    background-color: var(--color-ledger-login-hover);
+}
+
 .ledger-surface ::deep .ledger-pane {
     display: flex;
     flex-direction: column;

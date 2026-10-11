@@ -1,10 +1,11 @@
+using EggIdentity.UI.Suite;
 using EggLedger.Domain.MissionQuery;
 using EggLedger.Web.Data;
 
 namespace EggLedger.Web.State;
 
 public sealed class AccountLoader(
-    IndexedDbAccountStore store, AppStateService appState, ActiveAccount active) : IDisposable {
+    IndexedDbAccountStore store, AppStateService appState, ActiveAccount active, SuiteContext? suite = null) : IDisposable {
 
     private bool _loaded;
     private bool _subscribed;
@@ -22,6 +23,9 @@ public sealed class AccountLoader(
 
         if (!_loaded) {
             var activeId = await store.GetActiveAccountIdAsync().ConfigureAwait(false);
+            if (string.IsNullOrEmpty(activeId) && suite?.ActiveEid is { } suiteEid && Accounts.Any(a => a.Id == suiteEid)) {
+                activeId = suiteEid;
+            }
             if (!string.IsNullOrEmpty(activeId)) {
                 _persisting = true;
                 active.SetActive(activeId);
@@ -41,7 +45,11 @@ public sealed class AccountLoader(
             return;
         }
 
-        _ = store.SetActiveAccountIdAsync(active.ActiveAccountId ?? "");
+        var id = active.ActiveAccountId;
+        _ = store.SetActiveAccountIdAsync(id ?? "");
+        if (suite is not null) {
+            _ = suite.SetActiveEidAsync(id, Accounts.FirstOrDefault(a => a.Id == id)?.Nickname);
+        }
     }
 
     public void Dispose() {

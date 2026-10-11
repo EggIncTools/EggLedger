@@ -1,9 +1,11 @@
 @* Root document for the Blazor Server host. Identity flows into the circuit via cookie
    auth + the framework AuthenticationStateProvider. *@
 @using EggIdentity.UI
+@using EggIdentity.UI.Suite
+@inject SuiteContext Suite
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" @attributes="Suite.HtmlAttributes">
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -36,6 +38,7 @@
             background: #b91c1c; color: #fff; padding: 0.6rem 1rem; z-index: 1000; }
         #blazor-error-ui .reload, #blazor-error-ui .dismiss { color: #fff; margin-left: 0.75rem; cursor: pointer; }
     </style>
+    <SuiteHandoff/>
     <HeadOutlet @rendermode="@RenderMode"/>
 </head>
 <body>
@@ -51,12 +54,19 @@
 
 <ReconnectModal/>
 <script src="_content/EggIdentity.UI/calendarScroll.js"></script>
-<script src="_framework/blazor.web.js"></script>
+<script src="_framework/blazor.web.js" autostart="false"></script>
+<script>
+    if (document.prerendering) {
+        document.addEventListener("prerenderingchange", function () { Blazor.start(); }, { once: true });
+    } else {
+        Blazor.start();
+    }
+</script>
 </body>
 </html>
 
 @code {
-
-
     private static readonly InteractiveServerRenderMode RenderMode = new();
+
+    protected override Task OnInitializedAsync() => Suite.LoadAsync();
 }

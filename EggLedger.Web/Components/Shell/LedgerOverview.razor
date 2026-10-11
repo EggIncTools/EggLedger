@@ -1,0 +1,42 @@
+@using EggIdentity.UI
+
+<section class="overview">
+    <div class="overview-hero">
+        <img class="overview-logo" src="@ContentPaths.Asset("images/icon-512.png")" alt="" width="64" height="64"/>
+        <h1 class="overview-title">EggLedger</h1>
+        <p class="overview-lead">@Lead</p>
+        <div class="overview-actions">@Actions</div>
+        @if (Note is not null) {
+            <div class="overview-note">@Note</div>
+        }
+    </div>
+
+    <div class="overview-grid">
+        <article class="overview-card overview-card-ships">
+            <span class="overview-card-kicker">Ships</span>
+            <h2 class="overview-card-title">Mission history</h2>
+            <p class="overview-card-body">Every space mission you have flown, with the full loot list for each one. Browse as a list or on a calendar, and filter by ship, duration, target or drop.</p>
+        </article>
+        <article class="overview-card overview-card-drops">
+            <span class="overview-card-kicker">Drops</span>
+            <h2 class="overview-card-title">Lifetime totals</h2>
+            <p class="overview-card-body">Lifetime counts for every artifact, stone, ingredient and fragment across all your missions, broken down by rarity and level.</p>
+        </article>
+        <article class="overview-card overview-card-reports">
+            <span class="overview-card-kicker">Reports</span>
+            <h2 class="overview-card-title">Saved analysis</h2>
+            <p class="overview-card-body">Drop rates, fuel spend and ship timelines over any slice of your history. Save a filter and the report updates after each fetch.</p>
+        </article>
+        <article class="overview-card overview-card-export">
+            <span class="overview-card-kicker">Export</span>
+            <h2 class="overview-card-title">Your data, your files</h2>
+            <p class="overview-card-body">Download the whole ledger to .xlsx or .csv at any time. Missions are fetched straight from the game backup with your EID.</p>
+        </article>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public string Lead { get; set; } = "";
+    [Parameter, EditorRequired] public RenderFragment? Actions { get; set; }
+    [Parameter] public RenderFragment? Note { get; set; }
+}

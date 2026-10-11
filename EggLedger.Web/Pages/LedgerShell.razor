@@ -8,9 +8,12 @@
 @page "/settings"
 @page "/about"
 @using EggIdentity.UI
+@using Microsoft.Extensions.DependencyInjection
 @implements IDisposable
 @inject LedgerShellState Shell
 @inject ShipsViewState Ships
+@inject AppStateService AppStateSvc
+@inject IServiceProvider Services
 @inject NavigationManager Nav
 @inject IJSRuntime Js
 
@@ -25,15 +28,27 @@
         </div>
 
         <div class="ledger-surface @(Shell.View == LedgerView.Reports ? "ledger-surface-clip" : "")">
-            <PaneSwap Key="Shell.View" Direction="_viewDirection" Class="ledger-pane">
-                @if (Shell.View == LedgerView.Drops) {
-                    <DropsView/>
-                } else if (Shell.View == LedgerView.Reports) {
-                    <ReportsView/>
-                } else {
-                    <ShipsView/>
-                }
-            </PaneSwap>
+            @if (!IsLoggedIn) {
+                <LedgerOverview Lead="Your mission history is stored server-side under your account, private to you. Log in to start.">
+                    <Actions>@LoginActions</Actions>
+                </LedgerOverview>
+            } else if (AppStateSvc.KnownAccounts.Count == 0) {
+                <LedgerOverview Lead="Add an Egg, Inc. account by EID and fetch to pull in every mission you have flown.">
+                    <Actions>
+                        <button type="button" class="overview-add-btn" @onclick="Shell.RequestAccountPopover">Add account</button>
+                    </Actions>
+                </LedgerOverview>
+            } else {
+                <PaneSwap Key="Shell.View" Direction="_viewDirection" Class="ledger-pane">
+                    @if (Shell.View == LedgerView.Drops) {
+                        <DropsView/>
+                    } else if (Shell.View == LedgerView.Reports) {
+                        <ReportsView/>
+                    } else {
+                        <ShipsView/>
+                    }
+                </PaneSwap>
+            }
         </div>
     </div>
 </div>
@@ -58,6 +73,11 @@
     [Parameter]
     public string? Path { get; set; }
 
+    [CascadingParameter(Name = "IsLoggedIn")]
+    private bool IsLoggedIn { get; set; } = true;
+
+    private RenderFragment? LoginActions => Services.GetService<ILoginActionsSlot>()?.Render();
+
     private PathRouteSync? _routeSync;
     private bool _applyingRoute;
     private string _routePath = "/";
@@ -68,6 +88,7 @@
         Shell.Changed += OnShellChanged;
         Shell.Changed += OnShellRouteChanged;
         Ships.Changed += OnShipsRouteChanged;
+        AppStateSvc.Changed += OnAppStateChanged;
         _routeSync = new PathRouteSync(Nav, Js, "/");
         _routeSync.Changed += OnRouteChanged;
         _routePath = "/" + Nav.ToBaseRelativePath(Nav.Uri).Split('?', '#')[0].Trim('/').ToLowerInvariant();
@@ -295,6 +316,10 @@
         InvokeAsync(StateHasChanged);
     }
 
+    private void OnAppStateChanged() {
+        InvokeAsync(StateHasChanged);
+    }
+
     private void OnShellRouteChanged() {
         if (_applyingRoute || _routeSync is null) {
             return;
@@ -326,6 +351,7 @@
         Shell.Changed -= OnShellChanged;
         Shell.Changed -= OnShellRouteChanged;
         Ships.Changed -= OnShipsRouteChanged;
+        AppStateSvc.Changed -= OnAppStateChanged;
         if (_routeSync is not null) {
             _routeSync.Changed -= OnRouteChanged;
             _routeSync.Dispose();

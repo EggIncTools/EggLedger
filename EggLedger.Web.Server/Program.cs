@@ -13,6 +13,7 @@ using EggIdentity.Settings.Api;
 using EggIdentity.Settings.Store;
 using EggIdentity.Styles;
 using EggIdentity.UI;
+using EggIdentity.UI.Suite;
 using EggIdentity.Visits;
 using EggLedger.Web;
 using EggLedger.Web.Data;
@@ -117,7 +118,10 @@ if (eggIdentitySession is not null) {
     builder.Services.AddSingleton(eggIdentitySession);
     builder.Services.AddScoped<EggLedger.Web.Components.IProfilePanelSlot, EggLedger.Web.Server.Components.ProfilePanelSlot>();
     builder.Services.AddScoped<EggLedger.Web.Components.ICookieBannerSlot, EggLedger.Web.Server.Components.CookieBannerSlot>();
+    builder.Services.AddScoped<EggLedger.Web.Components.ILoginActionsSlot, EggLedger.Web.Server.Components.LoginActionsSlot>();
 }
+builder.Services.AddEggIdentitySuite("ledger");
+builder.Services.AddScoped<EggLedger.Web.Components.ISuiteChromeSlot, EggLedger.Web.Server.Components.SuiteChromeSlot>();
 builder.Services.AddEggIdentityConsent(new ConsentOptions { CookieDomain = eggIdentitySession?.CookieDomain });
 
 builder.Services.AddAuthorization();
@@ -312,6 +316,7 @@ var app = builder.Build();
 app.UseExceptionHandler();
 app.UseForwardedHeaders();
 
+app.UseSuitePrerender();
 app.UseRouting();
 app.UseStaticFiles();
 app.UseAuthentication();

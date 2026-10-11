@@ -1,0 +1,123 @@
+.overview {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    max-width: 64rem;
+    margin: 0 auto;
+    padding: 2rem 1rem 1rem;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
+.overview-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    text-align: center;
+}
+
+.overview-logo {
+    border-radius: 0.5rem;
+}
+
+.overview-title {
+    margin: 0;
+    font-size: 1.5rem;
+    line-height: 2rem;
+    font-weight: 700;
+    color: var(--color-fg);
+}
+
+.overview-lead {
+    margin: 0;
+    max-width: 32rem;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: var(--color-muted);
+}
+
+.overview-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+.overview-note {
+    max-width: 28rem;
+    font-size: 0.75rem;
+    line-height: calc(1 / 0.75);
+    color: var(--color-muted);
+}
+
+.overview-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.overview-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 1rem 1.125rem;
+    border-radius: 0.5rem;
+    border: 1px solid color-mix(in srgb, var(--view-accent) 24%, transparent);
+    box-shadow: inset 0 -2px 0 0 color-mix(in srgb, var(--view-accent) 32%, transparent);
+    background: var(--color-bg);
+}
+
+.overview-card-kicker {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--view-accent);
+}
+
+.overview-card-title {
+    margin: 0;
+    font-size: 1.0625rem;
+    line-height: 1.3;
+    font-weight: 600;
+    color: var(--color-fg);
+}
+
+.overview-card-body {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--color-muted);
+}
+
+.overview-card-ships {
+    --view-accent: var(--color-view-ships);
+}
+
+.overview-card-drops {
+    --view-accent: var(--color-view-drops);
+}
+
+.overview-card-reports {
+    --view-accent: var(--color-view-reports);
+}
+
+.overview-card-export {
+    --view-accent: var(--color-accent);
+}
+
+@media (max-width: 47.9375rem) {
+    .overview {
+        padding: 1.25rem 0.75rem 0.75rem;
+    }
+
+    .overview-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
