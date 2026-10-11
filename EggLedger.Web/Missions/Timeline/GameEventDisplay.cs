@@ -11,10 +11,11 @@ public static class GameEventDisplay {
 
     public static string Slug(string type) => type.Replace('_', '-').ToLowerInvariant();
 
-    public static string Title(string type, string? message) => message ?? Slug(type) switch {
+    public static string Title(string type, string? message) => Slug(type) switch {
         "mission-capacity" => "Double capacity",
         "mission-duration" => "Shorter missions",
-        _ => type
+        "mission-fuel" => "Fuel bonus",
+        _ => message ?? type
     };
 
     public static string Color(string type) => ColorByType.GetValueOrDefault(type, "#9ca3af");
