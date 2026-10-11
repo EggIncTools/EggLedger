@@ -1,4 +1,4 @@
-<ErrorBoundary @ref="_boundary">
+<CircuitGuard @ref="_boundary" Name="Island">
     <ChildContent>
         @ChildContent
     </ChildContent>
@@ -11,12 +11,12 @@
             </button>
         </div>
     </ErrorContent>
-</ErrorBoundary>
+</CircuitGuard>
 
 @code {
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    private ErrorBoundary? _boundary;
+    private CircuitGuard? _boundary;
 
     private void Recover() {
         _boundary?.Recover();
