@@ -39,6 +39,7 @@
     --suite-panel-border: 1px solid var(--color-ledger-login-menu-border);
     --suite-item-hover-bg: var(--color-ledger-login);
     --suite-item-hover-fg: var(--color-white);
+    --suite-profile-gap: 0;
 }
 
 .layout-suite-chrome {
