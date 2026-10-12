@@ -1,4 +1,5 @@
 using System.Globalization;
+using EggIdentity.Filters;
 
 namespace EggLedger.Domain.Reports;
 
@@ -39,28 +40,19 @@ public static class Weight {
         _ => n,
     };
 
-    private static bool HasDateFilter(ReportFilters f) {
-        foreach (var c in f.And) {
-            if (c.TopLevel is "launchDT" or "returnDT") return true;
-        }
-        foreach (var group in f.Or) {
-            foreach (var c in group) {
-                if (c.TopLevel is "launchDT" or "returnDT") return true;
-            }
-        }
-        return false;
-    }
+    private static bool IsDateField(FilterCondition c) => c.Field is "launchDT" or "returnDT";
 
-    private static int DateFilterWindowDays(ReportFilters f, TimeProvider clock) {
+    private static bool HasDateFilter(FilterSet f) => LedgerFilters.Conditions(f).Any(IsDateField);
+
+    private static int DateFilterWindowDays(FilterSet f, TimeProvider clock) {
         var minDays = 9999;
-        List<FilterCondition> all = [.. f.And, .. f.Or.SelectMany(g => g)];
         var now = clock.GetUtcNow().UtcDateTime;
-        foreach (var c in all) {
-            if (c.TopLevel is not "launchDT" and not "returnDT") continue;
-            if (c.Op is not ">" and not ">=") {
+        foreach (var c in LedgerFilters.Conditions(f)) {
+            if (!IsDateField(c)) continue;
+            if (FilterOps.Canonical(c.Op) is not FilterOps.Gt and not FilterOps.Gte) {
                 continue;
             }
-            if (!DateTime.TryParseExact(c.Val, "yyyy-MM-dd", CultureInfo.InvariantCulture,
+            if (!DateTime.TryParseExact(c.Value, "yyyy-MM-dd", CultureInfo.InvariantCulture,
                     DateTimeStyles.None, out var t)) {
                 continue;
             }
@@ -70,21 +62,8 @@ public static class Weight {
         return minDays;
     }
 
-    private static bool HasArtifactScopeFilter(ReportFilters f) {
-        static bool IsArtifactField(string s) {
-            return s.StartsWith("artifact_", StringComparison.Ordinal);
-        }
-
-        foreach (var c in f.And) {
-            if (IsArtifactField(c.TopLevel)) return true;
-        }
-        foreach (var group in f.Or) {
-            foreach (var c in group) {
-                if (IsArtifactField(c.TopLevel)) return true;
-            }
-        }
-        return false;
-    }
+    private static bool HasArtifactScopeFilter(FilterSet f) =>
+        LedgerFilters.Conditions(f).Any(c => c.Field.StartsWith("artifact_", StringComparison.Ordinal));
 
     private static bool IsArtifactDimension(string groupBy) => groupBy switch {
         "artifact_name" or "rarity" or "tier" or "spec_type" => true,

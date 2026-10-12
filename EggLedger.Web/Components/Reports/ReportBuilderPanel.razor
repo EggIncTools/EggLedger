@@ -1,7 +1,5 @@
 @using System.Text.Json
 @using EggIdentity.UI
-@using FilterCondition = EggLedger.Domain.Reports.FilterCondition
-@using WebCondition = EggLedger.Web.Missions.FilterCondition
 @inject IndexedDbReportStore Store
 @inject MissionConfigProvider Config
 @inject IReportRunner MissionDb
@@ -264,8 +262,8 @@
                                               @key="_filterBarKey"
                                               Context="_filterContext"
                                               ShowApply="false"
-                                              InitialAnd="_initialAnd"
-                                              InitialOr="_initialOr"/>
+                                              ReportOps="true"
+                                              Initial="_initialFilters"/>
                         </div>
 
                         <div class="rb-field rb-field-loose">
@@ -314,8 +312,7 @@
     private MissionFilterBar? _filterBar;
     private FilterViewContext _filterContext = FilterViewContext.Empty;
     private int _filterBarKey;
-    private IReadOnlyList<WebCondition>? _initialAnd;
-    private IReadOnlyList<IReadOnlyList<WebCondition>?>? _initialOr;
+    private FilterSet? _initialFilters;
 
     private sealed class FormModel {
         public string Name { get; set; } = "";
@@ -352,8 +349,7 @@
         _editingGroupId = "";
         _createdAt = 0;
         _sortOrder = 0;
-        _initialAnd = null;
-        _initialOr = null;
+        _initialFilters = null;
         _filterBarKey++;
         _form = new FormModel();
         _builderMode = "basic";
@@ -369,10 +365,7 @@
         _editingGroupId = def.GroupId ?? "";
         _createdAt = def.CreatedAt;
         _sortOrder = def.SortOrder;
-        _initialAnd = def.Filters.And.Select(ToWeb).ToList();
-        _initialOr = def.Filters.Or
-            .Select(g => (IReadOnlyList<WebCondition>?)g.Select(ToWeb).ToList())
-            .ToList();
+        _initialFilters = def.Filters;
         _filterBarKey++;
         _form = new FormModel {
             Name = def.Name,
@@ -458,8 +451,7 @@
         _form.Mode = result.Mode;
         _form.GroupBy = result.GroupBy;
         _form.DisplayMode = result.DisplayMode;
-        _initialAnd = result.And;
-        _initialOr = null;
+        _initialFilters = new FilterSet(result.And, []);
         _filterBarKey++;
         _builderMode = "advanced";
         return Task.CompletedTask;
@@ -483,24 +475,8 @@
         await Saved.InvokeAsync();
     }
 
-    private static WebCondition ToWeb(FilterCondition c) {
-        return new WebCondition(c.TopLevel, c.Op, c.Val);
-    }
-
-    private static FilterCondition ToReport(WebCondition c) {
-        return new FilterCondition { TopLevel = c.TopLevel, Op = c.Op, Val = c.Val };
-    }
-
     private ReportDefinition BuildDefinition(FormModel f) {
-        var legacy = _filterBar?.BuildFilter();
-        var reportFilters = new ReportFilters();
-        if (legacy is not null) {
-            reportFilters.And = legacy.And.Select(ToReport).ToList();
-            reportFilters.Or = legacy.Or
-                .Where(g => g is { Count: > 0 })
-                .Select(g => g!.Select(ToReport).ToList())
-                .ToList();
-        }
+        var reportFilters = _filterBar?.BuildFilter() ?? FilterSet.Empty;
 
         var timeSeries = f.Mode == "time_series";
         var hasSecondary = !string.IsNullOrEmpty(f.SecondaryGroupBy);

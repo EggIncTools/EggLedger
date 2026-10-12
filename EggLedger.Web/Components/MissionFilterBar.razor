@@ -1,109 +1,55 @@
 @using System.Text.RegularExpressions
-@using FilterCondition = EggLedger.Web.Missions.FilterCondition
 @inject IndexedDbSettings Settings
 @inject FilterState Filters
-@* Faithful port of the Vue FullFilter. Each AND row builds progressively: field
-   first, operator after a field is chosen, value after the operator. A complete
-   row gets a yellow OR button that adds an indented "⮡ OR" sibling under it
-   (legacy per-condition OR rescue). Emits the legacy (and, orFilters) shape so the
-   matcher reproduces Vue semantics exactly (see docs/filter-legacy-semantics.md). *@
 
 <div class="fbar @(FillHeight ? "fbar-fill" : "")">
-    @foreach (var index in Enumerable.Range(0, _draft.Rows.Count)) {
-        var row = _draft.Rows[index];
+    <FilterBuilder Fields="_fields"
+                   Draft="_draft"
+                   OpsFor="OpsFor"
+                   OptionsFor="OptionsFor"
+                   OptionsVersion="_optionsVersion"
+                   ValueEditor="PickerEditor"
+                   ValueEditorFor="LedgerFilterFields.UsesPicker">
+        @if (ShowApply) {
+            <hr class="fbar-rule"/>
 
-        @if (index != 0) {
-            <div class="filter-and-divider">
-                <span>AND</span>
-            </div>
-        }
-
-        <div class="filter-container">
-            @RenderConditionControls(row.Cond, OnRowChanged)
-
-            @RenderWarning(row.Cond)
-
-            @if (RowComplete(row.Cond)) {
-                <Tooltip Text="Add alternate filter condition">
-                    <button type="button"
-                            class="filter-icon-btn filter-or-btn"
-                            disabled="@OrAddDisabled(index)"
-                            @onclick="() => AddOr(index)">
-                        OR
-                    </button>
-                </Tooltip>
+            <button type="button" class="fbar-apply" disabled="@Applying" @onclick="ApplyAsync">Apply Filter</button>
+            @if (Applying) {
+                <span class="filter-applying">
+                    <img class="filter-applying-spinner" src="@ContentPaths.Asset("images/loading.gif")" alt=""/>
+                    Applying filter...
+                </span>
+            } else if (LastResultText is { Length: > 0 }) {
+                <div class="fbar-result">
+                    @RenderResultText(LastResultText)
+                </div>
             }
-
-            @if (FieldOf(row.Cond) is not null) {
-                <button type="button" aria-label="Remove filter condition"
-                        class="filter-icon-btn filter-remove-btn"
-                        @onclick="() => RemoveRow(index)">
-                    &times;
-                </button>
-            }
-        </div>
-
-        @foreach (var orIndex in Enumerable.Range(0, row.Or.Count)) {
-            var orRow = row.Or[orIndex];
-            <div class="filter-or-row filter-container">
-                <span class="filter-or-chip">OR</span>
-
-                @RenderConditionControls(orRow, NoOp)
-
-                @RenderWarning(orRow)
-
-                <button type="button" aria-label="Remove alternate condition"
-                        class="filter-icon-btn filter-remove-btn"
-                        @onclick="() => RemoveOr(index, orIndex)">
-                    &times;
-                </button>
-            </div>
         }
-    }
+    </FilterBuilder>
 </div>
-
-@if (ShowApply) {
-    <hr class="fbar-rule"/>
-
-    <button type="button" class="fbar-apply" disabled="@Applying" @onclick="ApplyAsync">Apply Filter</button>
-    @if (Applying) {
-        <span class="filter-applying">
-            <img class="filter-applying-spinner" src="@ContentPaths.Asset("images/loading.gif")" alt=""/>
-            Applying filter...
-        </span>
-    } else if (LastResultText is { Length: > 0 }) {
-        <div class="fbar-result">
-            @RenderResultText(LastResultText)
-        </div>
-    }
-}
 
 @code {
     [Parameter] public FilterViewContext Context { get; set; } = FilterViewContext.Empty;
     [Parameter] public bool Applying { get; set; }
     [Parameter] public string LastResultText { get; set; } = "";
-    [Parameter] public EventCallback<LegacyFilter> OnApply { get; set; }
+    [Parameter] public EventCallback<FilterSet> OnApply { get; set; }
 
     [Parameter] public bool ShowApply { get; set; } = true;
 
     [Parameter] public bool FillHeight { get; set; }
 
-    [Parameter] public IReadOnlyList<FilterCondition>? InitialAnd { get; set; }
+    [Parameter] public FilterSet? Initial { get; set; }
 
-    [Parameter] public IReadOnlyList<IReadOnlyList<FilterCondition>?>? InitialOr { get; set; }
+    [Parameter] public bool ReportOps { get; set; }
 
-    public sealed record LegacyFilter(
-        IReadOnlyList<FilterCondition> And,
-        IReadOnlyList<IReadOnlyList<FilterCondition>?> Or);
-
-    private readonly Dictionary<string, List<FilterOption>> _optionCache = [];
+    private readonly Dictionary<string, List<PickerOption>> _pickerCache = [];
     private FilterDraft _draft = new();
     private FilterViewContext? _bound;
+    private IReadOnlyList<FilterFieldDef> _fields = [];
     private PersistedSetting<bool>? _advancedDropsSetting;
+    private int _optionsVersion;
 
     private bool AdvancedDrops => _advancedDropsSetting?.Value ?? false;
-
-    private FilterFieldCtx FieldCtx => Context.Fields;
 
     protected override void OnInitialized() {
         BindContext();
@@ -125,144 +71,34 @@
         }
 
         _bound = Context;
-        _optionCache.Clear();
-        TopLevelFields = Context.IncludeArtifactFields
-            ? [.. FilterFields.ReportFilterFields]
-            : FilterFields.ReportMissionFields();
-
-        _draft = Filters.Resolve(Context, InitialAnd, InitialOr);
+        _pickerCache.Clear();
+        _fields = Context.IncludeArtifactFields ? LedgerFilterFields.ReportFilterFields : LedgerFilterFields.ReportMissionFields;
+        _draft = Filters.Resolve(Context, Initial);
     }
 
-    private List<FilterFieldDef> TopLevelFields { get; set; } = [];
+    private IReadOnlyList<FilterOpDef> OpsFor(FilterFieldDef def) =>
+        ReportOps ? LedgerFilterFields.ReportOpsFor(def) : LedgerFilterFields.MissionBarOpsFor(def);
 
-    private FilterFieldDef? FieldOf(FilterCondition c) {
-        return string.IsNullOrEmpty(c.TopLevel) ? null : FilterFields.GetReportField(c.TopLevel);
+    private List<PickerOption> Pickers(FilterFieldDef def) {
+        if (_pickerCache.TryGetValue(def.Key, out var cached)) return cached;
+        var opts = LedgerFilterFields.PickerOptionsFor(def, Context.Fields, AdvancedDrops);
+        _pickerCache[def.Key] = opts;
+        return opts;
     }
 
-    private static bool RowComplete(FilterCondition c) {
-        return FilterDraft.IsComplete(c);
-    }
+    private IReadOnlyList<FilterOption> OptionsFor(FilterFieldDef def) => [.. Pickers(def).Select(o => o.ToFilterOption())];
 
-    private bool RowIncomplete(FilterCondition c) {
-        var def = FieldOf(c);
-        if (def is null)
-            return false;
-        return !RowComplete(c);
-    }
-
-    private bool OrAddDisabled(int index) {
-        var or = _draft.Rows[index].Or;
-        if (or.Count == 0)
-            return false;
-        return !RowComplete(or[^1]);
-    }
-
-
-    private RenderFragment RenderConditionControls(FilterCondition c, Action changed) => __builder => {
-        var def = FieldOf(c);
-        var incomplete = RowIncomplete(c);
-
-        <select class="filter-select" value="@c.TopLevel"
-                @onchange="@(e => {
-                               SetField(c, e.Value?.ToString());
-                               changed();
-                           })">
-            <option value="" class="filter-select-option">Field...</option>
-            @foreach (var f in TopLevelFields) {
-                <option value="@f.Key" class="filter-select-option">@f.Label</option>
-            }
-        </select>
-
-        @if (def is not null) {
-            var ops = FilterFields.MissionBarOpsFor(def);
-            @if (def.ValueKind == FilterValueKind.Bool) {
-                <span class="filter-is">is</span>
-            } else {
-                var opMissing = incomplete && string.IsNullOrEmpty(c.Op);
-                <select class="filter-select @(opMissing ? "field-incomplete" : "")"
-                        value="@c.Op" disabled="@(ops.Count <= 1)"
-                        @onchange="@(e => {
-                                       c.Op = e.Value?.ToString() ?? "";
-                                       changed();
-                                   })">
-                    @if (ops.Count > 1) {
-                        <option value="" class="filter-select-option">Select...</option>
-                    }
-                    @foreach (var op in ops) {
-                        <option value="@op.Value" class="filter-select-option">@op.Label</option>
-                    }
-                </select>
-            }
-
-            @if (!string.IsNullOrEmpty(c.Op) || def.ValueKind == FilterValueKind.Bool) {
-                var valMissing = incomplete && string.IsNullOrEmpty(c.Val);
-                @switch (def.ValueKind) {
-                    case FilterValueKind.Select:
-                        <select class="filter-select @(valMissing ? "field-incomplete" : "")" value="@c.Val"
-                                @onchange="@(e => {
-                                               c.Val = e.Value?.ToString() ?? "";
-                                               changed();
-                                           })">
-                            <option value="" class="filter-select-option">Select...</option>
-                            @foreach (var opt in OptionsFor(def)) {
-                                <option value="@opt.Value" class="filter-select-option @opt.StyleClass">@opt.Text</option>
-                            }
-                        </select>
-                        break;
-                    case FilterValueKind.Bool:
-                        <select class="filter-select @(valMissing ? "field-incomplete" : "")" value="@c.Val"
-                                @onchange="@(e => {
-                                               c.Val = e.Value?.ToString() ?? "";
-                                               changed();
-                                           })">
-                            <option value="" class="filter-select-option">Select...</option>
-                            @foreach (var opt in FilterOptions.GetBoolFilterOptions()) {
-                                <option value="@opt.Value" class="filter-select-option">@opt.Text</option>
-                            }
-                        </select>
-                        break;
-                    case FilterValueKind.Date:
-                        <input type="date" class="filter-select @(valMissing ? "field-incomplete" : "")" value="@c.Val"
-                               @onchange="@(e => {
-                                              c.Val = e.Value?.ToString() ?? "";
-                                              changed();
-                                          })"/>
-                        break;
-                    case FilterValueKind.Number:
-                        <input type="number" class="filter-select @(valMissing ? "field-incomplete" : "")" value="@c.Val"
-                               @onchange="@(e => {
-                                              c.Val = e.Value?.ToString() ?? "";
-                                              changed();
-                                          })"/>
-                        break;
-                    case FilterValueKind.Modal:
-                        var isDrop = def.Key == "drops";
-                        <SearchablePicker Options="OptionsFor(def)"
-                                          SelectedValue="@ModalSelectedValue(def, c.Val)"
-                                          Placeholder="Click to select"
-                                          ImageBasePath="@(isDrop ? "images/" : "images/targets/")"
-                                          RarityRing="isDrop"
-                                          OverlayKind="@(isDrop ? "drop" : "target")"
-                                          Incomplete="valMissing"
-                                          OnSelect="opt => { c.Val = opt.Value; changed(); }"
-                                          Footer="@(isDrop ? DropAdvancedFooter : null)"/>
-                        break;
-                }
-            }
-        }
-    };
-
-    private RenderFragment RenderWarning(FilterCondition c) => __builder => {
-        var def = FieldOf(c);
-        @if (def is not null && RowIncomplete(c)) {
-            <Tooltip Text="Fill in the missing field" Class="filter-incomplete-icon" Error="true" Focusable="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
-                    <circle cx="12" cy="12" r="9"/>
-                    <line x1="12" y1="7.5" x2="12" y2="13"/>
-                    <line x1="12" y1="16" x2="12" y2="16.01"/>
-                </svg>
-            </Tooltip>
-        }
+    private RenderFragment<FilterValueEditorContext> PickerEditor => ctx => __builder => {
+        var isDrop = ctx.Field.Key == "drops";
+        <SearchablePicker Options="Pickers(ctx.Field)"
+                          SelectedValue="@(string.IsNullOrEmpty(ctx.Value) ? null : ctx.Value)"
+                          Placeholder="Click to select"
+                          ImageBasePath="@(isDrop ? "images/" : "images/targets/")"
+                          RarityRing="isDrop"
+                          OverlayKind="@(isDrop ? "drop" : "target")"
+                          Incomplete="ctx.Incomplete"
+                          OnSelect="opt => ctx.SetValue(opt.Value)"
+                          Footer="@(isDrop ? DropAdvancedFooter : null)"/>
     };
 
     private static readonly Regex ResultTextPattern = new(
@@ -285,78 +121,18 @@
         </span>
     };
 
-    private static string? ModalSelectedValue(FilterFieldDef def, string val) {
-        return string.IsNullOrEmpty(val) ? null : val;
-    }
-
     private RenderFragment DropAdvancedFooter => @<label class="fbar-advanced">
                                                      <input type="checkbox" class="ext-opt-check" checked="@AdvancedDrops" @onchange="OnAdvancedDropsToggled"/>
                                                      Advanced (family groupings)
                                                  </label>;
 
     private async Task OnAdvancedDropsToggled(ChangeEventArgs e) {
-        _optionCache.Remove("drops");
+        _pickerCache.Remove("drops");
+        _optionsVersion++;
         if (_advancedDropsSetting is { } setting) await setting.SetAsync(e.Value is true);
     }
 
-    private List<FilterOption> OptionsFor(FilterFieldDef def) {
-        if (def.OptionsSource is null)
-            return [];
-        if (_optionCache.TryGetValue(def.Key, out var cached))
-            return cached;
-
-        var opts = def.Key == "drops"
-            ? FilterOptions.GetDropFilterOptions(FieldCtx.ArtifactConfigs, FieldCtx.MaxQuality, AdvancedDrops)
-            : def.OptionsSource(FieldCtx);
-        _optionCache[def.Key] = opts;
-        return opts;
-    }
-
-    private void SetField(FilterCondition c, string? key) {
-        c.TopLevel = key ?? "";
-        var def = FieldOf(c);
-        if (def is null) {
-            c.Op = "";
-            c.Val = "";
-            return;
-        }
-
-        if (def.ValueKind == FilterValueKind.Bool) {
-            c.Op = "eq";
-            c.Val = "";
-            return;
-        }
-
-        var ops = FilterFields.MissionBarOpsFor(def);
-        c.Op = ops.Count == 1 ? ops[0].Value : "";
-        c.Val = "";
-    }
-
-    private static void NoOp() {
-    }
-
-    private void OnRowChanged() {
-        _draft.EnsureTrailingRow();
-    }
-
-    private void AddOr(int index) {
-        if (OrAddDisabled(index))
-            return;
-        _draft.Rows[index].Or.Add(new FilterCondition());
-    }
-
-    private void RemoveRow(int index) {
-        _draft.RemoveRow(index);
-    }
-
-    private void RemoveOr(int index, int orIndex) {
-        _draft.Rows[index].Or.RemoveAt(orIndex);
-    }
-
-    public LegacyFilter BuildFilter() {
-        var (and, or) = _draft.CompleteConditions();
-        return new LegacyFilter(and, or);
-    }
+    public FilterSet BuildFilter() => _draft.Complete(_fields, OpsFor);
 
     private async Task ApplyAsync() {
         await OnApply.InvokeAsync(BuildFilter());

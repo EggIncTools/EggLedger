@@ -1,3 +1,4 @@
+using EggIdentity.UI;
 using EggLedger.Web.Missions;
 using EggLedger.Web.Missions.Model;
 using EggLedger.Web.State;
@@ -7,15 +8,15 @@ namespace EggLedger.Web.Tests.Missions;
 public sealed class FilterViewContextTests {
     private static readonly FilterFieldCtx Fields = new();
 
-    private static List<FilterCondition> And(params (string Field, string Op, string Val)[] conditions) =>
-        [.. conditions.Select(c => new FilterCondition(c.Field, c.Op, c.Val))];
+    private static FilterSet And(params (string Field, string Op, string Val)[] conditions) =>
+        new([.. conditions.Select(c => new FilterCondition(c.Field, c.Op, c.Val))], []);
 
     [Fact]
     public void Resolve_ShipsAndDrops_ReturnTheSameDraft() {
         var state = new FilterState();
 
-        var fromShips = state.Resolve(new ShipsFilterContext(Fields), null, null);
-        var fromDrops = state.Resolve(new DropsFilterContext(Fields), null, null);
+        var fromShips = state.Resolve(new ShipsFilterContext(Fields), null);
+        var fromDrops = state.Resolve(new DropsFilterContext(Fields), null);
 
         Assert.Same(fromShips, fromDrops);
     }
@@ -25,46 +26,43 @@ public sealed class FilterViewContextTests {
         var state = new FilterState();
         var ships = new ShipsFilterContext(Fields);
 
-        var draft = state.Resolve(ships, null, null);
-        draft.Rows[0].Cond.TopLevel = "ship";
-        draft.Rows[0].Cond.Op = "eq";
-        draft.Rows[0].Cond.Val = "3";
+        var draft = state.Resolve(ships, null);
+        draft.Rows[0].Head = new FilterCondition("ship", "=", "3");
 
-        var again = state.Resolve(ships, And(("level", "eq", "9")), null);
+        var again = state.Resolve(ships, And(("level", "=", "9")));
 
         Assert.Same(draft, again);
-        Assert.Equal("ship", again.Rows[0].Cond.TopLevel);
-        Assert.Equal("3", again.Rows[0].Cond.Val);
+        Assert.Equal("ship", again.Rows[0].Head.Field);
+        Assert.Equal("3", again.Rows[0].Head.Value);
     }
 
     [Fact]
     public void Resolve_ReportsContext_HydratesPerReport_AndLeavesSharedDraftAlone() {
         var state = new FilterState();
         var reports = new ReportsFilterContext(Fields);
-        var shared = state.Resolve(new ShipsFilterContext(Fields), null, null);
-        shared.Rows[0].Cond.TopLevel = "ship";
+        var shared = state.Resolve(new ShipsFilterContext(Fields), null);
+        shared.Rows[0].Head = new FilterCondition("ship", "", "");
 
-        var first = state.Resolve(reports, And(("level", "eq", "9")), null);
-        var second = state.Resolve(reports, And(("target", "eq", "4")), null);
+        var first = state.Resolve(reports, And(("level", "=", "9")));
+        var second = state.Resolve(reports, And(("target", "=", "4")));
 
         Assert.NotSame(first, second);
         Assert.NotSame(shared, first);
-        Assert.Equal("level", first.Rows[0].Cond.TopLevel);
-        Assert.Equal("target", second.Rows[0].Cond.TopLevel);
-        Assert.Equal("ship", shared.Rows[0].Cond.TopLevel);
-        Assert.Single(shared.Rows);
+        Assert.Equal("level", first.Rows[0].Head.Field);
+        Assert.Equal("target", second.Rows[0].Head.Field);
+        Assert.Equal("ship", shared.Rows[0].Head.Field);
     }
 
     [Fact]
     public void Resolve_AlwaysLeavesATrailingBlankRow() {
         var state = new FilterState();
 
-        var shared = state.Resolve(new ShipsFilterContext(Fields), null, null);
-        var perReport = state.Resolve(new ReportsFilterContext(Fields), And(("ship", "eq", "3")), null);
+        var shared = state.Resolve(new ShipsFilterContext(Fields), null);
+        var perReport = state.Resolve(new ReportsFilterContext(Fields), And(("ship", "=", "3")));
 
-        Assert.Equal("", shared.Rows[^1].Cond.TopLevel);
+        Assert.Equal("", shared.Rows[^1].Head.Field);
         Assert.Equal(2, perReport.Rows.Count);
-        Assert.Equal("", perReport.Rows[^1].Cond.TopLevel);
+        Assert.Equal("", perReport.Rows[^1].Head.Field);
     }
 
     [Fact]
@@ -88,100 +86,55 @@ public sealed class FilterViewContextTests {
         var ships = new ShipsFilterContext(Fields);
         var drops = new DropsFilterContext(Fields);
 
-        var shipsDraft = state.Resolve(ships, null, null);
-        shipsDraft.Hydrate(And(("ship", "eq", "3")), null);
+        var shipsDraft = state.Resolve(ships, null);
+        shipsDraft.Hydrate(And(("ship", "=", "3")));
 
-        var dropsDraft = state.Resolve(drops, null, null);
-        Assert.Equal("ship", dropsDraft.Rows[0].Cond.TopLevel);
+        var dropsDraft = state.Resolve(drops, null);
+        Assert.Equal("ship", dropsDraft.Rows[0].Head.Field);
 
-        dropsDraft.Rows[0].Cond.Val = "5";
+        dropsDraft.Rows[0].Head = dropsDraft.Rows[0].Head with { Value = "5" };
 
-        var backToShips = state.Resolve(ships, null, null);
+        var backToShips = state.Resolve(ships, null);
         Assert.Same(shipsDraft, backToShips);
-        Assert.Equal("5", backToShips.Rows[0].Cond.Val);
+        Assert.Equal("5", backToShips.Rows[0].Head.Value);
     }
 
     [Fact]
-    public void Hydrate_RestoresOrSiblings() {
+    public void Complete_KeepsOrSiblingsWithTheirRow() {
         var draft = new FilterDraft();
-        draft.Hydrate(
-            And(("ship", "eq", "3")),
-            [And(("ship", "eq", "4"))]);
+        draft.Hydrate(new FilterSet(
+            [new FilterCondition("ship", "=", "3"), new FilterCondition("level", "=", "5")],
+            [[], [new FilterCondition("level", "=", "8")]]));
 
-        Assert.Single(draft.Rows);
-        Assert.Single(draft.Rows[0].Or);
-        Assert.Equal("4", draft.Rows[0].Or[0].Val);
+        var set = draft.Complete(LedgerFilterFields.ReportFilterFields);
+
+        Assert.Equal(2, set.And.Count);
+        Assert.Empty(set.Or[0]);
+        Assert.Equal("8", set.Or[1][0].Value);
     }
 
     [Fact]
-    public void CompleteConditions_SkipsIncompleteRows() {
+    public void Complete_SkipsIncompleteRows() {
         var draft = new FilterDraft();
-        draft.Hydrate(
-            And(("ship", "eq", "3"), ("level", "eq", ""), ("", "", "")),
-            null);
+        draft.Hydrate(And(("ship", "=", "3"), ("level", "=", ""), ("", "", "")));
 
-        var (and, or) = draft.CompleteConditions();
+        var set = draft.Complete(LedgerFilterFields.ReportFilterFields);
 
-        Assert.Single(and);
-        Assert.Equal("ship", and[0].TopLevel);
-        Assert.Single(or);
-        Assert.Null(or[0]);
+        Assert.Single(set.And);
+        Assert.Equal("ship", set.And[0].Field);
     }
 
     [Fact]
-    public void DraftHash_IsStableAcrossEquivalentDrafts() {
-        var first = new FilterDraft();
-        first.Hydrate(
-            And(("ship", "eq", "3"), ("level", "gte", "5")),
-            [null, And(("level", "eq", "8"))]);
+    public void Hash_SeparatesOrSiblingFromASecondAndRow() {
+        var withSibling = new FilterSet([new FilterCondition("ship", "=", "3")], [[new FilterCondition("level", "=", "8")]]);
+        var twoRows = And(("ship", "=", "3"), ("level", "=", "8"));
 
-        var second = new FilterDraft();
-        second.Hydrate(
-            And(("ship", "eq", "3"), ("level", "gte", "5")),
-            [null, And(("level", "eq", "8"))]);
-        second.EnsureTrailingRow();
-
-        Assert.Equal(FilterMatching.Hash("UTC", first), FilterMatching.Hash("UTC", second));
+        Assert.NotEqual(FilterCodec.Hash("UTC", withSibling), FilterCodec.Hash("UTC", twoRows));
     }
 
     [Fact]
-    public void DraftHash_DiffersForDifferentConditions() {
-        var baseline = new FilterDraft();
-        baseline.Hydrate(And(("ship", "eq", "3")), null);
-
-        var otherValue = new FilterDraft();
-        otherValue.Hydrate(And(("ship", "eq", "4")), null);
-
-        var otherOp = new FilterDraft();
-        otherOp.Hydrate(And(("ship", "gte", "3")), null);
-
-        var otherField = new FilterDraft();
-        otherField.Hydrate(And(("level", "eq", "3")), null);
-
-        var hash = FilterMatching.Hash("UTC", baseline);
-        Assert.NotEqual(hash, FilterMatching.Hash("UTC", otherValue));
-        Assert.NotEqual(hash, FilterMatching.Hash("UTC", otherOp));
-        Assert.NotEqual(hash, FilterMatching.Hash("UTC", otherField));
-    }
-
-    [Fact]
-    public void DraftHash_SeparatesOrSiblingFromASecondAndRow() {
-        var withSibling = new FilterDraft();
-        withSibling.Hydrate(
-            And(("ship", "eq", "3")),
-            [And(("level", "eq", "8"))]);
-
-        var twoRows = new FilterDraft();
-        twoRows.Hydrate(And(("ship", "eq", "3"), ("level", "eq", "8")), null);
-
-        Assert.NotEqual(FilterMatching.Hash("UTC", withSibling), FilterMatching.Hash("UTC", twoRows));
-    }
-
-    [Fact]
-    public void DraftHash_DiffersByScope() {
-        var draft = new FilterDraft();
-        draft.Hydrate(And(("ship", "eq", "3")), null);
-
-        Assert.NotEqual(FilterMatching.Hash("UTC", draft), FilterMatching.Hash("America/New_York", draft));
+    public void Hash_DiffersByScope() {
+        var set = And(("ship", "=", "3"));
+        Assert.NotEqual(FilterCodec.Hash("UTC", set), FilterCodec.Hash("America/New_York", set));
     }
 }

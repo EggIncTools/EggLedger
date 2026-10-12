@@ -1,3 +1,4 @@
+using EggIdentity.Filters;
 using EggLedger.Desktop.Storage;
 using EggLedger.Domain.Reports;
 using Microsoft.Data.Sqlite;
@@ -158,9 +159,7 @@ public sealed class ReportParityTests {
                 GroupBy = "ship_type",
                 Subject = "missions",
                 AccountId = Eid,
-                Filters = new ReportFilters {
-                    And = [new FilterCondition { TopLevel = "duration", Op = "=", Val = "0" }],
-                },
+                Filters = new FilterSet([new FilterCondition("duration", "=", "0")], []),
             },
             new NoWeights());
     }
@@ -193,9 +192,7 @@ public sealed class ReportParityTests {
                 GroupBy = "ship_type",
                 Subject = "missions",
                 AccountId = Eid,
-                Filters = new ReportFilters {
-                    And = [new FilterCondition { TopLevel = "drops", Op = "c", Val = "%_%_2_%" }],
-                },
+                Filters = new FilterSet([new FilterCondition("drops", "c", "%_%_2_%")], []),
             },
             new NoWeights());
     }
@@ -208,9 +205,7 @@ public sealed class ReportParityTests {
                 GroupBy = "ship_type",
                 Subject = "missions",
                 AccountId = Eid,
-                Filters = new ReportFilters {
-                    And = [new FilterCondition { TopLevel = "drops", Op = "dnc", Val = "%_%_0_%" }],
-                },
+                Filters = new FilterSet([new FilterCondition("drops", "dnc", "%_%_0_%")], []),
             },
             new NoWeights());
     }
@@ -289,9 +284,7 @@ public sealed class ReportParityTests {
                 GroupBy = "duration_type",
                 Subject = "missions",
                 AccountId = Eid,
-                Filters = new ReportFilters {
-                    And = [new FilterCondition { TopLevel = "launchDT", Op = ">=", Val = "2025-10-01" }],
-                },
+                Filters = new FilterSet([new FilterCondition("launchDT", ">=", "2025-10-01")], []),
             },
             new NoWeights());
     }
@@ -304,9 +297,7 @@ public sealed class ReportParityTests {
                 GroupBy = "ship_type",
                 Subject = "missions",
                 AccountId = Eid,
-                Filters = new ReportFilters {
-                    And = [new FilterCondition { TopLevel = "returnDT", Op = "<", Val = "2025-10-01" }],
-                },
+                Filters = new FilterSet([new FilterCondition("returnDT", "<", "2025-10-01")], []),
             },
             new NoWeights());
     }
@@ -319,12 +310,10 @@ public sealed class ReportParityTests {
                 GroupBy = "ship_type",
                 Subject = "missions",
                 AccountId = Eid,
-                Filters = new ReportFilters {
-                    And = [
-                        new FilterCondition { TopLevel = "launchDT", Op = ">=", Val = "2025-09-18" },
-                        new FilterCondition { TopLevel = "launchDT", Op = "<=", Val = "2025-11-01" },
-                    ],
-                },
+                Filters = new FilterSet([
+                    new FilterCondition("launchDT", ">=", "2025-09-18"),
+                    new FilterCondition("launchDT", "<=", "2025-11-01"),
+                ], []),
             },
             new NoWeights());
     }
@@ -401,9 +390,7 @@ public sealed class ReportParityTests {
                 GroupBy = "rarity",
                 Subject = "artifacts",
                 AccountId = Eid,
-                Filters = new ReportFilters {
-                    And = [new FilterCondition { TopLevel = "artifact_quality", Op = ">=", Val = "2" }],
-                },
+                Filters = new FilterSet([new FilterCondition("artifact_quality", ">=", "2")], []),
             },
             new NoWeights());
     }
@@ -416,9 +403,7 @@ public sealed class ReportParityTests {
                 GroupBy = "spec_type",
                 Subject = "artifacts",
                 AccountId = Eid,
-                Filters = new ReportFilters {
-                    And = [new FilterCondition { TopLevel = "artifact_quality", Op = "<", Val = "2" }],
-                },
+                Filters = new FilterSet([new FilterCondition("artifact_quality", "<", "2")], []),
             },
             new NoWeights());
     }

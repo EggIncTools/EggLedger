@@ -1,5 +1,6 @@
 using System.Collections.Frozen;
 using System.Globalization;
+using EggIdentity.Filters;
 
 namespace EggLedger.Domain.Reports;
 
@@ -10,28 +11,20 @@ public static class QueryBuilder {
     private static bool IsFloat(string s) =>
         double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out _);
 
-    public static (string clause, List<object?> args) BuildWhereClause(ReportFilters filters) {
+    public static (string clause, List<object?> args) BuildWhereClause(FilterSet filters) {
         List<string> clauses = [];
         List<object?> args = [];
 
-        void AddCond(FilterCondition c) {
-            var (clause, cargs) = ConditionToSql(c);
-            if (clause == "") return;
-            clauses.Add(clause);
-            args.AddRange(cargs);
-        }
-
-        foreach (var c in filters.And) AddCond(c);
-
-        foreach (var group in filters.Or) {
-            List<string> orParts = [];
-            foreach (var c in group) {
+        foreach (var row in LedgerFilters.Rows(filters)) {
+            List<string> parts = [];
+            foreach (var c in row) {
                 var (clause, cargs) = ConditionToSql(c);
                 if (clause == "") continue;
-                orParts.Add(clause);
+                parts.Add(clause);
                 args.AddRange(cargs);
             }
-            if (orParts.Count > 0) clauses.Add("(" + string.Join(" OR ", orParts) + ")");
+            if (parts.Count == 1) clauses.Add(parts[0]);
+            else if (parts.Count > 1) clauses.Add("(" + string.Join(" OR ", parts) + ")");
         }
 
         return clauses.Count == 0 ? ("", []) : (string.Join(" AND ", clauses), args);
@@ -55,22 +48,25 @@ public static class QueryBuilder {
         ["artifact_quality"] = "d.quality",
     }.ToFrozenDictionary();
 
-    public static (string clause, List<object?> args) ConditionToSql(FilterCondition c) {
-        switch (c.TopLevel) {
+    public static (string clause, List<object?> args) ConditionToSql(FilterCondition condition) {
+        var field = LedgerFilters.Find(condition.Field)?.Key ?? condition.Field;
+        var op = FilterOps.Canonical(condition.Op);
+        var val = condition.Value;
+        switch (field) {
             case "dubcap":
-                return c.Op == "true"
+                return BoolFlag(op, val)
                     ? ("m.is_dub_cap = 1", [])
                     : ("m.is_dub_cap = 0", []);
             case "buggedcap":
-                return c.Op == "true"
+                return BoolFlag(op, val)
                     ? ("m.is_bugged_cap = 1", [])
                     : ("m.is_bugged_cap = 0", []);
             case "drops":
-                if (c.Op is not "c" and not "dnc") return ("", []);
-                if (c.Val == "") {
+                if (op is not FilterOps.Contains and not FilterOps.NotContains) return ("", []);
+                if (val == "") {
                     return ("", []);
                 }
-                var parts = c.Val.Split('_');
+                var parts = val.Split('_');
 
                 string[] cols = ["artifact_id", "level", "rarity"];
                 List<string> preds = [];
@@ -83,52 +79,55 @@ public static class QueryBuilder {
                 var inner = "SELECT 1 FROM artifact_drops WHERE mission_id = m.mission_id AND player_id = m.player_id";
                 foreach (var p in preds) inner += " " + p;
                 var exists = "EXISTS (" + inner + ")";
-                if (c.Op == "dnc") exists = "NOT " + exists;
+                if (op == FilterOps.NotContains) exists = "NOT " + exists;
                 return (exists, qargs);
         }
 
-        if (c.TopLevel is "launchDT" or "returnDT") {
-            var col = MissionFieldToColumn[c.TopLevel];
-            return c.Op switch {
-                ">" or "<" or ">=" or "<=" => ($"{col} {c.Op} strftime('%s', ?)", [c.Val]),
-                "=" or "d=" => ($"{col} = strftime('%s', ?)", [c.Val]),
+        if (field is "launchDT" or "returnDT") {
+            var col = MissionFieldToColumn[field];
+            return op switch {
+                ">" or "<" or ">=" or "<=" => ($"{col} {op} strftime('%s', ?)", [val]),
+                "=" or "d=" => ($"{col} = strftime('%s', ?)", [val]),
                 _ => ("", []),
             };
         }
 
-        if (MissionFieldToColumn.TryGetValue(c.TopLevel, out var mcol)) {
-            return c.Op switch {
-                "=" or "!=" or ">" or "<" or ">=" or "<=" => IsInt(c.Val) ? ($"{mcol} {c.Op} ?", [c.Val]) : ("", []),
+        if (MissionFieldToColumn.TryGetValue(field, out var mcol)) {
+            return op switch {
+                "=" or "!=" or ">" or "<" or ">=" or "<=" => IsInt(val) ? ($"{mcol} {op} ?", [val]) : ("", []),
                 _ => ("", []),
             };
         }
 
-        if (ArtifactFieldToColumn.TryGetValue(c.TopLevel, out var acol)) {
+        if (ArtifactFieldToColumn.TryGetValue(field, out var acol)) {
 
-            switch (c.Op) {
+            switch (op) {
                 case "=":
                 case "!=":
                 case ">":
                 case "<":
                 case ">=":
                 case "<=":
-                    switch (c.TopLevel) {
+                    switch (field) {
                         case "artifact_spec_type":
                             break;
                         case "artifact_quality":
-                            if (!IsFloat(c.Val)) return ("", []);
+                            if (!IsFloat(val)) return ("", []);
                             break;
                         default:
-                            if (!IsInt(c.Val)) return ("", []);
+                            if (!IsInt(val)) return ("", []);
                             break;
                     }
-                    return ($"{acol} {c.Op} ?", [c.Val]);
+                    return ($"{acol} {op} ?", [val]);
             }
             return ("", []);
         }
 
         return ("", []);
     }
+
+    private static bool BoolFlag(string op, string val) =>
+        op == FilterOps.True || (op == FilterOps.Eq && val == FilterOps.True);
 
     public static string GroupByColumn(string groupBy) => groupBy switch {
         "ship_type" => "m.ship",

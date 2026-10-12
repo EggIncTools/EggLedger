@@ -88,13 +88,13 @@
 }
 
 @code {
-    [Parameter] public IReadOnlyList<FilterOption> Options { get; set; } = [];
+    [Parameter] public IReadOnlyList<PickerOption> Options { get; set; } = [];
     [Parameter] public string? SelectedValue { get; set; }
     [Parameter] public string Placeholder { get; set; } = "Click to select";
     [Parameter] public string ImageBasePath { get; set; } = "images/";
     [Parameter] public bool RarityRing { get; set; }
     [Parameter] public string OverlayKind { get; set; } = "drop";
-    [Parameter] public EventCallback<FilterOption> OnSelect { get; set; }
+    [Parameter] public EventCallback<PickerOption> OnSelect { get; set; }
     [Parameter] public RenderFragment? Footer { get; set; }
     [Parameter] public bool Incomplete { get; set; }
     [Parameter] public RenderFragment? TriggerContent { get; set; }
@@ -111,20 +111,20 @@
     private string _query = "";
     private int _activeIndex = -1;
 
-    private FilterOption? Selected =>
+    private PickerOption? Selected =>
         SelectedValue is null ? null : Options.FirstOrDefault(o => o.Value == SelectedValue);
 
-    private List<FilterOption> Filtered() {
+    private List<PickerOption> Filtered() {
         return string.IsNullOrWhiteSpace(_query)
             ? [.. Options]
             : [.. Options.Where(o => o.Text.Contains(_query, StringComparison.OrdinalIgnoreCase))];
     }
 
-    private sealed record PickerSegment(string? GroupLabel, List<(FilterOption Option, int Index)> Items);
+    private sealed record PickerSegment(string? GroupLabel, List<(PickerOption Option, int Index)> Items);
 
-    private sealed record TierCluster(string? TierKey, List<(FilterOption Option, int Index)> Items);
+    private sealed record TierCluster(string? TierKey, List<(PickerOption Option, int Index)> Items);
 
-    private static List<PickerSegment> BuildSegments(List<FilterOption> filtered) {
+    private static List<PickerSegment> BuildSegments(List<PickerOption> filtered) {
         var segments = new List<PickerSegment>();
         string? currentKey = null;
         for (var i = 0; i < filtered.Count; i++) {
@@ -145,7 +145,7 @@
         return segments;
     }
 
-    private static List<TierCluster> BuildTierClusters(List<(FilterOption Option, int Index)> items) {
+    private static List<TierCluster> BuildTierClusters(List<(PickerOption Option, int Index)> items) {
         var clusters = new List<TierCluster>();
         string? currentTier = null;
         foreach (var item in items) {
@@ -161,7 +161,7 @@
         return clusters;
     }
 
-    private RenderFragment RenderChip(FilterOption opt, int idx) => __builder => {
+    private RenderFragment RenderChip(PickerOption opt, int idx) => __builder => {
         <Tooltip Lines="@ChipLines(opt)" Class="popup-opt-chip-wrap">
             <button type="button" class="popup-opt-chip @(idx == _activeIndex ? "selected-popup-opt" : "")"
                     @onclick="() => Choose(opt)">
@@ -176,17 +176,17 @@
         </Tooltip>
     };
 
-    private static IReadOnlyList<TooltipLine> ChipLines(FilterOption opt) {
+    private static IReadOnlyList<TooltipLine> ChipLines(PickerOption opt) {
         return opt.Rarity is { } r
             ? [new TooltipLine(opt.Text, Head: true), new TooltipLine(FilterOptions.RarityWord(r), Class: FilterOptions.RarityStyleClass(r))]
             : [new TooltipLine(opt.Text, Head: true)];
     }
 
-    private string ImageSrc(FilterOption o) {
+    private string ImageSrc(PickerOption o) {
         return ContentPaths.Asset(ImageBasePath + o.ImagePath);
     }
 
-    private string RingClass(FilterOption o) {
+    private string RingClass(PickerOption o) {
         if (RarityRing && o.Rarity is { } r) return $"popup-ring bg-r-{r}";
 
         return o.ImagePath == "icon_help.webp" ? "popup-ring popup-ring-help" : "";
@@ -241,7 +241,7 @@
         }
     }
 
-    private async Task Choose(FilterOption opt) {
+    private async Task Choose(PickerOption opt) {
         _open = false;
         await OnSelect.InvokeAsync(opt);
     }

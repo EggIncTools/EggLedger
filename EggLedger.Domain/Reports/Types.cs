@@ -1,21 +1,15 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
+using EggIdentity.Filters;
 
 namespace EggLedger.Domain.Reports;
 
-public sealed class FilterCondition {
-    [JsonPropertyName("topLevel")]
-    public string TopLevel { get; set; } = "";
-    [JsonPropertyName("op")]
-    public string Op { get; set; } = "";
-    [JsonPropertyName("val")]
-    public string Val { get; set; } = "";
-}
+public sealed class FilterSetJsonConverter : JsonConverter<FilterSet> {
+    public override FilterSet Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        JsonSerializer.Deserialize<FilterSet>(ref reader, FilterCodec.Options) ?? FilterSet.Empty;
 
-public sealed class ReportFilters {
-    [JsonPropertyName("and")]
-    public List<FilterCondition> And { get; set; } = [];
-    [JsonPropertyName("or")]
-    public List<List<FilterCondition>> Or { get; set; } = [];
+    public override void Write(Utf8JsonWriter writer, FilterSet value, JsonSerializerOptions options) =>
+        JsonSerializer.Serialize(writer, value, FilterCodec.Options);
 }
 
 public sealed class ReportDefinition {
@@ -42,7 +36,8 @@ public sealed class ReportDefinition {
     [JsonPropertyName("customBucketUnit")]
     public string CustomBucketUnit { get; set; } = "";
     [JsonPropertyName("filters")]
-    public ReportFilters Filters { get; set; } = new();
+    [JsonConverter(typeof(FilterSetJsonConverter))]
+    public FilterSet Filters { get; set; } = FilterSet.Empty;
     [JsonPropertyName("gridX")]
     public int GridX { get; set; }
     [JsonPropertyName("gridY")]

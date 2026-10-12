@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Runtime.InteropServices;
+using EggIdentity.Filters;
 using EggLedger.Domain.Reports;
 using Ei;
 
@@ -132,9 +133,7 @@ public class InMemoryReportRunnerTests {
             GroupBy = "ship_type",
             Subject = "missions",
             AccountId = Eid,
-            Filters = new ReportFilters {
-                And = [new FilterCondition { TopLevel = "duration", Op = "=", Val = "0" }],
-            },
+            Filters = new FilterSet([new FilterCondition("duration", "=", "0")], []),
         };
 
         var kept = missions.Where(m => m.DurationType == 0);
@@ -218,9 +217,7 @@ public class InMemoryReportRunnerTests {
             GroupBy = "ship_type",
             Subject = "missions",
             AccountId = Eid,
-            Filters = new ReportFilters {
-                And = [new FilterCondition { TopLevel = "drops", Op = "c", Val = "%_%_3_%" }],
-            },
+            Filters = new FilterSet([new FilterCondition("drops", "c", "%_%_3_%")], []),
         };
 
         var sqlDb = new FakeDb().On("GROUP BY m.ship", Group1D(missions.Where(m => m.MissionId == "a"), Ship));

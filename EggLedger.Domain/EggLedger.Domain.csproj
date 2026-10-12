@@ -11,6 +11,7 @@
   <ItemGroup>
     <PackageReference Include="protobuf-net" />
     <PackageReference Include="EggIncognito.Protos" />
+    <PackageReference Include="EggIdentity.Core" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(EggIncProtoPath)' != ''">

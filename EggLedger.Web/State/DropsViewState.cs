@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using EggLedger.Domain.MissionPacking;
 using EggLedger.Domain.MissionQuery;
-using EggLedger.Web.Components;
 using EggLedger.Web.Data;
 using EggLedger.Web.Missions;
 using EggLedger.Web.Missions.Model;
@@ -140,7 +139,7 @@ public sealed class DropsViewState(
         Changed?.Invoke();
     }
 
-    public async Task ApplyFilterAsync(MissionFilterBar.LegacyFilter filter) {
+    public async Task ApplyFilterAsync(FilterSet filter) {
         if (_allMissions is not { } missions
             || _matcher is not { } matcher
             || _allDropsCache is null
@@ -156,8 +155,8 @@ public sealed class DropsViewState(
         try {
             var matchedIds = await hub.GetFilterMatchesAsync(
                 id,
-                FilterMatching.Hash(timeZones.TimeZone.Id, filter.And, filter.Or),
-                () => FilterMatching.MatchingIdsAsync(matcher, missions, filter.And, filter.Or));
+                FilterCodec.Hash(timeZones.TimeZone.Id, filter),
+                () => FilterMatching.MatchingIdsAsync(matcher, missions, filter));
 
             sw.Stop();
             if (generation != _filterGeneration) return;

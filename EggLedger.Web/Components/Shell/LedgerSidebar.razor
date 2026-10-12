@@ -112,7 +112,7 @@
         Drops.Changed += OnStateChanged;
     }
 
-    private Task ApplyActiveAsync(MissionFilterBar.LegacyFilter filter) {
+    private Task ApplyActiveAsync(FilterSet filter) {
         return Shell.View switch {
             LedgerView.Drops => Drops.ApplyFilterAsync(filter),
             LedgerView.Reports => Task.CompletedTask,

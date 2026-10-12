@@ -231,9 +231,7 @@ public sealed class MennoServiceTests {
         Assert.NotEqual(0.0, baseline!.MatrixValues[0]);
 
         var def = ShipDurationDef();
-        def.Filters = new ReportFilters {
-            And = [new FilterCondition { TopLevel = "target", Op = "=", Val = "99999" }],
-        };
+        def.Filters = new FilterSet([new FilterCondition("target", "=", "99999")], []);
 
         var result = MennoService.ExecuteComparison(
             def, items, ["9"], ["0"]);
@@ -253,9 +251,7 @@ public sealed class MennoServiceTests {
             GroupBy = "artifact_name",
             SecondaryGroupBy = "rarity",
             Weight = "gold",
-            Filters = new ReportFilters {
-                And = [new FilterCondition { TopLevel = "ship", Op = "=", Val = "10" }],
-            },
+            Filters = new FilterSet([new FilterCondition("ship", "=", "10")], []),
         };
 
         var result = MennoService.ExecuteComparison(

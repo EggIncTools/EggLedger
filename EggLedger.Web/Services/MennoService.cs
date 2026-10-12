@@ -334,59 +334,36 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null,
 
     internal static IReadOnlyList<ConfigurationItem> FilterByReportConditions(
         ReportDefinition def, IReadOnlyList<ConfigurationItem> items) {
-        if (def.Filters.And.Count == 0 && def.Filters.Or.Count == 0) return items;
-        var result = new List<ConfigurationItem>(items.Count);
-        foreach (var item in items) {
-            if (PassesReportFilters(def, item)) result.Add(item);
-        }
-        return result;
+        if (def.Filters.IsEmpty) return items;
+        var menno = def.Filters with { And = [.. def.Filters.And.Select(MennoOnly)], Or = [.. def.Filters.Or.Select(g => (IReadOnlyList<FilterCondition>)[.. g.Select(MennoOnly)])] };
+        var options = new FilterEvaluation(Strict: false);
+        return [.. items.Where(item => FilterEvaluator.Evaluate(menno, LedgerFilters.Fields, key => MennoValue(key, item), options).Matched)];
     }
 
-    private static bool PassesReportFilters(ReportDefinition def, ConfigurationItem item) {
-        foreach (var c in def.Filters.And) {
-            if (!EvalCondition(c, item)) return false;
-        }
-        foreach (var group in def.Filters.Or) {
-            if (group.Count == 0) continue;
-            var any = false;
-            foreach (var c in group) {
-                if (EvalCondition(c, item)) {
-                    any = true;
-                    break;
-                }
-            }
-            if (!any) return false;
-        }
-        return true;
-    }
+    private static readonly HashSet<string> MennoFields = [
+        with(StringComparer.Ordinal),
+        "ship", "duration", "level", "target", "artifact_rarity", "artifact_tier", "artifact_name",
+    ];
 
-    private static bool EvalCondition(FilterCondition c, ConfigurationItem item) {
+    private static FilterCondition MennoOnly(FilterCondition c) =>
+        LedgerFilters.Find(c.Field) is { } f && MennoFields.Contains(f.Key) ? c : c with { Value = "" };
+
+    private static FilterSubjectValue MennoValue(string key, ConfigurationItem item) {
         var sc = item.ShipConfiguration;
         var ac = item.ArtifactConfiguration;
-        return c.TopLevel switch {
-            "ship" => sc?.ShipType is { } st && CompareNumeric(c, st.Id),
-            "duration" => sc?.ShipDurationType is { } dt && CompareNumeric(c, dt.Id),
-            "level" => sc is not null && CompareNumeric(c, sc.Level),
-            "target" => sc?.TargetArtifact is { } ta && CompareNumeric(c, ta.Id),
-            "artifact_rarity" => ac?.ArtifactRarity is { } r && CompareNumeric(c, r.Id),
-            "artifact_tier" => ac is not null && CompareNumeric(c, ac.ArtifactLevel),
-            "artifact_name" => ac?.ArtifactType is { } at && CompareNumeric(c, at.Id),
-            _ => true,
+        return key switch {
+            "ship" => Num(sc?.ShipType?.Id),
+            "duration" => Num(sc?.ShipDurationType?.Id),
+            "level" => Num(sc?.Level),
+            "target" => Num(sc?.TargetArtifact?.Id),
+            "artifact_rarity" => Num(ac?.ArtifactRarity?.Id),
+            "artifact_tier" => Num(ac?.ArtifactLevel),
+            "artifact_name" => Num(ac?.ArtifactType?.Id),
+            _ => FilterSubjectValue.Absent,
         };
     }
 
-    private static bool CompareNumeric(FilterCondition c, long actual) {
-        if (c.Op is not ("=" or "!=" or ">" or "<" or ">=" or "<=")) return true;
-        return !TryInt(c.Val, out var target) || c.Op switch {
-            "=" => actual == target,
-            "!=" => actual != target,
-            ">" => actual > target,
-            "<" => actual < target,
-            ">=" => actual >= target,
-            "<=" => actual <= target,
-            _ => true,
-        };
-    }
+    private static FilterSubjectValue Num(int? value) => FilterSubjectValue.Of((double?)value);
 
     private delegate bool MennoMatcher(ConfigurationItem item, string rawVal);
 

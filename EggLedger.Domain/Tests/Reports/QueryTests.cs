@@ -1,16 +1,14 @@
+using EggIdentity.Filters;
 using EggLedger.Domain.Reports;
 
 namespace EggLedger.Domain.Tests.Reports;
 
 public class QueryTests {
+    private static FilterSet And(params FilterCondition[] conditions) => new(conditions, []);
+
     [Fact]
     public void BuildWhereClause_MissionScope() {
-        var filters = new ReportFilters {
-            And = [
-                new FilterCondition { TopLevel = "ship", Op = "=", Val = "3" },
-                new FilterCondition { TopLevel = "duration", Op = "!=", Val = "0" },
-            ],
-        };
+        var filters = And(new FilterCondition("ship", "=", "3"), new FilterCondition("duration", "!=", "0"));
         var (clause, args) = QueryBuilder.BuildWhereClause(filters);
         Assert.Contains("m.ship = ?", clause);
         Assert.Contains("m.duration_type != ?", clause);
@@ -19,12 +17,7 @@ public class QueryTests {
 
     [Fact]
     public void BuildWhereClause_ArtifactScope() {
-        var filters = new ReportFilters {
-            And = [
-                new FilterCondition { TopLevel = "artifact_rarity", Op = ">=", Val = "2" },
-                new FilterCondition { TopLevel = "artifact_spec_type", Op = "=", Val = "Artifact" },
-            ],
-        };
+        var filters = And(new FilterCondition("artifact_rarity", ">=", "2"), new FilterCondition("artifact_spec_type", "=", "Artifact"));
         var (clause, args) = QueryBuilder.BuildWhereClause(filters);
         Assert.Contains("d.rarity >= ?", clause);
         Assert.Contains("d.spec_type = ?", clause);
@@ -33,16 +26,34 @@ public class QueryTests {
 
     [Fact]
     public void BuildWhereClause_BooleanOps() {
-        var filters = new ReportFilters {
-            And = [
-                new FilterCondition { TopLevel = "dubcap", Op = "true" },
-                new FilterCondition { TopLevel = "buggedcap", Op = "false" },
-            ],
-        };
+        var filters = And(new FilterCondition("dubcap", "true", ""), new FilterCondition("buggedcap", "false", ""));
         var (clause, args) = QueryBuilder.BuildWhereClause(filters);
         Assert.Contains("m.is_dub_cap = 1", clause);
         Assert.Contains("m.is_bugged_cap = 0", clause);
         Assert.Empty(args);
+    }
+
+    [Fact]
+    public void BuildWhereClause_InlineBoolForm() {
+        var (clause, _) = QueryBuilder.BuildWhereClause(And(new FilterCondition("dubcap", "=", "true")));
+        Assert.Contains("m.is_dub_cap = 1", clause);
+    }
+
+    [Fact]
+    public void BuildWhereClause_OrSiblingsRescueTheirRow() {
+        var filters = new FilterSet(
+            [new FilterCondition("ship", "=", "3"), new FilterCondition("level", "=", "5")],
+            [[new FilterCondition("ship", "=", "4")], []]);
+        var (clause, args) = QueryBuilder.BuildWhereClause(filters);
+        Assert.Equal("(m.ship = ? OR m.ship = ?) AND m.level = ?", clause);
+        Assert.Equal(["3", "4", "5"], args);
+    }
+
+    [Fact]
+    public void BuildWhereClause_AliasOpsAndFarmKeyApply() {
+        var (clause, args) = QueryBuilder.BuildWhereClause(And(new FilterCondition("farm", "eq", "1")));
+        Assert.Equal("m.mission_type = ?", clause);
+        Assert.Equal(["1"], args);
     }
 
     [Fact]
@@ -60,23 +71,23 @@ public class QueryTests {
     }
 
     public static IEnumerable<object?[]> NumericValidationCases() => new[] {
-        new object?[] { new FilterCondition { TopLevel = "artifact_tier", Op = "=", Val = "3" }, "d.level = ?", "3", false },
-        [new FilterCondition { TopLevel = "artifact_rarity", Op = ">=", Val = "2" }, "d.rarity >= ?", "2", false],
-        [new FilterCondition { TopLevel = "level", Op = "=", Val = "5" }, "m.level = ?", "5", false],
-        [new FilterCondition { TopLevel = "ship", Op = "=", Val = "3" }, "m.ship = ?", "3", false],
-        [new FilterCondition { TopLevel = "artifact_name", Op = "=", Val = "12" }, "d.artifact_id = ?", "12", false],
-        [new FilterCondition { TopLevel = "artifact_quality", Op = ">", Val = "3.5" }, "d.quality > ?", "3.5", false],
-        [new FilterCondition { TopLevel = "artifact_spec_type", Op = "=", Val = "Artifact" }, "d.spec_type = ?", "Artifact", false],
-        [new FilterCondition { TopLevel = "artifact_tier", Op = "=", Val = "gusset" }, null, null, true],
-        [new FilterCondition { TopLevel = "artifact_rarity", Op = "=", Val = "rare" }, null, null, true],
-        [new FilterCondition { TopLevel = "ship", Op = "=", Val = "henliner" }, null, null, true],
-        [new FilterCondition { TopLevel = "artifact_quality", Op = "=", Val = "abc" }, null, null, true],
+        new object?[] { new FilterCondition("artifact_tier", "=", "3"), "d.level = ?", "3", false },
+        [new FilterCondition("artifact_rarity", ">=", "2"), "d.rarity >= ?", "2", false],
+        [new FilterCondition("level", "=", "5"), "m.level = ?", "5", false],
+        [new FilterCondition("ship", "=", "3"), "m.ship = ?", "3", false],
+        [new FilterCondition("artifact_name", "=", "12"), "d.artifact_id = ?", "12", false],
+        [new FilterCondition("artifact_quality", ">", "3.5"), "d.quality > ?", "3.5", false],
+        [new FilterCondition("artifact_spec_type", "=", "Artifact"), "d.spec_type = ?", "Artifact", false],
+        [new FilterCondition("artifact_tier", "=", "gusset"), null, null, true],
+        [new FilterCondition("artifact_rarity", "=", "rare"), null, null, true],
+        [new FilterCondition("ship", "=", "henliner"), null, null, true],
+        [new FilterCondition("artifact_quality", "=", "abc"), null, null, true],
     };
 
     [Theory]
     [MemberData(nameof(NumericValidationCases))]
     public void BuildWhereClause_NumericValidation(FilterCondition cond, string? wantSub, string? wantArg, bool wantEmpty) {
-        var filters = new ReportFilters { And = [cond] };
+        var filters = And(cond);
         var (clause, args) = QueryBuilder.BuildWhereClause(filters);
         if (wantEmpty) {
             Assert.Equal("", clause);
@@ -90,9 +101,7 @@ public class QueryTests {
 
     [Fact]
     public void ConditionToSql_LaunchDTUsesStrftime() {
-        var filters = new ReportFilters {
-            And = [new FilterCondition { TopLevel = "launchDT", Op = ">=", Val = "2025-01-01" }],
-        };
+        var filters = And(new FilterCondition("launchDT", ">=", "2025-01-01"));
         var (clause, args) = QueryBuilder.BuildWhereClause(filters);
         Assert.Contains("m.start_timestamp >= strftime('%s', ?)", clause);
         Assert.Single(args);
@@ -101,9 +110,7 @@ public class QueryTests {
 
     [Fact]
     public void ConditionToSql_ReturnDTLessThan() {
-        var filters = new ReportFilters {
-            And = [new FilterCondition { TopLevel = "returnDT", Op = "<", Val = "2025-06-01" }],
-        };
+        var filters = And(new FilterCondition("returnDT", "<", "2025-06-01"));
         var (clause, args) = QueryBuilder.BuildWhereClause(filters);
         Assert.Contains("m.return_timestamp < strftime('%s', ?)", clause);
         Assert.Single(args);
@@ -111,9 +118,7 @@ public class QueryTests {
 
     [Fact]
     public void ConditionToSql_LaunchDTEquals() {
-        var filters = new ReportFilters {
-            And = [new FilterCondition { TopLevel = "launchDT", Op = "=", Val = "2025-05-15" }],
-        };
+        var filters = And(new FilterCondition("launchDT", "=", "2025-05-15"));
         var (clause, args) = QueryBuilder.BuildWhereClause(filters);
         Assert.Contains("m.start_timestamp = strftime('%s', ?)", clause);
         Assert.Single(args);

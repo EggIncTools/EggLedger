@@ -1,4 +1,5 @@
 using System.Globalization;
+using EggIdentity.Filters;
 using EggLedger.Domain.Reports;
 
 namespace EggLedger.Domain.Tests.Reports;
@@ -6,6 +7,9 @@ namespace EggLedger.Domain.Tests.Reports;
 public class WeightTests {
     private static string Ago(int days) =>
         DateTime.Now.AddDays(-days).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+    private static FilterSet LaunchedAfter(params string[] dates) =>
+        new([.. dates.Select(d => new FilterCondition("launchDT", ">=", d))], []);
 
     [Fact]
     public void ClassifyWeight_2D_NoArtifact_IsLow() {
@@ -33,9 +37,7 @@ public class WeightTests {
             Mode = "aggregate",
             GroupBy = "ship_type",
             SecondaryGroupBy = "artifact_name",
-            Filters = new ReportFilters {
-                And = [new FilterCondition { TopLevel = "launchDT", Op = ">=", Val = Ago(30) }],
-            },
+            Filters = LaunchedAfter(Ago(30)),
         };
         Assert.Equal("MEDIUM", Weight.ClassifyWeight(def));
     }
@@ -58,9 +60,7 @@ public class WeightTests {
             GroupBy = "time_bucket",
             SecondaryGroupBy = "ship_type",
             TimeBucket = "month",
-            Filters = new ReportFilters {
-                And = [new FilterCondition { TopLevel = "launchDT", Op = ">=", Val = Ago(30) }],
-            },
+            Filters = LaunchedAfter(Ago(30)),
         };
         Assert.Equal("MEDIUM", Weight.ClassifyWeight(def));
     }
@@ -72,9 +72,7 @@ public class WeightTests {
             GroupBy = "time_bucket",
             SecondaryGroupBy = "ship_type",
             TimeBucket = "month",
-            Filters = new ReportFilters {
-                And = [new FilterCondition { TopLevel = "launchDT", Op = ">=", Val = Ago(180) }],
-            },
+            Filters = LaunchedAfter(Ago(180)),
         };
         Assert.Equal("HEAVY", Weight.ClassifyWeight(def));
     }
@@ -97,9 +95,7 @@ public class WeightTests {
             GroupBy = "time_bucket",
             SecondaryGroupBy = "artifact_name",
             TimeBucket = "month",
-            Filters = new ReportFilters {
-                And = [new FilterCondition { TopLevel = "launchDT", Op = ">=", Val = Ago(30) }],
-            },
+            Filters = LaunchedAfter(Ago(30)),
         };
         Assert.Equal("MEDIUM", Weight.ClassifyWeight(def));
     }
@@ -116,9 +112,7 @@ public class WeightTests {
             Mode = "time_series",
             GroupBy = "time_bucket",
             TimeBucket = "month",
-            Filters = new ReportFilters {
-                And = [new FilterCondition { TopLevel = "launchDT", Op = ">=", Val = Ago(30) }],
-            },
+            Filters = LaunchedAfter(Ago(30)),
         };
         Assert.Equal("MEDIUM", Weight.ClassifyWeight(def));
     }
@@ -130,12 +124,7 @@ public class WeightTests {
             Mode = "time_series",
             GroupBy = "time_bucket",
             TimeBucket = "month",
-            Filters = new ReportFilters {
-                And = [
-                    new FilterCondition { TopLevel = "launchDT", Op = ">=", Val = Ago(90) },
-                    new FilterCondition { TopLevel = "launchDT", Op = ">=", Val = Ago(10) },
-                ],
-            },
+            Filters = LaunchedAfter(Ago(90), Ago(10)),
         };
         Assert.Equal("MEDIUM", Weight.ClassifyWeight(def));
     }
@@ -149,9 +138,7 @@ public class WeightTests {
             Mode = "time_series",
             GroupBy = "time_bucket",
             TimeBucket = "month",
-            Filters = new ReportFilters {
-                And = [new FilterCondition { TopLevel = "launchDT", Op = ">=", Val = launchedAfter }],
-            },
+            Filters = LaunchedAfter(launchedAfter),
         };
         Assert.Equal(expected, Weight.ClassifyWeight(def, clock));
     }

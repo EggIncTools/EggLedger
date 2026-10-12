@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 namespace EggLedger.Web.Data;
 
 public static class ReportMapping {
-    private static readonly JsonSerializerOptions FilterOptions = new(JsonSerializerDefaults.Web);
 
     public static ReportDefinition ToDefinition(ReportRow r, ILogger? logger = null) => new() {
         Id = r.Id,
@@ -79,16 +78,14 @@ public static class ReportMapping {
         MinSampleSize = d.MinSampleSize,
     };
 
-    public static ReportFilters ParseFilters(string? json, ILogger? logger = null) {
-        if (string.IsNullOrWhiteSpace(json)) return new ReportFilters();
+    public static FilterSet ParseFilters(string? json, ILogger? logger = null) {
         try {
-            return JsonSerializer.Deserialize<ReportFilters>(json, FilterOptions) ?? new ReportFilters();
+            return FilterCodec.Deserialize(json);
         } catch (JsonException ex) {
             logger?.LogDebug(ex, "report filters JSON unreadable, using empty filters");
-            return new ReportFilters();
+            return FilterSet.Empty;
         }
     }
 
-    public static string SerializeFilters(ReportFilters filters) =>
-        JsonSerializer.Serialize(filters, FilterOptions);
+    public static string SerializeFilters(FilterSet filters) => FilterCodec.Serialize(filters);
 }

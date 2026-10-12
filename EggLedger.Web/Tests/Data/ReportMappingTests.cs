@@ -45,8 +45,8 @@ public sealed class ReportMappingTests {
         Assert.Equal("ship_type", def.GroupBy);
         Assert.Equal("duration_type", def.SecondaryGroupBy);
         Assert.Single(def.Filters.And);
-        Assert.Equal("level", def.Filters.And[0].TopLevel);
-        Assert.Equal("5", def.Filters.And[0].Val);
+        Assert.Equal("level", def.Filters.And[0].Field);
+        Assert.Equal("5", def.Filters.And[0].Value);
         Assert.True(def.MennoEnabled);
 
         var back = ReportMapping.ToRow(def);
@@ -57,7 +57,7 @@ public sealed class ReportMappingTests {
         Assert.Equal(row.MinSampleSize, back.MinSampleSize);
 
         var reparsed = ReportMapping.ParseFilters(back.Filters);
-        Assert.Equal("level", reparsed.And[0].TopLevel);
+        Assert.Equal("level", reparsed.And[0].Field);
     }
 
     [Fact]

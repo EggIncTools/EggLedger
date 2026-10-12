@@ -1,153 +1,48 @@
 .fbar {
     max-height: 15rem;
     overflow-y: auto;
+    --filter-row-gap: 0.5rem;
+    --filter-row-padding: 0.25rem 0;
+    --filter-or-indent: 1.25rem;
+    --filter-select-bg: var(--color-darkest);
+    --filter-select-fg: var(--color-muted);
+    --filter-select-border: 1px solid var(--color-border);
+    --filter-select-radius: 0.375rem;
+    --filter-select-padding: 0.5rem 2.5rem 0.5rem 0.5rem;
+    --filter-select-size: 0.875rem;
+    --filter-select-hover-bg: var(--color-bg);
+    --filter-focus-ring: 0 0 0 1px var(--color-accent);
+    --filter-disabled-opacity: 0.6;
+    --filter-option-bg: var(--color-darkest);
+    --filter-option-fg: var(--color-muted);
+    --filter-incomplete-color: var(--color-ledger-incomplete);
+    --filter-incomplete-glow: 0 0 5px 1px color-mix(in srgb, var(--color-ledger-incomplete) 55%, transparent);
+    --filter-glue-color: var(--color-muted);
+    --filter-divider-line: var(--color-border);
+    --filter-divider-size: 0.65rem;
+    --filter-divider-tracking: 0.1em;
+    --filter-chip-bg: transparent;
+    --filter-chip-fg: var(--color-yellow-700);
+    --filter-chip-border: 1px solid color-mix(in srgb, var(--color-yellow-700) 60%, transparent);
+    --filter-chip-radius: 9999px;
+    --filter-chip-size: 0.6rem;
+    --filter-or-color: var(--color-yellow-700);
+    --filter-or-border: color-mix(in srgb, var(--color-yellow-700) 70%, transparent);
+    --filter-or-hover-bg: color-mix(in srgb, var(--color-yellow-700) 15%, transparent);
+    --filter-or-disabled-opacity: 0.4;
+    --filter-btn-size: 1.9rem;
+    --filter-btn-radius: 0.375rem;
+    --filter-btn-font-size: 0.75rem;
+    --filter-remove-fg: var(--color-muted);
+    --filter-remove-border: var(--color-border);
+    --filter-remove-hover-fg: var(--color-err);
+    --filter-is-color: var(--color-muted);
 }
 
 .fbar-fill {
     flex: 1;
     min-height: 0;
     max-height: none;
-}
-
-.filter-container {
-    position: relative;
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    flex-grow: 1;
-    align-items: center;
-    gap: 0.5rem;
-    min-width: 0;
-    padding: 0.25rem 0;
-}
-
-.filter-and-divider {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin: 0.3rem 0;
-    color: var(--color-muted);
-    font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-}
-
-.filter-and-divider::before,
-.filter-and-divider::after {
-    content: '';
-    height: 1px;
-    flex: 1;
-    background: var(--color-border);
-}
-
-.filter-or-row {
-    margin-left: 1.25rem;
-}
-
-.filter-or-chip {
-    display: inline-flex;
-    align-items: center;
-    height: 1.25rem;
-    padding: 0 0.4rem;
-    border-radius: 9999px;
-    border: 1px solid color-mix(in srgb, var(--color-yellow-700) 60%, transparent);
-    color: var(--color-yellow-700);
-    font-size: 0.6rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-}
-
-.filter-is {
-    color: var(--color-muted);
-}
-
-.filter-select-option {
-    background-color: var(--color-darkest);
-    color: var(--color-muted);
-}
-
-.filter-select {
-    display: block;
-    flex: 1 1 7rem;
-    min-width: 0;
-    padding: 0.5rem 2.5rem 0.5rem 0.5rem;
-    font-size: 0.875rem;
-    line-height: calc(1.25 / 0.875);
-    font-variant-numeric: tabular-nums;
-    color: var(--color-muted);
-    background-color: var(--color-darkest);
-    border: 1px solid var(--color-border);
-    border-radius: 0.375rem;
-    appearance: none;
-    color-scheme: dark;
-    cursor: pointer;
-}
-
-.filter-select:focus {
-    outline: none;
-    border-color: var(--color-accent);
-    box-shadow: 0 0 0 1px var(--color-accent);
-}
-
-.filter-select:hover {
-    background-color: var(--color-bg);
-}
-
-.filter-select:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.field-incomplete {
-    border-color: var(--color-ledger-incomplete);
-    box-shadow: 0 0 5px 1px color-mix(in srgb, var(--color-ledger-incomplete) 55%, transparent);
-}
-
-.fbar ::deep .filter-incomplete-icon {
-    display: inline-flex;
-    align-items: center;
-    color: var(--color-ledger-incomplete);
-    cursor: help;
-}
-
-.filter-icon-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    height: 1.9rem;
-    min-width: 1.9rem;
-    padding: 0 0.45rem;
-    border-radius: 0.375rem;
-    border: 1px solid;
-    background: transparent;
-    font-size: 0.75rem;
-    font-weight: 600;
-    line-height: 1;
-    cursor: pointer;
-    transition: background-color var(--motion-fast) var(--ease-standard), opacity var(--motion-fast) var(--ease-standard);
-}
-
-.filter-or-btn {
-    color: var(--color-yellow-700);
-    border-color: color-mix(in srgb, var(--color-yellow-700) 70%, transparent);
-}
-
-.filter-or-btn:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--color-yellow-700) 15%, transparent);
-}
-
-.filter-or-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-}
-
-.filter-remove-btn {
-    color: var(--color-muted);
-    border-color: var(--color-border);
-}
-
-.filter-remove-btn:hover {
-    color: var(--color-err);
 }
 
 .fbar-rule {

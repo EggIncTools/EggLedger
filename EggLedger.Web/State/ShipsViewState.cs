@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.Text.Json;
 using EggLedger.Domain.MissionPacking;
 using EggLedger.Domain.MissionQuery;
-using EggLedger.Web.Components;
 using EggLedger.Web.Data;
 using EggLedger.Web.Missions;
 using EggLedger.Web.Missions.Model;
@@ -150,7 +149,7 @@ public sealed class ShipsViewState(
         Changed?.Invoke();
     }
 
-    public async Task ApplyFilterAsync(MissionFilterBar.LegacyFilter filter) {
+    public async Task ApplyFilterAsync(FilterSet filter) {
         if (AllMissions is not { } missions || _matcher is not { } matcher || active.ActiveAccountId is not { } id) return;
 
         var generation = ++_filterGeneration;
@@ -159,13 +158,13 @@ public sealed class ShipsViewState(
         FlatSorted = null;
         Changed?.Invoke();
 
-        var countableDrop = CountableDrop(filter);
+        var countableDrop = FilterMatching.CountableDrop(filter);
         var sw = Stopwatch.StartNew();
         try {
             var matchedIds = await hub.GetFilterMatchesAsync(
                 id,
-                FilterMatching.Hash(timeZones.TimeZone.Id, filter.And, filter.Or),
-                () => FilterMatching.MatchingIdsAsync(matcher, missions, filter.And, filter.Or));
+                FilterCodec.Hash(timeZones.TimeZone.Id, filter),
+                () => FilterMatching.MatchingIdsAsync(matcher, missions, filter));
 
             var (result, dropCounts) = await ProjectMatchesAsync(matcher, missions, matchedIds, countableDrop);
             sw.Stop();
@@ -173,7 +172,7 @@ public sealed class ShipsViewState(
 
             DropCounts = dropCounts;
             Filtered = result;
-            HasActiveFilter = HasConditions(filter);
+            HasActiveFilter = FilterMatching.HasConditions(filter);
             PruneSelection();
             var shown = result.Count;
             var filteredOut = missions.Count - shown;
@@ -189,18 +188,6 @@ public sealed class ShipsViewState(
             Applying = false;
             Changed?.Invoke();
         }
-    }
-
-    private static bool HasConditions(MissionFilterBar.LegacyFilter filter) =>
-        filter.And.Count > 0 || filter.Or.Any(g => g is { Count: > 0 });
-
-    private static DropMatch? CountableDrop(MissionFilterBar.LegacyFilter filter) {
-        foreach (var fc in filter.And) {
-            var typed = FilterCodec.FromLegacyCondition(fc);
-            if (typed is { Field: FilterField.Drops, Operator: FilterOperator.Contains, Value: DropFilterValue d }) return d.Match;
-        }
-
-        return null;
     }
 
     private static async Task<(List<DatabaseMission> Result, Dictionary<string, int> Counts)> ProjectMatchesAsync(

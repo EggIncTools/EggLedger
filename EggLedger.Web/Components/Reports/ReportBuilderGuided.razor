@@ -1,5 +1,3 @@
-@using WebCondition = EggLedger.Web.Missions.FilterCondition
-
 @* Guided report builder: a 4-step wizard (intent -> group-by -> quick filters -> name)
    that emits a partial ReportDefinition for the parent to prefill and switch to advanced. *@
 
@@ -84,13 +82,13 @@
         string Mode,
         string GroupBy,
         string DisplayMode,
-        IReadOnlyList<WebCondition> And);
+        IReadOnlyList<FilterCondition> And);
 
     [Parameter] public EventCallback<GuidedResult> OnApply { get; set; }
 
     private sealed record IntentOption(string Value, string Label, string Hint);
 
-    private sealed record QuickFilterOption(string Key, string Label, WebCondition Condition);
+    private sealed record QuickFilterOption(string Key, string Label, FilterCondition Condition);
 
     private static readonly IReadOnlyList<IntentOption> IntentOptions = [
         new("missions", "Mission counts", "Count missions by ship, level, or duration"),
@@ -110,10 +108,10 @@
     private IReadOnlyList<QuickFilterOption> QuickFilterOptions {
         get {
             var opts = new List<QuickFilterOption> {
-                new("dubcap", "Only dub-cap missions", new WebCondition("dubcap", "true", "")),
-                new("extended", "Only extended missions", new WebCondition("duration", "=", "2"))
+                new("dubcap", "Only dub-cap missions", new FilterCondition("dubcap", "true", "")),
+                new("extended", "Only extended missions", new FilterCondition("duration", "=", "2"))
             };
-            if (_intent == "artifacts") opts.Add(new QuickFilterOption("legendary", "Only legendary artifacts", new WebCondition("artifact_rarity", "=", "3")));
+            if (_intent == "artifacts") opts.Add(new QuickFilterOption("legendary", "Only legendary artifacts", new FilterCondition("artifact_rarity", "=", "3")));
 
             return opts;
         }

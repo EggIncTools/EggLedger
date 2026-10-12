@@ -6,71 +6,71 @@ using Ei;
 namespace EggLedger.Web.Missions;
 
 public static class FilterOptions {
-    public static List<FilterOption> GetShipFilterOptions() {
+    public static List<PickerOption> GetShipFilterOptions() {
         return [.. Enum.GetValues<MissionInfo.Spaceship>()
             .OrderBy(s => (int)s)
-            .Select(s => new FilterOption { Text = s.Name(), Value = ((int)s).ToString(CultureInfo.InvariantCulture) })];
+            .Select(s => new PickerOption { Text = s.Name(), Value = ((int)s).ToString(CultureInfo.InvariantCulture) })];
     }
 
-    public static List<FilterOption> GetDurationFilterOptions() {
+    public static List<PickerOption> GetDurationFilterOptions() {
         return [.. Enum.GetValues<MissionInfo.DurationType>()
             .OrderBy(d => (int)d)
-            .Select(d => new FilterOption {
+            .Select(d => new PickerOption {
                 Text = d.Display(),
                 Value = ((int)d).ToString(CultureInfo.InvariantCulture),
                 StyleClass = "text-duration-" + (int)d,
             })];
     }
 
-    public static List<FilterOption> GetLevelFilterOptions() {
+    public static List<PickerOption> GetLevelFilterOptions() {
         return [.. Enumerable.Range(0, 9)
-            .Select(i => new FilterOption { Text = i + "★", Value = i.ToString(CultureInfo.InvariantCulture) })];
+            .Select(i => new PickerOption { Text = i + "★", Value = i.ToString(CultureInfo.InvariantCulture) })];
     }
 
-    public static List<FilterOption> GetMissionTypeFilterOptions() =>
+    public static List<PickerOption> GetMissionTypeFilterOptions() =>
     [
-        new FilterOption { Text = "Home", Value = "0" },
-        new FilterOption { Text = "Virtue", Value = "1" },
-        new FilterOption { Text = "Unknown", Value = "-1" },
+        new PickerOption { Text = "Home", Value = "0" },
+        new PickerOption { Text = "Virtue", Value = "1" },
+        new PickerOption { Text = "Unknown", Value = "-1" },
     ];
 
-    public static List<FilterOption> GetFarmFilterOptions() =>
+    public static List<PickerOption> GetFarmFilterOptions() =>
     [
-        new FilterOption { Text = "Home", Value = "0" },
-        new FilterOption { Text = "Virtue", Value = "1" },
+        new PickerOption { Text = "Home", Value = "0" },
+        new PickerOption { Text = "Virtue", Value = "1" },
     ];
 
-    public static List<FilterOption> GetBoolFilterOptions() =>
+    public static List<PickerOption> GetBoolFilterOptions() =>
     [
-        new FilterOption { Text = "True", Value = "true" },
-        new FilterOption { Text = "False", Value = "false" },
+        new PickerOption { Text = "True", Value = "true" },
+        new PickerOption { Text = "False", Value = "false" },
     ];
 
-    public static List<FilterOption> GetTargetFilterOptions(IEnumerable<PossibleTarget> possibleTargets) {
-        return [.. possibleTargets.Select(t => new FilterOption {
+    public static List<PickerOption> GetTargetFilterOptions(IEnumerable<PossibleTarget> possibleTargets) {
+        return [.. possibleTargets.Select(t => new PickerOption {
             Text = t.DisplayName,
             Value = t.Id.ToString(CultureInfo.InvariantCulture),
             ImagePath = t.ImageString,
         })];
     }
 
-    public static List<FilterOption> GetArtifactRarityFilterOptions() =>
+    public static List<PickerOption> GetArtifactRarityFilterOptions() =>
     [
-        new FilterOption { Text = "Common", Value = "0" },
-        new FilterOption { Text = "Rare", Value = "1", StyleClass = "text-rare" },
-        new FilterOption { Text = "Epic", Value = "2", StyleClass = "text-epic" },
-        new FilterOption { Text = "Legendary", Value = "3", StyleClass = "text-legendary" },
+        new PickerOption { Text = "Common", Value = "0" },
+        new PickerOption { Text = "Rare", Value = "1", StyleClass = "text-rare" },
+        new PickerOption { Text = "Epic", Value = "2", StyleClass = "text-epic" },
+        new PickerOption { Text = "Legendary", Value = "3", StyleClass = "text-legendary" },
     ];
 
-    public static List<FilterOption> GetArtifactSpecTypeFilterOptions() =>
+    public static List<PickerOption> GetArtifactSpecTypeFilterOptions() =>
     [
-        new FilterOption { Text = "Artifact", Value = "0" },
-        new FilterOption { Text = "Stone", Value = "1" },
-        new FilterOption { Text = "Stone Fragment", Value = "2" },
-        new FilterOption { Text = "Ingredient", Value = "3" },
+        new PickerOption { Text = "Artifact", Value = "0" },
+        new PickerOption { Text = "Stone", Value = "1" },
+        new PickerOption { Text = "Stone Fragment", Value = "2" },
+        new PickerOption { Text = "Ingredient", Value = "3" },
     ];
 
-    public static List<FilterOption> GetMissionFilterValueOptions(string topLevel) => topLevel switch {
+    public static List<PickerOption> GetMissionFilterValueOptions(string topLevel) => topLevel switch {
         "ship" => GetShipFilterOptions(),
         "farm" => GetFarmFilterOptions(),
         "duration" => GetDurationFilterOptions(),
@@ -80,20 +80,20 @@ public static class FilterOptions {
         _ => [],
     };
 
-    public static List<FilterOption> GetArtifactTierFilterOptions(IEnumerable<PossibleArtifact> artifactConfigs) {
+    public static List<PickerOption> GetArtifactTierFilterOptions(IEnumerable<PossibleArtifact> artifactConfigs) {
         var levels = new SortedSet<int>(artifactConfigs.Select(a => a.Level));
-        return [.. levels.Select(level => new FilterOption {
+        return [.. levels.Select(level => new PickerOption {
             Text = "Tier " + (level + 1),
             Value = level.ToString(CultureInfo.InvariantCulture),
         })];
     }
 
-    public static List<FilterOption> GetArtifactNameFilterOptions(IReadOnlyList<PossibleArtifact> artifactConfigs) {
+    public static List<PickerOption> GetArtifactNameFilterOptions(IReadOnlyList<PossibleArtifact> artifactConfigs) {
         var representatives = new Dictionary<int, PossibleArtifact>();
         foreach (var a in artifactConfigs) {
             if (!representatives.TryGetValue(a.Name, out var existing) || a.Level < existing.Level) representatives[a.Name] = a;
         }
-        List<FilterOption> result = [.. representatives.Values.Select(a => new FilterOption {
+        List<PickerOption> result = [.. representatives.Values.Select(a => new PickerOption {
             Text = a.DisplayName,
             Value = a.Name.ToString(CultureInfo.InvariantCulture),
             ImagePath = DropPath(a),
@@ -132,13 +132,13 @@ public static class FilterOptions {
         return "artifacts/" + fixedName + "/" + fixedName + "_" + (drop.Level + 1 + addendum) + ".png";
     }
 
-    public static List<FilterOption> GetDropFilterOptions(
+    public static List<PickerOption> GetDropFilterOptions(
         IReadOnlyList<PossibleArtifact> artifactConfigs,
         double maxQuality,
         bool advanced) {
         List<PossibleArtifact> artifactList = [.. artifactConfigs.Where(a => a.BaseQuality <= maxQuality)];
 
-        var result = new List<FilterOption> {
+        var result = new List<PickerOption> {
             new() { Text = "Any Rare", Value = "%_%_1_%", Rarity = 1, StyleClass = "text-rare", ImagePath = "icon_help.webp" },
             new() { Text = "Any Epic", Value = "%_%_2_%", Rarity = 2, StyleClass = "text-epic", ImagePath = "icon_help.webp" },
             new() { Text = "Any Legendary", Value = "%_%_3_%", Rarity = 3, StyleClass = "text-legendary", ImagePath = "icon_help.webp" },
@@ -189,7 +189,7 @@ public static class FilterOptions {
             foreach (var rarities in tierMap.Values) totalCount += rarities.Count;
 
             if (advanced && totalCount > 1) {
-                result.Add(new FilterOption {
+                result.Add(new PickerOption {
                     Text = familyDisplayName + " (Any)",
                     Value = familyId + "_%_%_%",
                     Rarity = null,
@@ -204,7 +204,7 @@ public static class FilterOptions {
                 var rarities = tierMap[tierLevel];
                 var tierKey = groupKey + "_" + tierLevel;
                 if (advanced && rarities.Exists(a => a.Rarity > 0)) {
-                    result.Add(new FilterOption {
+                    result.Add(new PickerOption {
                         Text = ArtifactDisplayText(rarities[0]) + " (Any Rarity)",
                         Value = rarities[0].Name + "_" + rarities[0].Level + "_%_%",
                         Rarity = null,
@@ -216,7 +216,7 @@ public static class FilterOptions {
                     });
                 }
                 foreach (var a in rarities) {
-                    result.Add(new FilterOption {
+                    result.Add(new PickerOption {
                         Text = ArtifactDisplayText(a),
                         Value = a.Name + "_" + a.Level + "_" + a.Rarity + "_" + a.BaseQuality.ToString(CultureInfo.InvariantCulture),
                         Rarity = a.Rarity,

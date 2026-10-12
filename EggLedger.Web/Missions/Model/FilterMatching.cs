@@ -1,52 +1,31 @@
-using System.Text;
 using EggLedger.Domain.MissionPacking;
-using WebCondition = EggLedger.Web.Missions.FilterCondition;
+using EggLedger.Domain.Reports;
 
 namespace EggLedger.Web.Missions.Model;
 
 public static class FilterMatching {
     public const string FailedText = "Filter failed, please try again";
 
-    public static string Hash(string scope, FilterDraft draft) {
-        var (and, or) = draft.CompleteConditions();
-        return Hash(scope, and, or);
-    }
-
-    public static string Hash(
-        string scope,
-        IReadOnlyList<WebCondition> and,
-        IReadOnlyList<IReadOnlyList<WebCondition>?> or) {
-        var sb = new StringBuilder(scope);
-        sb.Append('#');
-        for (var i = 0; i < and.Count; i++) {
-            Append(sb, and[i]);
-            var siblings = i < or.Count ? or[i] : null;
-            if (siblings is not null) {
-                foreach (var sibling in siblings) {
-                    sb.Append('|');
-                    Append(sb, sibling);
-                }
-            }
-
-            sb.Append(';');
-        }
-
-        return sb.ToString();
-    }
-
     public static async Task<IReadOnlySet<string>> MatchingIdsAsync(
         MissionFilterMatcher matcher,
         IReadOnlyList<DatabaseMission> missions,
-        IReadOnlyList<WebCondition> and,
-        IReadOnlyList<IReadOnlyList<WebCondition>?> or) {
+        FilterSet filter) {
         var matched = new HashSet<string>(StringComparer.Ordinal);
         foreach (var mission in missions) {
-            if (await matcher.MissionMatchesFilterAsync(mission, and, or).ConfigureAwait(false)) matched.Add(mission.MissiondId);
+            if (await matcher.MatchesAsync(mission, filter).ConfigureAwait(false)) matched.Add(mission.MissiondId);
         }
 
         return matched;
     }
 
-    private static void Append(StringBuilder sb, WebCondition c) =>
-        sb.Append(c.TopLevel).Append('~').Append(c.Op).Append('~').Append(c.Val);
+    public static bool HasConditions(FilterSet filter) => !filter.IsEmpty;
+
+    public static DropMatch? CountableDrop(FilterSet filter) {
+        foreach (var c in filter.And) {
+            if (LedgerFilters.Find(c.Field)?.Key == "drops" && FilterOps.Canonical(c.Op) == FilterOps.Contains && c.Value.Length > 0)
+                return DropMatch.Decode(c.Value);
+        }
+
+        return null;
+    }
 }
