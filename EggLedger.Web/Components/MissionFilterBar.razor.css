@@ -45,6 +45,10 @@
     max-height: none;
 }
 
+.fbar ::deep .fb-footer {
+    display: block;
+}
+
 .fbar-rule {
     margin-top: 1rem;
     width: 100%;

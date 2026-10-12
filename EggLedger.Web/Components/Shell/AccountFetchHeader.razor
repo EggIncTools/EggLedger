@@ -24,7 +24,10 @@
 
     <div class="account-full">
         @if (Services.GetService<ISuiteChromeSlot>() is { } suiteChrome) {
-            <div class="account-suite">@suiteChrome.RenderAccount()</div>
+            <div class="account-suite">
+                <span class="account-suite-label">@(IsLoggedIn ? "Signed in as" : "Not signed in")</span>
+                @suiteChrome.RenderAccount()
+            </div>
         }
         <div class="account-main-row">
             @if (IsLoggedIn) {
