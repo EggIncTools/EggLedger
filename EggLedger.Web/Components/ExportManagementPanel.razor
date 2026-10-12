@@ -10,7 +10,7 @@
     <div class="exm-body exm-row">
         <label class="exm-text" for="keepCountInput">Keep</label>
         <input id="keepCountInput" type="number" class="number-input exm-keep"
-               value="@_keepCount" min="0" max="50" placeholder="0" @onchange="OnKeepCountChangeAsync"/>
+               @bind:get="SettingsModel.FormatInt(_keepCount)" @bind:set="OnKeepCountChangeAsync" min="0" max="50" placeholder="0"/>
         <span class="exm-text">most recent exports per player (0 = unlimited)</span>
     </div>
     @if (PruneFileCount > 0) {
@@ -178,8 +178,8 @@
         if (!_selected.Remove(path)) _selected.Add(path);
     }
 
-    private async Task OnKeepCountChangeAsync(ChangeEventArgs e) {
-        int.TryParse(e.Value?.ToString(), out var v);
+    private async Task OnKeepCountChangeAsync(string? value) {
+        int.TryParse(value, out var v);
         _keepCount = ClampKeep(v);
         Model.ExportKeepCount = _keepCount;
         await OnSetting.InvokeAsync((SettingsModel.KeyExportKeepCount, SettingsModel.FormatInt(_keepCount)));

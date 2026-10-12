@@ -14,13 +14,13 @@
         <div class="win-res">
             <div class="win-dim">
                 <input type="number" id="resPrefX" class="number-input win-num"
-                       value="@_width" @onchange="OnWidthChangeAsync"/>
+                       @bind:get="SettingsModel.FormatInt(_width)" @bind:set="OnWidthChangeAsync"/>
                 <span class="win-dim-label">Width<br/>(<span class="win-axis">X</span>)</span>
             </div>
             <span class="win-x">x</span>
             <div class="win-dim">
                 <input type="number" id="resPrefY" class="number-input win-num"
-                       value="@_height" @onchange="OnHeightChangeAsync"/>
+                       @bind:get="SettingsModel.FormatInt(_height)" @bind:set="OnHeightChangeAsync"/>
                 <span class="win-dim-label">Height<br/>(<span class="win-axis">Y</span>)</span>
             </div>
             <button type="button" class="btn-primary win-capture" @onclick="CaptureFromCurrentAsync">
@@ -71,16 +71,16 @@
         _fullscreen = _loadedFullscreen;
     }
 
-    private async Task OnWidthChangeAsync(ChangeEventArgs e) {
-        if (int.TryParse(e.Value?.ToString(), out var v) && v > 0) {
+    private async Task OnWidthChangeAsync(string? value) {
+        if (int.TryParse(value, out var v) && v > 0) {
             _width = v;
             Model.WindowWidth = v;
             await OnSetting.InvokeAsync((SettingsModel.KeyWindowWidth, SettingsModel.FormatInt(v)));
         }
     }
 
-    private async Task OnHeightChangeAsync(ChangeEventArgs e) {
-        if (int.TryParse(e.Value?.ToString(), out var v) && v > 0) {
+    private async Task OnHeightChangeAsync(string? value) {
+        if (int.TryParse(value, out var v) && v > 0) {
             _height = v;
             Model.WindowHeight = v;
             await OnSetting.InvokeAsync((SettingsModel.KeyWindowHeight, SettingsModel.FormatInt(v)));

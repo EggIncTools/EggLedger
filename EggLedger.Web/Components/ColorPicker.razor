@@ -38,8 +38,9 @@
                 <input type="text"
                        maxlength="7"
                        placeholder="#6366f1"
-                       value="@_hexInput"
-                       @oninput="OnHexInput"
+                       @bind:get="_hexInput"
+                       @bind:set="OnHexInput"
+                       @bind:event="oninput"
                        @onchange="CommitHexInput"/>
                 <div class="cp-hex-preview" style="background-color: @(ColorPickerMath.IsValidHex(_hexInput) ? _hexInput : CurrentHex)"></div>
             </div>
@@ -103,8 +104,8 @@
         }
     }
 
-    private void OnHexInput(ChangeEventArgs e) {
-        _hexInput = e.Value?.ToString() ?? "";
+    private void OnHexInput(string? value) {
+        _hexInput = value ?? "";
     }
 
     private async Task CommitHexInput() {

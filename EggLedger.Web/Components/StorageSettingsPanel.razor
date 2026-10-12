@@ -36,7 +36,7 @@
         <div class="stor-body">
             <div class="stor-row stor-row-half">
                 <input type="text" class="stor-input" placeholder="Destination path..."
-                       value="@_backupDestPath" @onchange="OnBackupDestChangeAsync"/>
+                       @bind:get="_backupDestPath" @bind:set="OnBackupDestChangeAsync"/>
                 <button type="button" class="btn-secondary stor-btn" @onclick="ChooseBackupDestAsync">
                     Choose...
                 </button>
@@ -77,7 +77,7 @@
         <div class="stor-body">
             <div class="stor-row stor-row-half">
                 <input type="text" class="stor-input" placeholder="Destination path..."
-                       value="@_moveDestPath" @onchange="OnMoveDestChangeAsync"/>
+                       @bind:get="_moveDestPath" @bind:set="OnMoveDestChangeAsync"/>
                 <button type="button" class="btn-secondary stor-btn" @onclick="ChooseMoveDestAsync">
                     Choose...
                 </button>
@@ -138,8 +138,8 @@
         await OnSetting.InvokeAsync((SettingsModel.KeyStorageFolderHidden, SettingsModel.FormatBool(hidden)));
     }
 
-    private async Task OnBackupDestChangeAsync(ChangeEventArgs e) {
-        _backupDestPath = e.Value?.ToString() ?? "";
+    private async Task OnBackupDestChangeAsync(string? value) {
+        _backupDestPath = value ?? "";
         Model.BackupDestPath = _backupDestPath;
         await OnSetting.InvokeAsync((SettingsModel.KeyBackupDestPath, _backupDestPath));
     }
@@ -167,8 +167,8 @@
         }
     }
 
-    private async Task OnMoveDestChangeAsync(ChangeEventArgs e) {
-        _moveDestPath = e.Value?.ToString() ?? "";
+    private async Task OnMoveDestChangeAsync(string? value) {
+        _moveDestPath = value ?? "";
         Model.MoveDestPath = _moveDestPath;
         await OnSetting.InvokeAsync((SettingsModel.KeyMoveDestPath, _moveDestPath));
     }

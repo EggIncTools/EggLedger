@@ -22,7 +22,7 @@
             <CloseButton OnClick="Close"/>
             <div class="popup-search-row">
                 <input @ref="_searchInput" type="text" class="input-search" placeholder="Search..."
-                       value="@_query" @oninput="OnQueryInput"/>
+                       @bind:get="_query" @bind:set="OnQueryInput" @bind:event="oninput"/>
                 @if (Footer is not null) {
                     <div class="popup-settings-wrap">
                         <button type="button" class="popup-settings-btn" aria-label="Options"
@@ -217,8 +217,8 @@
         }
     }
 
-    private void OnQueryInput(ChangeEventArgs e) {
-        _query = e.Value?.ToString() ?? "";
+    private void OnQueryInput(string? value) {
+        _query = value ?? "";
         _activeIndex = -1;
     }
 
