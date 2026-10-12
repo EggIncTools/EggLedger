@@ -81,17 +81,18 @@
     gap: 0.375rem;
     width: 100%;
     padding: 0.4rem 0.85rem;
-    border: 0;
+    border: 1px solid color-mix(in oklab, var(--color-ledger-support) 45%, transparent);
     border-radius: 0.375rem;
-    color: var(--color-white);
-    background-color: var(--color-ledger-support);
+    color: var(--color-ledger-support);
+    background-color: color-mix(in oklab, var(--color-ledger-support) 16%, var(--color-panel2));
     font-weight: 600;
     cursor: pointer;
-    transition: background-color var(--motion-base) var(--ease-standard);
+    transition: background-color var(--motion-base) var(--ease-standard), border-color var(--motion-base) var(--ease-standard);
 }
 
 .ledger-support-btn:hover {
-    background-color: var(--color-ledger-support-hover);
+    border-color: color-mix(in oklab, var(--color-ledger-support) 65%, transparent);
+    background-color: color-mix(in oklab, var(--color-ledger-support) 26%, var(--color-panel2));
 }
 
 @media (max-width: 47.9375rem) {
