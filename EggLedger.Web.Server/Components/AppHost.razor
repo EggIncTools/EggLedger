@@ -52,16 +52,9 @@
     <span class="dismiss">&times;</span>
 </div>
 
-<ReconnectModal/>
 <script src="_content/EggIdentity.UI/calendarScroll.js"></script>
 <script src="_framework/blazor.web.js" autostart="false"></script>
-<script>
-    if (document.prerendering) {
-        document.addEventListener("prerenderingchange", function () { Blazor.start(); }, { once: true });
-    } else {
-        Blazor.start();
-    }
-</script>
+<CircuitLifecycle/>
 </body>
 </html>
 
