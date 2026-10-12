@@ -1,0 +1,24 @@
+@inject LedgerShellState Shell
+
+<section class="ledger-support">
+    <div class="ledger-support-head">
+        <span class="ledger-support-badge">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true">
+                <path d="M12 21s-6.716-4.35-9.428-8.35C.86 9.9 1.5 6.5 4.2 5.3c1.9-.84 4.02-.16 5.3 1.36L12 9l2.5-2.34c1.28-1.52 3.4-2.2 5.3-1.36 2.7 1.2 3.34 4.6 1.628 7.35C18.716 16.65 12 21 12 21z"/>
+            </svg>
+        </span>
+        <div class="ledger-support-head-text">
+            <span class="ledger-support-title">Support</span>
+            <span class="ledger-support-sub">Free, open source, no ads</span>
+        </div>
+        <button type="button" class="ledger-support-btn" @onclick="OpenSupport">Support</button>
+    </div>
+    <p class="ledger-support-lede">Covers server and cert costs and keeps EggLedger free for everyone.</p>
+</section>
+
+@code {
+    private void OpenSupport() {
+        Shell.SupportOpen = true;
+    }
+
+}

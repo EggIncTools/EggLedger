@@ -18,5 +18,10 @@ public static class AppVersionInfo {
 
     public static string Display => BuildVersion.Describe(Informational, null);
 
+    public static string? CommitUrl =>
+        BuildVersion.Parse(Informational)?.Sha is { Length: > 0 } sha
+            ? $"https://github.com/EggIncTools/EggLedger/commit/{sha}"
+            : null;
+
     public static string DescribeTag(string? tag) => BuildVersion.Describe(tag?.TrimStart('v'), null);
 }

@@ -1,5 +1,7 @@
 @using EggIdentity.UI
+@using Microsoft.Extensions.DependencyInjection
 @implements IDisposable
+@inject IServiceProvider Services
 @inject ActiveAccount Active
 @inject AppStateService AppStateSvc
 @inject AccountLoader Loader
@@ -21,6 +23,9 @@
     </button>
 
     <div class="account-full">
+        @if (Services.GetService<ISuiteChromeSlot>() is { } suiteChrome) {
+            <div class="account-suite">@suiteChrome.RenderAccount()</div>
+        }
         <div class="account-main-row">
             @if (IsLoggedIn) {
                 <Menu @bind-Open="_open" Class="account-select-wrap" TriggerClass="account-select-btn" TriggerLabel="Choose account"

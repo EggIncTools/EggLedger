@@ -41,6 +41,15 @@
     min-width: 0;
 }
 
+.account-suite {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    min-width: 0;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
 .account-main-row {
     display: flex;
     align-items: stretch;

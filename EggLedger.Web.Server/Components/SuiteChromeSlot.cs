@@ -8,4 +8,9 @@ public sealed class SuiteChromeSlot : ISuiteChromeSlot {
         builder.OpenComponent<SuiteChrome>(0);
         builder.CloseComponent();
     };
+
+    public RenderFragment RenderAccount() => builder => {
+        builder.OpenComponent<SuiteAccountChrome>(0);
+        builder.CloseComponent();
+    };
 }

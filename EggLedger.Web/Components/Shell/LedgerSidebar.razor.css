@@ -1,6 +1,6 @@
 .ledger-sidebar {
     display: grid;
-    grid-template-rows: auto minmax(6rem, 1fr) minmax(6rem, 1fr);
+    grid-template-rows: auto auto minmax(6rem, 1fr) minmax(6rem, 1fr) auto;
     grid-template-columns: minmax(0, 1fr);
     gap: 0.5rem;
     width: clamp(19rem, 23vw, 30rem);
@@ -10,7 +10,7 @@
 }
 
 .ledger-sidebar-reports {
-    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
 }
 
 .sb-panel {
@@ -124,6 +124,12 @@
         width: 2.75rem;
         min-width: 2.75rem;
         grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .ledger-sidebar-rail ::deep .ledger-about,
+    .ledger-sidebar-rail ::deep .ledger-support,
+    .ledger-sidebar-rail ::deep .account-suite {
+        display: none;
     }
 
     .ledger-sidebar-rail ::deep .account-full {

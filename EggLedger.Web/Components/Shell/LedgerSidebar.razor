@@ -5,6 +5,7 @@
 @inject MissionConfigProvider Config
 
 <aside class="ledger-sidebar @(_collapsed ? "ledger-sidebar-rail" : "") @(IsReports ? "ledger-sidebar-reports" : "")">
+    <LedgerAbout/>
     <AccountFetchHeader OnExpandRequest="Expand"/>
 
     <div class="sb-panel sidebar-panel sidebar-filter @(_filterOpen ? "" : "sidebar-panel-closed")">
@@ -72,6 +73,8 @@
             <OptionsHost/>
         </div>
     </div>
+
+    <LedgerSupport/>
 </aside>
 
 @code {

@@ -1,18 +1,3 @@
 @using EggIdentity.UI.Suite
 
 <SuiteSwitcher Placement="SuitePlacement.Inline"/>
-<SuiteAccount Placement="SuitePlacement.Bar" OnOpenProfile="OpenProfile"/>
-<LedgerProfileModal Open="_profileOpen" OnClose="CloseProfile"/>
-
-@code {
-    private bool _profileOpen;
-
-    private void OpenProfile() {
-        _profileOpen = true;
-    }
-
-    private void CloseProfile() {
-        _profileOpen = false;
-    }
-
-}

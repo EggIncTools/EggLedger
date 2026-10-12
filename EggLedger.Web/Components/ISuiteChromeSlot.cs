@@ -4,4 +4,6 @@ namespace EggLedger.Web.Components;
 
 public interface ISuiteChromeSlot {
     RenderFragment Render();
+
+    RenderFragment RenderAccount();
 }

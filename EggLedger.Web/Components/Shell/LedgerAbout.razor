@@ -1,15 +1,25 @@
+@using Microsoft.Extensions.DependencyInjection
 @implements IDisposable
+@inject IServiceProvider Services
 @inject AppStateService AppStateSvc
 @inject LedgerShellState Shell
 @inject IPlatformCapabilities Platform
 @inject IUpdateStatusProvider UpdateStatus
 
 <div class="ledger-about">
+    @if (Services.GetService<ISuiteChromeSlot>() is { } suiteChrome) {
+        <div class="ledger-about-suite">@suiteChrome.Render()</div>
+    }
+
     <span class="ledger-about-info">
         <img class="ledger-about-logo" src="@ContentPaths.Asset("images/icon-512.png")" alt="" width="22" height="22"/>
         <span class="ledger-about-brand">EggLedger</span>
         @if (AppVersionInfo.Display is { Length: > 0 } version) {
-            <span class="ledger-about-version">@version</span>
+            if (AppVersionInfo.CommitUrl is { } commitUrl) {
+                <a class="ledger-about-version" href="@commitUrl" target="_blank" rel="noopener" title="View commit on GitHub">@version</a>
+            } else {
+                <span class="ledger-about-version">@version</span>
+            }
         }
         @if (UpdateAvailable) {
             <button type="button" class="ledger-about-badge" title="New version available" aria-label="New version available"
@@ -48,11 +58,6 @@
         <button type="button" class="ledger-about-btn" title="Privacy" aria-label="Privacy" @onclick="OpenPrivacy">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true">
                 <path d="M12 3l7 3v6c0 4.2-2.9 7.8-7 9-4.1-1.2-7-4.8-7-9V6z"/>
-            </svg>
-        </button>
-        <button type="button" class="ledger-about-btn ledger-about-btn-support" title="Support the project" aria-label="Support the project" @onclick="OpenSupport">
-            <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" aria-hidden="true">
-                <path d="M12 21s-6.716-4.35-9.428-8.35C.86 9.9 1.5 6.5 4.2 5.3c1.9-.84 4.02-.16 5.3 1.36L12 9l2.5-2.34c1.28-1.52 3.4-2.2 5.3-1.36 2.7 1.2 3.34 4.6 1.628 7.35C18.716 16.65 12 21 12 21z"/>
             </svg>
         </button>
         <a class="ledger-about-btn" href="https://github.com/EggIncTools/EggLedger" target="_blank" rel="noopener"
@@ -101,10 +106,6 @@
 
     private void OpenPrivacy() {
         Shell.Legal = LegalDocument.Privacy;
-    }
-
-    private void OpenSupport() {
-        Shell.SupportOpen = true;
     }
 
     public void Dispose() {
