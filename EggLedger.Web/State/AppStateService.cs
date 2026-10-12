@@ -4,11 +4,6 @@ using EggLedger.Web.Services;
 namespace EggLedger.Web.State;
 
 public sealed class AppStateService {
-    public string AppVersion {
-        get;
-        set => Set(ref field, value);
-    } = "";
-
     public IReadOnlyList<KnownAccount> KnownAccounts {
         get;
         set => Set(ref field, value);

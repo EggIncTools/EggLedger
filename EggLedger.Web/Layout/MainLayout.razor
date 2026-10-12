@@ -3,7 +3,6 @@
 @using Microsoft.Extensions.DependencyInjection
 @inherits LayoutComponentBase
 @implements IDisposable
-@inject AppStateService AppStateSvc
 @inject IServiceProvider Services
 @inject ScreenshotSafetyState ScreenshotSafety
 @inject IndexedDbSettings Settings
@@ -53,8 +52,6 @@
     private bool IsLoggedIn = true;
 
     protected override async Task OnInitializedAsync() {
-        AppStateSvc.AppVersion = AppVersionInfo.Current;
-
         if (AuthStateTask is not null) {
             var authState = await AuthStateTask;
             IsLoggedIn = authState.User.Identity?.IsAuthenticated ?? false;

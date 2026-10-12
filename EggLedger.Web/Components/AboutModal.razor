@@ -12,7 +12,7 @@
                         <p class="about-update-text">Checking for updates...</p>
                         break;
                     case UpdatePhase.Available:
-                        <p class="about-update-text about-update-text-strong">Update v@UpdateStatus.AvailableVersion available</p>
+                        <p class="about-update-text about-update-text-strong">Update @AppVersionInfo.DescribeTag(UpdateStatus.AvailableVersion) available</p>
                         <button type="button" class="btn-primary about-update-btn" @onclick="InstallUpdate">Update now</button>
                         break;
                     case UpdatePhase.Downloading:

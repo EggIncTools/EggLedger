@@ -7,7 +7,7 @@ COPY --parents EggLedger.Domain/*.csproj EggLedger.Web/*.csproj EggLedger.Web.Se
 RUN --mount=type=secret,id=github_token \
     --mount=type=cache,target=/root/.nuget/packages \
     dotnet nuget update source github \
-      --username DavidArthurCole \
+      --username EggIncTools \
       --password "$(cat /run/secrets/github_token)" \
       --store-password-in-clear-text \
       --configfile nuget.config \
@@ -16,14 +16,17 @@ COPY EggLedger.Domain/ EggLedger.Domain/
 COPY EggLedger.Web/ EggLedger.Web/
 COPY EggLedger.Web.Server/ EggLedger.Web.Server/
 COPY EggLedger.Desktop/ EggLedger.Desktop/
-ARG EGGLEDGER_VERSION
+ARG BUILD_HEIGHT
+ARG BUILD_SHA
 RUN --mount=type=cache,target=/root/.nuget/packages \
-    dotnet publish EggLedger.Web.Server/EggLedger.Web.Server.csproj -c Release -o /app \
-      ${EGGLEDGER_VERSION:+-p:MinVerVersionOverride=$EGGLEDGER_VERSION}
+    BUILD_HEIGHT="$BUILD_HEIGHT" BUILD_SHA="$BUILD_SHA" \
+    dotnet publish EggLedger.Web.Server/EggLedger.Web.Server.csproj -c Release -o /app
 
 FROM mcr.microsoft.com/dotnet/aspnet:11.0.0-rc.1 AS runtime
-ARG GIT_SHA
-ENV GIT_SHA=$GIT_SHA
+ARG BUILD_HEIGHT
+ARG BUILD_SHA
+ENV GIT_SHA=$BUILD_SHA
+ENV APP_VERSION=${BUILD_HEIGHT}.0.0
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libgssapi-krb5-2 \
     && rm -rf /var/lib/apt/lists/*

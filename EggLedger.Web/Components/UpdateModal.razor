@@ -12,7 +12,7 @@
     <div class="upd">
         <span class="upd-title">
             New Version of EggLedger Available:
-            <span class="upd-version">v@(UpdateStatus.AvailableVersion)</span>
+            <span class="upd-version">@AppVersionInfo.DescribeTag(UpdateStatus.AvailableVersion)</span>
         </span>
         @if (!string.IsNullOrEmpty(UpdateStatus.ReleaseNotes)) {
             <span class="upd-caption">Update information:</span>

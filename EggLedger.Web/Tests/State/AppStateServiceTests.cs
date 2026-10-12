@@ -6,32 +6,19 @@ namespace EggLedger.Web.Tests.State;
 
 public sealed class AppStateServiceTests {
     [Fact]
-    public void DefaultsToNoVersionAndNoAccounts() {
+    public void DefaultsToNoAccounts() {
         var sut = new AppStateService();
-        Assert.Equal("", sut.AppVersion);
         Assert.Empty(sut.KnownAccounts);
         Assert.Null(sut.PipelineState);
     }
 
     [Fact]
-    public void SettingAppVersionFiresChanged() {
-        var sut = new AppStateService();
-        var fired = 0;
-        sut.Changed += () => fired++;
-
-        sut.AppVersion = "2.1.4";
-
-        Assert.Equal("2.1.4", sut.AppVersion);
-        Assert.Equal(1, fired);
-    }
-
-    [Fact]
     public void SettingSameValueDoesNotFireChanged() {
-        var sut = new AppStateService { AppVersion = "2.1.4" };
+        var sut = new AppStateService { PipelineState = AppState.FetchingMissions };
         var fired = 0;
         sut.Changed += () => fired++;
 
-        sut.AppVersion = "2.1.4";
+        sut.PipelineState = AppState.FetchingMissions;
 
         Assert.Equal(0, fired);
     }

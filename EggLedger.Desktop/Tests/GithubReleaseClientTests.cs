@@ -15,7 +15,7 @@ public sealed class GithubReleaseClientTests {
         Assert.NotNull(rel);
         Assert.Equal("2.2.0", rel.Value.Tag);
         Assert.Equal("notes here", rel.Value.Body);
-        Assert.Contains("https://api.github.com/repos/DavidArthurCole/EggLedger/releases/latest", stub.Requests[0].RequestUri?.ToString());
+        Assert.Contains("https://api.github.com/repos/EggIncTools/EggLedger/releases/latest", stub.Requests[0].RequestUri?.ToString());
     }
 
     [Fact]

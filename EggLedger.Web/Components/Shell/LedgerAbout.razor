@@ -8,8 +8,8 @@
     <span class="ledger-about-info">
         <img class="ledger-about-logo" src="@ContentPaths.Asset("images/icon-512.png")" alt="" width="22" height="22"/>
         <span class="ledger-about-brand">EggLedger</span>
-        @if (!string.IsNullOrEmpty(AppStateSvc.AppVersion)) {
-            <span class="ledger-about-version">v@(AppStateSvc.AppVersion)</span>
+        @if (AppVersionInfo.Display is { Length: > 0 } version) {
+            <span class="ledger-about-version">@version</span>
         }
         @if (UpdateAvailable) {
             <button type="button" class="ledger-about-badge" title="New version available" aria-label="New version available"

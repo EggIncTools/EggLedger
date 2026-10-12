@@ -2,23 +2,40 @@ name: Release
 
 on:
   push:
-    tags: ["v*"]
+    branches: [main]
 
 permissions:
   contents: write
   packages: write
   actions: write
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
+  identity:
+    uses: EggIncTools/EggIdentity/.github/workflows/build-identity.yml@main
+
   create-release:
+    needs: identity
     runs-on: ubuntu-latest
     steps:
       - uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228
+        with:
+          tag_name: v${{ needs.identity.outputs.version }}
+          target_commitish: ${{ needs.identity.outputs.sha }}
+          name: v${{ needs.identity.outputs.version }}
+          draft: true
+          make_latest: false
 
   desktop:
     name: Desktop (${{ matrix.rid }})
-    needs: create-release
+    needs: [identity, create-release]
     runs-on: ${{ matrix.os }}
+    env:
+      BUILD_HEIGHT: ${{ needs.identity.outputs.height }}
+      BUILD_SHA: ${{ needs.identity.outputs.sha }}
     strategy:
       fail-fast: false
       matrix:
@@ -118,6 +135,8 @@ jobs:
       - name: Attach to release
         uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228
         with:
+          tag_name: v${{ needs.identity.outputs.version }}
+          draft: true
           files: ${{ matrix.asset }}
 
       - name: Upload checksum line
@@ -127,7 +146,7 @@ jobs:
           path: ${{ matrix.asset }}.sha256
 
   checksums:
-    needs: desktop
+    needs: [identity, desktop]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
@@ -138,24 +157,40 @@ jobs:
       - run: cat sums/*.sha256 > SHA256SUMS
       - uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228
         with:
+          tag_name: v${{ needs.identity.outputs.version }}
+          draft: true
           files: SHA256SUMS
 
+  publish-release:
+    needs: [identity, checksums]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228
+        with:
+          tag_name: v${{ needs.identity.outputs.version }}
+          draft: false
+          make_latest: true
+
   docker:
+    needs: identity
     uses: EggIncTools/EggIdentity/.github/workflows/docker-publish.yml@main
     with:
       needs-pat: true
-      version-build-arg: EGGLEDGER_VERSION
+      tags-mode: commit
+      build-height: ${{ needs.identity.outputs.height }}
+      build-sha: ${{ needs.identity.outputs.sha }}
     secrets:
       PACKAGES_PAT: ${{ secrets.PACKAGES_PAT }}
 
   notify-app:
-    needs: docker
+    needs: [identity, docker]
     uses: EggIncTools/EggIdentity/.github/workflows/notify-deploy.yml@main
     with:
       app: eggledger
       hook-url: https://id.egginc.tools
       digest: ${{ needs.docker.outputs.digest }}
-      revision: ${{ github.sha }}
-      version: ${{ github.ref_name }}
+      revision: ${{ needs.identity.outputs.sha }}
+      version: ${{ needs.identity.outputs.version }}
+      height: ${{ needs.identity.outputs.height }}
     secrets:
       hook-secret: ${{ secrets.DEPLOY_HOOK_SECRET }}

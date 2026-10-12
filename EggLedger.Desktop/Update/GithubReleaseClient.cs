@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace EggLedger.Desktop.Update;
 
 public sealed class GithubReleaseClient(HttpClient httpClient, ILogger<GithubReleaseClient>? logger = null) {
-    public const string GithubRepo = "DavidArthurCole/EggLedger";
+    public const string GithubRepo = "EggIncTools/EggLedger";
 
     private const int DownloadChunkBytes = 64 * 1024;
 
