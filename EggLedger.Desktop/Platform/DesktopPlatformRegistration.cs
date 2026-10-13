@@ -23,8 +23,7 @@ public static class DesktopPlatformRegistration {
         services.RemoveAll<IUserTimeZoneProvider>();
         services.AddSingleton<IUserTimeZoneProvider, DesktopTimeZoneProvider>();
 
-        services.RemoveAll<ApiClient>();
-        services.AddScoped(sp => new ApiClient(sp.GetRequiredService<HttpClient>()));
+        services.AddEggLedgerApi(ApiClient.DefaultApiPrefix);
 
         return services;
     }

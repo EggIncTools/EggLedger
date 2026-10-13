@@ -47,7 +47,7 @@ public static class WebServiceRegistration {
 
         services.AddSingleton<EggLedger.Web.Missions.MissionConfigProvider>();
 
-        services.AddScoped(sp => new ApiClient(sp.GetRequiredService<HttpClient>(), apiPrefix: "/egg-api"));
+        services.AddEggLedgerApi("/egg-api", httpBaseAddress);
 
         services.AddScoped<IApiPayloadDecoder>(sp => new LocalApiPayloadDecoder(sp.GetRequiredService<ApiClient>()));
 

@@ -1,30 +1,27 @@
 using System.IO.Compression;
 using EggLedger.Domain.Ei;
+using EggSharp.Api;
+using EggSharp.Core;
 using Ei;
 using ProtoBuf;
 
 namespace EggLedger.Domain.Api;
 
-public sealed partial class ApiClient(
-    HttpClient? httpClient = null,
-    string apiPrefix = ApiClient.DefaultApiPrefix,
-    string appVersion = ApiClient.DefaultAppVersion,
-    string appBuild = ApiClient.DefaultAppBuild,
-    uint clientVersion = ApiClient.DefaultClientVersion,
-    Platform platform = ApiClient.DefaultPlatform) {
-
+public sealed partial class ApiClient(IEggIncApi? api = null, string apiPrefix = ApiClient.DefaultApiPrefix) {
     public const string DefaultAppVersion = "1.35.7";
     public const string DefaultAppBuild = "111343";
     public const uint DefaultClientVersion = 72;
     public const Platform DefaultPlatform = Platform.Ios;
     public const string DefaultApiPrefix = "https://ctx-dot-auxbrainhome.appspot.com";
-    private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(5);
-    private readonly HttpClient _client = httpClient ?? new HttpClient { Timeout = RequestTimeout };
+    public static readonly VersionTriple DefaultVersions = new(DefaultClientVersion, DefaultAppVersion, DefaultAppBuild);
+    internal static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(5);
     public string ApiPrefix { get; } = apiPrefix;
-    public string AppVersion { get; } = appVersion;
-    public string AppBuild { get; } = appBuild;
-    public uint ClientVersion { get; } = clientVersion;
-    public Platform Platform { get; } = platform;
+    public string AppVersion => DefaultAppVersion;
+    public string AppBuild => DefaultAppBuild;
+    public uint ClientVersion => DefaultClientVersion;
+    public Platform Platform => DefaultPlatform;
+
+    private IEggIncApi Api => api ?? throw new InvalidOperationException("ApiClient was built without an IEggIncApi; it can only decode.");
 
     public BasicRequestInfo NewBasicRequestInfo(string userId) => new() {
         EiUserId = userId,
@@ -34,48 +31,31 @@ public sealed partial class ApiClient(
         Platform = EnumNames.ProtoName(Platform),
     };
 
-    public async Task<byte[]> RequestRawPayloadAsync<TReq>(
+    private async Task<byte[]> SendAsync(
         string endpoint,
-        TReq reqMsg,
-        CancellationToken cancellationToken = default) {
+        Func<IEggIncApi, Task<ApiOutcome<byte[]>>> call,
+        CancellationToken cancellationToken) {
         string apiUrl = ApiPrefix + endpoint;
-
-        byte[] reqBin;
-        using (var buffer = new MemoryStream()) {
-            Serializer.Serialize(buffer, reqMsg);
-            reqBin = buffer.ToArray();
-        }
-
-        string reqDataEncoded = Convert.ToBase64String(reqBin);
-        var form = new FormUrlEncodedContent([
-            new KeyValuePair<string, string>("data", reqDataEncoded),
-        ]);
-
-        HttpResponseMessage resp;
+        ApiOutcome<byte[]> outcome;
         try {
-            resp = await _client.PostAsync(apiUrl, form, cancellationToken).ConfigureAwait(false);
+            outcome = await call(Api).ConfigureAwait(false);
         } catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested) {
             throw new ApiRequestException($"POST {apiUrl}: timeout after {RequestTimeout}");
         } catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
             throw new ApiRequestException($"POST {apiUrl}: interrupted");
         } catch (HttpRequestException ex) {
             throw new ApiRequestException($"POST {apiUrl}: {ex.Message}", ex);
+        } catch (FormatException ex) {
+            throw new ApiRequestException($"POST {apiUrl}: base64 decode error: {ex.Message}", ex);
         }
 
-        using (resp) {
-            string body = await resp.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-            if (!resp.IsSuccessStatusCode) {
-                throw new ApiRequestException(
-                    $"POST {apiUrl}: HTTP {(int)resp.StatusCode}: {body}");
-            }
-
-            try {
-                return Convert.FromBase64String(body);
-            } catch (FormatException ex) {
-                throw new ApiRequestException(
-                    $"POST {apiUrl}: {body}: base64 decode error: {ex.Message}", ex);
-            }
+        if (outcome.StatusCode is { } status) {
+            throw new ApiRequestException($"POST {apiUrl}: HTTP {status}: {outcome.ResponseBody}");
         }
+        if (!outcome.Success || outcome.Response is null) {
+            throw new ApiRequestException($"POST {apiUrl}: {outcome.Error}");
+        }
+        return outcome.Response;
     }
 
     public static TMsg DecodeApiResponse<TMsg>(string apiUrl, byte[] payload, bool authenticated) {

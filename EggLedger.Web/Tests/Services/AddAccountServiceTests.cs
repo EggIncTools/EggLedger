@@ -11,8 +11,7 @@ public sealed class AddAccountServiceTests {
     private const string Eid = "EI1234567890123456";
 
     private static AddAccountService Make(FakeIndexedDb db, HttpMessageHandler handler, out IndexedDbAccountStore accounts) {
-        var http = new HttpClient(handler) { BaseAddress = new Uri("https://example.test") };
-        var api = new ApiClient(http);
+        var api = EggLedgerApi.Create(handler);
         accounts = new IndexedDbAccountStore(new IndexedDbSettings(db));
         return new AddAccountService(api, accounts, new LocalApiPayloadDecoder(api));
     }

@@ -112,20 +112,22 @@ public class ApiClientTests {
     }
 
     [Fact]
-    public async Task RequestRawPayload_PostsBase64FormAndDecodesResponse() {
+    public async Task RequestCompleteMission_PostsBase64FormAndReturnsDecodedBody() {
         var resp = new CompleteMissionResponse { Success = true };
         byte[] respBin = Serialize(resp);
-        string respBase64 = Convert.ToBase64String(respBin);
 
-        var handler = new CapturingHandler(respBase64);
-        var http = new HttpClient(handler);
-        var client = new ApiClient(http);
+        var handler = new CapturingHandler(Convert.ToBase64String(respBin));
+        var client = EggLedgerApi.Create(handler);
 
-        var req = new MissionRequest { EiUserId = "EI42" };
-        byte[] expectedReqBin = Serialize(req);
-        string expectedReqBase64 = Convert.ToBase64String(expectedReqBin);
+        var expectedReq = new MissionRequest {
+            Rinfo = client.NewBasicRequestInfo("EI42"),
+            EiUserId = "EI42",
+            Info = new MissionInfo { Identifier = "m1" },
+            ClientVersion = ApiClient.DefaultClientVersion,
+        };
+        string expectedReqBase64 = Convert.ToBase64String(Serialize(expectedReq));
 
-        byte[] decoded = await client.RequestRawPayloadAsync("/ei_afx/complete_mission", req);
+        byte[] decoded = await client.RequestCompleteMissionRawPayloadAsync("EI42", "m1");
 
         Assert.NotNull(handler.LastRequest);
         Assert.Equal(HttpMethod.Post, handler.LastRequest!.Method);
@@ -134,22 +136,91 @@ public class ApiClientTests {
             handler.LastRequest.RequestUri!.ToString());
         Assert.Equal("application/x-www-form-urlencoded", handler.ContentType);
         Assert.Equal("data=" + Uri.EscapeDataString(expectedReqBase64), handler.RequestBody);
-
         Assert.Equal(respBin, decoded);
-        var got = ApiClient.DecodeApiResponse<CompleteMissionResponse>(
-            "https://example/test", decoded, authenticated: false);
-        Assert.True(got.Success);
     }
 
     [Fact]
-    public async Task RequestRawPayload_ThrowsOnNon2xx() {
-        var handler = new CapturingHandler("ignored", HttpStatusCode.InternalServerError);
-        var http = new HttpClient(handler);
-        var client = new ApiClient(http);
+    public async Task RequestFirstContact_PostsLedgerRequest() {
+        var handler = new CapturingHandler(Convert.ToBase64String(Serialize(new EggIncFirstContactResponse())));
+        var client = EggLedgerApi.Create(handler);
+
+        var expectedReq = new EggIncFirstContactRequest {
+            Rinfo = client.NewBasicRequestInfo("EI42"),
+            EiUserId = "EI42",
+            DeviceId = "EggLedger",
+            ClientVersion = ApiClient.DefaultClientVersion,
+            Platform = ApiClient.DefaultPlatform,
+        };
+
+        await client.RequestFirstContactRawPayloadAsync("EI42");
+
+        Assert.Equal(
+            "https://ctx-dot-auxbrainhome.appspot.com/ei/bot_first_contact",
+            handler.LastRequest!.RequestUri!.ToString());
+        Assert.Equal("data=" + Uri.EscapeDataString(Convert.ToBase64String(Serialize(expectedReq))), handler.RequestBody);
+    }
+
+    [Fact]
+    public async Task Request_ProxyOrigin_ResolvesAgainstHostBase() {
+        var handler = new CapturingHandler(Convert.ToBase64String(Serialize(new CompleteMissionResponse())));
+        var client = EggLedgerApi.Create(handler, "/egg-api", new Uri("https://ledger.test/"));
+
+        await client.RequestCompleteMissionRawPayloadAsync("EI42", "m1");
+
+        Assert.Equal("https://ledger.test/egg-api/ei_afx/complete_mission", handler.LastRequest!.RequestUri!.ToString());
+    }
+
+    [Fact]
+    public async Task Request_ThrowsOnNon2xx() {
+        var handler = new CapturingHandler("boom", HttpStatusCode.InternalServerError);
+        var client = EggLedgerApi.Create(handler);
 
         var ex = await Assert.ThrowsAsync<ApiRequestException>(
-            () => client.RequestRawPayloadAsync("/ei/bot_first_contact", new MissionRequest()));
-        Assert.Contains("HTTP 500", ex.Message);
+            () => client.RequestFirstContactRawPayloadAsync("EI42"));
+        Assert.Equal("POST https://ctx-dot-auxbrainhome.appspot.com/ei/bot_first_contact: HTTP 500: boom", ex.Message);
+    }
+
+    [Fact]
+    public async Task Request_MalformedBase64_ThrowsDecodeError() {
+        var client = EggLedgerApi.Create(new CapturingHandler("not*base64"));
+
+        var ex = await Assert.ThrowsAsync<ApiRequestException>(
+            () => client.RequestFirstContactRawPayloadAsync("EI42"));
+        Assert.Contains("base64 decode error", ex.Message);
+    }
+
+    [Fact]
+    public async Task Request_CallerCancellation_IsInterrupted() {
+        var client = EggLedgerApi.Create(new CapturingHandler(""));
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        var ex = await Assert.ThrowsAsync<ApiRequestException>(
+            () => client.RequestFirstContactRawPayloadAsync("EI42", cts.Token));
+        Assert.EndsWith(": interrupted", ex.Message);
+    }
+
+    [Fact]
+    public async Task Request_TransportFailure_KeepsMessage() {
+        var client = EggLedgerApi.Create(new ThrowingHandler(new HttpRequestException("refused")));
+
+        var ex = await Assert.ThrowsAsync<ApiRequestException>(
+            () => client.RequestFirstContactRawPayloadAsync("EI42"));
+        Assert.Equal("POST https://ctx-dot-auxbrainhome.appspot.com/ei/bot_first_contact: refused", ex.Message);
+    }
+
+    [Fact]
+    public async Task Request_HandlerTimeout_IsTimeout() {
+        var client = EggLedgerApi.Create(new ThrowingHandler(new TaskCanceledException()));
+
+        var ex = await Assert.ThrowsAsync<ApiRequestException>(
+            () => client.RequestFirstContactRawPayloadAsync("EI42"));
+        Assert.Contains("timeout after", ex.Message);
+    }
+
+    private sealed class ThrowingHandler(Exception ex) : HttpMessageHandler {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request, CancellationToken cancellationToken) => Task.FromException<HttpResponseMessage>(ex);
     }
 
     [Fact]

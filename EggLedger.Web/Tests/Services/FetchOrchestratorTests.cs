@@ -15,8 +15,7 @@ public sealed class FetchOrchestratorTests {
     private const string Eid = "EI1234567890123456";
 
     private static FetchOrchestrator Make(FakeIndexedDb db, HttpMessageHandler handler) {
-        var http = new HttpClient(handler) { BaseAddress = new Uri("https://example.test") };
-        var api = new ApiClient(http);
+        var api = EggLedgerApi.Create(handler);
         var settings = new IndexedDbSettings(db);
         var store = new IndexedDbMissionStore(db, new LocalApiPayloadDecoder(new ApiClient()));
         var accounts = new IndexedDbAccountStore(settings);
@@ -121,8 +120,7 @@ public sealed class FetchOrchestratorTests {
 
     private static FetchOrchestrator MakeDetached(TimeProvider clock) {
         var db = new FakeIndexedDb();
-        var http = new HttpClient(new RoutingHandler("", _ => null)) { BaseAddress = new Uri("https://example.test") };
-        var api = new ApiClient(http);
+        var api = EggLedgerApi.Create(new RoutingHandler("", _ => null));
         var settings = new IndexedDbSettings(db);
         var store = new IndexedDbMissionStore(db, new LocalApiPayloadDecoder(new ApiClient()));
         var fetch = new FetchService(api, store, settings, new IndexedDbAccountStore(settings), new LocalApiPayloadDecoder(api), NullLogger<FetchService>.Instance);

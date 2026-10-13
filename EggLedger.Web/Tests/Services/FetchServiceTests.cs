@@ -20,8 +20,7 @@ public sealed class FetchServiceTests {
         IndexedDbSettings? settings = null,
         IAutoExporter? exporter = null,
         TimeProvider? time = null) {
-        var http = new HttpClient(handler) { BaseAddress = new Uri("https://example.test") };
-        var api = new ApiClient(http);
+        var api = EggLedgerApi.Create(handler);
         settings ??= new IndexedDbSettings(db);
         if (workerCount != 1) {
             await settings.SetSettingAsync("worker_count", workerCount.ToString());

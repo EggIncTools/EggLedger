@@ -1,3 +1,4 @@
+using EggSharp.Api;
 using Ei;
 
 namespace EggLedger.Domain.Api;
@@ -9,16 +10,8 @@ public sealed partial class ApiClient {
 
     public Task<byte[]> RequestFirstContactRawPayloadAsync(
         string playerId,
-        CancellationToken cancellationToken = default) {
-        var req = new EggIncFirstContactRequest {
-            Rinfo = NewBasicRequestInfo(playerId),
-            EiUserId = playerId,
-            DeviceId = "EggLedger",
-            ClientVersion = ClientVersion,
-            Platform = Platform,
-        };
-        return RequestRawPayloadAsync(FirstContactEndpoint, req, cancellationToken);
-    }
+        CancellationToken cancellationToken = default) =>
+        SendAsync(FirstContactEndpoint, a => a.BotFirstContactRaw(playerId, null, null, cancellationToken), cancellationToken);
 
     public EggIncFirstContactResponse DecodeFirstContactPayload(byte[] payload) =>
         DecodeApiResponse<EggIncFirstContactResponse>(
@@ -34,7 +27,7 @@ public sealed partial class ApiClient {
             Info = new MissionInfo { Identifier = missionId },
             ClientVersion = ClientVersion,
         };
-        return RequestRawPayloadAsync(CompleteMissionEndpoint, req, cancellationToken);
+        return SendAsync(CompleteMissionEndpoint, a => a.CompleteMissionRaw(req, null, cancellationToken), cancellationToken);
     }
 
     public CompleteMissionResponse DecodeCompleteMissionPayload(byte[] payload) =>
