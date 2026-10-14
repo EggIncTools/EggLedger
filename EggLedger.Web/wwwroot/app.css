@@ -11,6 +11,12 @@
   --color-err: #f87171;
   --color-border: #364153;
   --color-warn: #fb923c;
+  --report-heat-zero-fg: #6b7280;
+  --report-dim-color: var(--color-ledger-dim);
+  --report-hairline: var(--color-ledger-hairline);
+  --report-other: #6b7280;
+  --report-card-bg: var(--color-dark);
+  --report-card-hover-border: var(--color-border);
   --color-heat-low: #393b40;
   --color-heat-high: #6366f1;
   --color-chart-1: #6366f1;

@@ -5,14 +5,14 @@
     <p class="sopt-empty">Select an account to see mission options.</p>
 } else {
     <div class="sopt">
+        <button type="button" class="sopt-dialog-btn" aria-haspopup="dialog" title="Edit mission card layout, fields and colors"
+                @onclick="OpenCardConfigAsync">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" aria-hidden="true">
+                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+            </svg>
+            <span>Design...</span>
+        </button>
         @if (State.ViewMode == ShipsViewMode.List) {
-            <button type="button" class="sopt-dialog-btn" aria-haspopup="dialog" title="Edit mission card design"
-                    @onclick="OpenCardConfigAsync">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" aria-hidden="true">
-                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
-                </svg>
-                <span>Card Design...</span>
-            </button>
             <div>
                 <span class="sopt-heading">Display</span>
                 <div class="sopt-checks">

@@ -5,6 +5,10 @@
     margin-bottom: 0.5rem;
 }
 
+.pins-grid {
+    --report-grid-row: 144px;
+}
+
 .pins-empty {
     margin: 0;
     font-size: 0.75rem;

@@ -12,11 +12,13 @@
     @if (_reports.Count == 0) {
         <p class="pins-empty">No pinned reports yet. Add one with the + button.</p>
     } else {
+        <div class="pins-grid">
         <EggIdentity.UI.Reports.ReportGrid Placements="_placements" Editable="false">
             <Item Context="placement">
                 <ReportCard Report="_reportsById[placement.ReportId]" AccountId="@AccountId" ShowUnpin="true" OnUnpin="() => UnpinAsync(_pinIdsByReportId[placement.ReportId])"/>
             </Item>
         </EggIdentity.UI.Reports.ReportGrid>
+        </div>
     }
 </div>
 

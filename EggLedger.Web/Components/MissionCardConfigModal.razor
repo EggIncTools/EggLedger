@@ -1,104 +1,104 @@
 @using EggIdentity.UI
 <div class="mcc-size">
-<ModalHost Open="_open" OnClose="Close" Title="Mission Card Layout" Width="ModalWidth.Custom">
+<ModalHost Open="_open" OnClose="Close" Title="Design" Width="ModalWidth.Custom">
     <div class="mcc">
-        <div class="mcc-form">
-            <div class="panel-muted mcc-box">
-                <span class="mcc-heading">Preset</span>
-                <TileGroup TValue="string" Options="PresetTiles()" Selected="_editingPresetName" OnSelect="SwitchTo" Wrap="true"/>
-                <div class="mcc-actions">
-                    <button type="button" class="toggle-link mcc-link" @onclick="@(() => BeginNaming(NameAction.SaveAsNew))">Save as new</button>
-                    <button type="button" class="toggle-link mcc-link" @onclick="@(() => BeginNaming(NameAction.Duplicate))">Duplicate</button>
-                    <button type="button" class="toggle-link mcc-link" disabled="@IsClassic" @onclick="@(() => BeginNaming(NameAction.Rename))">Rename</button>
-                    <button type="button" class="toggle-link mcc-link" disabled="@IsClassic" @onclick="Delete">Delete</button>
-                </div>
-                @if (_pendingNameAction is not null) {
-                    <div class="mcc-naming">
-                        <input class="mcc-input" @bind="_pendingNameInput" @bind:event="oninput" placeholder="Preset name"/>
-                        <button type="button" class="toggle-link mcc-link" @onclick="ConfirmNaming" disabled="@(!CanConfirmNaming)">Confirm</button>
-                        <button type="button" class="toggle-link mcc-link" @onclick="@(() => _pendingNameAction = null)">Cancel</button>
+        <div class="mcc-body">
+            <div class="mcc-form">
+                <section class="mcc-section">
+                    <span class="mcc-label">Preset</span>
+                    <TileGroup TValue="string" Options="PresetTiles()" Selected="_editingPresetName" OnSelect="SwitchTo" Wrap="true"/>
+                    @if (_pendingNameAction is { } action) {
+                        <div class="mcc-row">
+                            <input class="form-input mcc-name" @bind="_pendingNameInput" @bind:event="oninput" placeholder="Preset name" aria-label="Preset name"/>
+                            <button type="button" class="btn-mini" @onclick="ConfirmNaming" disabled="@(!CanConfirmNaming)">@ConfirmLabel(action)</button>
+                            <button type="button" class="btn-mini" @onclick="@(() => _pendingNameAction = null)">Cancel</button>
+                        </div>
                         @if (_nameError is not null) {
                             <span class="mcc-error">@_nameError</span>
                         }
-                    </div>
-                }
-            </div>
-
-            <div class="panel-muted mcc-box">
-                <span class="mcc-heading">Layout</span>
-                <TileGroup TValue="CardLayout" Options="LayoutTiles" Selected="_form.Layout" OnSelect="SetLayout"/>
-            </div>
-
-            <div class="panel-muted mcc-box">
-                <span class="mcc-heading">Fields</span>
-                <div class="mcc-fields">
-                    @foreach (var slot in _form.Fields.OrderBy(f => f.Order)) {
-                        <div class="mcc-field">
-                            <input type="checkbox" checked="@slot.Enabled" @onchange="@(e => SetFieldEnabled(slot, e))"/>
-                            <span class="mcc-field-name">@slot.Field</span>
-                            <button type="button" class="mcc-move" disabled="@IsFirst(slot)" @onclick="@(() => MoveField(slot, -1))" aria-label="Move up">&uarr;</button>
-                            <button type="button" class="mcc-move" disabled="@IsLast(slot)" @onclick="@(() => MoveField(slot, 1))" aria-label="Move down">&darr;</button>
+                    } else {
+                        <div class="mcc-row">
+                            <button type="button" class="btn-mini" @onclick="@(() => BeginNaming(NameAction.SaveAsNew))">Save as new</button>
+                            <button type="button" class="btn-mini" @onclick="@(() => BeginNaming(NameAction.Duplicate))">Duplicate</button>
+                            <button type="button" class="btn-mini" disabled="@IsClassic" @onclick="@(() => BeginNaming(NameAction.Rename))">Rename</button>
+                            <button type="button" class="btn-mini mcc-danger" disabled="@IsClassic" @onclick="Delete">Delete</button>
                         </div>
                     }
-                </div>
-            </div>
+                </section>
 
-            <div class="panel-muted mcc-box mcc-checks">
-                <label class="mcc-check">
-                    <input type="checkbox" @bind="_form.ColorizeByDuration"/> Colorize by duration
-                </label>
-                <label class="mcc-check">
-                    <input type="checkbox" @bind="_form.ShowExpectedDropsPerShip"/> Show expected drops per ship
-                </label>
-            </div>
+                <section class="mcc-section">
+                    <span class="mcc-label">Layout</span>
+                    <TileGroup TValue="CardLayout" Options="LayoutTiles" Selected="_form.Layout" OnSelect="SetLayout"/>
+                    <span class="mcc-hint">@LayoutHint(_form.Layout)</span>
+                </section>
 
-            <div class="panel-muted mcc-box">
-                <span class="mcc-heading">Colors</span>
-                <div class="mcc-colors">
-                    <div class="mcc-color">
-                        <span class="mcc-color-label">Background</span>
-                        <ColorPicker Value="@(_form.BackgroundColor ?? ColorPickerMath.Fallback)" ValueChanged="@(v => _form.BackgroundColor = v)"/>
-                        <button type="button" class="toggle-link mcc-link" @onclick="@(() => _form.BackgroundColor = null)">Reset</button>
-                    </div>
-                    <div class="mcc-color">
-                        <span class="mcc-color-label">Border</span>
-                        <ColorPicker Value="@(_form.BorderColor ?? ColorPickerMath.Fallback)" ValueChanged="@(v => _form.BorderColor = v)"/>
-                        <button type="button" class="toggle-link mcc-link" @onclick="@(() => _form.BorderColor = null)">Reset</button>
-                    </div>
-                    <div class="mcc-color">
-                        <span class="mcc-color-label">Accent</span>
-                        <ColorPicker Value="@(_form.AccentColor ?? ColorPickerMath.Fallback)" ValueChanged="@(v => _form.AccentColor = v)"/>
-                        <button type="button" class="toggle-link mcc-link" @onclick="@(() => _form.AccentColor = null)">Reset</button>
-                    </div>
-                </div>
-            </div>
+                <section class="mcc-section">
+                    <span class="mcc-label">Fields</span>
+                    <ul class="mcc-fields">
+                        @foreach (var slot in _form.Fields.OrderBy(f => f.Order)) {
+                            <li class="mcc-field">
+                                <label class="form-check mcc-field-check">
+                                    <input type="checkbox" class="ext-opt-check" checked="@slot.Enabled" @onchange="@(e => SetFieldEnabled(slot, e))"/>
+                                    <span class="@(slot.Enabled ? "" : "mcc-off")">@FieldLabel(slot.Field)</span>
+                                </label>
+                                <button type="button" class="icon-btn icon-btn-sm" disabled="@IsFirst(slot)" @onclick="@(() => MoveField(slot, -1))" aria-label="@($"Move {FieldLabel(slot.Field)} up")" title="Move up">
+                                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>
+                                </button>
+                                <button type="button" class="icon-btn icon-btn-sm" disabled="@IsLast(slot)" @onclick="@(() => MoveField(slot, 1))" aria-label="@($"Move {FieldLabel(slot.Field)} down")" title="Move down">
+                                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                                </button>
+                            </li>
+                        }
+                    </ul>
+                </section>
 
-            <div class="panel-muted mcc-box">
-                <label class="mcc-css-label">
-                    Custom CSS
-                    <textarea class="mcc-input mcc-css" rows="6" @bind="_form.CustomCss" @bind:event="oninput"></textarea>
-                </label>
-                <div class="mcc-css-foot">
-                    <span class="mcc-css-count">@(_form.CustomCss?.Length ?? 0) / 20000</span>
-                    @if (_cssError is not null) {
+                <section class="mcc-section">
+                    <span class="mcc-label">Display</span>
+                    <label class="form-check">
+                        <input type="checkbox" class="ext-opt-check" @bind="_form.ColorizeByDuration"/> Colorize by duration
+                    </label>
+                    <label class="form-check">
+                        <input type="checkbox" class="ext-opt-check" @bind="_form.ShowExpectedDropsPerShip"/> Show expected drops per ship
+                    </label>
+                </section>
+
+                <section class="mcc-section">
+                    <span class="mcc-label">Colors</span>
+                    <div class="mcc-colors">
+                        @foreach (var c in ColorSlots()) {
+                            <span class="mcc-color-label">@c.Label</span>
+                            <ColorPicker Value="@(c.Get() ?? ColorPickerMath.Fallback)" ValueChanged="@(v => c.Set(v))"/>
+                            <button type="button" class="btn-mini" disabled="@(c.Get() is null)" @onclick="@(() => c.Set(null))">Reset</button>
+                        }
+                    </div>
+                </section>
+
+                <section class="mcc-section">
+                    <label class="mcc-label" for="mcc-css">Custom CSS</label>
+                    <textarea id="mcc-css" class="form-input mcc-css" rows="6" spellcheck="false" @bind="_form.CustomCss" @bind:event="oninput"></textarea>
+                    <div class="mcc-css-foot">
                         <span class="mcc-error">@_cssError</span>
+                        <span class="mcc-hint">@(_form.CustomCss?.Length ?? 0) / 20000</span>
+                    </div>
+                </section>
+            </div>
+
+            <div class="mcc-preview">
+                <span class="mcc-label">Preview</span>
+                <div class="mcc-preview-body">
+                    <MissionCardCustomStyle Config="_form.ToConfig()"/>
+                    @if (PreviewMission is not null) {
+                        <MissionCard Mission="PreviewMission" Config="_form.ToConfig()" ViewByDate="false" ViewMissionTimes="true"/>
+                    } else {
+                        <span class="mcc-hint">No missions loaded to preview.</span>
                     }
                 </div>
             </div>
-
-            <button type="button" class="btn-primary" @onclick="Save" disabled="@(_cssError is not null)">Save</button>
         </div>
 
-        <div class="mcc-preview">
-            <span class="mcc-preview-title">Preview</span>
-            <div class="mcc-preview-body">
-                <MissionCardCustomStyle Config="_form.ToConfig()"/>
-                @if (_previewMission is not null) {
-                    <MissionCard Mission="_previewMission" Config="_form.ToConfig()" ViewByDate="false" ViewMissionTimes="true"/>
-                } else {
-                    <span class="mcc-preview-empty">No missions loaded to preview.</span>
-                }
-            </div>
+        <div class="mcc-foot">
+            <button type="button" class="btn-secondary" @onclick="Close">Cancel</button>
+            <button type="button" class="btn-primary" @onclick="Save" disabled="@(_cssError is not null)">Save</button>
         </div>
     </div>
 </ModalHost>
@@ -112,14 +112,47 @@
     private bool _open;
     private CardConfigForm _form = new();
     private string? _cssError;
-    private DatabaseMission? _previewMission => PreviewMission;
     private string _editingPresetName = "Classic";
 
     private static readonly IReadOnlyList<TileGroup<CardLayout>.Tile> LayoutTiles = [
         new(CardLayout.CompactRow, b => b.AddContent(0, "Compact row")),
         new(CardLayout.Grid, b => b.AddContent(0, "Grid")),
-        new(CardLayout.Cards, b => b.AddContent(0, "Cards (beta)"), Title: "Stacked mission cards in List, cards inside Calendar bars, and an agenda view on phones")
+        new(CardLayout.Cards, b => b.AddContent(0, "Cards (beta)"))
     ];
+
+    private static string LayoutHint(CardLayout layout) => layout switch {
+        CardLayout.CompactRow => "One line per mission in List.",
+        CardLayout.Grid => "Aligned columns per mission in List.",
+        _ => "Stacked cards in List, cards inside Calendar bars, and an agenda on phones."
+    };
+
+    private static string FieldLabel(CardField field) => field switch {
+        CardField.ShipName => "Ship name",
+        CardField.LevelStars => "Level stars",
+        CardField.LaunchDate => "Launch date",
+        CardField.LaunchTime => "Launch time",
+        CardField.Duration => "Duration",
+        CardField.Target => "Target",
+        CardField.Capacity => "Capacity",
+        CardField.CapacityModifierBadge => "Capacity modifier badge",
+        CardField.DropCount => "Drop count",
+        CardField.ShipIcon => "Ship icon",
+        _ => field.ToString()
+    };
+
+    private static string ConfirmLabel(NameAction action) => action switch {
+        NameAction.Rename => "Rename",
+        NameAction.Duplicate => "Duplicate",
+        _ => "Save"
+    };
+
+    private sealed record ColorSlot(string Label, Func<string?> Get, Action<string?> Set);
+
+    private IEnumerable<ColorSlot> ColorSlots() {
+        yield return new("Background", () => _form.BackgroundColor, v => _form.BackgroundColor = v);
+        yield return new("Border", () => _form.BorderColor, v => _form.BorderColor = v);
+        yield return new("Accent", () => _form.AccentColor, v => _form.AccentColor = v);
+    }
 
     private IReadOnlyList<TileGroup<string>.Tile> PresetTiles() =>
         [.. PresetSet.Presets.Select(p => new TileGroup<string>.Tile(p.Name, b => b.AddContent(0, p.Name)))];
@@ -134,6 +167,7 @@
         _editingPresetName = PresetSet.ActivePresetName;
         _form = CardConfigForm.From(PresetSet.ActivePreset());
         _cssError = null;
+        _pendingNameAction = null;
         _open = true;
         StateHasChanged();
         return Task.CompletedTask;
@@ -202,7 +236,11 @@
 
     private void BeginNaming(NameAction action) {
         _pendingNameAction = action;
-        _pendingNameInput = action == NameAction.Duplicate ? _editingPresetName + " copy" : "";
+        _pendingNameInput = action switch {
+            NameAction.Duplicate => _editingPresetName + " copy",
+            NameAction.Rename => _editingPresetName,
+            _ => ""
+        };
         _nameError = null;
     }
 

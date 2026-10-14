@@ -6,9 +6,10 @@
 @inject ILogger<ReportCard> Logger
 
 <div class="rc-wrap">
-    <EggIdentity.UI.Reports.ReportCard Definition="Report.Definition" Cube="DisplayCube" Source="_source"
+    <EggIdentity.UI.Reports.ReportCard Definition="Report.Definition" Cube="DisplayCube" Source="_source" Style="LedgerChartStyle"
                                         Error="@_error" Loading="@(_cube is null && _error is null)">
         <Actions>
+            <Tooltip Text="@WeightTitle" Class="@($"rc-weight {WeightClass}")" Focusable="true">@WeightLabel</Tooltip>
             @if (EditMode) {
                 @if (Groups.Count > 0) {
                     <select class="rc-group" value="@(Report.Placement.Group ?? "")" @onchange="OnGroupSelectChanged">
@@ -50,7 +51,7 @@
     </EggIdentity.UI.Reports.ReportCard>
 
     @if (SideBySide) {
-        <EggIdentity.UI.Reports.ReportCard Definition="CommunityDefinition" Cube="_community" Source="_source"/>
+        <EggIdentity.UI.Reports.ReportCard Definition="CommunityDefinition" Cube="_community" Source="_source" Style="LedgerChartStyle"/>
     }
 </div>
 
@@ -77,6 +78,32 @@
 
     private ReportCube? _combined;
     private ReportCube? _community;
+
+    private static readonly ChartStyle LedgerChartStyle = ChartStyle.Default with {
+        HeatLow = "#1f2937",
+        HeatHigh = "#6366f1",
+        SeriesBase = "#6366f1",
+    };
+
+    private ReportCostLevel Weight => new LedgerReportCost().Estimate(Report.Definition.Query).Level;
+
+    private string WeightLabel => Weight switch {
+        ReportCostLevel.High => "HEAVY",
+        ReportCostLevel.Medium => "MEDIUM",
+        _ => "LIGHT"
+    };
+
+    private string WeightClass => Weight switch {
+        ReportCostLevel.High => "rc-weight-heavy",
+        ReportCostLevel.Medium => "rc-weight-medium",
+        _ => "rc-weight-light"
+    };
+
+    private string WeightTitle => Weight switch {
+        ReportCostLevel.High => "Heavy: full scan, may be slow on large accounts",
+        ReportCostLevel.Medium => "Medium: partial index usage",
+        _ => "Light: fully indexed"
+    };
 
     private ReportCube? DisplayCube => _combined ?? _cube;
 
