@@ -8,7 +8,7 @@ namespace EggLedger.Desktop.Storage;
 public static class SqliteMigrationRunner {
     public const int MissionTargetVersion = 11;
 
-    public const int ReportTargetVersion = 13;
+    public const int ReportTargetVersion = 14;
 
     private static readonly Regex FileNamePattern =
         new(@"\.Migrations\.(?<set>[^.]+)\.(?<num>\d+)_", RegexOptions.Compiled);

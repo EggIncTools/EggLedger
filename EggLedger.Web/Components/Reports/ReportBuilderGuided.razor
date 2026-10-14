@@ -1,5 +1,4 @@
-@* Guided report builder: a 4-step wizard (intent -> group-by -> quick filters -> name)
-   that emits a partial ReportDefinition for the parent to prefill and switch to advanced. *@
+@using EggIdentity.Reports
 
 <div class="guide">
     <div class="guide-head">
@@ -76,15 +75,7 @@
 
 @code {
 
-    public sealed record GuidedResult(
-        string Name,
-        string Subject,
-        string Mode,
-        string GroupBy,
-        string DisplayMode,
-        IReadOnlyList<FilterCondition> And);
-
-    [Parameter] public EventCallback<GuidedResult> OnApply { get; set; }
+    [Parameter] public EventCallback<ReportDefinition> OnApply { get; set; }
 
     private sealed record IntentOption(string Value, string Label, string Hint);
 
@@ -102,8 +93,24 @@
     private readonly HashSet<string> _quickFilters = new();
     private string _reportName = "";
 
-    private IReadOnlyList<ReportDimension> GroupByOptions =>
-        _intent == "artifacts" ? ReportDimensions.Artifact : ReportDimensions.Mission;
+    private sealed record GroupByOption(string Value, string Label);
+
+    private static readonly IReadOnlyList<GroupByOption> MissionGroupBys = [
+        new("ship_type", "Ship Type"),
+        new("duration_type", "Duration Type"),
+        new("level", "Level"),
+        new("mission_type", "Mission Type"),
+        new("mission_target", "Mission Target"),
+    ];
+
+    private static readonly IReadOnlyList<GroupByOption> ArtifactGroupBys = [
+        new("artifact_name", "Artifact Name"),
+        new("rarity", "Rarity"),
+        new("tier", "Tier"),
+        new("spec_type", "Spec Type"),
+    ];
+
+    private IReadOnlyList<GroupByOption> GroupByOptions => _intent == "artifacts" ? ArtifactGroupBys : MissionGroupBys;
 
     private IReadOnlyList<QuickFilterOption> QuickFilterOptions {
         get {
@@ -176,7 +183,7 @@
             _ => ""
         };
         var by = !string.IsNullOrEmpty(_groupBy) && _groupBy != "time_bucket"
-            ? " by " + ReportDimensions.DimensionLabel(_groupBy).ToLowerInvariant()
+            ? " by " + (MissionGroupBys.Concat(ArtifactGroupBys).FirstOrDefault(o => o.Value == _groupBy)?.Label ?? _groupBy).ToLowerInvariant()
             : "";
         _reportName = baseName + by;
     }
@@ -199,14 +206,17 @@
             "artifacts" => "pie",
             _ => "bar"
         };
-        var result = new GuidedResult(
-            _reportName.Trim(),
-            isArtifact ? "artifacts" : "missions",
-            _intent == "time" ? "time_series" : "aggregate",
-            _groupBy,
-            displayMode,
-            and);
-        await OnApply.InvokeAsync(result);
+        var legacy = new LegacyReportDefinition {
+            Name = _reportName.Trim(),
+            Subject = isArtifact ? "artifacts" : "missions",
+            Mode = _intent == "time" ? "time_series" : "aggregate",
+            GroupBy = _groupBy,
+            DisplayMode = displayMode,
+            Filters = new FilterSet(and, [])
+        };
+
+        var definition = LegacyReportUpgrade.Convert(legacy).Definition;
+        await OnApply.InvokeAsync(definition);
     }
 
 }

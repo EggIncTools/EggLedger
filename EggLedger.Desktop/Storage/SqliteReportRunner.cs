@@ -1,4 +1,5 @@
 using System.Globalization;
+using EggIdentity.Reports;
 using EggLedger.Domain.MissionQuery;
 using EggLedger.Domain.Reports;
 using EggLedger.Web.Data;
@@ -8,13 +9,12 @@ namespace EggLedger.Desktop.Storage;
 public sealed class SqliteReportRunner(IReportSourceCache sources, IWeightData weights, TimeProvider? time = null) : IReportRunner {
     private readonly IReportSourceCache _sources = sources ?? throw new ArgumentNullException(nameof(sources));
     private readonly IWeightData _weights = weights ?? throw new ArgumentNullException(nameof(weights));
+    private readonly TimeProvider _time = time ?? TimeProvider.System;
 
-    public async Task<ReportResult> RunReportAsync(ReportDefinition def, string accountId) {
-        if (def.AccountId != accountId) def.AccountId = accountId;
-
-        var source = await _sources.GetAsync(accountId).ConfigureAwait(false);
-        var runner = new InMemoryReportRunner(_weights, time);
-        return runner.Run(def, source.Missions, source.Drops, source.Fuel);
+    public Task<ReportCube> RunReportAsync(ReportQuery query, string accountId, CancellationToken ct = default) {
+        ArgumentNullException.ThrowIfNull(query);
+        var registry = LedgerReportSources.Registry(async _ => await _sources.GetAsync(accountId).ConfigureAwait(false), _weights, _time);
+        return registry.RunAsync(query, ReportContext.Utc, ct);
     }
 }
 
@@ -31,20 +31,20 @@ public static class SqliteReportSource {
     private const string FuelSql =
         "SELECT player_id, mission_id, egg_id, amount FROM mission_fuel WHERE player_id = ? ORDER BY id";
 
-    public static Func<string, Task<ReportSource>> Loader(SqliteMissionDb db, IMissionStore missionStore) {
+    public static Func<string, Task<LedgerReportData>> Loader(SqliteMissionDb db, IMissionStore missionStore) {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(missionStore);
         return accountId => LoadAsync(db, missionStore, accountId);
     }
 
-    public static async Task<ReportSource> LoadAsync(SqliteMissionDb db, IMissionStore missionStore, string accountId) {
+    public static async Task<LedgerReportData> LoadAsync(SqliteMissionDb db, IMissionStore missionStore, string accountId) {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(missionStore);
         await missionStore.EnsureFilterColsBackfilledAsync(accountId).ConfigureAwait(false);
         return await Task.Run(() => Load(db, accountId)).ConfigureAwait(false);
     }
 
-    public static ReportSource Load(SqliteMissionDb db, string accountId) {
+    public static LedgerReportData Load(SqliteMissionDb db, string accountId) {
         ArgumentNullException.ThrowIfNull(db);
         object?[] args = [accountId];
 
@@ -82,7 +82,7 @@ public static class SqliteReportSource {
             Amount = AsDouble(r[3]),
         }).ToList();
 
-        return new ReportSource(missions, drops, fuel);
+        return new LedgerReportData(missions, drops, fuel);
     }
 
     private static string AsString(object? v) => v switch {

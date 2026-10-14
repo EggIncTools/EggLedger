@@ -4,34 +4,24 @@
 @inject TimeProvider Time
 @inject ILogger<ReportGrid> Logger
 @using System.Text.Json
+@using System.Text.Json.Nodes
+@using EggIdentity.Reports
+@using EggLedger.Web.Settings
 @implements IDisposable
-
-@* Dashboard grid of report cards, positioned via ReportGridLayout packing. Drag-reorder
-   is a simple index swap (drop onto a card swaps its position with the dragged one);
-   the Vue zone-insertion drag math is not replicated. *@
 
 <div class="rgrid">
     @if (!string.IsNullOrEmpty(_actionMessage)) {
         <span class="rgrid-msg @(_actionMessageIsError ? "rgrid-msg-err" : "")">@_actionMessage</span>
     }
-    @if (_defs.Count == 0) {
+    @if (_reports.Count == 0) {
         <div class="rgrid-empty">No reports yet. Click "New Report" to create one.</div>
     } else {
-        var (positions, _) = ReportGridLayout.BuildOccupancyFromLayout(_defs);
-        <div class="report-grid">
-            @foreach (var index in Enumerable.Range(0, _defs.Count)) {
-                var def = _defs[index];
-                var pos = positions[index];
-                <div @key="def.Id" draggable="@EditMode" class="report-grid-cell @(EditMode ? "report-grid-cell-drag" : "")"
-                     style="--cell-col: @pos.Col / span @pos.W; --cell-row: @pos.Row / span @pos.H;"
-                     @ondragstart="() => OnDragStart(index)" @ondragover="@(() => { })" @ondragover:preventDefault="true"
-                     @ondrop="() => OnDropAsync(index)">
-                    <ReportCard Def="def" Pos="pos" AccountId="@AccountId"
-                                EditMode="EditMode" Groups="Groups" OnEdit="OnEdit"
-                                OnDelete="HandleDeleteAsync" OnChanged="ReloadAsync"/>
-                </div>
-            }
-        </div>
+        <EggIdentity.UI.Reports.ReportGrid Placements="@_placements" Editable="@EditMode" PlacementsChanged="OnPlacementsChangedAsync">
+            <Item Context="placement">
+                <ReportCard Report="@_byId[placement.ReportId]" AccountId="@AccountId" EditMode="@EditMode" Groups="@Groups"
+                            OnEdit="@OnEdit" OnChanged="ReloadAsync"/>
+            </Item>
+        </EggIdentity.UI.Reports.ReportGrid>
     }
 </div>
 
@@ -42,9 +32,10 @@
 
     [Parameter] public bool EditMode { get; set; }
     [Parameter] public IReadOnlyList<ReportGroupRow> Groups { get; set; } = [];
-    [Parameter] public EventCallback<ReportDefinition> OnEdit { get; set; }
-    private List<ReportDefinition> _defs = [];
-    private int? _draggingIndex;
+    [Parameter] public EventCallback<LedgerReport> OnEdit { get; set; }
+    private List<LedgerReport> _reports = [];
+    private List<ReportPlacement> _placements = [];
+    private Dictionary<string, LedgerReport> _byId = [];
     private string? _actionMessage;
     private bool _actionMessageIsError;
 
@@ -54,64 +45,47 @@
 
     protected override async Task OnParametersSetAsync() {
         if (string.IsNullOrEmpty(AccountId)) {
-            _defs = [];
+            RecomputeReports([]);
             return;
         }
 
         await State.EnsureAccountLoadedAsync();
-        RecomputeDefs();
+        RecomputeReports(State.Reports);
     }
 
     private void OnStateChanged() {
         InvokeAsync(() => {
-            RecomputeDefs();
+            RecomputeReports(State.Reports);
             StateHasChanged();
         });
     }
 
-    private void RecomputeDefs() {
-        var rows = GroupFilter is null ? State.Reports : State.Reports.Where(r => r.GroupId == GroupFilter);
-        _defs = [.. rows];
+    private void RecomputeReports(IReadOnlyList<LedgerReport> source) {
+        var filtered = GroupFilter is null ? source : source.Where(r => r.Placement.Group == GroupFilter);
+        _reports = [.. filtered];
+        _placements = [.. _reports.Select(r => r.Placement with { Group = null })];
+        _byId = _reports.ToDictionary(r => r.Id);
     }
 
-    public async Task ReloadAsync() {
-        if (string.IsNullOrEmpty(AccountId)) {
-            _defs = [];
-            return;
+    public Task ReloadAsync() => State.LoadReportsAsync();
+
+    private async Task OnPlacementsChangedAsync(IReadOnlyList<ReportPlacement> changed) {
+        foreach (var placement in changed) {
+            var row = await Store.RetrieveReportAsync(placement.ReportId);
+            if (row is null) continue;
+            await Store.UpdateReportAsync(ReportMapping.WithPlacement(row, placement with { Group = string.IsNullOrEmpty(row.GroupId) ? null : row.GroupId }));
         }
 
         await State.LoadReportsAsync();
-        RecomputeDefs();
-    }
-
-    private async Task HandleDeleteAsync(string id) {
-        await Store.DeleteReportAsync(id);
-        await ReloadAsync();
-    }
-
-    private void OnDragStart(int index) {
-        _draggingIndex = index;
-    }
-
-    private async Task OnDropAsync(int targetIndex) {
-        var from = _draggingIndex;
-        _draggingIndex = null;
-        if (from is null || from == targetIndex) return;
-
-        var ids = _defs.Select(d => d.Id).ToList();
-        var moved = ids[from.Value];
-        ids.RemoveAt(from.Value);
-        ids.Insert(targetIndex, moved);
-        await Store.ReorderReportsAsync(ids);
-        await ReloadAsync();
     }
 
     public async Task ExportAllAsync() {
         var rows = await Store.RetrieveAccountReportsAsync(AccountId);
-        var defs = rows.Select(r => ReportMapping.ToDefinition(r, Logger)).ToList();
-        var json = JsonSerializer.Serialize(defs, new JsonSerializerOptions { WriteIndented = true });
+        var groups = await Store.RetrieveAccountGroupsAsync(AccountId);
+        var blob = CloudReportsBlob.Pack(rows, groups, Logger);
+        var json = JsonSerializer.Serialize(blob, new JsonSerializerOptions { WriteIndented = true });
         await Downloader.DownloadJsonAsync(json, $"reports-export-{Time.GetUtcNow():yyyyMMdd-HHmmss}.json");
-        _actionMessage = $"Exported {defs.Count} report(s)";
+        _actionMessage = $"Exported {rows.Count} report(s)";
         _actionMessageIsError = false;
         StateHasChanged();
         ClearMessageLater();
@@ -121,19 +95,20 @@
         if (string.IsNullOrWhiteSpace(json)) return;
 
         try {
-            var defs = ParseImportedDefinitions(json);
-            foreach (var def in defs) {
-                def.Id = Guid.NewGuid().ToString("D");
-                def.AccountId = AccountId;
-                def.SortOrder = 0;
-                def.CreatedAt = 0;
-                def.UpdatedAt = 0;
-                if (GroupFilter is not null) def.GroupId = GroupFilter;
-
-                await Store.InsertReportAsync(ReportMapping.ToRow(def));
+            var blob = ParseImportedBlob(json);
+            int count = 0;
+            foreach (var r in blob.Unpack(Logger)) {
+                var newId = Guid.NewGuid().ToString("D");
+                var report = r with {
+                    AccountId = AccountId,
+                    Definition = r.Definition with { Id = newId },
+                    Placement = r.Placement with { ReportId = newId },
+                };
+                await Store.InsertReportAsync(ReportMapping.ToRow(report));
+                count++;
             }
 
-            _actionMessage = $"Imported {defs.Count} report(s)";
+            _actionMessage = $"Imported {count} report(s)";
             _actionMessageIsError = false;
         } catch (JsonException) {
             _actionMessage = "Import failed - invalid file";
@@ -144,12 +119,14 @@
         ClearMessageLater();
     }
 
-    private static List<ReportDefinition> ParseImportedDefinitions(string json) {
+    private static CloudReportsBlob ParseImportedBlob(string json) {
         var trimmed = json.TrimStart();
-        if (trimmed.StartsWith('[')) return JsonSerializer.Deserialize<List<ReportDefinition>>(json) ?? [];
+        if (trimmed.StartsWith('[')) {
+            var array = JsonSerializer.Deserialize<List<JsonObject>>(json) ?? [];
+            return new CloudReportsBlob { Reports = array };
+        }
 
-        var single = JsonSerializer.Deserialize<ReportDefinition>(json);
-        return single is null ? [] : [single];
+        return JsonSerializer.Deserialize<CloudReportsBlob>(json) ?? new CloudReportsBlob();
     }
 
     private void ClearMessageLater() =>

@@ -11,6 +11,16 @@
   --color-err: #f87171;
   --color-border: #364153;
   --color-warn: #fb923c;
+  --color-heat-low: #393b40;
+  --color-heat-high: #6366f1;
+  --color-chart-1: #6366f1;
+  --color-chart-2: #22c55e;
+  --color-chart-3: #f59e0b;
+  --color-chart-4: #a855f7;
+  --color-chart-5: #06b6d4;
+  --color-chart-6: #f43f5e;
+  --color-chart-7: #84cc16;
+  --color-chart-8: #ec4899;
   --color-white: #ffffff;
   --color-dark: #393b40;
   --color-darkerthandark: #33353a;

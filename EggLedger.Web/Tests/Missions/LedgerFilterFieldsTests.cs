@@ -33,7 +33,7 @@ public sealed class LedgerFilterFieldsTests {
     [Fact]
     public void ReportOpsFor_DateFields_UseFullDateSet() {
         var ops = LedgerFilterFields.ReportOpsFor(LedgerFilters.Find("launchDT")!);
-        Assert.Equal(new[] { "=", "<", ">", "<=", ">=" }, ops.Select(o => o.Value).ToArray());
+        Assert.Equal(new[] { "=", "<", ">", "<=", ">=", FilterOps.Within }, ops.Select(o => o.Value).ToArray());
     }
 
     [Fact]

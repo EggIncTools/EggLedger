@@ -1,4 +1,7 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using EggIdentity.Reports;
 using EggLedger.Domain.Reports;
 using EggLedger.Web.Data;
 using Microsoft.Extensions.Logging;
@@ -67,17 +70,62 @@ public sealed record CloudReportGroup {
     };
 }
 
+public sealed record CloudReport {
+    [JsonPropertyName("accountId")]
+    public string AccountId { get; init; } = "";
+    [JsonPropertyName("definition")]
+    public JsonObject Definition { get; init; } = [];
+    [JsonPropertyName("placement")]
+    public ReportPlacement? Placement { get; init; }
+}
+
 public sealed record CloudReportsBlob {
+    public const int CurrentVersion = 2;
+
+    [JsonPropertyName("version")]
+    public int Version { get; init; }
     [JsonPropertyName("reports")]
-    public IReadOnlyList<ReportDefinition> Reports { get; init; } = [];
+    public IReadOnlyList<JsonObject> Reports { get; init; } = [];
+    [JsonPropertyName("definitions")]
+    public IReadOnlyList<CloudReport> Definitions { get; init; } = [];
     [JsonPropertyName("groups")]
     public IReadOnlyList<CloudReportGroup> Groups { get; init; } = [];
 
     public static CloudReportsBlob Pack(
         IReadOnlyList<ReportRow> reports, IReadOnlyList<ReportGroupRow> groups, ILogger? logger = null) => new() {
-            Reports = reports.Select(r => ReportMapping.ToDefinition(r, logger)).ToList(),
-            Groups = groups.Select(CloudReportGroup.FromRow).ToList(),
+            Version = CurrentVersion,
+            Definitions = [.. reports.Select(r => ReportMapping.ToReport(r, logger)).Select(Pack)],
+            Groups = [.. groups.Select(CloudReportGroup.FromRow)],
         };
+
+    public IEnumerable<LedgerReport> Unpack(ILogger? logger = null) {
+        foreach (var d in Definitions ?? []) {
+            if (Read(d.Definition, logger) is not var (definition, placement)) continue;
+            var p = d.Placement ?? placement ?? new ReportPlacement(definition.Id, 0, 0, 2, 2, 0);
+            yield return new LedgerReport(definition, p with { ReportId = definition.Id }) { AccountId = d.AccountId };
+        }
+        foreach (var legacy in Reports ?? []) {
+            if (Read(legacy, logger) is not var (definition, placement)) continue;
+            var accountId = legacy["accountId"] is JsonValue v && v.TryGetValue<string>(out var a) ? a : "";
+            yield return new LedgerReport(definition, (placement ?? new ReportPlacement(definition.Id, 0, 0, 2, 2, 0)) with { ReportId = definition.Id }) { AccountId = accountId };
+        }
+    }
+
+    private static CloudReport Pack(LedgerReport report) => new() {
+        AccountId = report.AccountId,
+        Definition = JsonNode.Parse(ReportCodec.Serialize(report.Definition))!.AsObject(),
+        Placement = report.Placement,
+    };
+
+    private static (ReportDefinition, ReportPlacement?)? Read(JsonObject? json, ILogger? logger) {
+        if (json is null) return null;
+        try {
+            return ReportCodec.Upgrade((JsonObject)json.DeepClone(), LegacyReportUpgrade.Upgrades);
+        } catch (JsonException ex) {
+            logger?.LogDebug(ex, "cloud report unreadable, skipping");
+            return null;
+        }
+    }
 }
 
 public static class CloudSyncBlobs {
@@ -124,7 +172,8 @@ public static class CloudSyncBlobs {
     public static (List<ReportGroupRow> Groups, List<ReportRow> Reports) SelectReportsToImport(
         CloudReportsBlob remote,
         IReadOnlyCollection<string> existingGroupIds,
-        IReadOnlyCollection<string> existingReportIds) {
+        IReadOnlyCollection<string> existingReportIds,
+        ILogger? logger = null) {
         var groups = new List<ReportGroupRow>();
         var seenGroups = new HashSet<string>(existingGroupIds, StringComparer.Ordinal);
         foreach (var g in remote.Groups ?? []) {
@@ -134,9 +183,9 @@ public static class CloudSyncBlobs {
 
         var reports = new List<ReportRow>();
         var seenReports = new HashSet<string>(existingReportIds, StringComparer.Ordinal);
-        foreach (var d in remote.Reports ?? []) {
-            if (string.IsNullOrEmpty(d.Id) || !seenReports.Add(d.Id)) continue;
-            reports.Add(ReportMapping.ToRow(d));
+        foreach (var r in remote.Unpack(logger)) {
+            if (string.IsNullOrEmpty(r.Id) || !seenReports.Add(r.Id)) continue;
+            reports.Add(ReportMapping.ToRow(r));
         }
 
         return (groups, reports);

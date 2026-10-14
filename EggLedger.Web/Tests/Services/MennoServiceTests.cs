@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Net;
 using System.Text;
+using EggIdentity.Reports;
 using EggLedger.Domain.Reports;
 using EggLedger.Web.Services;
 
@@ -116,109 +117,91 @@ public sealed class MennoServiceTests {
         Assert.Null(service.CachedItems);
     }
 
-    private static ReportDefinition ShipDurationDef(string normalizeBy = "", string familyWeight = "") => new() {
-        MennoEnabled = true,
-        Subject = "artifacts",
-        GroupBy = "ship_type",
-        SecondaryGroupBy = "duration_type",
-        NormalizeBy = normalizeBy,
-        FamilyWeight = familyWeight,
-        Weight = "gold",
-    };
+    private static ReportDefinition Def(
+        string source, string row, string col, bool enabled = true, Normalize? normalize = null, FilterSet? filters = null) {
+        var options = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (enabled) options[LedgerReportKeys.MennoOption] = "true";
+        var query = new ReportQuery(source) {
+            GroupBy = [.. new[] { row, col }.Where(d => d.Length > 0).Select(d => new GroupKey(d))],
+            Normalize = normalize ?? Normalize.None,
+            Filters = filters ?? FilterSet.Empty,
+        };
+        return new ReportDefinition(ReportCodec.CurrentVersion, "m", "Menno", query, new ReportView(ReportCharts.Heatmap) { Options = options });
+    }
+
+    private static ReportDefinition ShipDurationDef(Normalize? normalize = null, FilterSet? filters = null) =>
+        Def(LedgerReportKeys.Artifacts, LedgerReportKeys.Ship, LedgerReportKeys.Duration, normalize: normalize, filters: filters);
+
+    private static ReportMatrix User(IReadOnlyList<string> rows, IReadOnlyList<string> cols) => new(
+        rows, rows, cols, cols,
+        [.. rows.Select(_ => (IReadOnlyList<double?>)[.. cols.Select(_ => (double?)1)])],
+        [.. rows.Select(_ => (IReadOnlyList<int>)[.. cols.Select(_ => 0)])]);
+
+    private static double[] Flat(ReportMatrix m) => [.. m.Cells.SelectMany(r => r.Select(v => v ?? double.NaN))];
 
     [Fact]
-    public async Task ExecuteComparison_ShipByDuration_GoldenMatrixAndAirtime() {
+    public async Task ExecuteComparison_ShipByDuration_GoldenMatrix() {
         var service = Make(FixtureBytes("menno-sample.json"), out _);
         var items = await service.RefreshAsync();
 
-        var def = ShipDurationDef();
-        var result = MennoService.ExecuteComparison(
-            def, items, ["9", "10"], ["0", "1"]);
+        var result = MennoService.ExecuteComparison(ShipDurationDef(), items, User(["9", "10"], ["0", "1"]));
 
         Assert.NotNull(result);
-        Assert.True(result!.Is2D);
-        Assert.True(result.IsFloat);
-        Assert.Equal("gold", result.Weight);
-        Assert.Equal(new[] { "9", "10" }, result.RawRowLabels);
-        Assert.Equal(new[] { "0", "1" }, result.RawColLabels);
-
+        Assert.Equal(new[] { "9", "10" }, result.RowKeys);
+        Assert.Equal(new[] { "0", "1" }, result.ColKeys);
         var expected = new[] { 70.0, 62.0, 60.0, 78.0 };
-        Assert.Equal(expected.Length, result.MatrixValues.Count);
-        for (int i = 0; i < expected.Length; i++) {
-            Assert.Equal(expected[i], result.MatrixValues[i], 9);
-        }
-
-        Assert.NotNull(result.AirtimeMatrixValues);
-        var expectedAir = new[] { 70.0 / 24, 62.0 / 48, 60.0 / 48, 78.0 / 72 };
-        for (int i = 0; i < expectedAir.Length; i++) {
-            Assert.Equal(expectedAir[i], result.AirtimeMatrixValues![i], 9);
-        }
+        var actual = Flat(result);
+        Assert.Equal(expected.Length, actual.Length);
+        for (int i = 0; i < expected.Length; i++) Assert.Equal(expected[i], actual[i], 9);
     }
 
     [Fact]
-    public async Task ExecuteComparison_RowPct_NormalizesAndSkipsAirtime() {
+    public async Task ExecuteComparison_AirtimeNormalize_ReturnsPerFlightHour() {
         var service = Make(FixtureBytes("menno-sample.json"), out _);
         var items = await service.RefreshAsync();
 
-        var def = ShipDurationDef(normalizeBy: "row_pct");
         var result = MennoService.ExecuteComparison(
-            def, items, ["9", "10"], ["0", "1"]);
+            ShipDurationDef(Normalize.By(LedgerReportKeys.Airtime)), items, User(["9", "10"], ["0", "1"]));
 
         Assert.NotNull(result);
+        var expected = new[] { 70.0 / 24, 62.0 / 48, 60.0 / 48, 78.0 / 72 };
+        var actual = Flat(result);
+        for (int i = 0; i < expected.Length; i++) Assert.Equal(expected[i], actual[i], 9);
+    }
 
+    [Fact]
+    public async Task ExecuteComparison_RowPct_Normalizes() {
+        var service = Make(FixtureBytes("menno-sample.json"), out _);
+        var items = await service.RefreshAsync();
+
+        var result = MennoService.ExecuteComparison(ShipDurationDef(Normalize.Row), items, User(["9", "10"], ["0", "1"]));
+
+        Assert.NotNull(result);
         var expected = new[] {
             2800.0 / 3420 * 100, 620.0 / 3420 * 100,
             1200.0 / 1980 * 100, 780.0 / 1980 * 100,
         };
-        for (int i = 0; i < expected.Length; i++) {
-            Assert.Equal(expected[i], result!.MatrixValues[i], 9);
-        }
-
-        Assert.Null(result!.AirtimeMatrixValues);
-    }
-
-    [Fact]
-    public async Task ExecuteComparison_FormatsDisplayLabels() {
-        var service = Make(FixtureBytes("menno-sample.json"), out _);
-        var items = await service.RefreshAsync();
-
-        var result = MennoService.ExecuteComparison(
-            ShipDurationDef(), items, ["9", "10"], ["0", "1"]);
-
-        Assert.NotNull(result);
-
-        Assert.Equal(2, result!.RowLabels.Count);
-        Assert.Equal(2, result.ColLabels.Count);
-        Assert.DoesNotContain("9", result.RowLabels[0], StringComparison.Ordinal);
+        var actual = Flat(result);
+        for (int i = 0; i < expected.Length; i++) Assert.Equal(expected[i], actual[i], 9);
     }
 
     [Theory]
-    [InlineData(false, "artifacts", "ship_type", "duration_type")]
-    [InlineData(true, "ships", "ship_type", "duration_type")]
-    [InlineData(true, "artifacts", "spec_type", "duration_type")]
-    [InlineData(true, "artifacts", "ship_type", "")]
-    public async Task ExecuteComparison_IneligibleReport_ReturnsNull(
-        bool enabled, string subject, string groupBy, string secondary) {
+    [InlineData(false, LedgerReportKeys.Artifacts, LedgerReportKeys.Ship, LedgerReportKeys.Duration)]
+    [InlineData(true, LedgerReportKeys.Missions, LedgerReportKeys.Ship, LedgerReportKeys.Duration)]
+    [InlineData(true, LedgerReportKeys.Artifacts, LedgerReportKeys.SpecType, LedgerReportKeys.Duration)]
+    [InlineData(true, LedgerReportKeys.Artifacts, LedgerReportKeys.Ship, "")]
+    public async Task ExecuteComparison_IneligibleReport_ReturnsNull(bool enabled, string source, string row, string col) {
         var service = Make(FixtureBytes("menno-sample.json"), out _);
         var items = await service.RefreshAsync();
 
-        var def = new ReportDefinition {
-            MennoEnabled = enabled,
-            Subject = subject,
-            GroupBy = groupBy,
-            SecondaryGroupBy = secondary,
-        };
-        var result = MennoService.ExecuteComparison(
-            def, items, ["9", "10"], ["0", "1"]);
+        var result = MennoService.ExecuteComparison(Def(source, row, col, enabled), items, User(["9", "10"], ["0", "1"]));
 
         Assert.Null(result);
     }
 
     [Fact]
     public void ExecuteComparison_EmptyInputs_ReturnsNull() {
-        var def = ShipDurationDef();
-        Assert.Null(MennoService.ExecuteComparison(
-            def, [], ["9"], ["0"]));
+        Assert.Null(MennoService.ExecuteComparison(ShipDurationDef(), [], User(["9"], ["0"])));
     }
 
     [Fact]
@@ -226,18 +209,15 @@ public sealed class MennoServiceTests {
         var service = Make(FixtureBytes("menno-sample.json"), out _);
         var items = await service.RefreshAsync();
 
-        var baseline = MennoService.ExecuteComparison(
-            ShipDurationDef(), items, ["9"], ["0"]);
-        Assert.NotEqual(0.0, baseline!.MatrixValues[0]);
+        var baseline = MennoService.ExecuteComparison(ShipDurationDef(), items, User(["9"], ["0"]));
+        Assert.NotNull(baseline);
+        Assert.NotEqual(0.0, Flat(baseline)[0]);
 
-        var def = ShipDurationDef();
-        def.Filters = new FilterSet([new FilterCondition("target", "=", "99999")], []);
-
-        var result = MennoService.ExecuteComparison(
-            def, items, ["9"], ["0"]);
+        var filters = new FilterSet([new FilterCondition("target", "=", "99999")], []);
+        var result = MennoService.ExecuteComparison(ShipDurationDef(filters: filters), items, User(["9"], ["0"]));
 
         Assert.NotNull(result);
-        Assert.Equal(0.0, result!.MatrixValues[0], 9);
+        Assert.Equal(0.0, Flat(result)[0], 9);
     }
 
     [Fact]
@@ -245,19 +225,12 @@ public sealed class MennoServiceTests {
         var service = Make(FixtureBytes("menno-sample.json"), out _);
         var items = await service.RefreshAsync();
 
-        var def = new ReportDefinition {
-            MennoEnabled = true,
-            Subject = "artifacts",
-            GroupBy = "artifact_name",
-            SecondaryGroupBy = "rarity",
-            Weight = "gold",
-            Filters = new FilterSet([new FilterCondition("ship", "=", "10")], []),
-        };
+        var filters = new FilterSet([new FilterCondition("ship", "=", "10")], []);
+        var def = Def(LedgerReportKeys.Artifacts, LedgerReportKeys.ArtifactName, LedgerReportKeys.Rarity, filters: filters);
 
-        var result = MennoService.ExecuteComparison(
-            def, items, ["1"], ["0"]);
+        var result = MennoService.ExecuteComparison(def, items, User(["1"], ["0"]));
 
         Assert.NotNull(result);
-        Assert.Equal(0.0, result!.MatrixValues[0], 9);
+        Assert.Equal(0.0, Flat(result)[0], 9);
     }
 }

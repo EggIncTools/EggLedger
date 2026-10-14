@@ -1,3 +1,4 @@
+using EggIdentity.Reports;
 using EggLedger.Domain.MissionPacking;
 using EggLedger.Domain.MissionQuery;
 using EggLedger.Domain.Reports;
@@ -14,15 +15,15 @@ public sealed class ReportSourceCacheTests {
         public IReadOnlyList<int> FamilyAfxIds(string familyId) => [];
     }
 
-    private static ReportSource SourceFor(string accountId) => new(
+    private static LedgerReportData SourceFor(string accountId) => new(
         [new MissionRowData { PlayerId = accountId, MissionId = accountId + "-m1" }],
         [new ArtifactDropRowData { PlayerId = accountId, MissionId = accountId + "-m1" }],
         [new FuelRowData { PlayerId = accountId, MissionId = accountId + "-m1" }]);
 
-    private static Task<ReportSource> SourceOf(string accountId) => Task.FromResult(SourceFor(accountId));
+    private static Task<LedgerReportData> SourceOf(string accountId) => Task.FromResult(SourceFor(accountId));
 
     private static ReportSourceCache NewCache(
-        Func<string, Task<ReportSource>>? loader = null,
+        Func<string, Task<LedgerReportData>>? loader = null,
         TimeSpan? ttl = null,
         TimeProvider? clock = null) =>
         new(loader ?? SourceOf, ttl ?? Ttl, clock ?? TestTime.New());
@@ -108,7 +109,7 @@ public sealed class ReportSourceCacheTests {
 
     [Fact]
     public async Task ConcurrentRequests_ShareASingleScan() {
-        var gate = new TaskCompletionSource<ReportSource>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var gate = new TaskCompletionSource<LedgerReportData>(TaskCreationOptions.RunContinuationsAsynchronously);
         var calls = 0;
         var cache = NewCache(_ => {
             calls++;
@@ -131,7 +132,7 @@ public sealed class ReportSourceCacheTests {
         var calls = 0;
         var cache = NewCache(_ => {
             calls++;
-            return Task.FromResult(ReportSource.Empty);
+            return Task.FromResult(LedgerReportData.Empty);
         });
 
         var first = await cache.GetAsync("a");
@@ -149,7 +150,7 @@ public sealed class ReportSourceCacheTests {
         var cache = NewCache(id => {
             calls++;
             return calls == 1
-                ? Task.FromException<ReportSource>(new InvalidOperationException("boom"))
+                ? Task.FromException<LedgerReportData>(new InvalidOperationException("boom"))
                 : SourceOf(id);
         });
 
@@ -296,19 +297,14 @@ public sealed class ReportSourceCacheTests {
             return IndexedDbReportSource.LoadAsync(db, id);
         });
         var runner = new IndexedDbReportRunner(cache, new NoWeights());
-        var def = new ReportDefinition {
-            Mode = "aggregate",
-            GroupBy = "ship_type",
-            Subject = "missions",
-            AccountId = "EI1",
-        };
+        var query = new ReportQuery(LedgerReportKeys.Missions) { GroupBy = [new GroupKey(LedgerReportKeys.Ship)] };
 
-        var first = await runner.RunReportAsync(def, "EI1");
-        var second = await runner.RunReportAsync(def, "EI1");
+        var first = await runner.RunReportAsync(query, "EI1");
+        var second = await runner.RunReportAsync(query, "EI1");
 
         Assert.Equal(1, scans);
-        Assert.Equal([1], first.Values);
-        Assert.Equal([1], second.Values);
+        Assert.Equal([1d], ReportProjection.Series(first, MeasureRequest.RowCountKey).Values);
+        Assert.Equal([1d], ReportProjection.Series(second, MeasureRequest.RowCountKey).Values);
     }
 
     [Fact]

@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using EggIdentity.Filters;
 using EggIdentity.Reports;
+using SortKey = EggIdentity.Reports.SortKey;
 
 namespace EggLedger.Domain.Reports;
 

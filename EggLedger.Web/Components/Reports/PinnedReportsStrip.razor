@@ -1,3 +1,4 @@
+@using EggIdentity.Reports
 @inject IndexedDbPinnedReportStore PinStore
 @inject IndexedDbReportStore ReportStore
 @inject ILogger<PinnedReportsStrip> Logger
@@ -8,19 +9,14 @@
             <TriggerContent>+</TriggerContent>
         </SearchablePicker>
     </div>
-    @if (_defs.Count == 0) {
+    @if (_reports.Count == 0) {
         <p class="pins-empty">No pinned reports yet. Add one with the + button.</p>
     } else {
-        <div class="report-grid">
-            @for (var i = 0; i < _defs.Count; i++) {
-                var def = _defs[i];
-                var pos = _positions[i];
-                var pinId = _resolvedPins[i].Id;
-                <div @key="pinId" class="report-grid-cell" style="--cell-col: @pos.Col / span @pos.W; --cell-row: @pos.Row / span @pos.H;">
-                    <ReportCard Def="def" Pos="pos" AccountId="@AccountId" ShowUnpin="true" OnUnpin="() => UnpinAsync(pinId)"/>
-                </div>
-            }
-        </div>
+        <EggIdentity.UI.Reports.ReportGrid Placements="_placements" Editable="false">
+            <Item Context="placement">
+                <ReportCard Report="_reportsById[placement.ReportId]" AccountId="@AccountId" ShowUnpin="true" OnUnpin="() => UnpinAsync(_pinIdsByReportId[placement.ReportId])"/>
+            </Item>
+        </EggIdentity.UI.Reports.ReportGrid>
     }
 </div>
 
@@ -29,9 +25,10 @@
     [Parameter] [EditorRequired] public string View { get; set; } = "";
 
     private List<PinnedReportRow> _pins = [];
-    private List<PinnedReportRow> _resolvedPins = [];
-    private List<ReportDefinition> _defs = [];
-    private List<GridCardPos> _positions = [];
+    private List<LedgerReport> _reports = [];
+    private List<ReportPlacement> _placements = [];
+    private Dictionary<string, LedgerReport> _reportsById = [];
+    private Dictionary<string, string> _pinIdsByReportId = [];
     private List<PickerOption> _pickerOptions = [];
     private string _loadedKey = "";
 
@@ -46,9 +43,10 @@
     private async Task LoadAsync() {
         if (string.IsNullOrEmpty(AccountId)) {
             _pins = [];
-            _resolvedPins = [];
-            _defs = [];
-            _positions = [];
+            _reports = [];
+            _placements = [];
+            _reportsById = [];
+            _pinIdsByReportId = [];
             _pickerOptions = [];
             return;
         }
@@ -78,32 +76,33 @@
             _pins = [.. await PinStore.RetrieveAsync(AccountId, View)];
         }
 
-        var resolvedPins = new List<PinnedReportRow>();
-        var defs = new List<ReportDefinition>();
+        var reports = new List<LedgerReport>();
+        var pinIdsByReportId = new Dictionary<string, string>();
         foreach (var pin in _pins) {
-            ReportDefinition? def = null;
+            LedgerReport? report = null;
             if (pin.Kind == PinnedReportKinds.Template) {
-                def = ReportTemplates.Find(pin.RefId);
-                if (def is not null) def.AccountId = AccountId;
+                var def = ReportTemplates.Find(pin.RefId);
+                if (def is not null) report = new LedgerReport(def, ReportTemplates.Placement(def.Id, pin.SortOrder)) { AccountId = AccountId };
             } else {
                 var row = await ReportStore.RetrieveReportAsync(pin.RefId);
-                if (row is not null) def = ReportMapping.ToDefinition(row, Logger);
+                if (row is not null) report = ReportMapping.ToReport(row, Logger);
             }
-            if (def is null) continue;
-            resolvedPins.Add(pin);
-            defs.Add(def);
+            if (report is null) continue;
+            reports.Add(report);
+            pinIdsByReportId[report.Id] = pin.Id;
         }
 
-        _resolvedPins = resolvedPins;
-        _defs = defs;
-        _positions = ReportGridLayout.BuildOccupancyFromLayout(_defs).CardPositions;
+        _reports = reports;
+        _reportsById = reports.ToDictionary(r => r.Id);
+        _pinIdsByReportId = pinIdsByReportId;
+        _placements = [.. _reports.Select((r, i) => r.Placement with { Order = i, Group = null })];
 
         var pinnedUserIds = _pins.Where(p => p.Kind == PinnedReportKinds.User).Select(p => p.RefId).ToHashSet();
         var pinnedTemplateIds = _pins.Where(p => p.Kind == PinnedReportKinds.Template).Select(p => p.RefId).ToHashSet();
         var userReports = await ReportStore.RetrieveAccountReportsAsync(AccountId);
         _pickerOptions = [
-            .. userReports.Where(r => !pinnedUserIds.Contains(r.Id)).Select(r => new PickerOption { Value = "user:" + r.Id, Text = r.Name }),
-            .. ReportTemplates.All.Where(t => !pinnedTemplateIds.Contains(t.Id)).Select(t => new PickerOption { Value = "template:" + t.Id, Text = t.Name + " (template)" }),
+            .. userReports.Where(r => !pinnedUserIds.Contains(r.Id)).Select(r => new PickerOption { Value = "user:" + r.Id, Text = ReportMapping.ToReport(r).Definition.Title }),
+            .. ReportTemplates.All.Where(t => !pinnedTemplateIds.Contains(t.Id)).Select(t => new PickerOption { Value = "template:" + t.Id, Text = t.Title + " (template)" }),
         ];
     }
 

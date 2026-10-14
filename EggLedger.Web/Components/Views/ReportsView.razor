@@ -101,8 +101,8 @@
         if (_builder is not null) await _builder.OpenForCreateAsync();
     }
 
-    private async Task OpenEdit(ReportDefinition def) {
-        if (_builder is not null) await _builder.OpenForEditAsync(def);
+    private async Task OpenEdit(LedgerReport report) {
+        if (_builder is not null) await _builder.OpenForEditAsync(report);
     }
 
     private async Task OnSavedAsync() {

@@ -1,4 +1,3 @@
-using EggLedger.Domain.Reports;
 using EggLedger.Web.Data;
 using Microsoft.Extensions.Logging;
 
@@ -23,7 +22,7 @@ public sealed class ReportsViewState(ActiveAccount active, IndexedDbReportStore 
 
     public IReadOnlyList<ReportGroupRow> Groups { get; private set; } = [];
 
-    public IReadOnlyList<ReportDefinition> Reports { get; private set; } = [];
+    public IReadOnlyList<LedgerReport> Reports { get; private set; } = [];
 
     public string? SelectedGroup { get; private set; }
 
@@ -80,7 +79,7 @@ public sealed class ReportsViewState(ActiveAccount active, IndexedDbReportStore 
         var rows = await store.RetrieveAccountReportsAsync(id);
         if (generation != _reportsLoadGeneration) return false;
 
-        Reports = [.. rows.Select(r => ReportMapping.ToDefinition(r, logger))];
+        Reports = [.. rows.Select(r => ReportMapping.ToReport(r, logger))];
         Changed?.Invoke();
         return true;
     }

@@ -100,23 +100,27 @@ public sealed class CloudSyncBlobsTests {
         Assert.False(unpacked.ContainsKey("start_in_fullscreen"));
     }
 
+    private static ReportRow Row(string id, string accountId = "EI42") => new() {
+        Id = id,
+        AccountId = accountId,
+        Name = "Eggs over time",
+        Subject = "missions",
+        Mode = "aggregate",
+        GroupBy = "ship_type",
+        Filters = "{\"and\":[{\"topLevel\":\"ship\",\"op\":\"=\",\"val\":\"9\"}],\"or\":[]}",
+        GridW = 3,
+        GridH = 2,
+        SortOrder = 4,
+    };
+
     [Fact]
     public void SelectReportsToImport_SkipsExistingAndBlankAndDuplicates() {
-        var remote = new CloudReportsBlob {
+        var remote = CloudReportsBlob.Pack([Row("r1"), Row("r2"), Row("r1"), Row("")], []) with {
             Groups = [
                 new CloudReportGroup { Id = "g1" },
                 new CloudReportGroup { Id = "g2" },
-
                 new CloudReportGroup { Id = "g2" },
-
                 new CloudReportGroup { Id = "" },
-            ],
-            Reports = [
-                new ReportDefinition { Id = "r1" },
-
-                new ReportDefinition { Id = "r2" },
-
-                new ReportDefinition { Id = "" },
             ],
         };
 
@@ -130,16 +134,7 @@ public sealed class CloudSyncBlobsTests {
     }
 
     [Fact]
-    public void ReportsBlob_SerializesGoWireShape() {
-        var row = new ReportRow {
-            Id = "rep1",
-            AccountId = "EI42",
-            Name = "Eggs over time",
-            GroupBy = "ship_type",
-            DisplayMode = "chart",
-            ValueFilterOp = "gte",
-            Filters = "{\"and\":[{\"topLevel\":\"ship\",\"op\":\"eq\",\"val\":\"henerprise\"}],\"or\":[]}",
-        };
+    public void ReportsBlob_PacksVersionedDefinitionsAndGroups() {
         var group = new ReportGroupRow {
             Id = "grp1",
             AccountId = "EI42",
@@ -148,30 +143,30 @@ public sealed class CloudSyncBlobsTests {
             CreatedAt = 1700000000,
         };
 
-        var blob = CloudReportsBlob.Pack([row], [group]);
-        var json = JsonSerializer.Serialize(blob, Json);
+        var json = JsonSerializer.Serialize(CloudReportsBlob.Pack([Row("rep1")], [group]), Json);
 
-        Assert.Contains("\"reports\"", json, StringComparison.Ordinal);
-        Assert.Contains("\"groups\"", json, StringComparison.Ordinal);
-
-        Assert.Contains("\"accountId\"", json, StringComparison.Ordinal);
-        Assert.Contains("\"displayMode\"", json, StringComparison.Ordinal);
-        Assert.Contains("\"groupBy\"", json, StringComparison.Ordinal);
-        Assert.Contains("\"valueFilterOp\"", json, StringComparison.Ordinal);
-        Assert.DoesNotContain("\"account_id\"", json, StringComparison.Ordinal);
-        Assert.DoesNotContain("\"display_mode\"", json, StringComparison.Ordinal);
-
-        Assert.Contains("\"filters\":{", json, StringComparison.Ordinal);
-        Assert.Contains("\"and\":[", json, StringComparison.Ordinal);
-        Assert.Contains("\"or\":[", json, StringComparison.Ordinal);
+        Assert.Contains($"\"version\":{CloudReportsBlob.CurrentVersion}", json, StringComparison.Ordinal);
+        Assert.Contains("\"definitions\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"placement\"", json, StringComparison.Ordinal);
         Assert.Contains("\"topLevel\":\"ship\"", json, StringComparison.Ordinal);
-
-        Assert.DoesNotContain("\"filters\":\"{", json, StringComparison.Ordinal);
-
         Assert.Contains("\"Id\":\"grp1\"", json, StringComparison.Ordinal);
-        Assert.Contains("\"AccountId\":\"EI42\"", json, StringComparison.Ordinal);
         Assert.Contains("\"SortOrder\":3", json, StringComparison.Ordinal);
-        Assert.Contains("\"CreatedAt\":1700000000", json, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ReportsBlob_RoundTrips_DefinitionAndPlacement() {
+        var json = JsonSerializer.Serialize(CloudReportsBlob.Pack([Row("rep1")], []), Json);
+        var blob = JsonSerializer.Deserialize<CloudReportsBlob>(json, Json);
+        Assert.NotNull(blob);
+
+        var (_, reports) = CloudSyncBlobs.SelectReportsToImport(blob, [], []);
+        var report = ReportMapping.ToReport(Assert.Single(reports));
+
+        Assert.Equal("rep1", report.Id);
+        Assert.Equal("EI42", report.AccountId);
+        Assert.Equal("Eggs over time", report.Definition.Title);
+        Assert.Equal(LedgerReportKeys.Ship, report.Definition.Query.GroupBy[0].Dimension);
+        Assert.Equal((3, 2, 4), (report.Placement.W, report.Placement.H, report.Placement.Order));
     }
 
     [Fact]
@@ -204,14 +199,14 @@ public sealed class CloudSyncBlobsTests {
         var (groups, reports) = CloudSyncBlobs.SelectReportsToImport(
             blob!, existingGroupIds: [], existingReportIds: []);
 
-        var r = Assert.Single(reports);
+        var r = ReportMapping.ToReport(Assert.Single(reports));
         Assert.Equal("rep1", r.Id);
         Assert.Equal("EI42", r.AccountId);
-        Assert.Equal("ship_type", r.GroupBy);
+        Assert.Equal(LedgerReportKeys.Ship, r.Definition.Query.GroupBy[0].Dimension);
 
-        Assert.Contains("\"topLevel\":\"ship\"", r.Filters, StringComparison.Ordinal);
-        Assert.Contains("\"op\":\"eq\"", r.Filters, StringComparison.Ordinal);
-        Assert.Contains("\"val\":\"henerprise\"", r.Filters, StringComparison.Ordinal);
+        var condition = Assert.Single(r.Definition.Query.Filters.And);
+        Assert.Equal("ship", condition.Field);
+        Assert.Equal("henerprise", condition.Value);
 
         var g = Assert.Single(groups);
         Assert.Equal("grp1", g.Id);

@@ -5,12 +5,8 @@ using EggLedger.Web.State;
 
 namespace EggLedger.Web.Data;
 
-public sealed record ReportSource(IReadOnlyList<MissionRowData> Missions, IReadOnlyList<ArtifactDropRowData> Drops, IReadOnlyList<FuelRowData> Fuel) {
-    public static ReportSource Empty { get; } = new([], [], []);
-}
-
 public interface IReportSourceCache {
-    Task<ReportSource> GetAsync(string accountId);
+    Task<LedgerReportData> GetAsync(string accountId);
     void Invalidate(string accountId);
 }
 
@@ -19,20 +15,20 @@ public sealed class ReportSourceCache : IReportSourceCache, IDisposable {
 
     public static readonly TimeSpan DefaultTtl = TimeSpan.FromMinutes(5);
 
-    private readonly Func<string, Task<ReportSource>> _loader;
+    private readonly Func<string, Task<LedgerReportData>> _loader;
     private readonly TimeSpan _ttl;
     private readonly TimeProvider _time;
     private readonly Lock _gate = new();
-    private readonly Dictionary<string, TtlSnapshot<ReportSource>> _slots = [with(StringComparer.Ordinal)];
+    private readonly Dictionary<string, TtlSnapshot<LedgerReportData>> _slots = [with(StringComparer.Ordinal)];
     private readonly List<string> _order = [];
     private Action? _detachHub;
 
-    public ReportSourceCache(Func<string, Task<ReportSource>> loader, TimeProvider time)
+    public ReportSourceCache(Func<string, Task<LedgerReportData>> loader, TimeProvider time)
         : this(loader, DefaultTtl, time) {
     }
 
     internal ReportSourceCache(
-        Func<string, Task<ReportSource>> loader,
+        Func<string, Task<LedgerReportData>> loader,
         TimeSpan ttl,
         TimeProvider time) {
         _loader = loader ?? throw new ArgumentNullException(nameof(loader));
@@ -40,8 +36,8 @@ public sealed class ReportSourceCache : IReportSourceCache, IDisposable {
         _time = time ?? throw new ArgumentNullException(nameof(time));
     }
 
-    public Task<ReportSource> GetAsync(string accountId) {
-        TtlSnapshot<ReportSource> slot;
+    public Task<LedgerReportData> GetAsync(string accountId) {
+        TtlSnapshot<LedgerReportData> slot;
         lock (_gate) {
             slot = Touch(accountId);
         }
@@ -69,14 +65,14 @@ public sealed class ReportSourceCache : IReportSourceCache, IDisposable {
         _detachHub = null;
     }
 
-    private TtlSnapshot<ReportSource> Touch(string accountId) {
+    private TtlSnapshot<LedgerReportData> Touch(string accountId) {
         if (_slots.TryGetValue(accountId, out var existing)) {
             _order.Remove(accountId);
             _order.Add(accountId);
             return existing;
         }
 
-        var slot = new TtlSnapshot<ReportSource>(_ttl, async _ => await _loader(accountId).ConfigureAwait(false) ?? ReportSource.Empty, _time);
+        var slot = new TtlSnapshot<LedgerReportData>(_ttl, async _ => await _loader(accountId).ConfigureAwait(false) ?? LedgerReportData.Empty, _time);
         _slots[accountId] = slot;
         _order.Add(accountId);
         while (_order.Count > MaxAccounts) {
@@ -90,19 +86,19 @@ public sealed class ReportSourceCache : IReportSourceCache, IDisposable {
 }
 
 public static class IndexedDbReportSource {
-    public static Func<string, Task<ReportSource>> Loader(IIndexedDb db, IMissionStore missionStore) {
+    public static Func<string, Task<LedgerReportData>> Loader(IIndexedDb db, IMissionStore missionStore) {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(missionStore);
         return accountId => LoadAsync(db, missionStore, accountId);
     }
 
-    public static async Task<ReportSource> LoadAsync(IIndexedDb db, IMissionStore missionStore, string accountId) {
+    public static async Task<LedgerReportData> LoadAsync(IIndexedDb db, IMissionStore missionStore, string accountId) {
         ArgumentNullException.ThrowIfNull(missionStore);
         await missionStore.EnsureFilterColsBackfilledAsync(accountId).ConfigureAwait(false);
         return await LoadAsync(db, accountId).ConfigureAwait(false);
     }
 
-    public static async Task<ReportSource> LoadAsync(IIndexedDb db, string accountId) {
+    public static async Task<LedgerReportData> LoadAsync(IIndexedDb db, string accountId) {
         ArgumentNullException.ThrowIfNull(db);
         var missionRows = await db
             .GetAllByIndexAsync<MissionRow>(IndexedDbStores.Mission, IndexedDbStores.PlayerIdIndex, accountId)
@@ -114,7 +110,7 @@ public static class IndexedDbReportSource {
             .GetAllByIndexAsync<FuelRow>(IndexedDbStores.MissionFuel, IndexedDbStores.PlayerIdIndex, accountId)
             .ConfigureAwait(false);
 
-        return new ReportSource(
+        return new LedgerReportData(
             [.. missionRows.Select(ToMissionData)],
             [.. dropRows.Select(ToDropData)],
             [.. fuelRows.Select(ToFuelData)]);

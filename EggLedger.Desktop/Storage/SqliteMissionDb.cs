@@ -1,9 +1,8 @@
-using EggLedger.Domain.Reports;
 using Microsoft.Data.Sqlite;
 
 namespace EggLedger.Desktop.Storage;
 
-public sealed class SqliteMissionDb : IMissionDb {
+public sealed class SqliteMissionDb {
     private readonly SqliteConnection _connection;
     private readonly Lock _gate;
 

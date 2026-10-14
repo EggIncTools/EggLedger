@@ -1,3 +1,4 @@
+using EggIdentity.Reports;
 using EggLedger.Domain.Reports;
 using EggLedger.Web.Data;
 
@@ -14,6 +15,11 @@ public sealed class IndexedDbReportRunnerTests {
     private static IndexedDbReportRunner Runner(IIndexedDb db) =>
         new(new ReportSourceCache(IndexedDbReportSource.Loader(db, new FakeMissionStore()), TestTime.New()), new NoWeights());
 
+    private static ReportQuery CountBy(string source, string dimension) => new(source) {
+        GroupBy = [new GroupKey(dimension)],
+        Sort = [new SortKey(MeasureRequest.RowCountKey, Descending: true)],
+    };
+
     private static MissionRow Mission(string id, int ship, double start) => new() {
         PlayerId = Eid,
         MissionId = id,
@@ -24,6 +30,15 @@ public sealed class IndexedDbReportRunnerTests {
         NominalCapacity = 1,
     };
 
+    private static ArtifactDropRow Drop(string player, string mission, int index, int artifact, int rarity, int level) => new() {
+        PlayerId = player,
+        MissionId = mission,
+        DropIndex = index,
+        ArtifactId = artifact,
+        Rarity = rarity,
+        Level = level,
+    };
+
     [Fact]
     public async Task RunReportAsync_AggregateByShip_RunsEndToEnd() {
         var db = new FakeIndexedDb();
@@ -32,126 +47,50 @@ public sealed class IndexedDbReportRunnerTests {
         db.Seed("mission", Mission("c", ship: 3, start: 300));
         db.Seed("mission", Mission("other", ship: 9, start: 400) with { PlayerId = "EI2" });
 
-        var sut = Runner(db);
-        var def = new ReportDefinition {
-            Mode = "aggregate",
-            GroupBy = "ship_type",
-            Subject = "missions",
-            AccountId = Eid,
-        };
+        var cube = await Runner(db).RunReportAsync(CountBy(LedgerReportKeys.Missions, LedgerReportKeys.Ship), Eid);
+        var series = ReportProjection.Series(cube, MeasureRequest.RowCountKey, LedgerReportSources.Missions);
 
-        var result = await sut.RunReportAsync(def, Eid);
-
-        Assert.False(result.Is2D);
-        Assert.Equal([2, 1], result.Values);
-        Assert.Equal("Henerprise", result.Labels[0]);
-        Assert.Equal("BCR", result.Labels[1]);
+        Assert.Equal([2d, 1d], series.Values);
+        Assert.Equal("Henerprise", series.Labels[0]);
+        Assert.Equal("BCR", series.Labels[1]);
     }
 
     [Fact]
     public async Task RunReportAsync_DropBasedByRarity_ReadsDropStore() {
         var db = new FakeIndexedDb();
         db.Seed("mission", Mission("a", ship: 9, start: 100));
-        db.Seed("artifact_drops", new ArtifactDropRow {
-            PlayerId = Eid,
-            MissionId = "a",
-            DropIndex = 0,
-            ArtifactId = 12,
-            Rarity = 3,
-            Level = 2,
-        });
-        db.Seed("artifact_drops", new ArtifactDropRow {
-            PlayerId = Eid,
-            MissionId = "a",
-            DropIndex = 1,
-            ArtifactId = 13,
-            Rarity = 3,
-            Level = 1,
-        });
-        db.Seed("artifact_drops", new ArtifactDropRow {
-            PlayerId = Eid,
-            MissionId = "a",
-            DropIndex = 2,
-            ArtifactId = 14,
-            Rarity = 1,
-            Level = 0,
-        });
+        db.Seed("artifact_drops", Drop(Eid, "a", 0, 12, 3, 2));
+        db.Seed("artifact_drops", Drop(Eid, "a", 1, 13, 3, 1));
+        db.Seed("artifact_drops", Drop(Eid, "a", 2, 14, 1, 0));
+        db.Seed("artifact_drops", Drop("EI2", "z", 0, 99, 3, 0));
 
-        db.Seed("artifact_drops", new ArtifactDropRow {
-            PlayerId = "EI2",
-            MissionId = "z",
-            DropIndex = 0,
-            ArtifactId = 99,
-            Rarity = 3,
-            Level = 0,
-        });
+        var cube = await Runner(db).RunReportAsync(CountBy(LedgerReportKeys.Artifacts, LedgerReportKeys.Rarity), Eid);
+        var series = ReportProjection.Series(cube, MeasureRequest.RowCountKey, LedgerReportSources.Artifacts);
 
-        var sut = Runner(db);
-        var def = new ReportDefinition {
-            Mode = "aggregate",
-            GroupBy = "rarity",
-            Subject = "artifacts",
-            AccountId = Eid,
-        };
-
-        var result = await sut.RunReportAsync(def, Eid);
-
-        Assert.Equal([2, 1], result.Values);
-        Assert.Equal("Legendary", result.Labels[0]);
-        Assert.Equal("Rare", result.Labels[1]);
+        Assert.Equal([2d, 1d], series.Values);
+        Assert.Equal("Legendary", series.Labels[0]);
+        Assert.Equal("Rare", series.Labels[1]);
     }
 
     [Fact]
     public async Task RunReportAsync_DropReport_ReadsDropsByIndexNotWholeStore() {
         var db = new CountingIndexedDb();
         db.Seed("mission", Mission("a", ship: 9, start: 100));
-        db.Seed("artifact_drops", new ArtifactDropRow {
-            PlayerId = Eid,
-            MissionId = "a",
-            DropIndex = 0,
-            ArtifactId = 12,
-            Rarity = 3,
-            Level = 0,
-        });
-        db.Seed("artifact_drops", new ArtifactDropRow {
-            PlayerId = "EI2",
-            MissionId = "z",
-            DropIndex = 0,
-            ArtifactId = 99,
-            Rarity = 3,
-            Level = 0,
-        });
+        db.Seed("artifact_drops", Drop(Eid, "a", 0, 12, 3, 0));
+        db.Seed("artifact_drops", Drop("EI2", "z", 0, 99, 3, 0));
 
-        var sut = Runner(db);
-        var def = new ReportDefinition {
-            Mode = "aggregate",
-            GroupBy = "rarity",
-            Subject = "artifacts",
-            AccountId = Eid,
-        };
-
-        var result = await sut.RunReportAsync(def, Eid);
+        var cube = await Runner(db).RunReportAsync(CountBy(LedgerReportKeys.Artifacts, LedgerReportKeys.Rarity), Eid);
 
         Assert.Contains(("artifact_drops", "player_id"), db.IndexQueries);
         Assert.DoesNotContain("artifact_drops", db.WholeStoreReads);
-        Assert.Equal([1], result.Values);
+        Assert.Equal([1d], ReportProjection.Series(cube, MeasureRequest.RowCountKey).Values);
     }
 
     [Fact]
     public async Task RunReportAsync_EmptyWhenNoRows() {
-        var db = new FakeIndexedDb();
-        var sut = Runner(db);
-        var def = new ReportDefinition {
-            Mode = "aggregate",
-            GroupBy = "ship_type",
-            Subject = "missions",
-            AccountId = Eid,
-        };
+        var cube = await Runner(new FakeIndexedDb()).RunReportAsync(CountBy(LedgerReportKeys.Missions, LedgerReportKeys.Ship), Eid);
 
-        var result = await sut.RunReportAsync(def, Eid);
-
-        Assert.Empty(result.Values);
-        Assert.Empty(result.Labels);
+        Assert.Empty(cube.Rows);
     }
 
     private sealed class CountingIndexedDb : IIndexedDb {

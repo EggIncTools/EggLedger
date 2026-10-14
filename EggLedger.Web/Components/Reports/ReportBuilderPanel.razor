@@ -1,531 +1,149 @@
-@using System.Text.Json
-@using EggIdentity.UI
+@using EggIdentity.Reports
+@using EggIdentity.UI.Reports
 @inject IndexedDbReportStore Store
-@inject MissionConfigProvider Config
-@inject IReportRunner MissionDb
+@inject IReportRunner Runner
 @inject ILogger<ReportBuilderPanel> Logger
 @inject TimeProvider Time
 
-@* Report builder modal. Blazor-controlled overlay (full-screen fixed backdrop + centered
-   panel). NOT a native <dialog>.showModal(): top-layer promotion desyncs the Blazor Server
-   render tree (insertBefore/parentNode-null crashes). Backdrop click closes. Builds a
-   ReportDefinition, auto-classifies weight, saves via IndexedDbReportStore. Field visibility
-   mirrors the Vue builder; per-label color overrides remain deferred (need computed labels). *@
-
-<ModalHost Open="_open" OnClose="Close" Title="@(_editingId is null ? "Add Report" : "Edit Report")" Width="ModalWidth.Regular">
-    <HeadTools>
-        @if (_editingId is null && _builderMode == "basic") {
-            <div class="segmented rb-mode" role="group" aria-label="Builder mode">
-                <button type="button" class="segmented-opt active">Basic</button>
-                <button type="button" class="segmented-opt" @onclick="SwitchToAdvanced">Advanced</button>
-            </div>
-        }
-    </HeadTools>
+<ModalHost Open="_open" OnClose="Close" Title="@(_editing ? "Edit Report" : "Add Report")" Width="ModalWidth.Regular">
     <ChildContent>
-        @if (_form is not null) {
-            <form method="dialog" class="rb" @onsubmit="SaveAsync" @onsubmit:preventDefault>
+        @if (_report is not null) {
+            <div class="rb">
                 <div class="rb-body">
-                    <PaneSwap Key="_builderMode" Direction="@(_builderMode == "basic" ? PaneDirection.Back : PaneDirection.Forward)" Class="rb-pane">
-                    @if (_builderMode == "basic") {
-                        <ReportBuilderGuided OnApply="OnGuidedApplyAsync"/>
-                    } else {
-                        @if (_editingId is null) {
-                            <div class="rb-row">
-                                <div class="segmented rb-mode" role="group" aria-label="Builder mode">
-                                    <button type="button" class="segmented-opt" @onclick="SwitchToBasic">Basic</button>
-                                    <button type="button" class="segmented-opt active">Advanced</button>
-                                </div>
-                            </div>
-                        }
+                    <ReportBuilderGuided OnApply="OnGuidedApply"/>
 
-                        <div class="rb-field">
-                            <span class="rb-label">Name</span>
-                            <input type="text" class="rb-control" placeholder="Report name" @bind="_form.Name" @bind:event="oninput" required/>
+                    <ReportBuilder Sources="LedgerReportSources.All" Value="_report.Definition" ValueChanged="OnDefinitionChanged" Cost="_cost"/>
+
+                    <div class="rb-field">
+                        <span class="rb-label">Grid size</span>
+                        <ReportGridSizePicker Width="_report.Placement.W" WidthChanged="SetWidth" Height="_report.Placement.H" HeightChanged="SetHeight"/>
+                    </div>
+
+                    <div class="rb-preview">
+                        <div class="rb-preview-head">
+                            <span class="rb-label">Preview</span>
+                            <button type="button" class="rb-foot-btn rb-preview-btn" @onclick="RefreshPreviewAsync" disabled="@_previewLoading">Preview</button>
                         </div>
-
-                        <div class="rb-field">
-                            <span class="rb-label">Description (optional)</span>
-                            <textarea rows="2" class="rb-control rb-textarea" placeholder="What does this report show?" @bind="_form.Description" @bind:event="oninput"></textarea>
-                        </div>
-
-                        <div class="rb-divider">
-                            <span class="rb-divider-label">Data</span>
-                            <div class="rb-divider-line"></div>
-                        </div>
-
-                        <div class="rb-pair">
-                            <div class="rb-field">
-                                <span class="rb-label">Subject</span>
-                                <select class="rb-control" @bind="_form.Subject">
-                                    <option value="ships">Ships</option>
-                                    <option value="artifacts">Artifacts</option>
-                                </select>
-                            </div>
-
-                            <div class="rb-field">
-                                <span class="rb-label">Mode</span>
-                                <select class="rb-control" @bind="_form.Mode">
-                                    <option value="aggregate">Aggregate</option>
-                                    <option value="time_series">Time Series</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        @if (_form.Subject == "artifacts") {
-                            <div class="rb-field">
-                                <span class="rb-label">Family weight (optional)</span>
-                                <select class="rb-control" @bind="_form.FamilyWeight">
-                                    <option value="">None (raw count)</option>
-                                    @foreach (var fam in EiafxData.Families) {
-                                        <option value="@fam.Id">@fam.Name</option>
-                                    }
-                                </select>
-                                @if (!string.IsNullOrEmpty(_form.FamilyWeight)) {
-                                    <p class="rb-hint">Drops weighted by T1-equivalent crafting cost</p>
-                                }
-                            </div>
-                        }
-
-                        <div class="rb-pair">
-                            <div class="rb-field">
-                                <span class="rb-label">Group by</span>
-                                <select class="rb-control" @bind="_form.GroupBy">
-                                    @foreach (var d in ReportDimensions.All) {
-                                        <option value="@d.Value">@d.Label</option>
-                                    }
-                                </select>
-                            </div>
-
-                            <div class="rb-field">
-                                <span class="rb-label">Secondary Group By</span>
-                                <select class="rb-control" @bind="_form.SecondaryGroupBy">
-                                    <option value="">None (1D)</option>
-                                    @foreach (var d in ReportDimensions.All) {
-                                        <option value="@d.Value">@d.Label</option>
-                                    }
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="rb-pair">
-                            @if (!HideDisplay) {
-                                <div class="rb-field">
-                                    <span class="rb-label">Display</span>
-                                    <select class="rb-control"
-                                            value="@_form.DisplayMode" @onchange="OnDisplayModeChanged">
-                                        @if (HasSecondary) {
-                                            <option value="heatmap">Heatmap</option>
-                                            <option value="grouped_bar">Grouped Bar</option>
-                                        } else if (TimeSeries) {
-                                            <option value="line">Line chart</option>
-                                        } else {
-                                            <option value="bar">Bar chart</option>
-                                            <option value="line">Line chart</option>
-                                            <option value="pie">Pie chart</option>
-                                            <option value="grid">Table</option>
-                                        }
-                                    </select>
-                                </div>
-                            }
-
-                            @if (_form.Mode == "aggregate") {
-                                <div class="rb-field @(HideDisplay ? "rb-field-wide" : "")">
-                                    <span class="rb-label">Normalize by (optional)</span>
-                                    <select class="rb-control" @bind="_form.NormalizeBy">
-                                        <option value="none">None (raw count)</option>
-                                        @if (HasSecondary) {
-                                            <option value="row_pct">Row % (each row sums to 100)</option>
-                                            <option value="col_pct">Column % (each column sums to 100)</option>
-                                            <option value="global_pct">Global % (all cells sum to 100)</option>
-                                        }
-                                        <option value="launches">Per launch</option>
-                                        <option value="airtime">Per flight hour</option>
-                                    </select>
-                                </div>
-                            }
-                        </div>
-
-                        @if (_form.DisplayMode is "line" or "bar") {
-                            <div class="rb-field">
-                                <span class="rb-label">Style</span>
-                                <select class="rb-control" @bind="_form.ChartType">
-                                    @if (_form.DisplayMode == "line") {
-                                        <option value="">Filled area</option>
-                                        <option value="line">Line only</option>
-                                    } else {
-                                        <option value="">Default order</option>
-                                        <option value="bar_desc">Sorted descending</option>
-                                        <option value="bar_asc">Sorted ascending</option>
-                                    }
-                                </select>
-                            </div>
-                        }
-
-                        @if (TimeSeries) {
-                            <div class="rb-pair">
-                                <div class="rb-field">
-                                    <span class="rb-label">Time bucket</span>
-                                    <select class="rb-control" @bind="_form.TimeBucket">
-                                        <option value="day">Day</option>
-                                        <option value="week">Week</option>
-                                        <option value="month">Month</option>
-                                        <option value="year">Year</option>
-                                        <option value="custom">Custom window</option>
-                                    </select>
-                                </div>
-                                @if (_form.TimeBucket == "custom") {
-                                    <div class="rb-field">
-                                        <span class="rb-label">Last N</span>
-                                        <div class="rb-inline">
-                                            <input type="number" min="1" class="rb-control rb-narrow" @bind="_form.CustomBucketN"/>
-                                            <select class="rb-control rb-grow" @bind="_form.CustomBucketUnit">
-                                                <option value="day">Days</option>
-                                                <option value="week">Weeks</option>
-                                                <option value="month">Months</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                }
-                            </div>
-                        }
-
-                        <div class="rb-field">
-                            <span class="rb-label">Filter results where value</span>
-                            <div class="rb-row rb-row-tight">
-                                <select class="rb-control rb-op" @bind="_form.ValueFilterOp">
-                                    <option value="">Off</option>
-                                    <option value="&gt;">&gt;</option>
-                                    <option value="&lt;">&lt;</option>
-                                    <option value="&gt;=">&gt;=</option>
-                                    <option value="&lt;=">&lt;=</option>
-                                    <option value="=">=</option>
-                                    <option value="!=">!=</option>
-                                </select>
-                                @if (!string.IsNullOrEmpty(_form.ValueFilterOp)) {
-                                    <input type="number" step="any" class="rb-control rb-grow" placeholder="0" @bind="_form.ValueFilterThreshold"/>
-                                }
-                            </div>
-                        </div>
-
-                        <div class="rb-divider">
-                            <span class="rb-divider-label">Appearance</span>
-                            <div class="rb-divider-line"></div>
-                        </div>
-
-                        @if (_form.DisplayMode != "grid") {
-                            <div class="rb-colors">
-                                <div class="rb-field">
-                                    <span class="rb-label">@(_form.DisplayMode == "pie" ? "Fallback color" : "Chart color")</span>
-                                    <input type="color" class="rb-swatch" @bind="_form.Color"/>
-                                </div>
-
-                                @if (_form.DisplayMode == "heatmap") {
-                                    <div class="rb-field">
-                                        <span class="rb-label">Zero cell color</span>
-                                        <input type="color" class="rb-swatch" @bind="_form.UnfilledColor"/>
-                                    </div>
-                                }
-                            </div>
-                        }
-
-                        @if (_form.DisplayMode == "heatmap" && !string.IsNullOrEmpty(_form.SecondaryGroupBy)) {
-                            <div class="rb-row">
-                                <span class="rb-label rb-nowrap">Min sample size</span>
-                                <input type="number" min="0" class="rb-sample" @bind="_form.MinSampleSize"/>
-                                <span class="rb-hint">cells below this count show "-"</span>
-                            </div>
-                        }
-
-                        @if (ChartLabels.Count > 0) {
-                            <div class="rb-field rb-field-loose">
-                                <span class="rb-label">@(_form.DisplayMode == "pie" ? "Slice colors" : "Bar colors")</span>
-                                <div class="rb-label-colors">
-                                    @foreach (var label in ChartLabels) {
-                                        <div class="rb-label-color">
-                                            <input type="color" class="rb-swatch rb-swatch-small"
-                                                   value="@LabelColor(label)" @onchange="e => SetLabelColor(label, e)"/>
-                                            <span class="rb-label rb-trunc">@label</span>
-                                        </div>
-                                    }
-                                </div>
-                            </div>
-                        }
-
-                        <div class="rb-field">
-                            <span class="rb-label">Grid size</span>
-                            <ReportGridSizePicker @bind-Width="_form.GridW" @bind-Height="_form.GridH"/>
-                        </div>
-
-                        <div class="rb-field">
-                            <span class="rb-label">Filters</span>
-                            <MissionFilterBar @ref="_filterBar"
-                                              @key="_filterBarKey"
-                                              Context="_filterContext"
-                                              ShowApply="false"
-                                              ReportOps="true"
-                                              Initial="_initialFilters"/>
-                        </div>
-
-                        <div class="rb-field rb-field-loose">
-                            <div class="rb-row">
-                                <input id="mennoEnabledCheck" type="checkbox" class="ext-opt-check" @bind="_form.MennoEnabled"/>
-                                <label for="mennoEnabledCheck" class="rb-label rb-check-label">Compare with Menno community data</label>
-                            </div>
-                            @if (_form.MennoEnabled) {
-                                <div class="rb-field rb-indent">
-                                    <span class="rb-label">Comparison display</span>
-                                    <select class="rb-control" @bind="_form.MennoCompareMode">
-                                        <option value="side_by_side">Side by side</option>
-                                        <option value="ratio">Ratio (x)</option>
-                                        <option value="dual_value">Dual value</option>
-                                    </select>
-                                </div>
-                            }
-                        </div>
-                    }
-                    </PaneSwap>
+                        <EggIdentity.UI.Reports.ReportCard Definition="_report.Definition" Cube="_preview" Source="_previewSource" Loading="_previewLoading" Error="@_previewError"/>
+                    </div>
                 </div>
 
                 <div class="rb-foot">
                     <button type="button" class="rb-foot-btn rb-foot-cancel" @onclick="Close">Cancel</button>
-                    <button type="submit" class="rb-foot-btn rb-foot-save" disabled="@(_builderMode == "basic" || string.IsNullOrWhiteSpace(_form.Name))">Save</button>
+                    <button type="button" class="rb-foot-btn rb-foot-save" @onclick="SaveAsync" disabled="@string.IsNullOrWhiteSpace(_report.Definition.Title)">Save</button>
                 </div>
-            </form>
+            </div>
         }
     </ChildContent>
 </ModalHost>
 
 @code {
-    [Parameter] [EditorRequired] public string AccountId { get; set; } = "";
+    [Parameter, EditorRequired] public string AccountId { get; set; } = "";
 
     [Parameter] public string? GroupId { get; set; }
 
     [Parameter] public EventCallback Saved { get; set; }
+
     private bool _open;
-    private FormModel? _form;
-    private string _builderMode = "basic";
-    private IReadOnlyList<string> _editingResultLabels = Array.Empty<string>();
-    private string? _editingId;
-    private string _editingGroupId = "";
-    private long _createdAt;
-    private int _sortOrder;
-    private MissionFilterBar? _filterBar;
-    private FilterViewContext _filterContext = FilterViewContext.Empty;
-    private int _filterBarKey;
-    private FilterSet? _initialFilters;
-
-    private sealed class FormModel {
-        public string Name { get; set; } = "";
-        public string Description { get; set; } = "";
-        public string Subject { get; set; } = "ships";
-        public string Mode { get; set; } = "aggregate";
-        public string DisplayMode { get; set; } = "bar";
-        public string GroupBy { get; set; } = "ship_type";
-        public string SecondaryGroupBy { get; set; } = "";
-        public string NormalizeBy { get; set; } = "none";
-        public string ChartType { get; set; } = "";
-        public Dictionary<string, string> LabelColorsMap { get; set; } = new(StringComparer.Ordinal);
-        public string FamilyWeight { get; set; } = "";
-        public string TimeBucket { get; set; } = "month";
-        public int CustomBucketN { get; set; } = 1;
-        public string CustomBucketUnit { get; set; } = "month";
-        public string ValueFilterOp { get; set; } = "";
-        public double ValueFilterThreshold { get; set; }
-        public string MennoCompareMode { get; set; } = "side_by_side";
-        public string Color { get; set; } = "#6366f1";
-        public string UnfilledColor { get; set; } = "#1f2937";
-        public int GridW { get; set; } = 2;
-        public int GridH { get; set; } = 2;
-        public int MinSampleSize { get; set; }
-        public bool MennoEnabled { get; set; }
-    }
-
-    protected override void OnInitialized() {
-        _filterContext = new ReportsFilterContext(Config.FieldCtx);
-    }
+    private bool _editing;
+    private LedgerReport? _report;
+    private LedgerReportCost? _cost;
+    private ReportCube? _preview;
+    private IReportSource? _previewSource;
+    private bool _previewLoading;
+    private string? _previewError;
 
     public Task OpenForCreateAsync() {
-        _editingId = null;
-        _editingGroupId = "";
-        _createdAt = 0;
-        _sortOrder = 0;
-        _initialFilters = null;
-        _filterBarKey++;
-        _form = new FormModel();
-        _builderMode = "basic";
-        _editingResultLabels = Array.Empty<string>();
+        string id = Guid.NewGuid().ToString("D");
+        _editing = false;
+        _report = new LedgerReport(
+            new ReportDefinition(ReportCodec.CurrentVersion, id, "", new ReportQuery(LedgerReportKeys.Missions), new ReportView(ReportCharts.Bar)),
+            new ReportPlacement(id, 0, 0, 2, 2, int.MaxValue) { Group = GroupId }
+        ) {
+            AccountId = AccountId
+        };
+        _cost = new LedgerReportCost(Time);
+        _preview = null;
+        _previewSource = null;
+        _previewError = null;
         _open = true;
         StateHasChanged();
         return Task.CompletedTask;
     }
 
-    public async Task OpenForEditAsync(ReportDefinition def) {
-        _builderMode = "advanced";
-        _editingId = def.Id;
-        _editingGroupId = def.GroupId ?? "";
-        _createdAt = def.CreatedAt;
-        _sortOrder = def.SortOrder;
-        _initialFilters = def.Filters;
-        _filterBarKey++;
-        _form = new FormModel {
-            Name = def.Name,
-            Description = def.Description,
-            Subject = def.Subject == "missions" ? "ships" : string.IsNullOrEmpty(def.Subject) ? "ships" : def.Subject,
-            Mode = string.IsNullOrEmpty(def.Mode) ? "aggregate" : def.Mode,
-            DisplayMode = string.IsNullOrEmpty(def.DisplayMode) ? "bar" : def.DisplayMode,
-            GroupBy = string.IsNullOrEmpty(def.GroupBy) ? "ship_type" : def.GroupBy,
-            SecondaryGroupBy = def.SecondaryGroupBy,
-            NormalizeBy = string.IsNullOrEmpty(def.NormalizeBy) ? "none" : def.NormalizeBy,
-            ChartType = def.ChartType,
-            FamilyWeight = def.FamilyWeight,
-            TimeBucket = string.IsNullOrEmpty(def.TimeBucket) ? "month" : def.TimeBucket,
-            CustomBucketN = def.CustomBucketN == 0 ? 1 : def.CustomBucketN,
-            CustomBucketUnit = string.IsNullOrEmpty(def.CustomBucketUnit) ? "month" : def.CustomBucketUnit,
-            ValueFilterOp = def.ValueFilterOp,
-            ValueFilterThreshold = def.ValueFilterThreshold,
-            MennoCompareMode = string.IsNullOrEmpty(def.MennoCompareMode) ? "side_by_side" : def.MennoCompareMode,
-            Color = string.IsNullOrEmpty(def.Color) ? "#6366f1" : def.Color,
-            UnfilledColor = string.IsNullOrEmpty(def.UnfilledColor) ? "#1f2937" : def.UnfilledColor,
-            GridW = def.GridW == 0 ? 2 : def.GridW,
-            GridH = def.GridH == 0 ? 2 : def.GridH,
-            MinSampleSize = def.MinSampleSize,
-            MennoEnabled = def.MennoEnabled,
-            LabelColorsMap = new Dictionary<string, string>(SliceColors.ParseLabelColors(def.LabelColors), StringComparer.Ordinal)
-        };
+    public Task OpenForEditAsync(LedgerReport report) {
+        _editing = true;
+        _report = report;
+        _cost = new LedgerReportCost(Time);
+        _preview = null;
+        _previewSource = null;
+        _previewError = null;
         _open = true;
         StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private Task OnDefinitionChanged(ReportDefinition d) {
+        if (_report is null) return Task.CompletedTask;
+
+        _report = _report with { Definition = d };
+        return Task.CompletedTask;
+    }
+
+    private Task OnGuidedApply(ReportDefinition applied) {
+        if (_report is null) return Task.CompletedTask;
+
+        _report = _report with { Definition = applied with { Id = _report.Id } };
+        return Task.CompletedTask;
+    }
+
+    private void SetWidth(int w) {
+        if (_report is null) return;
+
+        _report = _report with { Placement = _report.Placement with { W = w } };
+    }
+
+    private void SetHeight(int h) {
+        if (_report is null) return;
+
+        _report = _report with { Placement = _report.Placement with { H = h } };
+    }
+
+    private async Task RefreshPreviewAsync() {
+        if (_report is null) return;
+
+        _previewLoading = true;
+        _previewError = null;
 
         try {
-            var result = await MissionDb.RunReportAsync(def, def.AccountId);
-            _editingResultLabels = result.Is2D ? Array.Empty<string>() : result.Labels;
+            _preview = await Runner.RunReportAsync(_report.Definition.Query, AccountId);
+            _previewSource = LedgerReportSources.All.FirstOrDefault(s => string.Equals(s.Id, _report.Definition.Query.Source, StringComparison.Ordinal));
         } catch (Exception ex) {
-            Logger.LogDebug(ex, "report run for editing labels failed");
-            _editingResultLabels = Array.Empty<string>();
+            Logger.LogDebug(ex, "report preview failed");
+            _preview = null;
+            _previewError = "Preview failed";
         }
 
-        StateHasChanged();
-    }
-
-    private void OnDisplayModeChanged(ChangeEventArgs e) {
-        if (_form is null) return;
-
-        _form.DisplayMode = e.Value?.ToString() ?? "bar";
-        _form.ChartType = "";
-    }
-
-    private IReadOnlyList<string> ChartLabels {
-        get {
-            if (_form is null || _form.DisplayMode is not ("pie" or "bar")) return Array.Empty<string>();
-
-            return _editingResultLabels.Count > 0 ? _editingResultLabels : _form.LabelColorsMap.Keys.ToList();
-        }
-    }
-
-    private string LabelColor(string label) {
-        return _form is null ? "#6366f1" : SliceColors.GetLabelColor(label, _form.Color, ChartLabels, _form.LabelColorsMap);
-    }
-
-    private void SetLabelColor(string label, ChangeEventArgs e) {
-        if (_form is null) return;
-
-        _form.LabelColorsMap[label] = e.Value?.ToString() ?? _form.Color;
-    }
-
-    private bool HasSecondary => !string.IsNullOrEmpty(_form?.SecondaryGroupBy);
-    private bool TimeSeries => _form?.Mode == "time_series";
-    private bool HideDisplay => TimeSeries && HasSecondary;
-
-    private void SwitchToAdvanced() {
-        _builderMode = "advanced";
-    }
-
-    private void SwitchToBasic() {
-        _builderMode = "basic";
-    }
-
-    private Task OnGuidedApplyAsync(ReportBuilderGuided.GuidedResult result) {
-        if (_form is null) return Task.CompletedTask;
-
-        _form.Name = result.Name;
-        _form.Subject = result.Subject;
-        _form.Mode = result.Mode;
-        _form.GroupBy = result.GroupBy;
-        _form.DisplayMode = result.DisplayMode;
-        _initialFilters = new FilterSet(result.And, []);
-        _filterBarKey++;
-        _builderMode = "advanced";
-        return Task.CompletedTask;
+        _previewLoading = false;
     }
 
     private async Task SaveAsync() {
-        if (_form is null || string.IsNullOrWhiteSpace(_form.Name)) return;
+        if (_report is null || string.IsNullOrWhiteSpace(_report.Definition.Title)) return;
 
-        var def = BuildDefinition(_form);
-        def.Weight = Weight.ClassifyWeight(def, Time);
-
-        var row = ReportMapping.ToRow(def);
-        if (_editingId is null) {
-            await Store.InsertReportAsync(row);
-        } else {
+        var row = ReportMapping.ToRow(_report);
+        if (_editing) {
             await Store.UpdateReportAsync(row);
+        } else {
+            await Store.InsertReportAsync(row);
         }
 
         _open = false;
-        _form = null;
+        _report = null;
         await Saved.InvokeAsync();
-    }
-
-    private ReportDefinition BuildDefinition(FormModel f) {
-        var reportFilters = _filterBar?.BuildFilter() ?? FilterSet.Empty;
-
-        var timeSeries = f.Mode == "time_series";
-        var hasSecondary = !string.IsNullOrEmpty(f.SecondaryGroupBy);
-
-        var displayMode = f.DisplayMode;
-        if (hasSecondary) {
-            if (displayMode is not ("heatmap" or "grouped_bar")) displayMode = "heatmap";
-        } else if (timeSeries) {
-            displayMode = "line";
-        } else if (displayMode is not ("bar" or "line" or "pie" or "grid")) {
-            displayMode = "bar";
-        }
-
-        return new ReportDefinition {
-            Id = _editingId ?? Guid.NewGuid().ToString("D"),
-            AccountId = AccountId,
-            Name = f.Name.Trim(),
-            Description = f.Description,
-            Subject = f.Subject,
-            Mode = f.Mode,
-            DisplayMode = displayMode,
-            GroupBy = f.GroupBy,
-            SecondaryGroupBy = f.SecondaryGroupBy,
-            NormalizeBy = f.NormalizeBy,
-            ChartType = f.ChartType,
-            FamilyWeight = f.Subject == "artifacts" ? f.FamilyWeight : "",
-            TimeBucket = timeSeries ? f.TimeBucket : "",
-            CustomBucketN = timeSeries && f.TimeBucket == "custom" ? f.CustomBucketN : 0,
-            CustomBucketUnit = timeSeries && f.TimeBucket == "custom" ? f.CustomBucketUnit : "",
-            ValueFilterOp = f.ValueFilterOp,
-            ValueFilterThreshold = string.IsNullOrEmpty(f.ValueFilterOp) ? 0 : f.ValueFilterThreshold,
-            MennoCompareMode = f.MennoEnabled ? f.MennoCompareMode : "",
-            LabelColors = f.LabelColorsMap.Count == 0 ? "" : JsonSerializer.Serialize(f.LabelColorsMap),
-            Color = f.Color,
-            UnfilledColor = f.UnfilledColor,
-            GridW = f.GridW,
-            GridH = f.GridH,
-            MinSampleSize = f.MinSampleSize,
-            MennoEnabled = f.MennoEnabled,
-            Filters = reportFilters,
-            GroupId = _editingId is null ? GroupId ?? "" : _editingGroupId,
-            SortOrder = _sortOrder,
-            CreatedAt = _createdAt
-        };
     }
 
     private void Close() {
         _open = false;
-        _form = null;
+        _report = null;
     }
-
 }

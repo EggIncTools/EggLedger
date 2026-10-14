@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using EggLedger.Domain.Reports;
 
 namespace EggLedger.Web.Data;
 
@@ -173,7 +172,7 @@ public sealed record ReportRow {
     [JsonPropertyName("group_id")]
     public string GroupId { get; init; } = "";
     [JsonPropertyName("normalize_by")]
-    public string NormalizeBy { get; init; } = ReportDefaults.NormalizeNone;
+    public string NormalizeBy { get; init; } = "none";
     [JsonPropertyName("label_colors")]
     public string LabelColors { get; init; } = "";
     [JsonPropertyName("secondary_group_by")]
@@ -188,6 +187,8 @@ public sealed record ReportRow {
     public string MennoCompareMode { get; init; } = "side_by_side";
     [JsonPropertyName("min_sample_size")]
     public int MinSampleSize { get; init; }
+    [JsonPropertyName("definition")]
+    public string Definition { get; init; } = "";
 }
 
 public sealed record ReportGroupRow {

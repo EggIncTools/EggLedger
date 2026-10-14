@@ -404,12 +404,12 @@
             if (local is not null) existingGroupIds.Add(g.Id);
         }
 
-        foreach (var r in remote.Reports ?? []) {
+        foreach (var r in remote.Unpack(Logger)) {
             var local = await Reports.RetrieveReportAsync(r.Id);
             if (local is not null) existingReportIds.Add(r.Id);
         }
 
-        var (groups, reports) = CloudSyncBlobs.SelectReportsToImport(remote, existingGroupIds, existingReportIds);
+        var (groups, reports) = CloudSyncBlobs.SelectReportsToImport(remote, existingGroupIds, existingReportIds, Logger);
         foreach (var g in groups) await Reports.InsertReportGroupAsync(g);
         foreach (var r in reports) await Reports.InsertReportAsync(r);
     }

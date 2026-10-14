@@ -65,11 +65,11 @@ public sealed class MigrationTests {
     }
 
     [Fact]
-    public void ReportDb_FreshMigratesToV13() {
+    public void ReportDb_FreshMigratesToV14() {
         using var conn = FreshConnection();
         SqliteMigrationRunner.MigrateReportDb(conn);
 
-        Assert.Equal(13, UserVersion(conn));
+        Assert.Equal(14, UserVersion(conn));
         Assert.True(TableExists(conn, "reports"));
         Assert.True(TableExists(conn, "report_groups"));
         Assert.True(TableExists(conn, "pinned_reports"));
@@ -80,7 +80,7 @@ public sealed class MigrationTests {
             "filters", "color", "description", "chart_type", "value_filter_op",
             "group_id", "normalize_by", "label_colors", "secondary_group_by",
             "unfilled_color", "family_weight", "menno_enabled", "menno_compare_mode",
-            "min_sample_size",
+            "min_sample_size", "definition",
         };
         foreach (var expected in expectedReportCols) {
             Assert.Contains(expected, reportCols);
@@ -108,10 +108,10 @@ public sealed class MigrationTests {
     public void ReportDb_RerunIsNoOp() {
         using var conn = FreshConnection();
         SqliteMigrationRunner.MigrateReportDb(conn);
-        Assert.Equal(13, UserVersion(conn));
+        Assert.Equal(14, UserVersion(conn));
 
         SqliteMigrationRunner.MigrateReportDb(conn);
-        Assert.Equal(13, UserVersion(conn));
+        Assert.Equal(14, UserVersion(conn));
     }
 
     [Fact]

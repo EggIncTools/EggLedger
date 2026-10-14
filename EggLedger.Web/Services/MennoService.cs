@@ -1,10 +1,10 @@
 using System.IO.Compression;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using EggIdentity.Reports;
 using EggIdentity.Resilience;
 using EggLedger.Domain.Eiafx;
 using EggLedger.Domain.Reports;
-using EggLedger.Domain.Util;
 using Ei;
 using Microsoft.Extensions.Logging;
 
@@ -162,54 +162,65 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null,
             && sc.TargetArtifact.Id == targetId)];
     }
 
-    public static ReportResult? ExecuteComparison(
+    public static ReportMatrix? ExecuteComparison(
         ReportDefinition def,
         IReadOnlyList<ConfigurationItem> items,
-        IReadOnlyList<string> rawRowLabels,
-        IReadOnlyList<string> rawColLabels) {
-        if (!def.MennoEnabled) return null;
-        if (def.Subject != "artifacts") {
-            return null;
-        }
-        if (!Report.MennoComparableGroupBy(def.GroupBy) || !Report.MennoComparableGroupBy(def.SecondaryGroupBy)) return null;
-        if (items.Count == 0 || rawRowLabels.Count == 0 || rawColLabels.Count == 0) return null;
+        ReportMatrix user) {
+        ArgumentNullException.ThrowIfNull(def);
+        ArgumentNullException.ThrowIfNull(items);
+        ArgumentNullException.ThrowIfNull(user);
+        if (!MennoComparison.Enabled(def)) return null;
+        if (items.Count == 0 || user.RowKeys.Count == 0 || user.ColKeys.Count == 0) return null;
 
-        var rowMatcher = MatcherFor(def.GroupBy);
-        var colMatcher = MatcherFor(def.SecondaryGroupBy);
+        var rowDim = def.Query.GroupBy[0].Dimension;
+        var colDim = def.Query.GroupBy[1].Dimension;
+
+        var rowMatcher = MatcherFor(rowDim);
+        var colMatcher = MatcherFor(colDim);
         if (rowMatcher is null || colMatcher is null) return null;
 
-        var familySet = FamilyAfxIdSet(def.FamilyWeight);
-
+        var rawRowLabels = user.RowKeys;
+        var rawColLabels = user.ColKeys;
         int nR = rawRowLabels.Count;
         int nC = rawColLabels.Count;
 
-        string pctMode = def.NormalizeBy;
-        bool isPct = pctMode is "row_pct" or "col_pct" or "global_pct";
+        var familyId = def.Query.Filters.And.FirstOrDefault(c => c.Field == LedgerReportKeys.Family)?.Value ?? "";
+        var familySet = FamilyAfxIdSet(familyId);
+
+        var normalize = def.Query.Normalize;
+        string pctMode = normalize.Kind switch {
+            NormalizeKind.Row => "row_pct",
+            NormalizeKind.Column => "col_pct",
+            NormalizeKind.Global => "global_pct",
+            _ => "",
+        };
+        bool isPct = pctMode != "";
 
         var filteredItems = FilterByReportConditions(def, items);
 
         var (familyDrops, estimatedMissions) = AccumulateDrops(
-            filteredItems, rowMatcher, colMatcher, rawRowLabels, rawColLabels, nR, nC, isPct, def, familySet);
+            filteredItems, rowMatcher, colMatcher, rawRowLabels, rawColLabels, nR, nC, isPct, familyId, familySet);
 
-        var (shipAxis, durAxis) = ResolveAxisRoles(def);
+        var (shipAxis, durAxis) = ResolveAxisRoles(rowDim, colDim);
 
         var (matrixValues, airtimeMatrixValues) = ComputeMatrix(
             familyDrops, estimatedMissions, nR, nC, isPct, pctMode, shipAxis, durAxis, rawRowLabels, rawColLabels);
 
-        var rowLabels = rawRowLabels.Select(l => Labels.FormatLabel(def.GroupBy, l)).ToList();
-        var colLabels = rawColLabels.Select(l => Labels.FormatLabel(def.SecondaryGroupBy, l)).ToList();
+        bool useAirtime = normalize.Kind == NormalizeKind.By
+            && normalize.Measure == LedgerReportKeys.Airtime
+            && airtimeMatrixValues is not null;
+        var chosen = useAirtime ? airtimeMatrixValues! : matrixValues;
 
-        return new ReportResult {
-            RowLabels = rowLabels,
-            ColLabels = colLabels,
-            MatrixValues = [.. matrixValues],
-            Is2D = true,
-            IsFloat = true,
-            Weight = def.Weight,
-            RawRowLabels = [.. rawRowLabels],
-            RawColLabels = [.. rawColLabels],
-            AirtimeMatrixValues = airtimeMatrixValues?.ToList(),
-        };
+        var cells = new List<IReadOnlyList<double?>>(nR);
+        var samples = new List<IReadOnlyList<int>>(nR);
+        for (int r = 0; r < nR; r++) {
+            var row = new double?[nC];
+            for (int c = 0; c < nC; c++) row[c] = chosen[(r * nC) + c];
+            cells.Add(row);
+            samples.Add(new int[nC]);
+        }
+
+        return new ReportMatrix(user.RowKeys, user.RowLabels, user.ColKeys, user.ColLabels, cells, samples);
     }
 
     private static (double[] familyDrops, double[] estimatedMissions) AccumulateDrops(
@@ -221,7 +232,7 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null,
         int nR,
         int nC,
         bool isPct,
-        ReportDefinition def,
+        string familyWeight,
         HashSet<int>? familySet) {
         var familyDrops = new double[nR * nC];
         var estimatedMissions = new double[nR * nC];
@@ -242,7 +253,7 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null,
                     int artifactTypeId = item.ArtifactConfiguration!.ArtifactType!.Id;
                     if (familySet is null || familySet.Contains(artifactTypeId)) {
                         double w = 1.0;
-                        if (def.FamilyWeight != "") {
+                        if (familyWeight != "") {
                             double cw = EiafxData.CraftingWeights.TryGetValue(
                                 (artifactTypeId, item.ArtifactConfiguration.ArtifactLevel), out var found)
                                 ? found
@@ -258,17 +269,17 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null,
         return (familyDrops, estimatedMissions);
     }
 
-    private static (string shipAxis, string durAxis) ResolveAxisRoles(ReportDefinition def) {
+    private static (string shipAxis, string durAxis) ResolveAxisRoles(string rowDim, string colDim) {
         string shipAxis = "";
         string durAxis = "";
-        if (def.GroupBy == "ship_type") {
+        if (rowDim == LedgerReportKeys.Ship) {
             shipAxis = "row";
-        } else if (def.SecondaryGroupBy == "ship_type") {
+        } else if (colDim == LedgerReportKeys.Ship) {
             shipAxis = "col";
         }
-        if (def.GroupBy == "duration_type") {
+        if (rowDim == LedgerReportKeys.Duration) {
             durAxis = "row";
-        } else if (def.SecondaryGroupBy == "duration_type") {
+        } else if (colDim == LedgerReportKeys.Duration) {
             durAxis = "col";
         }
         return (shipAxis, durAxis);
@@ -327,15 +338,42 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null,
             }
         }
 
-        if (isPct) Matrix.Apply2DPctNormalization(matrixValues, nR, nC, pctMode);
+        if (isPct) Apply2DPctNormalization(matrixValues, nR, nC, pctMode);
 
         return (matrixValues, airtimeMatrixValues);
     }
 
+    private static void Apply2DPctNormalization(double[] values, int nR, int nC, string pctMode) {
+        switch (pctMode) {
+            case "row_pct":
+                for (int r = 0; r < nR; r++) {
+                    double total = 0;
+                    for (int c = 0; c < nC; c++) total += values[(r * nC) + c];
+                    if (total <= 0) continue;
+                    for (int c = 0; c < nC; c++) values[(r * nC) + c] = values[(r * nC) + c] / total * 100.0;
+                }
+                break;
+            case "col_pct":
+                for (int c = 0; c < nC; c++) {
+                    double total = 0;
+                    for (int r = 0; r < nR; r++) total += values[(r * nC) + c];
+                    if (total <= 0) continue;
+                    for (int r = 0; r < nR; r++) values[(r * nC) + c] = values[(r * nC) + c] / total * 100.0;
+                }
+                break;
+            case "global_pct":
+                double grandTotal = 0;
+                for (int i = 0; i < values.Length; i++) grandTotal += values[i];
+                if (grandTotal <= 0) break;
+                for (int i = 0; i < values.Length; i++) values[i] = values[i] / grandTotal * 100.0;
+                break;
+        }
+    }
+
     internal static IReadOnlyList<ConfigurationItem> FilterByReportConditions(
         ReportDefinition def, IReadOnlyList<ConfigurationItem> items) {
-        if (def.Filters.IsEmpty) return items;
-        var menno = def.Filters with { And = [.. def.Filters.And.Select(MennoOnly)], Or = [.. def.Filters.Or.Select(g => (IReadOnlyList<FilterCondition>)[.. g.Select(MennoOnly)])] };
+        if (def.Query.Filters.IsEmpty) return items;
+        var menno = def.Query.Filters with { And = [.. def.Query.Filters.And.Select(MennoOnly)], Or = [.. def.Query.Filters.Or.Select(g => (IReadOnlyList<FilterCondition>)[.. g.Select(MennoOnly)])] };
         var options = new FilterEvaluation(Strict: false);
         return [.. items.Where(item => FilterEvaluator.Evaluate(menno, LedgerFilters.Fields, key => MennoValue(key, item), options).Matched)];
     }
@@ -367,14 +405,14 @@ public sealed class MennoService(HttpClient http, IMennoDataStore? store = null,
 
     private delegate bool MennoMatcher(ConfigurationItem item, string rawVal);
 
-    private static MennoMatcher? MatcherFor(string groupBy) => groupBy switch {
-        "ship_type" => (item, raw) => TryInt(raw, out var v) && item.ShipConfiguration!.ShipType!.Id == v,
-        "duration_type" => (item, raw) => TryInt(raw, out var v) && item.ShipConfiguration!.ShipDurationType!.Id == v,
-        "level" => (item, raw) => TryInt(raw, out var v) && item.ShipConfiguration!.Level == v,
-        "mission_target" => (item, raw) => TryInt(raw, out var v) && item.ShipConfiguration!.TargetArtifact!.Id == v,
-        "artifact_name" => (item, raw) => TryInt(raw, out var v) && item.ArtifactConfiguration!.ArtifactType!.Id == v,
-        "rarity" => (item, raw) => TryInt(raw, out var v) && item.ArtifactConfiguration!.ArtifactRarity!.Id == v,
-        "tier" => (item, raw) => TryInt(raw, out var v) && item.ArtifactConfiguration!.ArtifactLevel == v,
+    private static MennoMatcher? MatcherFor(string dimension) => dimension switch {
+        LedgerReportKeys.Ship => (item, raw) => TryInt(raw, out var v) && item.ShipConfiguration!.ShipType!.Id == v,
+        LedgerReportKeys.Duration => (item, raw) => TryInt(raw, out var v) && item.ShipConfiguration!.ShipDurationType!.Id == v,
+        LedgerReportKeys.Level => (item, raw) => TryInt(raw, out var v) && item.ShipConfiguration!.Level == v,
+        LedgerReportKeys.Target => (item, raw) => TryInt(raw, out var v) && item.ShipConfiguration!.TargetArtifact!.Id == v,
+        LedgerReportKeys.ArtifactName => (item, raw) => TryInt(raw, out var v) && item.ArtifactConfiguration!.ArtifactType!.Id == v,
+        LedgerReportKeys.Rarity => (item, raw) => TryInt(raw, out var v) && item.ArtifactConfiguration!.ArtifactRarity!.Id == v,
+        LedgerReportKeys.Tier => (item, raw) => TryInt(raw, out var v) && item.ArtifactConfiguration!.ArtifactLevel == v,
         _ => null,
     };
 

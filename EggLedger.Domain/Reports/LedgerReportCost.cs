@@ -64,7 +64,7 @@ public sealed class LedgerReportCost(TimeProvider? time = null) : IReportCostEst
     }
 
     private static bool IsDateField(FilterCondition c) =>
-        c.Field == LedgerReportKeys.Launched || c.Field == LedgerReportKeys.Returned;
+        c.Field is LedgerReportKeys.Launched or LedgerReportKeys.Returned;
 
     private static bool HasDateFilter(FilterSet f) => LedgerFilters.Conditions(f).Any(IsDateField);
 

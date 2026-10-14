@@ -1,222 +1,127 @@
-@using System.Text.Json
-@inject IReportRunner MissionDb
+@using EggIdentity.Reports
+@inject IReportRunner Runner
 @inject MennoService Menno
 @inject IndexedDbReportStore Store
 @inject IDownloadService Downloader
 @inject ILogger<ReportCard> Logger
 
-@* A single report card: header (name + weight badge), dispatched chart, edit/delete/
-   copy/export controls. When Menno-enabled and the result is a 2D heatmap, also runs
-   the community comparison per mennoCompareMode (side_by_side / ratio / dual_value). *@
-
-<div class="rcard">
-    <div class="rcard-head">
-        <div class="rcard-head-text">
-            <Tooltip Text="@Def.Name" Class="rcard-name">@DisplayName</Tooltip>
-            <span class="rcard-sub">@Subtitle</span>
-            @if (!string.IsNullOrEmpty(Def.Description)) {
-                <Tooltip Text="@Def.Description" Class="rcard-sub rcard-desc">@Def.Description</Tooltip>
-            }
-        </div>
-        <Tooltip Text="@WeightTitle" Class="@($"rcard-weight {WeightClass}")" Focusable="true">@Def.Weight</Tooltip>
-    </div>
-    <div class="rcard-body">
-        @if (_error is not null) {
-            <div class="rcard-msg rcard-msg-err">@_error</div>
-        } else if (_result is null) {
-            <div class="rcard-msg rcard-msg-running pulse">Running...</div>
-        } else if (ShowMennoComparison) {
-            @switch (Def.MennoCompareMode) {
-                case MennoComparison.SideBySide:
-                    <div class="rcard-split">
-                        <div class="rcard-half">
-                            <span class="rcard-half-label">Yours</span>
-                            <div class="rcard-half-body">
-                                <ReportHeatmap Result="_result" Color="ColorOr" NormalizeBy="NormalizeOr"
-                                               UnfilledColor="@Def.UnfilledColor" MinSampleSize="Def.MinSampleSize"/>
-                            </div>
-                        </div>
-                        <div class="rcard-half">
-                            <span class="rcard-half-label">Community</span>
-                            <div class="rcard-half-body">
-                                <ReportHeatmap Result="MennoAirtime" Color="ColorOr" NormalizeBy="NormalizeOr"
-                                               UnfilledColor="@Def.UnfilledColor"/>
-                            </div>
-                        </div>
-                    </div>
-                    break;
-                case MennoComparison.Ratio:
-                    <ReportHeatmap Result="RatioResult" Color="ColorOr" NormalizeBy="ratio"
-                                   UnfilledColor="@Def.UnfilledColor"
-                                   MinSampleSize="Def.MinSampleSize"/>
-                    break;
-                case MennoComparison.DualValue:
-                    <ReportHeatmap Result="UserPerMission" Color="ColorOr" NormalizeBy="NormalizeOr"
-                                   UnfilledColor="@Def.UnfilledColor"
-                                   SecondaryValues="_mennoResult!.MatrixValues"
-                                   ColorValues="RatioColorValues"
-                                   MinSampleSize="Def.MinSampleSize"/>
-                    break;
-                default:
-                    <ReportChart Def="Def" Result="_result"/>
-                    break;
-            }
-        } else {
-            <ReportChart Def="Def" Result="_result"/>
-        }
-    </div>
-
-    <div class="rcard-foot">
-        @if (EditMode) {
-            @if (Groups.Count > 0) {
-                <select class="rcard-group" value="@Def.GroupId" @onchange="OnGroupSelectChanged">
-                    <option value="">No group</option>
-                    @foreach (var g in Groups) {
-                        <option value="@g.Id">@g.Name</option>
-                    }
-                </select>
-            }
-
-            <Tooltip Text="Duplicate report">
-                <button type="button" class="rcard-link" disabled="@(_copying || _deleting)" @onclick="CopyAsync">
+<div class="rc-wrap">
+    <EggIdentity.UI.Reports.ReportCard Definition="Report.Definition" Cube="_cube" Source="_source"
+                                        Error="@_error" Loading="@(_cube is null && _error is null)">
+        <Actions>
+            @if (EditMode) {
+                @if (Groups.Count > 0) {
+                    <select class="rc-group" value="@(Report.Placement.Group ?? "")" @onchange="OnGroupSelectChanged">
+                        <option value="">No group</option>
+                        @foreach (var g in Groups) {
+                            <option value="@g.Id">@g.Name</option>
+                        }
+                    </select>
+                }
+                <button type="button" class="rc-link" disabled="@(_copying || _deleting)" @onclick="CopyAsync">
                     @(_copying ? "Copying..." : "Copy")
                 </button>
-            </Tooltip>
-            <button type="button" class="rcard-link rcard-link-accent"
-                    disabled="@(_copying || _deleting)" @onclick="() => OnEdit.InvokeAsync(Def)">
-                Edit
-            </button>
-            @if (_confirmingDelete) {
-                <span class="rcard-err">Delete?</span>
-                <button type="button" class="rcard-link" @onclick="() => _confirmingDelete = false">Cancel</button>
-                <button type="button" class="rcard-link rcard-link-danger rcard-link-strong"
-                        disabled="@_deleting" @onclick="DeleteAsync">
-                    @(_deleting ? "Deleting..." : "Yes")
+                <button type="button" class="rc-link rc-link-accent"
+                        disabled="@(_copying || _deleting)" @onclick="() => OnEdit.InvokeAsync(Report)">
+                    Edit
                 </button>
+                @if (_confirmingDelete) {
+                    <span class="rc-err">Delete?</span>
+                    <button type="button" class="rc-link" @onclick="() => _confirmingDelete = false">Cancel</button>
+                    <button type="button" class="rc-link rc-link-danger rc-link-strong"
+                            disabled="@_deleting" @onclick="DeleteAsync">
+                        @(_deleting ? "Deleting..." : "Yes")
+                    </button>
+                } else {
+                    <button type="button" class="rc-link rc-link-danger"
+                            disabled="@(_copying || _deleting)" @onclick="() => _confirmingDelete = true">
+                        &#10005;
+                    </button>
+                }
             } else {
-                <button type="button" class="rcard-link rcard-link-danger"
-                        disabled="@(_copying || _deleting)" @onclick="() => _confirmingDelete = true">
-                    &#10005;
-                </button>
+                @if (ShowUnpin) {
+                    <button type="button" class="rc-chip rc-chip-danger" @onclick="() => OnUnpin.InvokeAsync()">
+                        Unpin
+                    </button>
+                }
+                <button type="button" class="rc-chip" disabled="@(_cube is null)" @onclick="ExportAsync">Export</button>
             }
-        } else {
-            @if (ShowResultCount) {
-                <span class="rcard-count">@ResultCountLabel</span>
-            }
+        </Actions>
+    </EggIdentity.UI.Reports.ReportCard>
 
-            @if (ShowUnpin) {
-                <button type="button" class="rcard-chip rcard-chip-danger" @onclick="() => OnUnpin.InvokeAsync()">
-                    Unpin
-                </button>
-            }
-            <button type="button" class="rcard-chip" disabled="@(_result is null)" @onclick="ExportAsync">Export</button>
-            <button type="button" class="rcard-chip rcard-chip-primary" disabled="@(_result is null)" @onclick="RunAsync">Run</button>
-        }
-    </div>
+    @if (MennoComparison.ShouldRender(Report.Definition, _userMatrix, _menno)) {
+        <table class="rc-menno">
+            <caption>Menno</caption>
+            <thead>
+                <tr>
+                    <th></th>
+                    @foreach (var c in MennoColLabels) {
+                        <th>@c</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @for (var r = 0; r < MennoRowLabels.Count; r++) {
+                    var row = r;
+                    <tr>
+                        <th>@MennoRowLabels[row]</th>
+                        @for (var c = 0; c < MennoColLabels.Count; c++) {
+                            var col = c;
+                            <td>@FormatCell(MennoCells?[row][col])</td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
 </div>
 
 @code {
-    [Parameter] [EditorRequired] public ReportDefinition Def { get; set; } = new();
-    [Parameter] [EditorRequired] public GridCardPos Pos { get; set; }
-    [Parameter] [EditorRequired] public string AccountId { get; set; } = "";
+    [Parameter, EditorRequired] public LedgerReport Report { get; set; } = null!;
+    [Parameter, EditorRequired] public string AccountId { get; set; } = "";
     [Parameter] public bool EditMode { get; set; }
-    [Parameter] public IReadOnlyList<ReportGroupRow> Groups { get; set; } = Array.Empty<ReportGroupRow>();
-    [Parameter] public EventCallback<ReportDefinition> OnEdit { get; set; }
-    [Parameter] public EventCallback<string> OnDelete { get; set; }
-
+    [Parameter] public IReadOnlyList<ReportGroupRow> Groups { get; set; } = [];
+    [Parameter] public EventCallback<LedgerReport> OnEdit { get; set; }
+    [Parameter] public EventCallback<LedgerReport> OnDelete { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
-
     [Parameter] public bool ShowUnpin { get; set; }
     [Parameter] public EventCallback OnUnpin { get; set; }
 
-    private ReportResult? _result;
-    private ReportResult? _mennoResult;
+    private ReportCube? _cube;
+    private IReportSource? _source;
+    private ReportMatrix? _userMatrix;
+    private ReportMatrix? _menno;
     private string? _error;
-    private string _ranKey = "";
+    private ReportDefinition? _lastDefinition;
     private bool _confirmingDelete;
     private bool _copying;
     private bool _deleting;
-    private string ColorOr => string.IsNullOrEmpty(Def.Color) ? "#6366f1" : Def.Color;
-    private string NormalizeOr => string.IsNullOrEmpty(Def.NormalizeBy) ? "none" : Def.NormalizeBy;
-    private string DisplayName => string.IsNullOrEmpty(Def.Name) ? "Untitled report" : Def.Name;
 
-    private bool ShowMennoComparison =>
-        MennoComparison.ShouldRender(Def, _result, _mennoResult);
+    private bool RatioMode => MennoComparison.CompareMode(Report.Definition) == MennoComparison.Ratio;
 
-    private ReportResult MennoAirtime =>
-        MennoComparison.MennoAirtimeResult(Def, _mennoResult!);
+    private IReadOnlyList<string> MennoRowLabels => (RatioMode ? _userMatrix : _menno)?.RowLabels ?? [];
+    private IReadOnlyList<string> MennoColLabels => (RatioMode ? _userMatrix : _menno)?.ColLabels ?? [];
 
-    private ReportResult UserPerMission =>
-        MennoComparison.UserPerMissionResult(_result!);
+    private IReadOnlyList<IReadOnlyList<double?>>? MennoCells =>
+        _menno is null ? null :
+        RatioMode ? MennoComparison.RatioCells(_userMatrix!, _menno) : _menno.Cells;
 
-    private ReportResult RatioResult =>
-        MennoComparison.RatioResult(_result!, _mennoResult!);
-
-    private IReadOnlyList<double> RatioColorValues =>
-        MennoComparison.RatioColorValues(_result!, _mennoResult!);
-
-    private string WeightClass => Def.Weight switch {
-        "HEAVY" => "rcard-weight-heavy",
-        "MEDIUM" => "rcard-weight-medium",
-        _ => "rcard-weight-light"
-    };
-
-    private string WeightTitle => Def.Weight switch {
-        "HEAVY" => "Heavy: full scan, may be slow on large accounts",
-        "MEDIUM" => "Medium: partial index usage",
-        _ => "Light: fully indexed"
-    };
-
-    private string SubjectLabel => Def.Subject switch {
-        "artifacts" => "Artifacts",
-        "fuel_eggs" => "Fuel",
-        _ => "Ships"
-    };
-    private string ModeLabel => Def.Mode == "time_series" ? "Time series" : "Aggregate";
-
-    private string GroupByLabel =>
-        string.IsNullOrEmpty(Def.GroupBy) || Def.GroupBy == "time_bucket" ? "" : ReportDimensions.DimensionLabel(Def.GroupBy);
-
-    private string SecondaryGroupByLabel =>
-        string.IsNullOrEmpty(Def.SecondaryGroupBy) ? "" : ReportDimensions.DimensionLabel(Def.SecondaryGroupBy);
-
-    private string Subtitle {
-        get {
-            var parts = new List<string> { SubjectLabel, ModeLabel };
-            if (GroupByLabel.Length > 0) parts.Add(GroupByLabel);
-
-            var text = string.Join(" - ", parts);
-            if (SecondaryGroupByLabel.Length > 0) text += " x " + SecondaryGroupByLabel;
-
-            return text;
-        }
-    }
-
-    private bool ShowResultCount =>
-        _result is { Is2D: false } && Def.DisplayMode is not ("pie" or "bar" or "line");
-
-    private string ResultCountLabel {
-        get {
-            var n = _result?.Labels.Count ?? 0;
-            return $"{n} result{(n == 1 ? "" : "s")}";
-        }
-    }
+    private static string FormatCell(double? value) => value?.ToString("0.##") ?? "-";
 
     private async Task OnGroupSelectChanged(ChangeEventArgs e) {
         var groupId = e.Value?.ToString() ?? "";
-        await Store.SetReportGroupAsync(Def.Id, groupId);
+        await Store.SetReportGroupAsync(Report.Id, groupId);
         await OnChanged.InvokeAsync();
     }
 
     private async Task CopyAsync() {
         _copying = true;
         try {
-            var copy = JsonSerializer.Deserialize<ReportDefinition>(JsonSerializer.Serialize(Def))!;
-            copy.Id = Guid.NewGuid().ToString("D");
-            copy.Name = Def.Name + " (copy)";
-            copy.SortOrder = 0;
-            copy.CreatedAt = 0;
-            copy.UpdatedAt = 0;
+            var newId = Guid.NewGuid().ToString("D");
+            var copy = Report with {
+                Definition = Report.Definition with { Id = newId, Title = Report.Definition.Title + " (copy)" },
+                Placement = Report.Placement with { ReportId = newId },
+            };
             await Store.InsertReportAsync(ReportMapping.ToRow(copy));
             await OnChanged.InvokeAsync();
         } finally {
@@ -227,7 +132,9 @@
     private async Task DeleteAsync() {
         _deleting = true;
         try {
-            await OnDelete.InvokeAsync(Def.Id);
+            await Store.DeleteReportAsync(Report.Id);
+            await OnDelete.InvokeAsync(Report);
+            await OnChanged.InvokeAsync();
         } finally {
             _deleting = false;
             _confirmingDelete = false;
@@ -235,10 +142,8 @@
     }
 
     private async Task ExportAsync() {
-        if (_result is null) return;
-
-        var json = JsonSerializer.Serialize(Def, new JsonSerializerOptions { WriteIndented = true });
-        await Downloader.DownloadJsonAsync(json, SafeFileName(Def.Name) + ".json");
+        var json = ReportCodec.Serialize(Report.Definition);
+        await Downloader.DownloadJsonAsync(json, SafeFileName(Report.Definition.Title) + ".json");
     }
 
     private static string SafeFileName(string name) {
@@ -249,21 +154,24 @@
     }
 
     protected override async Task OnParametersSetAsync() {
-        var key = Def.Id + ":" + Def.UpdatedAt;
-        if (key == _ranKey) return;
+        if (Report.Definition == _lastDefinition) return;
 
-        _ranKey = key;
+        _lastDefinition = Report.Definition;
         await RunAsync();
     }
 
     private async Task RunAsync() {
-        _result = null;
-        _mennoResult = null;
+        _cube = null;
+        _menno = null;
+        _userMatrix = null;
         _error = null;
+        _source = LedgerReportSources.All.FirstOrDefault(s => s.Id == Report.Definition.Query.Source);
+
         try {
-            _result = await MissionDb.RunReportAsync(Def, AccountId);
+            _cube = await Runner.RunReportAsync(Report.Definition.Query, AccountId);
         } catch (Exception ex) {
             _error = "Failed to run: " + ex.Message;
+            Logger.LogDebug(ex, "report run failed");
             StateHasChanged();
             return;
         }
@@ -273,27 +181,27 @@
     }
 
     private async Task RunMennoComparisonAsync() {
-        if (_result is null
-            || !Def.MennoEnabled
-            || !_result.Is2D
-            || _result.RawRowLabels.Count == 0
-            || _result.RawColLabels.Count == 0) {
+        if (_cube is null
+            || !MennoComparison.Enabled(Report.Definition)
+            || Report.Definition.View.Chart != ReportCharts.Heatmap) {
             return;
         }
 
         try {
-            if (!Menno.HasData) await Menno.EnsureLoadedAsync();
+            await Menno.EnsureLoadedAsync();
 
-            var items = Menno.CachedItems;
-            if (items is null) return;
+            var groupBy = Report.Definition.Query.GroupBy;
+            var measureKey = Report.Definition.Query.Measures.Count > 0
+                ? Report.Definition.Query.Measures[0].Key
+                : MeasureRequest.RowCountKey;
 
-            _mennoResult = MennoService.ExecuteComparison(
-                Def, items, _result.RawRowLabels, _result.RawColLabels);
+            _userMatrix = ReportProjection.Matrix(_cube, measureKey, groupBy[0].Dimension, groupBy[1].Dimension, _source);
+            _menno = MennoService.ExecuteComparison(Report.Definition, Menno.CachedItems ?? [], _userMatrix);
             StateHasChanged();
         } catch (Exception ex) {
             Logger.LogDebug(ex, "menno comparison for report failed");
-            _mennoResult = null;
+            _menno = null;
+            _userMatrix = null;
         }
     }
-
 }

@@ -19,7 +19,7 @@ public sealed class IndexedDbReportStore(IIndexedDb db, TimeProvider time) {
     }
 
     public static string NormalizeByOrDefault(string? v) =>
-        string.IsNullOrEmpty(v) ? Domain.Reports.ReportDefaults.NormalizeNone : v;
+        string.IsNullOrEmpty(v) ? "none" : v;
 
     public async Task InsertReportAsync(ReportRow r) {
         long stamp = Now();

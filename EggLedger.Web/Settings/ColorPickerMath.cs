@@ -1,6 +1,6 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
-using EggLedger.Domain.Reports.Charts;
+using EggIdentity.Reports;
 
 namespace EggLedger.Web.Settings;
 
@@ -41,10 +41,10 @@ public static partial class ColorPickerMath {
     }
 
     public static string HslToHex(double h, double s, double l) =>
-        SliceColors.HslToHex(h, s / 100.0, l / 100.0);
+        ChartPalette.FromHsl(h, s / 100.0, l / 100.0);
 
     public static HslInt HexToHslInt(string hex) {
-        var (h, s, l) = SliceColors.HexToHsl(hex);
+        var (h, s, l) = ChartPalette.Hsl(hex) ?? ChartPalette.Hsl(Fallback)!.Value;
         return new HslInt(
             (int)Math.Round(h),
             (int)Math.Round(s * 100),

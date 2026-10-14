@@ -67,8 +67,7 @@ public sealed class LegacyReportUpgradeTests {
     public void Convert_FuelSubject_SetsFuelAmountSumMeasure() {
         var legacy = Base() with { Subject = "fuel_eggs" };
         var (definition, _) = LegacyReportUpgrade.Convert(legacy);
-        Assert.Equal(1, definition.Query.Measures.Count);
-        Assert.Equal(new MeasureRequest(LedgerReportKeys.FuelAmount, Aggregation.Sum), definition.Query.Measures[0]);
+        Assert.Equal(new MeasureRequest(LedgerReportKeys.FuelAmount, Aggregation.Sum), Assert.Single(definition.Query.Measures));
     }
 
     [Theory]
@@ -92,8 +91,7 @@ public sealed class LegacyReportUpgradeTests {
     public void Convert_AggregateWithoutSecondary_SortsByRowCountDescending() {
         var legacy = Base() with { Mode = "aggregate", GroupBy = "ship_type", SecondaryGroupBy = "" };
         var (definition, _) = LegacyReportUpgrade.Convert(legacy);
-        Assert.Equal(1, definition.Query.Sort.Count);
-        Assert.Equal(new SortKey(MeasureRequest.RowCountKey, true), definition.Query.Sort[0]);
+        Assert.Equal(new SortKey(MeasureRequest.RowCountKey, true), Assert.Single(definition.Query.Sort));
     }
 
     [Fact]
@@ -103,7 +101,7 @@ public sealed class LegacyReportUpgradeTests {
         Assert.Equal(2, definition.Query.GroupBy.Count);
         Assert.Equal(LedgerReportKeys.Ship, definition.Query.GroupBy[0].Dimension);
         Assert.Equal(LedgerReportKeys.Duration, definition.Query.GroupBy[1].Dimension);
-        Assert.Equal(0, definition.Query.Sort.Count);
+        Assert.Empty(definition.Query.Sort);
     }
 
     [Fact]
@@ -155,16 +153,14 @@ public sealed class LegacyReportUpgradeTests {
     public void Convert_ValueFilter_MapsToHavingClause() {
         var legacy = Base() with { ValueFilterOp = ">", ValueFilterThreshold = 5 };
         var (definition, _) = LegacyReportUpgrade.Convert(legacy);
-        Assert.Equal(1, definition.Query.Having.Count);
-        Assert.Equal(new HavingClause(MeasureRequest.RowCountKey, ">", 5), definition.Query.Having[0]);
+        Assert.Equal(new HavingClause(MeasureRequest.RowCountKey, ">", 5), Assert.Single(definition.Query.Having));
     }
 
     [Fact]
     public void Convert_FamilyWeight_SetsCraftingWeightMeasureAndFamilyFilter() {
         var legacy = Base() with { FamilyWeight = "x" };
         var (definition, _) = LegacyReportUpgrade.Convert(legacy);
-        Assert.Equal(1, definition.Query.Measures.Count);
-        Assert.Equal(new MeasureRequest(LedgerReportKeys.CraftingWeight, Aggregation.Sum), definition.Query.Measures[0]);
+        Assert.Equal(new MeasureRequest(LedgerReportKeys.CraftingWeight, Aggregation.Sum), Assert.Single(definition.Query.Measures));
         Assert.Contains(new FilterCondition(LedgerReportKeys.Family, FilterOps.Eq, "x"), definition.Query.Filters.And);
     }
 
@@ -216,8 +212,7 @@ public sealed class LegacyReportUpgradeTests {
     public void Convert_LabelColors_MapsRarityNamesToIndices() {
         var legacy = Base() with { GroupBy = "rarity", LabelColors = "{\"Common\":\"#111111\",\"bogus\":\"nope\"}" };
         var (definition, _) = LegacyReportUpgrade.Convert(legacy);
-        Assert.Equal(1, definition.View.LabelColors.Count);
-        Assert.Equal("#111111", definition.View.LabelColors["0"]);
+        Assert.Equal(KeyValuePair.Create("0", "#111111"), Assert.Single(definition.View.LabelColors));
     }
 
     [Fact]
