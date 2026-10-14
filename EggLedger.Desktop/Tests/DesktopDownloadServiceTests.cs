@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using EggLedger.Desktop.Export;
 using EggLedger.Domain.Export;
 using EggLedger.Web.Platform;
@@ -63,8 +64,20 @@ public sealed class DesktopDownloadServiceTests : IDisposable {
         await sink.DownloadXlsxAsync(missions, "account.xlsx");
 
         Assert.True(File.Exists(path));
-        Assert.Equal(MissionExport.MissionsToXlsxBytes(missions), await File.ReadAllBytesAsync(path));
+        Assert.Equal(ZipEntries(MissionExport.MissionsToXlsxBytes(missions)), ZipEntries(await File.ReadAllBytesAsync(path)));
         Assert.Equal(path, Assert.Single(platform.Revealed));
+    }
+
+    private static List<(string Name, string Content)> ZipEntries(byte[] bytes) {
+        using var zip = new ZipArchive(new MemoryStream(bytes), ZipArchiveMode.Read);
+        return [.. zip.Entries.Select(e => (e.FullName, ReadEntry(e)))];
+    }
+
+    private static string ReadEntry(ZipArchiveEntry entry) {
+        using var stream = entry.Open();
+        using var buffer = new MemoryStream();
+        stream.CopyTo(buffer);
+        return Convert.ToHexString(buffer.ToArray());
     }
 
     [Fact]
