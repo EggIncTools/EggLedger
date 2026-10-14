@@ -57,7 +57,7 @@ public sealed class FilterOptionsTests {
         };
         var opts = FilterOptions.GetTargetFilterOptions(targets);
         Assert.Equal("-1", opts[0].Value);
-        Assert.Equal("none.png", opts[0].ImagePath);
+        Assert.Equal("_content/EggSharp.GameData.Assets/images/targets/none.png", opts[0].ImagePath);
         Assert.Equal("1", opts[1].Value);
     }
 

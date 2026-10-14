@@ -1,6 +1,7 @@
 using System.Globalization;
 using EggLedger.Domain.Ei;
 using EggLedger.Domain.MissionQuery;
+using EggLedger.Web.State;
 using Ei;
 
 namespace EggLedger.Web.Missions;
@@ -50,7 +51,7 @@ public static class FilterOptions {
         return [.. possibleTargets.Select(t => new PickerOption {
             Text = t.DisplayName,
             Value = t.Id.ToString(CultureInfo.InvariantCulture),
-            ImagePath = t.ImageString,
+            ImagePath = ContentPaths.GameAsset("images/targets/" + t.ImageString),
         })];
     }
 
@@ -129,7 +130,7 @@ public static class FilterOptions {
         int addendum = drop.ProtoName.Contains("_STONE", StringComparison.Ordinal) ? 1 : 0;
         string fixedName = ArtifactNameFixups.ApplyDisplayNameOverrides(
             drop.ProtoName.Replace("_FRAGMENT", "", StringComparison.Ordinal));
-        return "artifacts/" + fixedName + "/" + fixedName + "_" + (drop.Level + 1 + addendum) + ".png";
+        return ContentPaths.GameAsset("images/artifacts/" + fixedName + "/" + fixedName + "_" + (drop.Level + 1 + addendum) + ".png");
     }
 
     public static List<PickerOption> GetDropFilterOptions(

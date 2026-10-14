@@ -15,6 +15,6 @@ public static class TargetImagePaths {
 
         if (t is "GOLD_METEORITE" or "TAU_CETI_GEODE" or "SOLAR_TITANIUM") tier = 3;
 
-        return (ContentPaths.Asset($"images/artifacts/{t}/{t}_{tier}.png"), t);
+        return (ContentPaths.GameAsset($"images/artifacts/{t}/{t}_{tier}.png"), t);
     }
 }

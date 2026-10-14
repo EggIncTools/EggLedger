@@ -9,6 +9,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" />
     <PackageReference Include="EggIdentity.Core" />
     <PackageReference Include="EggIdentity.UI" />
+    <PackageReference Include="EggSharp.GameData.Assets" />
     <PackageReference Include="Markdig" />
   </ItemGroup>
 

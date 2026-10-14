@@ -1,5 +1,5 @@
-using System.Globalization;
 using EggLedger.Domain.Eiafx;
+using EggSharp.GameData;
 using Ei;
 
 namespace EggLedger.Domain.Tests.Eiafx;
@@ -26,26 +26,27 @@ public class QualityTests {
     }
 
     [Fact]
-    public void BaseQualityFor_MatchesGoldenFields() {
-        var path = Path.Combine(AppContext.BaseDirectory, "Fixtures", "eiafx-config-fixture.fields");
-        var lines = File.ReadAllLines(path);
-        Assert.NotEmpty(lines);
+    public void BaseQualityFor_MatchesEggSharpCatalog() {
+        var catalog = ArtifactCatalog.Parse(GameDataProvider.EmbeddedDocuments()[ArtifactCatalog.DocumentId]);
+        Assert.NotEmpty(catalog.Artifacts);
 
-        foreach (var line in lines) {
-            if (string.IsNullOrWhiteSpace(line)) {
-                continue;
-            }
-            var cols = line.Split(',');
-            Assert.Equal(4, cols.Length);
-
+        foreach (var a in catalog.Artifacts) {
             var spec = new ArtifactSpec {
-                name = (ArtifactSpec.Name)int.Parse(cols[0], CultureInfo.InvariantCulture),
-                level = (ArtifactSpec.Level)int.Parse(cols[1], CultureInfo.InvariantCulture),
-                rarity = (ArtifactSpec.Rarity)int.Parse(cols[2], CultureInfo.InvariantCulture),
+                name = (ArtifactSpec.Name)a.AfxId,
+                level = (ArtifactSpec.Level)a.AfxLevel,
+                rarity = (ArtifactSpec.Rarity)a.AfxRarity,
             };
-            var want = double.Parse(cols[3], CultureInfo.InvariantCulture);
-
-            Assert.Equal(want, Quality.BaseQualityFor(spec), 6);
+            Assert.Equal(a.BaseQuality, Quality.BaseQualityFor(spec), 6);
         }
+    }
+
+    [Fact]
+    public void LunarTotem_SpotValues() {
+        var spec = new ArtifactSpec {
+            name = ArtifactSpec.Name.LunarTotem,
+            level = ArtifactSpec.Level.Inferior,
+            rarity = ArtifactSpec.Rarity.Common,
+        };
+        Assert.Equal(0.7, Quality.BaseQualityFor(spec), 6);
     }
 }

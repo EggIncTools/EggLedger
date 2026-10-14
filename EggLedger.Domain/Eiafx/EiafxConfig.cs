@@ -3,7 +3,7 @@ using Ei;
 namespace EggLedger.Domain.Eiafx;
 
 public static class EiafxConfig {
-    private static IEiafxConfigSource _source = EmbeddedEiafxConfigSource.Instance;
+    private static IEiafxConfigSource _source = GameDataEiafxConfigSource.Instance;
 
     public static ArtifactsConfigurationResponse Config => _source.Config;
 

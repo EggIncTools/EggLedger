@@ -93,7 +93,7 @@
         <SearchablePicker Options="Pickers(ctx.Field)"
                           SelectedValue="@(string.IsNullOrEmpty(ctx.Value) ? null : ctx.Value)"
                           Placeholder="Click to select"
-                          ImageBasePath="@(isDrop ? "images/" : "images/targets/")"
+                          ImageBasePath="images/"
                           RarityRing="isDrop"
                           OverlayKind="@(isDrop ? "drop" : "target")"
                           Incomplete="ctx.Incomplete"

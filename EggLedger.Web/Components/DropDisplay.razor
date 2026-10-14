@@ -161,7 +161,7 @@
     private static string SpecPath(DropLike item) {
         var fixedName = ArtifactNameFixups.ApplyDisplayNameOverrides(
             item.Name.Replace("_FRAGMENT", "", StringComparison.Ordinal));
-        return ContentPaths.Asset($"images/artifacts/{fixedName}/{fixedName}_{item.Level + SpecPathOffset(item)}.png");
+        return ContentPaths.GameAsset($"images/artifacts/{fixedName}/{fixedName}_{item.Level + SpecPathOffset(item)}.png");
     }
 
 

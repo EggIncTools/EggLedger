@@ -14,6 +14,7 @@
     <PackageReference Include="EggSharp.Ei.ProtobufNet" />
     <PackageReference Include="EggSharp.Api" />
     <PackageReference Include="EggSharp.Core" />
+    <PackageReference Include="EggSharp.GameData" />
     <PackageReference Include="EggIdentity.Core" />
   </ItemGroup>
 

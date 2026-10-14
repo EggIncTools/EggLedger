@@ -183,7 +183,7 @@
     }
 
     private string ImageSrc(PickerOption o) {
-        return ContentPaths.Asset(ImageBasePath + o.ImagePath);
+        return o.ImagePath!.StartsWith("_content/", StringComparison.Ordinal) ? o.ImagePath : ContentPaths.Asset(ImageBasePath + o.ImagePath);
     }
 
     private string RingClass(PickerOption o) {
