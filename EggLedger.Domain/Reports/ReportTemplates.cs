@@ -1,4 +1,4 @@
-using System.Text.Json;
+using EggIdentity.Reports;
 
 namespace EggLedger.Domain.Reports;
 
@@ -9,66 +9,37 @@ public static class ReportTemplates {
     public const string RarityMix = "tmpl_rarity_mix";
 
     public static readonly IReadOnlyList<ReportDefinition> All = [
-        new ReportDefinition {
-            Id = TotalFuelByShip,
-            Name = "Total Eggs Used for Fuel",
-            Subject = "fuel_eggs",
-            Mode = "aggregate",
-            DisplayMode = "bar",
-            ChartType = "bar",
-            GroupBy = "ship_type",
-            Weight = "LOW",
-            Color = "#f59e0b",
-            NormalizeBy = ReportDefaults.NormalizeNone,
-            GridW = 2,
-            GridH = 2,
-        },
-        new ReportDefinition {
-            Id = ShipMix,
-            Name = "Fleet Mix",
-            Subject = "missions",
-            Mode = "aggregate",
-            DisplayMode = "bar",
-            ChartType = "bar",
-            GroupBy = "ship_type",
-            Weight = "LOW",
-            Color = "#6366f1",
-            NormalizeBy = ReportDefaults.NormalizeNone,
-            GridW = 2,
-            GridH = 2,
-        },
-        new ReportDefinition {
-            Id = DurationMix,
-            Name = "Mission Duration Mix",
-            Subject = "missions",
-            Mode = "aggregate",
-            DisplayMode = "bar",
-            ChartType = "bar",
-            GroupBy = "duration_type",
-            Weight = "LOW",
-            Color = "#22c55e",
-            NormalizeBy = ReportDefaults.NormalizeNone,
-            GridW = 2,
-            GridH = 2,
-        },
-        new ReportDefinition {
-            Id = RarityMix,
-            Name = "Artifact Rarity Mix",
-            Subject = "artifacts",
-            Mode = "aggregate",
-            DisplayMode = "bar",
-            ChartType = "bar",
-            GroupBy = "rarity",
-            Weight = "MEDIUM",
-            Color = "#a855f7",
-            NormalizeBy = ReportDefaults.NormalizeNone,
-            GridW = 2,
-            GridH = 2,
-        },
+        new ReportDefinition(ReportCodec.CurrentVersion, TotalFuelByShip, "Total Eggs Used for Fuel",
+            new ReportQuery(LedgerReportKeys.Fuel) {
+                GroupBy = [new GroupKey(LedgerReportKeys.Ship)],
+                Measures = [new MeasureRequest(LedgerReportKeys.FuelAmount, Aggregation.Sum)],
+                Sort = [new SortKey(LedgerReportKeys.FuelAmount, Descending: true)],
+            },
+            new ReportView(ReportCharts.Bar) { Color = "#f59e0b" }),
+        new ReportDefinition(ReportCodec.CurrentVersion, ShipMix, "Fleet Mix",
+            new ReportQuery(LedgerReportKeys.Missions) {
+                GroupBy = [new GroupKey(LedgerReportKeys.Ship)],
+                Measures = [],
+                Sort = [new SortKey(MeasureRequest.RowCountKey, Descending: true)],
+            },
+            new ReportView(ReportCharts.Bar) { Color = "#6366f1" }),
+        new ReportDefinition(ReportCodec.CurrentVersion, DurationMix, "Mission Duration Mix",
+            new ReportQuery(LedgerReportKeys.Missions) {
+                GroupBy = [new GroupKey(LedgerReportKeys.Duration)],
+                Measures = [],
+                Sort = [new SortKey(MeasureRequest.RowCountKey, Descending: true)],
+            },
+            new ReportView(ReportCharts.Bar) { Color = "#22c55e" }),
+        new ReportDefinition(ReportCodec.CurrentVersion, RarityMix, "Artifact Rarity Mix",
+            new ReportQuery(LedgerReportKeys.Artifacts) {
+                GroupBy = [new GroupKey(LedgerReportKeys.Rarity)],
+                Measures = [],
+                Sort = [new SortKey(MeasureRequest.RowCountKey, Descending: true)],
+            },
+            new ReportView(ReportCharts.Bar) { Color = "#a855f7" }),
     ];
 
-    public static ReportDefinition? Find(string id) {
-        var match = All.FirstOrDefault(d => d.Id == id);
-        return match is null ? null : JsonSerializer.Deserialize<ReportDefinition>(JsonSerializer.Serialize(match));
-    }
+    public static ReportDefinition? Find(string id) => All.FirstOrDefault(d => d.Id == id);
+
+    public static ReportPlacement Placement(string id, int order) => new(id, 0, 0, 2, 2, order);
 }

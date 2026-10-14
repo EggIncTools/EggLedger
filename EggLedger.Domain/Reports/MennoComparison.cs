@@ -1,3 +1,5 @@
+using EggIdentity.Reports;
+
 namespace EggLedger.Domain.Reports;
 
 public static class MennoComparison {
@@ -5,63 +7,48 @@ public static class MennoComparison {
     public const string Ratio = "ratio";
     public const string DualValue = "dual_value";
 
-    public static bool ShouldRender(ReportDefinition def, ReportResult? userResult, ReportResult? mennoResult) {
-        if (def is null || !def.MennoEnabled) return false;
-        if (def.DisplayMode != "heatmap") {
-            return false;
-        }
-        return userResult is { Is2D: true } && mennoResult is not null;
+    public static bool Enabled(ReportDefinition def) {
+        ArgumentNullException.ThrowIfNull(def);
+        if (!def.View.Options.TryGetValue(LedgerReportKeys.MennoOption, out var menno) || menno != "true") return false;
+        if (def.Query.Source != LedgerReportKeys.Artifacts) return false;
+        if (def.Query.GroupBy.Count != 2) return false;
+        return def.Query.GroupBy.All(g => g.Bucket is null && ComparableDimension(g.Dimension));
     }
 
-    public static ReportResult MennoAirtimeResult(ReportDefinition def, ReportResult mennoResult) {
-        if (def.NormalizeBy != "airtime") return mennoResult;
-        var avm = mennoResult.AirtimeMatrixValues;
-        return avm is null or { Count: 0 } ? mennoResult : Clone(mennoResult, matrixValues: [.. avm]);
-    }
-
-    public static ReportResult UserPerMissionResult(ReportResult userResult) {
-        var rpm = userResult.RawPerMissionValues;
-        return rpm is null or { Count: 0 } ? userResult : Clone(userResult, matrixValues: [.. rpm]);
-    }
-
-    public static IReadOnlyList<double?> RatioMatrix(ReportResult userResult, ReportResult mennoResult) {
-        var numerator = userResult.RawPerMissionValues is { Count: > 0 } rpm
-            ? rpm
-            : userResult.MatrixValues;
-        var menno = mennoResult.MatrixValues;
-        return [.. numerator.Select((n, i) => {
-            double mennoVal = i < menno.Count ? menno[i] : 0;
-            return mennoVal == 0 ? (double?)null : n / mennoVal;
-        })];
-    }
-
-    public static ReportResult RatioResult(ReportResult userResult, ReportResult mennoResult) {
-        var ratio = RatioMatrix(userResult, mennoResult);
-        List<double> vals = [.. ratio.Select(v => v ?? 0)];
-        var clone = Clone(userResult, matrixValues: vals);
-        clone.IsFloat = true;
-        return clone;
-    }
-
-    public static IReadOnlyList<double> RatioColorValues(ReportResult userResult, ReportResult mennoResult) {
-        var ratio = RatioMatrix(userResult, mennoResult);
-        return [.. ratio.Select(v => v ?? 0)];
-    }
-
-    private static ReportResult Clone(ReportResult src, List<double> matrixValues) => new() {
-        Labels = src.Labels,
-        Values = src.Values,
-        FloatValues = src.FloatValues,
-        IsFloat = src.IsFloat,
-        Weight = src.Weight,
-        RowLabels = src.RowLabels,
-        ColLabels = src.ColLabels,
-        MatrixValues = matrixValues,
-        Is2D = src.Is2D,
-        RawRowLabels = src.RawRowLabels,
-        RawColLabels = src.RawColLabels,
-        RawPerMissionValues = src.RawPerMissionValues,
-        AirtimeMatrixValues = src.AirtimeMatrixValues,
-        MissionCountMatrix = src.MissionCountMatrix,
+    public static bool ComparableDimension(string key) => key switch {
+        LedgerReportKeys.Ship or LedgerReportKeys.Duration or LedgerReportKeys.Level or LedgerReportKeys.Target
+            or LedgerReportKeys.ArtifactName or LedgerReportKeys.Rarity or LedgerReportKeys.Tier => true,
+        _ => false,
     };
+
+    public static string CompareMode(ReportDefinition def) {
+        ArgumentNullException.ThrowIfNull(def);
+        return def.View.Options.TryGetValue(LedgerReportKeys.MennoCompareOption, out var mode) ? mode : SideBySide;
+    }
+
+    public static bool ShouldRender(ReportDefinition def, ReportMatrix? user, ReportMatrix? menno) {
+        return Enabled(def) && def.View.Chart == ReportCharts.Heatmap && user is not null && menno is not null;
+    }
+
+    public static IReadOnlyList<IReadOnlyList<double?>> RatioCells(ReportMatrix user, ReportMatrix menno) {
+        ArgumentNullException.ThrowIfNull(user);
+        ArgumentNullException.ThrowIfNull(menno);
+        var lookup = new Dictionary<(string Row, string Col), double?>();
+        for (var r = 0; r < menno.RowKeys.Count; r++) {
+            for (var c = 0; c < menno.ColKeys.Count; c++) {
+                lookup[(menno.RowKeys[r], menno.ColKeys[c])] = menno.Cells[r][c];
+            }
+        }
+        var result = new List<IReadOnlyList<double?>>();
+        for (var r = 0; r < user.RowKeys.Count; r++) {
+            var row = new List<double?>();
+            for (var c = 0; c < user.ColKeys.Count; c++) {
+                var userVal = user.Cells[r][c];
+                var mennoVal = lookup.TryGetValue((user.RowKeys[r], user.ColKeys[c]), out var v) ? v : null;
+                row.Add(userVal is null || mennoVal is null or 0 ? null : userVal.Value / mennoVal.Value);
+            }
+            result.Add(row);
+        }
+        return result;
+    }
 }
