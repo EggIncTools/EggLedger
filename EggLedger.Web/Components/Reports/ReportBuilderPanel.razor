@@ -4,6 +4,7 @@
 @inject IReportRunner Runner
 @inject ILogger<ReportBuilderPanel> Logger
 @inject TimeProvider Time
+@inject MissionConfigProvider Config
 
 <ModalHost Open="_open" OnClose="Close" Title="@(_editing ? "Edit Report" : "Add Report")" Width="ModalWidth.Regular">
     <ChildContent>
@@ -12,7 +13,44 @@
                 <div class="rb-body">
                     <ReportBuilderGuided OnApply="OnGuidedApply"/>
 
-                    <ReportBuilder Sources="LedgerReportSources.All" Value="_report.Definition" ValueChanged="OnDefinitionChanged" Cost="_cost"/>
+                    <ReportBuilder Sources="LedgerReportSources.All" Value="_report.Definition" ValueChanged="OnDefinitionChanged" Cost="_cost">
+                        <FilterEditor Context="slot">
+                            <MissionFilterBar Context="_filterContext" Initial="slot.Value.Query.Filters" ReportOps="true"
+                                              OnApply="f => slot.Change(slot.Value with { Query = slot.Value.Query with { Filters = f } })"/>
+                        </FilterEditor>
+                        <Extra Context="slot">
+                            @if (slot.Value.Query.Source == LedgerReportKeys.Artifacts) {
+                                <div class="rb-field">
+                                    <span class="rb-label">Family weight</span>
+                                    <select class="rb-control" value="@ReportExtras.Family(slot.Value)"
+                                            @onchange="e => slot.Change(ReportExtras.WithFamily(slot.Value, e.Value?.ToString() ?? string.Empty))">
+                                        <option value="">None</option>
+                                        @foreach (var f in EiafxData.Families) {
+                                            <option value="@f.Id">@f.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                            }
+                            @if (MennoComparison.Enabled(MennoComparison.WithMode(slot.Value, true, MennoComparison.SideBySide))) {
+                                <label class="rb-check">
+                                    <input type="checkbox" checked="@MennoComparison.Enabled(slot.Value)"
+                                           @onchange="e => slot.Change(MennoComparison.WithMode(slot.Value, e.Value is true, MennoComparison.CompareMode(slot.Value)))"/>
+                                    Compare with community (Menno)
+                                </label>
+                                @if (MennoComparison.Enabled(slot.Value)) {
+                                    <div class="rb-field">
+                                        <span class="rb-label">Comparison</span>
+                                        <select class="rb-control" value="@MennoComparison.CompareMode(slot.Value)"
+                                                @onchange="e => slot.Change(MennoComparison.WithMode(slot.Value, true, e.Value?.ToString() ?? MennoComparison.SideBySide))">
+                                            <option value="@MennoComparison.SideBySide">Side by side</option>
+                                            <option value="@MennoComparison.Ratio">Ratio</option>
+                                            <option value="@MennoComparison.DualValue">Dual value</option>
+                                        </select>
+                                    </div>
+                                }
+                            }
+                        </Extra>
+                    </ReportBuilder>
 
                     <div class="rb-field">
                         <span class="rb-label">Grid size</span>
@@ -52,6 +90,9 @@
     private IReportSource? _previewSource;
     private bool _previewLoading;
     private string? _previewError;
+    private FilterViewContext? _filterContextCache;
+
+    private FilterViewContext _filterContext => _filterContextCache ??= new ReportsFilterContext(Config.FieldCtx);
 
     public Task OpenForCreateAsync() {
         string id = Guid.NewGuid().ToString("D");

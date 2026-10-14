@@ -14,7 +14,7 @@ public sealed class SqliteReportRunner(IReportSourceCache sources, IWeightData w
     public Task<ReportCube> RunReportAsync(ReportQuery query, string accountId, CancellationToken ct = default) {
         ArgumentNullException.ThrowIfNull(query);
         var registry = LedgerReportSources.Registry(async _ => await _sources.GetAsync(accountId).ConfigureAwait(false), _weights, _time);
-        return registry.RunAsync(query, ReportContext.Utc, ct);
+        return registry.RunAsync(LedgerReportQueries.Prepare(query), ReportContext.Utc, ct);
     }
 }
 

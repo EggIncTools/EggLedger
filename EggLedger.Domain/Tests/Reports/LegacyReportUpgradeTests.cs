@@ -149,6 +149,51 @@ public sealed class LegacyReportUpgradeTests {
         Assert.Equal(expected, definition.Query.Normalize);
     }
 
+    [Theory]
+    [InlineData("airtime", "airtime", "per flight hour")]
+    [InlineData("launches", "launches", "per launch")]
+    public void Convert_ArtifactsPerMission_DividesByMissionsSource(string normalizeBy, string measure, string unit) {
+        var legacy = Base() with { Subject = "artifacts", GroupBy = "ship_type", NormalizeBy = normalizeBy };
+        var (definition, _) = LegacyReportUpgrade.Convert(legacy);
+        Assert.Equal(Normalize.By(measure, LedgerReportKeys.Missions), definition.Query.Normalize);
+        Assert.Equal(unit, definition.View.Unit);
+    }
+
+    [Fact]
+    public void Convert_ArtifactsGroupedByArtifactField_KeepsLocalDenominator() {
+        var legacy = Base() with { Subject = "artifacts", GroupBy = "rarity", NormalizeBy = "launches" };
+        var (definition, _) = LegacyReportUpgrade.Convert(legacy);
+        Assert.Equal(Normalize.By(LedgerReportKeys.Launches), definition.Query.Normalize);
+    }
+
+    [Theory]
+    [InlineData("bar_desc", true)]
+    [InlineData("bar_asc", false)]
+    public void Convert_BarChartType_MapsToSort(string chartType, bool descending) {
+        var legacy = Base() with { DisplayMode = "bar", ChartType = chartType, SecondaryGroupBy = "level" };
+        var (definition, _) = LegacyReportUpgrade.Convert(legacy);
+        Assert.Equal(new SortKey(MeasureRequest.RowCountKey, descending), Assert.Single(definition.Query.Sort));
+    }
+
+    [Theory]
+    [InlineData("line", false)]
+    [InlineData("", true)]
+    public void Convert_LineOnly_TurnsFillOff(string chartType, bool fill) {
+        var legacy = Base() with { DisplayMode = "line", ChartType = chartType };
+        var (definition, _) = LegacyReportUpgrade.Convert(legacy);
+        Assert.Equal(fill, definition.View.Fill);
+    }
+
+    [Fact]
+    public void Convert_MennoModes_MapToHeat() {
+        var ratio = LegacyReportUpgrade.Convert(Base() with { MennoEnabled = true, MennoCompareMode = "ratio" }).Definition;
+        var dual = LegacyReportUpgrade.Convert(Base() with { MennoEnabled = true, MennoCompareMode = "dual_value" }).Definition;
+        var side = LegacyReportUpgrade.Convert(Base() with { MennoEnabled = true, MennoCompareMode = "side_by_side" }).Definition;
+        Assert.Equal(HeatScale.Ratio, ratio.View.Heat?.Scale);
+        Assert.Equal(new HeatView(MennoComparison.RatioMeasure, MennoComparison.MennoMeasure), dual.View.Heat);
+        Assert.Null(side.View.Heat);
+    }
+
     [Fact]
     public void Convert_ValueFilter_MapsToHavingClause() {
         var legacy = Base() with { ValueFilterOp = ">", ValueFilterThreshold = 5 };

@@ -6,7 +6,7 @@
 @inject ILogger<ReportCard> Logger
 
 <div class="rc-wrap">
-    <EggIdentity.UI.Reports.ReportCard Definition="Report.Definition" Cube="_cube" Source="_source"
+    <EggIdentity.UI.Reports.ReportCard Definition="Report.Definition" Cube="DisplayCube" Source="_source"
                                         Error="@_error" Loading="@(_cube is null && _error is null)">
         <Actions>
             @if (EditMode) {
@@ -49,30 +49,8 @@
         </Actions>
     </EggIdentity.UI.Reports.ReportCard>
 
-    @if (MennoComparison.ShouldRender(Report.Definition, _userMatrix, _menno)) {
-        <table class="rc-menno">
-            <caption>Menno</caption>
-            <thead>
-                <tr>
-                    <th></th>
-                    @foreach (var c in MennoColLabels) {
-                        <th>@c</th>
-                    }
-                </tr>
-            </thead>
-            <tbody>
-                @for (var r = 0; r < MennoRowLabels.Count; r++) {
-                    var row = r;
-                    <tr>
-                        <th>@MennoRowLabels[row]</th>
-                        @for (var c = 0; c < MennoColLabels.Count; c++) {
-                            var col = c;
-                            <td>@FormatCell(MennoCells?[row][col])</td>
-                        }
-                    </tr>
-                }
-            </tbody>
-        </table>
+    @if (SideBySide) {
+        <EggIdentity.UI.Reports.ReportCard Definition="CommunityDefinition" Cube="_community" Source="_source"/>
     }
 </div>
 
@@ -97,16 +75,19 @@
     private bool _copying;
     private bool _deleting;
 
-    private bool RatioMode => MennoComparison.CompareMode(Report.Definition) == MennoComparison.Ratio;
+    private ReportCube? _combined;
+    private ReportCube? _community;
 
-    private IReadOnlyList<string> MennoRowLabels => (RatioMode ? _userMatrix : _menno)?.RowLabels ?? [];
-    private IReadOnlyList<string> MennoColLabels => (RatioMode ? _userMatrix : _menno)?.ColLabels ?? [];
+    private ReportCube? DisplayCube => _combined ?? _cube;
 
-    private IReadOnlyList<IReadOnlyList<double?>>? MennoCells =>
-        _menno is null ? null :
-        RatioMode ? MennoComparison.RatioCells(_userMatrix!, _menno) : _menno.Cells;
+    private bool SideBySide =>
+        _community is not null && MennoComparison.ShouldRender(Report.Definition, _userMatrix, _menno);
 
-    private static string FormatCell(double? value) => value?.ToString("0.##") ?? "-";
+    private ReportDefinition CommunityDefinition => Report.Definition with {
+        Title = "Community",
+        Description = null,
+        View = Report.Definition.View with { Heat = null },
+    };
 
     private async Task OnGroupSelectChanged(ChangeEventArgs e) {
         var groupId = e.Value?.ToString() ?? "";
@@ -164,6 +145,8 @@
         _cube = null;
         _menno = null;
         _userMatrix = null;
+        _combined = null;
+        _community = null;
         _error = null;
         _source = LedgerReportSources.All.FirstOrDefault(s => s.Id == Report.Definition.Query.Source);
 
@@ -197,6 +180,14 @@
 
             _userMatrix = ReportProjection.Matrix(_cube, measureKey, groupBy[0].Dimension, groupBy[1].Dimension, _source);
             _menno = MennoService.ExecuteComparison(Report.Definition, Menno.CachedItems ?? [], _userMatrix);
+            if (_menno is not null) {
+                var mode = MennoComparison.CompareMode(Report.Definition);
+                if (mode == MennoComparison.SideBySide) {
+                    _community = MennoComparison.Community(_cube, _menno);
+                } else {
+                    _combined = MennoComparison.Combine(_cube, measureKey, _userMatrix, _menno, mode);
+                }
+            }
             StateHasChanged();
         } catch (Exception ex) {
             Logger.LogDebug(ex, "menno comparison for report failed");

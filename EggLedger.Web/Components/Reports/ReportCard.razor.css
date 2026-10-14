@@ -89,38 +89,3 @@
 .rc-chip-danger {
     color: var(--color-err);
 }
-
-.rc-menno {
-    flex-shrink: 0;
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.75rem;
-}
-
-.rc-menno caption {
-    text-align: left;
-    padding-bottom: 0.25rem;
-    color: var(--color-muted);
-}
-
-.rc-menno th,
-.rc-menno td {
-    padding: 0.125rem 0.375rem;
-    border: 1px solid var(--color-border);
-    text-align: right;
-}
-
-.rc-menno thead th {
-    color: var(--color-muted);
-    background-color: var(--color-bg);
-}
-
-.rc-menno tbody th {
-    color: var(--color-muted);
-    text-align: left;
-    background-color: var(--color-bg);
-}
-
-.rc-menno td {
-    color: var(--color-fg);
-}

@@ -132,20 +132,23 @@ public static class LegacyReportUpgrade {
         }
         var measureKey = measures.Count > 0 ? measures[0].Key : MeasureRequest.RowCountKey;
 
-        List<SortKey> sort = legacy.Mode != "time_series" && secondaryKey is null
-            ? [new SortKey(measureKey, true)]
-            : [];
+        List<SortKey> sort = legacy.ChartType switch {
+            "bar_desc" => [new SortKey(measureKey, true)],
+            "bar_asc" => [new SortKey(measureKey)],
+            _ when legacy.Mode != "time_series" && secondaryKey is null => [new SortKey(measureKey, true)],
+            _ => [],
+        };
 
         var filters = legacy.Filters with { And = and };
 
-        var normalize = legacy.NormalizeBy switch {
+        var normalize = LedgerReportQueries.PerMission(legacy.NormalizeBy switch {
             "row_pct" => Normalize.Row,
             "col_pct" => Normalize.Column,
             "global_pct" => Normalize.Global,
             "airtime" => Normalize.By(LedgerReportKeys.Airtime),
             "launches" => Normalize.By(LedgerReportKeys.Launches),
             _ => Normalize.None,
-        };
+        }, source, groupBy);
 
         List<HavingClause> having = legacy.ValueFilterOp != ""
             ? [new HavingClause(measureKey, legacy.ValueFilterOp, legacy.ValueFilterThreshold)]
@@ -180,6 +183,9 @@ public static class LegacyReportUpgrade {
 
         var view = new ReportView(chart) {
             Sample = legacy.MinSampleSize > 0 ? SampleRule.Dim : SampleRule.Show,
+            Unit = LedgerReportQueries.UnitFor(normalize),
+            Fill = !(chart == ReportCharts.Line && legacy.ChartType == "line"),
+            Heat = legacy.MennoEnabled ? MennoComparison.Heat(legacy.MennoCompareMode) : null,
             Color = ReportCodec.IsHex(legacy.Color) ? legacy.Color : null,
             Unfilled = ReportCodec.IsHex(legacy.UnfilledColor) ? legacy.UnfilledColor : null,
             LabelColors = BuildLabelColors(legacy.LabelColors, legacy.Mode, legacy.GroupBy),
