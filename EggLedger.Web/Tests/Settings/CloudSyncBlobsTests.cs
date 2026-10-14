@@ -154,6 +154,24 @@ public sealed class CloudSyncBlobsTests {
     }
 
     [Fact]
+    public void ReportsBlob_KeepsLegacyReportsArray_ForOlderClients() {
+        var json = JsonSerializer.Serialize(CloudReportsBlob.Pack([Row("rep1")], []), Json);
+
+        Assert.Contains("\"reports\":[{", json, StringComparison.Ordinal);
+        Assert.Contains("\"groupBy\":\"ship_type\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"accountId\":\"EI42\"", json, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ReportsBlob_UnpacksEachReportOnce_WhenBothShapesPresent() {
+        var json = JsonSerializer.Serialize(CloudReportsBlob.Pack([Row("rep1")], []), Json);
+        var blob = JsonSerializer.Deserialize<CloudReportsBlob>(json, Json);
+        Assert.NotNull(blob);
+
+        Assert.Single(blob.Unpack());
+    }
+
+    [Fact]
     public void ReportsBlob_RoundTrips_DefinitionAndPlacement() {
         var json = JsonSerializer.Serialize(CloudReportsBlob.Pack([Row("rep1")], []), Json);
         var blob = JsonSerializer.Deserialize<CloudReportsBlob>(json, Json);

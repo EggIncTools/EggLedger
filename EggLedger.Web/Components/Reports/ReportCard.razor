@@ -122,7 +122,7 @@
                 Definition = Report.Definition with { Id = newId, Title = Report.Definition.Title + " (copy)" },
                 Placement = Report.Placement with { ReportId = newId },
             };
-            await Store.InsertReportAsync(ReportMapping.ToRow(copy));
+            await Store.InsertReportAsync(ReportMapping.ToRow(copy, await Store.RetrieveReportAsync(Report.Id)));
             await OnChanged.InvokeAsync();
         } finally {
             _copying = false;

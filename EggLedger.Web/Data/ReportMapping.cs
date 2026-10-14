@@ -15,17 +15,14 @@ public static class ReportMapping {
         };
     }
 
-    public static ReportRow ToRow(LedgerReport report) {
+    public static ReportRow ToRow(LedgerReport report, ReportRow? existing = null) {
         var d = report.Definition;
         var p = report.Placement;
-        return new ReportRow {
+        return (existing ?? new ReportRow()) with {
             Id = d.Id,
             AccountId = report.AccountId,
             Name = d.Title,
-            Subject = d.Query.Source,
             Description = d.Description ?? "",
-            ChartType = d.View.Chart,
-            Color = d.View.Color ?? "",
             GridX = p.X,
             GridY = p.Y,
             GridW = p.W,
@@ -59,7 +56,7 @@ public static class ReportMapping {
         return LegacyReportUpgrade.Convert(Legacy(r, logger));
     }
 
-    private static LegacyReportDefinition Legacy(ReportRow r, ILogger? logger) => new() {
+    public static LegacyReportDefinition Legacy(ReportRow r, ILogger? logger = null) => new() {
         Id = r.Id,
         AccountId = r.AccountId,
         Name = r.Name,

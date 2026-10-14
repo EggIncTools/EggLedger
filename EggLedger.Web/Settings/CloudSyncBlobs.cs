@@ -94,17 +94,21 @@ public sealed record CloudReportsBlob {
     public static CloudReportsBlob Pack(
         IReadOnlyList<ReportRow> reports, IReadOnlyList<ReportGroupRow> groups, ILogger? logger = null) => new() {
             Version = CurrentVersion,
+            Reports = [.. reports.Select(r => JsonSerializer.SerializeToNode(ReportMapping.Legacy(r, logger))!.AsObject())],
             Definitions = [.. reports.Select(r => ReportMapping.ToReport(r, logger)).Select(Pack)],
             Groups = [.. groups.Select(CloudReportGroup.FromRow)],
         };
 
     public IEnumerable<LedgerReport> Unpack(ILogger? logger = null) {
+        var seen = new HashSet<string>(StringComparer.Ordinal);
         foreach (var d in Definitions ?? []) {
             if (Read(d.Definition, logger) is not var (definition, placement)) continue;
+            seen.Add(definition.Id);
             var p = d.Placement ?? placement ?? new ReportPlacement(definition.Id, 0, 0, 2, 2, 0);
             yield return new LedgerReport(definition, p with { ReportId = definition.Id }) { AccountId = d.AccountId };
         }
         foreach (var legacy in Reports ?? []) {
+            if (legacy["id"] is JsonValue id && id.TryGetValue<string>(out var legacyId) && seen.Contains(legacyId)) continue;
             if (Read(legacy, logger) is not var (definition, placement)) continue;
             var accountId = legacy["accountId"] is JsonValue v && v.TryGetValue<string>(out var a) ? a : "";
             yield return new LedgerReport(definition, (placement ?? new ReportPlacement(definition.Id, 0, 0, 2, 2, 0)) with { ReportId = definition.Id }) { AccountId = accountId };

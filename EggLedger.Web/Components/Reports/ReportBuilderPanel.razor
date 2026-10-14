@@ -130,11 +130,10 @@
     private async Task SaveAsync() {
         if (_report is null || string.IsNullOrWhiteSpace(_report.Definition.Title)) return;
 
-        var row = ReportMapping.ToRow(_report);
         if (_editing) {
-            await Store.UpdateReportAsync(row);
+            await Store.UpdateReportAsync(ReportMapping.ToRow(_report, await Store.RetrieveReportAsync(_report.Id)));
         } else {
-            await Store.InsertReportAsync(row);
+            await Store.InsertReportAsync(ReportMapping.ToRow(_report));
         }
 
         _open = false;

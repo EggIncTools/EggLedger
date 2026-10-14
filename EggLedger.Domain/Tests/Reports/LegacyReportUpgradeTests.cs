@@ -182,10 +182,16 @@ public sealed class LegacyReportUpgradeTests {
     }
 
     [Theory]
-    [InlineData("", "bar")]
-    [InlineData("line", "line")]
-    public void Convert_ChartType_DefaultsToBarWhenEmpty(string chartType, string expectedChart) {
-        var legacy = Base() with { DisplayMode = "", ChartType = chartType };
+    [InlineData("", "bar_desc", "bar")]
+    [InlineData("bar", "bar", "bar")]
+    [InlineData("chart", "", "bar")]
+    [InlineData("line", "area", "line")]
+    [InlineData("grouped_bar", "", "grouped_bar")]
+    [InlineData("multi_line", "", "multi_line")]
+    [InlineData("pie", "", "pie")]
+    [InlineData("grid", "", "table")]
+    public void Convert_DisplayMode_SelectsChartLikeOldDispatcher(string displayMode, string chartType, string expectedChart) {
+        var legacy = Base() with { DisplayMode = displayMode, ChartType = chartType };
         var (definition, _) = LegacyReportUpgrade.Convert(legacy);
         Assert.Equal(expectedChart, definition.View.Chart);
     }

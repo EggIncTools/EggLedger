@@ -162,9 +162,13 @@ public static class LegacyReportUpgrade {
         };
 
         var chart = legacy.DisplayMode switch {
-            "heatmap" => "heatmap",
-            "table" => "table",
-            _ => legacy.ChartType == "" ? "bar" : legacy.ChartType,
+            "heatmap" => ReportCharts.Heatmap,
+            "grouped_bar" => ReportCharts.GroupedBar,
+            "multi_line" => ReportCharts.MultiLine,
+            "pie" => ReportCharts.Pie,
+            "line" => ReportCharts.Line,
+            "grid" or "table" => ReportCharts.Table,
+            _ => ReportCharts.Bar,
         };
 
         var options = new Dictionary<string, string>(StringComparer.Ordinal);

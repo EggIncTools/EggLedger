@@ -56,6 +56,19 @@ public sealed class ReportMappingTests {
     }
 
     [Fact]
+    public void ToRow_WithExistingRow_KeepsLegacyColumnsForOlderClients() {
+        var legacy = LegacyRow();
+        var edited = ReportMapping.ToReport(legacy);
+        edited = edited with { Definition = edited.Definition with { Title = "Renamed" } };
+
+        var row = ReportMapping.ToRow(edited, legacy);
+
+        Assert.Equal("Renamed", row.Name);
+        Assert.Equal((legacy.Mode, legacy.GroupBy, legacy.SecondaryGroupBy, legacy.NormalizeBy, legacy.Filters, legacy.ChartType),
+            (row.Mode, row.GroupBy, row.SecondaryGroupBy, row.NormalizeBy, row.Filters, row.ChartType));
+    }
+
+    [Fact]
     public void ToReport_UnreadableDefinition_FallsBackToLegacyColumns() {
         var report = ReportMapping.ToReport(LegacyRow() with { Definition = "not json" });
 

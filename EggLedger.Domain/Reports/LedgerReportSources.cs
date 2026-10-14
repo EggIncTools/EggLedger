@@ -4,6 +4,7 @@ using EggIdentity.Reports;
 using EggLedger.Domain.Ei;
 using EggLedger.Domain.Eiafx;
 using EggLedger.Domain.LedgerData;
+using EggLedger.Domain.MissionPacking;
 using Ei;
 
 namespace EggLedger.Domain.Reports;
@@ -103,12 +104,22 @@ public static class LedgerReportSources {
 
     private static async ValueTask<IReadOnlyList<LedgerFuelRow>> LoadFuel(Func<CancellationToken, ValueTask<LedgerReportData>> data, CancellationToken ct) {
         var report = await data(ct).ConfigureAwait(false);
-        var missionsByKey = report.Missions.ToDictionary(m => (m.PlayerId, m.MissionId));
+        var fuelByMission = report.Fuel.ToLookup(f => (f.PlayerId, f.MissionId));
         var dropsByMission = report.Drops.ToLookup(d => (d.PlayerId, d.MissionId));
         List<LedgerFuelRow> rows = [];
-        foreach (var fuel in report.Fuel) {
-            if (!missionsByKey.TryGetValue((fuel.PlayerId, fuel.MissionId), out var mission)) continue;
-            rows.Add(new LedgerFuelRow(mission, fuel, [.. dropsByMission[(fuel.PlayerId, fuel.MissionId)]]));
+        foreach (var mission in report.Missions) {
+            var key = (mission.PlayerId, mission.MissionId);
+            IReadOnlyList<ArtifactDropRowData> drops = [.. dropsByMission[key]];
+            var recorded = fuelByMission[key].ToList();
+            IEnumerable<FuelRowData> fuels = recorded.Count > 0
+                ? recorded
+                : ShipFuelCosts.For(mission.Ship, mission.DurationType).Select(f => new FuelRowData {
+                    PlayerId = mission.PlayerId,
+                    MissionId = mission.MissionId,
+                    EggId = f.EggId,
+                    Amount = f.Amount,
+                });
+            rows.AddRange(fuels.Select(f => new LedgerFuelRow(mission, f, drops)));
         }
         return rows;
     }
