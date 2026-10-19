@@ -31,8 +31,9 @@
     flex: 1;
     min-height: 0;
     display: block;
-    padding: 0.25rem 0;
-    overflow: auto;
+    padding: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
     font-size: 0.75rem;
     line-height: calc(1 / 0.75);
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -40,6 +41,14 @@
     text-align: center;
     --pane-shift: 0rem;
     animation: pane-in var(--motion-base) var(--ease-standard) backwards;
+}
+
+.drops ::deep .ddc {
+    margin-bottom: 0;
+}
+
+.drops ::deep .ledger-section-inset {
+    margin-top: 0.5rem;
 }
 
 @media (max-width: 47.9375rem) {

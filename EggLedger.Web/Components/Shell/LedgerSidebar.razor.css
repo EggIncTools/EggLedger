@@ -94,6 +94,7 @@
 }
 
 .sidebar-scroll-body {
+    overflow-x: hidden;
     overflow-y: auto;
     padding-top: 0.25rem;
     font-size: 0.875rem;
@@ -112,6 +113,7 @@
     display: flex;
     flex-direction: column;
     flex: 1;
+    min-width: 0;
     min-height: 0;
 }
 
