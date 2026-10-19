@@ -6,16 +6,16 @@
   <ItemGroup>
     <PackageVersion Include="bunit" Version="2.9.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
-    <PackageVersion Include="EggIdentity.Admin" Version="271.0.0" />
-    <PackageVersion Include="EggIdentity.Auth" Version="271.0.0" />
-    <PackageVersion Include="EggIdentity.Bot" Version="271.0.0" />
-    <PackageVersion Include="EggIdentity.Brand" Version="271.0.0" />
-    <PackageVersion Include="EggIdentity.CodeStyle" Version="271.0.0" />
-    <PackageVersion Include="EggIdentity.Core" Version="271.0.0" />
-    <PackageVersion Include="EggIdentity.Data" Version="271.0.0" />
-    <PackageVersion Include="EggIdentity.Testing" Version="271.0.0" />
-    <PackageVersion Include="EggIdentity.UI" Version="271.0.0" />
-    <PackageVersion Include="EggIdentity.Web" Version="271.0.0" />
+    <PackageVersion Include="EggIdentity.Admin" Version="272.0.0" />
+    <PackageVersion Include="EggIdentity.Auth" Version="272.0.0" />
+    <PackageVersion Include="EggIdentity.Bot" Version="272.0.0" />
+    <PackageVersion Include="EggIdentity.Brand" Version="272.0.0" />
+    <PackageVersion Include="EggIdentity.CodeStyle" Version="272.0.0" />
+    <PackageVersion Include="EggIdentity.Core" Version="272.0.0" />
+    <PackageVersion Include="EggIdentity.Data" Version="272.0.0" />
+    <PackageVersion Include="EggIdentity.Testing" Version="272.0.0" />
+    <PackageVersion Include="EggIdentity.UI" Version="272.0.0" />
+    <PackageVersion Include="EggIdentity.Web" Version="272.0.0" />
     <PackageVersion Include="EggSharp.Api" Version="26.0.0" />
     <PackageVersion Include="EggSharp.Core" Version="26.0.0" />
     <PackageVersion Include="EggSharp.Ei.ProtobufNet" Version="26.0.0" />
@@ -23,8 +23,8 @@
     <PackageVersion Include="EggSharp.GameData.Assets" Version="26.0.0" />
     <PackageVersion Include="EggSharp.Protos" Version="26.0.0" />
     <PackageVersion Include="Markdig" Version="0.41.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.Authorization" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.Web" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.Authorization" Version="11.0.0-rc.1.26425.128" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.Web" Version="11.0.0-rc.1.26425.128" />
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageVersion Include="Npgsql" Version="10.0.3" />

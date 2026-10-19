@@ -50,7 +50,8 @@
 }
 
 .ships-ready > * {
-    animation: fade-in var(--motion-base) var(--ease-standard);
+    --pane-shift: 0rem;
+    animation: pane-in var(--motion-base) var(--ease-standard) backwards;
 }
 
 .ships-controls {

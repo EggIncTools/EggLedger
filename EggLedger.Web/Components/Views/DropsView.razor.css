@@ -38,7 +38,8 @@
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     color: var(--color-fg);
     text-align: center;
-    animation: fade-in var(--motion-base) var(--ease-standard);
+    --pane-shift: 0rem;
+    animation: pane-in var(--motion-base) var(--ease-standard) backwards;
 }
 
 @media (max-width: 47.9375rem) {

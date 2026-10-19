@@ -11,13 +11,13 @@
     min-height: 4rem;
     color: transparent;
     border-radius: 0.375rem;
-    background: linear-gradient(90deg, var(--color-ledger-panel-muted) 25%, var(--color-dark) 50%, var(--color-ledger-panel-muted) 75%);
-    background-size: 200% 100%;
-    animation: skel-shimmer 1.4s linear infinite;
+    background-color: var(--color-ledger-panel-muted);
+    animation: pulse var(--motion-pulse) var(--ease-pulse) infinite;
 }
 
 .rc-ready ::deep .report-card-body {
-    animation: fade-in var(--motion-base) var(--ease-standard);
+    --pane-shift: 0rem;
+    animation: pane-in var(--motion-base) var(--ease-standard) backwards;
 }
 
 @media (prefers-reduced-motion: reduce) {

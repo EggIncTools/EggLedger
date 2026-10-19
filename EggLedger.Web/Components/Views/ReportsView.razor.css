@@ -144,13 +144,7 @@
     height: 0.5rem;
     border-radius: 9999px;
     background-color: var(--color-accent);
-    animation: rv-pulse var(--motion-pulse) var(--ease-pulse) infinite;
-}
-
-@keyframes rv-pulse {
-    50% {
-        opacity: 0.3;
-    }
+    animation: pulse var(--motion-pulse) var(--ease-pulse) infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
