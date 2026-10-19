@@ -2,9 +2,11 @@
     display: grid;
     grid-template-rows: auto auto auto minmax(0, auto) auto;
     align-content: start;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: auto;
     gap: 0.5rem;
-    width: clamp(19rem, 23vw, 30rem);
+    width: fit-content;
+    min-width: clamp(19rem, 23vw, 30rem);
+    max-width: 60vw;
     flex-shrink: 0;
     min-height: 0;
     padding-top: 0.75rem;
@@ -12,6 +14,14 @@
 
 .ledger-sidebar-reports {
     grid-template-rows: auto auto auto auto auto;
+}
+
+.ledger-sidebar ::deep .ledger-about,
+.ledger-sidebar ::deep .account-bar,
+.ledger-sidebar ::deep .ledger-support,
+.sidebar-options,
+.sidebar-empty-note {
+    contain: inline-size;
 }
 
 .sb-panel {
@@ -169,7 +179,7 @@
 
 @media (min-width: 48rem) and (max-width: 79.9375rem) {
     .ledger-sidebar:not(.ledger-sidebar-rail) {
-        width: 19rem;
+        min-width: 19rem;
     }
 }
 

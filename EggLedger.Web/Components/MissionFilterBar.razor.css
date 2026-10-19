@@ -45,10 +45,25 @@
     max-height: none;
 }
 
+.fbar ::deep .fb {
+    overflow: hidden;
+}
+
 @media (min-width: 48rem) {
+    .fbar ::deep .fb {
+        container-type: normal;
+    }
+
+    .fbar ::deep .fb-row {
+        flex-wrap: nowrap;
+    }
+
+    .fbar ::deep .fb-row > * {
+        flex: 0 0 auto;
+    }
+
     .fbar ::deep .fb-row:not(:has(.fb-op)) .fb-field {
-        flex: 1 1 auto;
-        min-width: 0;
+        flex: 1 0 auto;
     }
 
     .fbar ::deep .fb-row:not(:has(.fb-op)) .fb-field .fb-select {
