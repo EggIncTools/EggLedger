@@ -58,6 +58,53 @@ public class MissionPackerTests {
     }
 
     [Fact]
+    public void CompileInFlightMission_DubCap() {
+        var ship = MissionInfo.Spaceship.ChickenOne;
+        var dur = MissionInfo.DurationType.Short;
+        var info = new MissionInfo {
+            Identifier = "flying-dc",
+            StartTimeDerived = 1_700_000_000,
+            DurationSeconds = 3600,
+            Ship = ship,
+            duration_type = dur,
+            Level = 0,
+            Capacity = (uint)(Nominal(ship, dur, 0) * 2.0f),
+        };
+
+        Assert.True(Packer.CompileInFlightMission(info).IsDubCap);
+    }
+
+    [Fact]
+    public void CompileInFlightMission_NominalCapacity_NotDubCap() {
+        var ship = MissionInfo.Spaceship.ChickenOne;
+        var dur = MissionInfo.DurationType.Short;
+        var info = new MissionInfo {
+            Identifier = "flying-nominal",
+            StartTimeDerived = 1_700_000_000,
+            DurationSeconds = 3600,
+            Ship = ship,
+            duration_type = dur,
+            Level = 0,
+            Capacity = (uint)Nominal(ship, dur, 0),
+        };
+
+        Assert.False(Packer.CompileInFlightMission(info).IsDubCap);
+    }
+
+    [Fact]
+    public void CompileInFlightMission_BuggedCap() {
+        var info = new MissionInfo {
+            Identifier = "flying-bc",
+            StartTimeDerived = 1712900000,
+            DurationSeconds = 3600,
+            Ship = MissionInfo.Spaceship.ChickenOne,
+            duration_type = MissionInfo.DurationType.Short,
+        };
+
+        Assert.True(Packer.CompileInFlightMission(info).IsBuggedCap);
+    }
+
+    [Fact]
     public void IsBuggedCap_InsideRange() => Assert.True(MissionPacker.IsBuggedCap(MakeTimestampMission(1712900000)));
 
     [Fact]

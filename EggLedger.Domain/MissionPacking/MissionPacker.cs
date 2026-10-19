@@ -147,6 +147,8 @@ public sealed class MissionPacker : IMissionCompiler {
             Level = (int)info.Level,
             Capacity = (int)info.Capacity,
             NominalCapcity = (int)nominalCap,
+            IsDubCap = IsDubCap(info),
+            IsBuggedCap = IsBuggedCap(info),
             Target = ProperTargetName(info.ShouldSerializeTargetArtifact() ? info.TargetArtifact : null),
             MissionType = (int)info.Type,
             MissionTypeString = info.Type.Display(),
@@ -203,9 +205,10 @@ public sealed class MissionPacker : IMissionCompiler {
         return mission;
     }
 
-    public bool IsDubCap(CompleteMissionResponse mission) {
-        if (mission.Info is null) return false;
-        var info = mission.Info;
+    public bool IsDubCap(CompleteMissionResponse mission) =>
+        mission.Info is { } info && IsDubCap(info);
+
+    public bool IsDubCap(MissionInfo info) {
         int level = (int)info.Level;
         if (!TryGetShipCapacities(info.Ship, info.duration_type, out var caps) || level >= caps.Length) return false;
         float nominalCapacity = caps[level];
@@ -213,5 +216,8 @@ public sealed class MissionPacker : IMissionCompiler {
     }
 
     public static bool IsBuggedCap(CompleteMissionResponse mission) =>
-        mission.Info is { StartTimeDerived: > BuggedCapLower and < BuggedCapUpper };
+        mission.Info is { } info && IsBuggedCap(info);
+
+    public static bool IsBuggedCap(MissionInfo info) =>
+        info.StartTimeDerived is > BuggedCapLower and < BuggedCapUpper;
 }
