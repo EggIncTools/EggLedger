@@ -25,9 +25,9 @@
 .ledger-about-info {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 0.4rem;
     min-width: 0;
-    white-space: nowrap;
 }
 
 .ledger-about-logo {
@@ -52,8 +52,7 @@ a.ledger-about-version:hover {
 
 .ledger-about-authors {
     color: var(--color-muted);
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
 }
 
 .ledger-about-badge {

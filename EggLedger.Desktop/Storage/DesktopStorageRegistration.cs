@@ -4,7 +4,6 @@ using EggLedger.Domain.Reports;
 using EggLedger.Web.Data;
 using EggLedger.Web.Platform;
 using EggLedger.Web.Services;
-using EggLedger.Web.State;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -76,14 +75,8 @@ public static class DesktopStorageRegistration {
 
         services.RemoveAll<IndexedDbReportRunner>();
         services.RemoveAll<IReportRunner>();
-        services.RemoveAll<IReportSourceCache>();
-        services.AddScoped<IReportSourceCache>(sp => {
-            var cache = new ReportSourceCache(
-                SqliteReportSource.Loader(sp.GetRequiredService<SqliteMissionDb>(), sp.GetRequiredService<IMissionStore>()),
-                sp.GetRequiredService<TimeProvider>());
-            cache.AttachHub(sp.GetRequiredService<LedgerDataHub>());
-            return cache;
-        });
+        services.RemoveAll<Func<string, Task<LedgerReportData>>>();
+        services.AddScoped(sp => SqliteReportSource.Loader(sp.GetRequiredService<SqliteMissionDb>(), sp.GetRequiredService<IMissionStore>()));
         services.AddScoped<IReportRunner>(sp => new SqliteReportRunner(
             sp.GetRequiredService<IReportSourceCache>(),
             sp.GetRequiredService<IWeightData>(),

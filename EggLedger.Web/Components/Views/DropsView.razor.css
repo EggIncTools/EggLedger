@@ -4,19 +4,27 @@
     font-style: italic;
 }
 
-.drops-loading {
-    margin-top: 2rem;
+.drops-skeleton {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+}
+
+.drops-skeleton-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(3.5rem, 1fr));
     gap: 0.5rem;
 }
 
-.drops-loading-text {
-    padding: 0.5rem;
-    font-size: 1.125rem;
-    line-height: calc(1.75 / 1.125);
+.skel-heading {
+    width: 10rem;
+    height: 1.25rem;
+}
+
+.skel-tile {
+    aspect-ratio: 1;
+    border-radius: 9999px;
 }
 
 .drops {
@@ -30,4 +38,12 @@
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     color: var(--color-fg);
     text-align: center;
+    animation: fade-in var(--motion-base) var(--ease-standard);
+}
+
+@media (max-width: 47.9375rem) {
+    .drops {
+        flex: none;
+        overflow: visible;
+    }
 }

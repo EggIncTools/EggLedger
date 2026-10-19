@@ -5,7 +5,7 @@
 @inject IDownloadService Downloader
 @inject ILogger<ReportCard> Logger
 
-<div class="rc-wrap">
+<div class="rc-wrap @(_cube is null && _error is null ? "rc-pending" : "rc-ready")">
     <EggIdentity.UI.Reports.ReportCard Definition="Report.Definition" Cube="DisplayCube" Source="_source" Style="LedgerChartStyle"
                                         Error="@_error" Loading="@(_cube is null && _error is null)">
         <Actions>
@@ -161,11 +161,11 @@
         return cleaned.Length == 0 ? "report" : cleaned;
     }
 
-    protected override async Task OnParametersSetAsync() {
+    protected override void OnParametersSet() {
         if (Report.Definition == _lastDefinition) return;
 
         _lastDefinition = Report.Definition;
-        await RunAsync();
+        _ = InvokeAsync(RunAsync);
     }
 
     private async Task RunAsync() {

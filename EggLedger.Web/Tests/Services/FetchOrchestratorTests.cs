@@ -1,6 +1,4 @@
 using EggLedger.Domain.Api;
-using EggLedger.Domain.MissionPacking;
-using EggLedger.Domain.MissionQuery;
 using EggLedger.Web.Data;
 using EggLedger.Web.Services;
 using EggLedger.Web.State;
@@ -342,11 +340,7 @@ public sealed class FetchOrchestratorTests {
         var handler = new RoutingHandler(FirstContactBody(["m1"]), CompleteMissionBody);
         var orchestrator = Make(db, handler);
 
-        using var hub = new LedgerDataHub(
-            _ => Task.FromResult<IReadOnlyList<DatabaseMission>?>([]),
-            _ => Task.FromResult<Dictionary<string, List<MissionDrop>>?>(null),
-            TimeSpan.FromMinutes(5),
-            TestTime.New());
+        using var hub = TestHub.New();
         var invalidated = new List<string>();
         hub.AccountInvalidated += invalidated.Add;
         hub.AttachFetch(orchestrator);

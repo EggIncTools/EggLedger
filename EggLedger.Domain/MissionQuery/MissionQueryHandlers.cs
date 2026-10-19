@@ -68,7 +68,10 @@ public sealed class MissionQueryHandlers(IMissionStore store, IArtifactQuality q
         if (stored is null) return null;
         var missionIds = await store.GetCompleteMissionIdsAsync(playerId);
         if (missionIds is null) return null;
+        return BuildDrops(missionIds, stored);
+    }
 
+    public Dictionary<string, List<MissionDrop>> BuildDrops(IEnumerable<string> missionIds, IEnumerable<StoredDrop> stored) {
         var result = new Dictionary<string, List<MissionDrop>>();
         foreach (var id in missionIds) result[id] = [];
         foreach (var d in stored) {

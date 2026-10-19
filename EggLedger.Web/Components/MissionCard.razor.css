@@ -112,7 +112,9 @@
 .mission-item-3 {
     display: flex;
     align-items: center;
-    flex: 0 0 calc(33.33% - 10px);
+    flex: 1 1 18rem;
+    max-width: 28rem;
+    min-width: 0;
     box-sizing: border-box;
     font-size: 0.875rem;
     line-height: calc(1.25 / 0.875);
@@ -124,6 +126,11 @@
 }
 
 .mission-item-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    flex: 1;
+    min-width: 0;
     margin-right: 1.25rem;
     padding: 0;
     border: 0;
@@ -132,15 +139,22 @@
     font-size: 0.875rem;
     line-height: calc(1.25 / 0.875);
     font-weight: 700;
+    text-align: left;
     cursor: pointer;
 }
 
 .mission-item-field {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
     color: var(--color-muted);
     margin-left: 0.5rem;
 }
 
 .mission-item-date {
+    flex-shrink: 0;
+    white-space: nowrap;
     color: var(--color-muted);
 }
 
@@ -149,9 +163,23 @@
     margin-left: 0.5rem;
 }
 
-@media (min-width: 48rem) and (max-width: 79.9375rem) {
+@media (max-width: 47.9375rem) {
     .mission-item-3 {
-        flex: 0 0 calc(50% - 10px);
+        flex: 1 1 100%;
+        max-width: none;
+    }
+
+    .mission-item-btn {
+        flex-wrap: wrap;
+        row-gap: 0;
+    }
+
+    .mission-item-date {
+        flex-basis: 100%;
+    }
+
+    .mission-item-date + .mission-item-field {
+        margin-left: 0;
     }
 }
 

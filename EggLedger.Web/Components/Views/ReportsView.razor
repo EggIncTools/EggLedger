@@ -57,9 +57,9 @@
         </div>
         <div class="rv-actions">
             @if (Menno.IsLoading) {
-                <span class="rv-menno" title="Downloading Menno's community ship data">
-                    <img class="rv-menno-spinner" src="@ContentPaths.Asset("images/loading.gif")" alt=""/>
-                    Syncing community data...
+                <span class="rv-menno" title="Downloading Menno's community ship data" aria-label="Syncing community data">
+                    <span class="rv-menno-dot"></span>
+                    Community data
                 </span>
             }
             <button type="button" class="btn-secondary" @onclick="State.RequestNewReportAsync">+ New Report</button>
@@ -82,10 +82,15 @@
     private ReportGrid? _grid;
     private ReportBuilderPanel? _builder;
 
-    protected override async Task OnInitializedAsync() {
+    protected override void OnInitialized() {
         State.Changed += OnStateChanged;
         Menno.Changed += OnStateChanged;
         State.Actions = this;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (!firstRender) return;
+        await Task.Yield();
         await State.EnsureInitializedAsync(InvokeAsync);
     }
 

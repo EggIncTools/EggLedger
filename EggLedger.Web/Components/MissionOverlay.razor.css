@@ -124,7 +124,7 @@
 
 .mov-grid {
     display: grid;
-    grid-template-columns: repeat(1, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
     gap: 0.5rem;
     flex: 1;
     min-height: 0;
@@ -215,6 +215,13 @@
     color: var(--color-fg);
 }
 
+@media (max-width: 47.9375rem) {
+    .mov-body {
+        padding-left: 3rem;
+        padding-right: 3rem;
+    }
+}
+
 @media (min-width: 48rem) {
     .mov-size-single {
         --modal-card-w: 60vw;
@@ -234,9 +241,5 @@
     .mov-body {
         padding-left: 2.5rem;
         padding-right: 2.5rem;
-    }
-
-    .mov-grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 }

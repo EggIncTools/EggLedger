@@ -34,3 +34,13 @@
     display: flex;
     flex-direction: column;
 }
+
+@media (max-width: 47.9375rem) {
+    .layout {
+        height: auto;
+    }
+
+    .layout-main {
+        flex: none;
+    }
+}

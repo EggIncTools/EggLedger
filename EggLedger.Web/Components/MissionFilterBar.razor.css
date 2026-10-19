@@ -45,6 +45,17 @@
     max-height: none;
 }
 
+@media (min-width: 48rem) {
+    .fbar ::deep .fb-row:not(:has(.fb-op)) .fb-field {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .fbar ::deep .fb-row:not(:has(.fb-op)) .fb-field .fb-select {
+        width: 100%;
+    }
+}
+
 .fbar ::deep .fb-footer {
     display: block;
 }

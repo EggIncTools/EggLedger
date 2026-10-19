@@ -1,37 +1,23 @@
 using EggLedger.Domain.MissionPacking;
-using EggLedger.Domain.MissionQuery;
+using EggLedger.Domain.Reports;
 using EggLedger.Web.State;
 using EggLedger.Web.Tests.Data;
 
 namespace EggLedger.Web.Tests.State;
 
 public sealed class LedgerDataHubTests {
-    private static readonly TimeSpan Ttl = TimeSpan.FromMinutes(5);
-
-    private static IReadOnlyList<DatabaseMission> MissionsFor(string accountId) =>
-        [new DatabaseMission { MissiondId = accountId + "-m1" }];
-
-    private static Task<IReadOnlyList<DatabaseMission>?> MissionsOf(string accountId) =>
-        Task.FromResult<IReadOnlyList<DatabaseMission>?>(MissionsFor(accountId));
-
     private static LedgerDataHub NewHub(
-        Func<string, Task<IReadOnlyList<DatabaseMission>?>>? missions = null,
-        Func<string, Task<Dictionary<string, List<MissionDrop>>?>>? drops = null,
-        TimeSpan? ttl = null,
+        Func<string, Task<LedgerReportData>>? loader = null,
         TimeProvider? clock = null,
         Func<string, Task<IReadOnlyList<DatabaseMission>?>>? inFlight = null) =>
-        new(missions ?? MissionsOf,
-            drops ?? (_ => Task.FromResult<Dictionary<string, List<MissionDrop>>?>(null)),
-            ttl ?? Ttl,
-            clock ?? TestTime.New(),
-            inFlight);
+        TestHub.New(loader, clock: clock, inFlight: inFlight);
 
     [Fact]
     public async Task Missions_StayCachedPerAccount_AcrossAccountSwitching() {
         var calls = new Dictionary<string, int>(StringComparer.Ordinal);
         var hub = NewHub(id => {
             calls[id] = calls.GetValueOrDefault(id) + 1;
-            return MissionsOf(id);
+            return TestHub.SourceOf(id);
         });
 
         var firstA = await hub.GetMissionsAsync("a");
@@ -39,36 +25,32 @@ public sealed class LedgerDataHubTests {
         var secondA = await hub.GetMissionsAsync("a");
 
         Assert.Same(firstA, secondA);
+        Assert.Equal("a-m1", Assert.Single(firstA!).MissiondId);
         Assert.Equal(1, calls["a"]);
         Assert.Equal(1, calls["b"]);
     }
 
     [Fact]
-    public async Task FourthAccount_EvictsLeastRecentlyUsedAccount() {
-        var calls = new Dictionary<string, int>(StringComparer.Ordinal);
+    public async Task MissionsAndDrops_ShareOneLoadOfTheDataset() {
+        var calls = 0;
         var hub = NewHub(id => {
-            calls[id] = calls.GetValueOrDefault(id) + 1;
-            return MissionsOf(id);
+            calls++;
+            return TestHub.SourceOf(id);
         });
 
-        await hub.GetMissionsAsync("a");
-        await hub.GetMissionsAsync("b");
-        await hub.GetMissionsAsync("c");
-        await hub.GetMissionsAsync("a");
-        await hub.GetMissionsAsync("d");
-        await hub.GetMissionsAsync("a");
-        await hub.GetMissionsAsync("b");
+        var missions = await hub.GetMissionsAsync("a");
+        var drops = await hub.GetDropsAsync("a");
+        var lifetime = await hub.GetLifetimeAggregateAsync("a");
 
-        Assert.Equal(1, calls["a"]);
-        Assert.Equal(1, calls["c"]);
-        Assert.Equal(1, calls["d"]);
-        Assert.Equal(2, calls["b"]);
+        Assert.Equal(1, calls);
+        Assert.Single(missions!);
+        Assert.Single(drops!["a-m1"]);
+        Assert.Equal(1, lifetime!.MissionCount);
     }
 
     [Fact]
     public async Task ConcurrentMissionRequests_ShareASingleLoad() {
-        var gate = new TaskCompletionSource<IReadOnlyList<DatabaseMission>?>(
-            TaskCreationOptions.RunContinuationsAsynchronously);
+        var gate = new TaskCompletionSource<LedgerReportData>(TaskCreationOptions.RunContinuationsAsynchronously);
         var calls = 0;
         var hub = NewHub(_ => {
             calls++;
@@ -77,7 +59,7 @@ public sealed class LedgerDataHubTests {
 
         var first = hub.GetMissionsAsync("a");
         var second = hub.GetMissionsAsync("a");
-        gate.SetResult(MissionsFor("a"));
+        gate.SetResult(TestHub.SourceFor("a"));
         var results = await Task.WhenAll(first, second);
 
         Assert.Equal(1, calls);
@@ -89,7 +71,7 @@ public sealed class LedgerDataHubTests {
         var calls = new Dictionary<string, int>(StringComparer.Ordinal);
         var hub = NewHub(id => {
             calls[id] = calls.GetValueOrDefault(id) + 1;
-            return MissionsOf(id);
+            return TestHub.SourceOf(id);
         });
         var invalidated = new List<string>();
         hub.AccountInvalidated += invalidated.Add;
@@ -111,7 +93,7 @@ public sealed class LedgerDataHubTests {
         var calls = 0;
         var hub = NewHub(id => {
             calls++;
-            return MissionsOf(id);
+            return TestHub.SourceOf(id);
         }, clock: clock);
 
         await hub.GetMissionsAsync("a");
@@ -126,26 +108,13 @@ public sealed class LedgerDataHubTests {
     }
 
     [Fact]
-    public async Task NullResult_IsNotCachedAsAHit() {
-        var calls = 0;
-        var hub = NewHub(_ => {
-            calls++;
-            return Task.FromResult<IReadOnlyList<DatabaseMission>?>(null);
-        });
-
-        Assert.Null(await hub.GetMissionsAsync("a"));
-        Assert.Null(await hub.GetMissionsAsync("a"));
-        Assert.Equal(2, calls);
-    }
-
-    [Fact]
     public async Task FailedLoad_DoesNotPoisonTheSlot() {
         var calls = 0;
         var hub = NewHub(id => {
             calls++;
             return calls == 1
-                ? Task.FromException<IReadOnlyList<DatabaseMission>?>(new InvalidOperationException("boom"))
-                : MissionsOf(id);
+                ? Task.FromException<LedgerReportData>(new InvalidOperationException("boom"))
+                : TestHub.SourceOf(id);
         });
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => hub.GetMissionsAsync("a"));
@@ -156,38 +125,24 @@ public sealed class LedgerDataHubTests {
     }
 
     [Fact]
-    public async Task LifetimeAggregate_ComposesOverTheCachedDropsSlot() {
-        var dropCalls = 0;
-        var hub = NewHub(drops: _ => {
-            dropCalls++;
-            return Task.FromResult<Dictionary<string, List<MissionDrop>>?>(new Dictionary<string, List<MissionDrop>> {
-                ["m1"] = [],
-                ["m2"] = [],
-            });
-        });
+    public async Task UnbackfilledMissions_AreExcludedFromTheMissionList() {
+        var hub = NewHub(_ => Task.FromResult(new LedgerReportData(
+            [
+                new MissionRowData { MissionId = "m1", Ship = -1 },
+                new MissionRowData { MissionId = "m2", StartTimestamp = 5, ReturnTimestamp = 6 },
+            ],
+            [],
+            [])));
 
-        await hub.GetDropsAsync("a");
-        var first = await hub.GetLifetimeAggregateAsync("a");
-        var second = await hub.GetLifetimeAggregateAsync("a");
+        var missions = await hub.GetMissionsAsync("a");
 
-        Assert.NotNull(first);
-        Assert.Same(first, second);
-        Assert.Equal(2, first.MissionCount);
-        Assert.Equal(1, dropCalls);
+        Assert.Equal("m2", Assert.Single(missions!).MissiondId);
     }
 
     [Fact]
-    public async Task LifetimeAggregate_IsNull_WhenDropsAreMissing() {
-        var hub = NewHub();
-
-        Assert.Null(await hub.GetLifetimeAggregateAsync("a"));
-    }
-
-    [Fact]
-    public async Task InFlight_IsCachedPerAccount_UntilTtlExpires() {
-        var clock = new FakeTimeProvider(new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
+    public async Task InFlight_IsCachedPerAccount_UntilInvalidated() {
         var calls = new Dictionary<string, int>(StringComparer.Ordinal);
-        var hub = NewHub(clock: clock, inFlight: id => {
+        var hub = NewHub(inFlight: id => {
             calls[id] = calls.GetValueOrDefault(id) + 1;
             return Task.FromResult<IReadOnlyList<DatabaseMission>?>([new DatabaseMission { MissiondId = id + "-f1" }]);
         });
@@ -200,7 +155,7 @@ public sealed class LedgerDataHubTests {
         Assert.Equal(1, calls["a"]);
         Assert.Equal(1, calls["b"]);
 
-        clock.Advance(TimeSpan.FromMinutes(6));
+        hub.Invalidate("a");
         await hub.GetInFlightAsync("a");
 
         Assert.Equal(2, calls["a"]);
@@ -218,26 +173,11 @@ public sealed class LedgerDataHubTests {
 
         var first = hub.GetInFlightAsync("a");
         var second = hub.GetInFlightAsync("a");
-        gate.SetResult(MissionsFor("a"));
+        gate.SetResult([new DatabaseMission { MissiondId = "f" }]);
         var results = await Task.WhenAll(first, second);
 
         Assert.Equal(1, calls);
         Assert.Same(results[0], results[1]);
-    }
-
-    [Fact]
-    public async Task Invalidate_DropsTheInFlightSlotToo() {
-        var calls = 0;
-        var hub = NewHub(inFlight: id => {
-            calls++;
-            return Task.FromResult<IReadOnlyList<DatabaseMission>?>([new DatabaseMission { MissiondId = id + "-f1" }]);
-        });
-
-        await hub.GetInFlightAsync("a");
-        hub.Invalidate("a");
-        await hub.GetInFlightAsync("a");
-
-        Assert.Equal(2, calls);
     }
 
     [Fact]

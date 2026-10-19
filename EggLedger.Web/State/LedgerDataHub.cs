@@ -1,5 +1,6 @@
 using EggLedger.Domain.MissionPacking;
 using EggLedger.Domain.MissionQuery;
+using EggLedger.Domain.Reports;
 using EggLedger.Web.Data;
 using EggLedger.Web.Missions;
 using EggLedger.Web.Services;
@@ -7,62 +8,79 @@ using EggLedger.Web.Services;
 namespace EggLedger.Web.State;
 
 public sealed class LedgerDataHub : IDisposable {
-    public const int MaxAccounts = 3;
-
     public const int MaxFilterMatchesPerAccount = 8;
 
-    public static readonly TimeSpan DefaultTtl = TimeSpan.FromMinutes(5);
+    private const string MissionsKey = "missions";
+    private const string DropsKey = "drops";
+    private const string LifetimeKey = "lifetime";
 
-    private readonly Func<string, Task<IReadOnlyList<DatabaseMission>?>> _missionsLoader;
-    private readonly Func<string, Task<Dictionary<string, List<MissionDrop>>?>> _dropsLoader;
+    private readonly LedgerDataStore _store;
+    private readonly IDataOwner _owner;
+    private readonly Func<string, Task<LedgerReportData>> _loader;
+    private readonly MissionPacker _packer;
+    private readonly MissionQueryHandlers _queries;
     private readonly Func<string, Task<IReadOnlyList<DatabaseMission>?>> _inFlightLoader;
-    private readonly TimeSpan _ttl;
-    private readonly TimeProvider _time;
+    private readonly Action<string>? _onAccountTouched;
     private readonly Lock _gate = new();
     private readonly Dictionary<string, AccountEntry> _entries = [with(StringComparer.Ordinal)];
-    private readonly List<string> _order = [];
     private Action? _detachFetch;
 
-    public LedgerDataHub(MissionQueryHandlers queries, IndexedDbMissionStore missions, TimeProvider time)
-        : this(
-            async accountId => (await queries.ViewMissionsOfEidAsync(accountId).ConfigureAwait(false))
-                ?.Cast<DatabaseMission>().ToList(),
-            queries.GetAllPlayerDropsAsync,
-            DefaultTtl,
-            time,
-            inFlightLoader: async accountId =>
-                await missions.GetInFlightMissionsAsync(accountId).ConfigureAwait(false)) {
+    public LedgerDataHub(
+        LedgerDataStore store,
+        IDataOwner owner,
+        Func<string, Task<LedgerReportData>> loader,
+        MissionPacker packer,
+        MissionQueryHandlers queries,
+        IMissionStore missions,
+        Func<string, Task<IReadOnlyList<DatabaseMission>?>>? inFlightLoader = null) {
+        _store = store ?? throw new ArgumentNullException(nameof(store));
+        _owner = owner ?? throw new ArgumentNullException(nameof(owner));
+        _loader = loader ?? throw new ArgumentNullException(nameof(loader));
+        _packer = packer ?? throw new ArgumentNullException(nameof(packer));
+        _queries = queries ?? throw new ArgumentNullException(nameof(queries));
+        ArgumentNullException.ThrowIfNull(missions);
+        _inFlightLoader = inFlightLoader ?? (_ => Task.FromResult<IReadOnlyList<DatabaseMission>?>([]));
+        _onAccountTouched = missions.QueueArtifactDropsBackfill;
     }
 
     internal LedgerDataHub(
-        Func<string, Task<IReadOnlyList<DatabaseMission>?>> missionsLoader,
-        Func<string, Task<Dictionary<string, List<MissionDrop>>?>> dropsLoader,
-        TimeSpan ttl,
-        TimeProvider time,
+        LedgerDataStore store,
+        IDataOwner owner,
+        Func<string, Task<LedgerReportData>> loader,
+        MissionPacker packer,
+        MissionQueryHandlers queries,
         Func<string, Task<IReadOnlyList<DatabaseMission>?>>? inFlightLoader = null) {
-        _missionsLoader = missionsLoader;
-        _dropsLoader = dropsLoader;
+        _store = store;
+        _owner = owner;
+        _loader = loader;
+        _packer = packer;
+        _queries = queries;
         _inFlightLoader = inFlightLoader ?? (_ => Task.FromResult<IReadOnlyList<DatabaseMission>?>([]));
-        _ttl = ttl;
-        _time = time ?? throw new ArgumentNullException(nameof(time));
     }
 
     public event Action<string>? AccountInvalidated;
 
-    public Task<IReadOnlyList<DatabaseMission>?> GetMissionsAsync(string accountId) =>
-        GetOrLoadAsync(accountId, static entry => entry.Missions, () => _missionsLoader(accountId));
+    public async Task<IReadOnlyList<DatabaseMission>?> GetMissionsAsync(string accountId) {
+        _onAccountTouched?.Invoke(accountId);
+        return await DerivedAsync(accountId, MissionsKey, data => Task.Run(() => Missions(data))).ConfigureAwait(false);
+    }
 
     public Task<Dictionary<string, List<MissionDrop>>?> GetDropsAsync(string accountId) =>
-        GetOrLoadAsync(accountId, static entry => entry.Drops, () => _dropsLoader(accountId));
-
-    public Task<IReadOnlyList<DatabaseMission>?> GetInFlightAsync(string accountId) =>
-        GetOrLoadAsync(accountId, static entry => entry.InFlightMissions, () => _inFlightLoader(accountId));
+        DerivedAsync(accountId, DropsKey, data => Task.Run(() => Drops(data)));
 
     public Task<LifetimeData?> GetLifetimeAggregateAsync(string accountId) =>
-        GetOrLoadAsync(accountId, static entry => entry.Lifetime, async () => {
-            var drops = await GetDropsAsync(accountId).ConfigureAwait(false);
-            return drops is null ? null : LifetimeAggregator.Aggregate(drops);
-        });
+        DerivedAsync(accountId, LifetimeKey, data => Task.Run(() => LifetimeAggregator.Aggregate(Drops(data))));
+
+    public Task<IReadOnlyList<DatabaseMission>?> GetInFlightAsync(string accountId) {
+        AccountEntry entry;
+        lock (_gate) {
+            entry = Touch(accountId);
+            if (entry.InFlight is { } pending) return pending;
+            var load = LoadInFlightAsync(entry, accountId);
+            if (!load.IsFaulted) entry.InFlight = load;
+            return load;
+        }
+    }
 
     public Task<IReadOnlySet<string>> GetFilterMatchesAsync(
         string accountId,
@@ -85,16 +103,17 @@ public sealed class LedgerDataHub : IDisposable {
             }
         }
 
-        _ = FillFilterMatchesAsync(entry, filterHash, completion, compute);
+        _ = Task.Run(() => FillFilterMatchesAsync(entry, filterHash, completion, compute));
         return completion.Task;
     }
 
     public void Invalidate(string accountId) {
         lock (_gate) {
             _entries.Remove(accountId);
-            _order.Remove(accountId);
         }
 
+        if (_owner.CachedKey is { } key) _store.Invalidate(key, accountId);
+        else _store.InvalidateAccount(accountId);
         AccountInvalidated?.Invoke(accountId);
     }
 
@@ -108,50 +127,46 @@ public sealed class LedgerDataHub : IDisposable {
     public void Dispose() {
         _detachFetch?.Invoke();
         _detachFetch = null;
-    }
-
-    private Task<T?> GetOrLoadAsync<T>(
-        string accountId,
-        Func<AccountEntry, CacheSlot<T>> pick,
-        Func<Task<T?>> load) where T : class {
-        CacheSlot<T> slot;
-        TaskCompletionSource<T?> completion;
         lock (_gate) {
-            slot = pick(Touch(accountId));
-            if (slot.HasValue && _time.GetUtcNow().UtcDateTime - slot.LoadedAt < _ttl) return Task.FromResult(slot.Value);
-            if (slot.InFlight is { } pending) return pending;
-
-            completion = new TaskCompletionSource<T?>(TaskCreationOptions.RunContinuationsAsynchronously);
-            slot.InFlight = completion.Task;
+            _entries.Clear();
         }
-
-        _ = FillAsync(slot, completion, load);
-        return completion.Task;
     }
 
-    private async Task FillAsync<T>(
-        CacheSlot<T> slot,
-        TaskCompletionSource<T?> completion,
-        Func<Task<T?>> load) where T : class {
+    private async Task<T?> DerivedAsync<T>(string accountId, string name, Func<LedgerReportData, Task<T>> derive) where T : class {
+        var key = await _owner.KeyAsync().ConfigureAwait(false);
+        return await _store.GetDerivedAsync(key, accountId, name, () => Task.Run(() => _loader(accountId)), derive).ConfigureAwait(false);
+    }
+
+    private IReadOnlyList<DatabaseMission> Missions(LedgerReportData data) => [.. data.Missions
+        .Where(r => r.Ship != -1)
+        .OrderBy(r => r.StartTimestamp)
+        .Select(r => _packer.MissionMetaToDBMission(new MissionMeta {
+            MissionId = r.MissionId,
+            StartTimestamp = r.StartTimestamp,
+            ReturnTimestamp = r.ReturnTimestamp,
+            Ship = (int)r.Ship,
+            DurationType = (int)r.DurationType,
+            Level = (int)r.Level,
+            Capacity = (int)r.Capacity,
+            NominalCapacity = (int)r.NominalCapacity,
+            IsDubCap = r.IsDubCap,
+            IsBuggedCap = r.IsBuggedCap,
+            Target = (int)r.Target,
+            MissionType = (int)r.MissionType,
+        }))];
+
+    private Dictionary<string, List<MissionDrop>> Drops(LedgerReportData data) => _queries.BuildDrops(
+        data.Missions.OrderBy(r => r.StartTimestamp).Select(r => r.MissionId),
+        data.Drops.Select(d => new StoredDrop(d.MissionId, (int)d.ArtifactId, (int)d.Level, (int)d.Rarity, (int)d.DropIndex)));
+
+    private async Task<IReadOnlyList<DatabaseMission>?> LoadInFlightAsync(AccountEntry entry, string accountId) {
         try {
-            var value = await load().ConfigureAwait(false);
+            return await _inFlightLoader(accountId).ConfigureAwait(false);
+        } catch {
             lock (_gate) {
-                if (value is not null) {
-                    slot.Value = value;
-                    slot.LoadedAt = _time.GetUtcNow().UtcDateTime;
-                    slot.HasValue = true;
-                }
-
-                ClearInFlight(slot, completion);
+                entry.InFlight = null;
             }
-
-            completion.SetResult(value);
-        } catch (Exception ex) {
-            lock (_gate) {
-                ClearInFlight(slot, completion);
-            }
-
-            completion.SetException(ex);
+            throw;
         }
     }
 
@@ -176,41 +191,15 @@ public sealed class LedgerDataHub : IDisposable {
         }
     }
 
-    private static void ClearInFlight<T>(CacheSlot<T> slot, TaskCompletionSource<T?> completion) where T : class {
-        if (ReferenceEquals(slot.InFlight, completion.Task)) slot.InFlight = null;
-    }
-
     private AccountEntry Touch(string accountId) {
-        if (_entries.TryGetValue(accountId, out var existing)) {
-            _order.Remove(accountId);
-            _order.Add(accountId);
-            return existing;
-        }
-
+        if (_entries.TryGetValue(accountId, out var existing)) return existing;
         var entry = new AccountEntry();
         _entries[accountId] = entry;
-        _order.Add(accountId);
-        while (_order.Count > MaxAccounts) {
-            var evicted = _order[0];
-            _order.RemoveAt(0);
-            _entries.Remove(evicted);
-        }
-
         return entry;
     }
 
-    private sealed class CacheSlot<T> where T : class {
-        public T? Value { get; set; }
-        public DateTime LoadedAt { get; set; }
-        public bool HasValue { get; set; }
-        public Task<T?>? InFlight { get; set; }
-    }
-
     private sealed class AccountEntry {
-        public CacheSlot<IReadOnlyList<DatabaseMission>> Missions { get; } = new();
-        public CacheSlot<IReadOnlyList<DatabaseMission>> InFlightMissions { get; } = new();
-        public CacheSlot<Dictionary<string, List<MissionDrop>>> Drops { get; } = new();
-        public CacheSlot<LifetimeData> Lifetime { get; } = new();
+        public Task<IReadOnlyList<DatabaseMission>?>? InFlight { get; set; }
         public Dictionary<string, Task<IReadOnlySet<string>>> FilterMatches { get; } = [with(StringComparer.Ordinal)];
         public List<string> FilterOrder { get; } = [];
     }

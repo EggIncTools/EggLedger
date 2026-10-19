@@ -16,12 +16,12 @@
     <PackageVersion Include="EggIdentity.Testing" Version="271.0.0" />
     <PackageVersion Include="EggIdentity.UI" Version="271.0.0" />
     <PackageVersion Include="EggIdentity.Web" Version="271.0.0" />
-    <PackageVersion Include="EggSharp.Api" Version="18.0.0" />
-    <PackageVersion Include="EggSharp.Core" Version="18.0.0" />
-    <PackageVersion Include="EggSharp.Ei.ProtobufNet" Version="18.0.0" />
-    <PackageVersion Include="EggSharp.GameData" Version="18.0.0" />
-    <PackageVersion Include="EggSharp.GameData.Assets" Version="18.0.0" />
-    <PackageVersion Include="EggSharp.Protos" Version="18.0.0" />
+    <PackageVersion Include="EggSharp.Api" Version="26.0.0" />
+    <PackageVersion Include="EggSharp.Core" Version="26.0.0" />
+    <PackageVersion Include="EggSharp.Ei.ProtobufNet" Version="26.0.0" />
+    <PackageVersion Include="EggSharp.GameData" Version="26.0.0" />
+    <PackageVersion Include="EggSharp.GameData.Assets" Version="26.0.0" />
+    <PackageVersion Include="EggSharp.Protos" Version="26.0.0" />
     <PackageVersion Include="Markdig" Version="0.41.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.Authorization" Version="10.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.Web" Version="10.0.0" />

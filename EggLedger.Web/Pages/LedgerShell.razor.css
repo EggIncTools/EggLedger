@@ -67,14 +67,27 @@
 
 @media (max-width: 47.9375rem) {
     .ledger-shell {
+        flex: none;
         flex-direction: column;
-        overflow-y: auto;
+        height: auto;
+        overflow: visible;
         padding-bottom: 0.75rem;
     }
 
     .ledger-content {
-        order: 2;
-        min-height: 60vh;
+        order: 5;
+        flex: none;
+        min-height: 0;
         padding-top: 0;
+    }
+
+    .ledger-surface,
+    .ledger-surface-clip {
+        flex: none;
+        overflow: visible;
+    }
+
+    .ledger-surface ::deep .ledger-pane {
+        flex: none;
     }
 }

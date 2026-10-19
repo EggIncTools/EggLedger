@@ -139,7 +139,22 @@
     font-size: 0.7rem;
 }
 
-.rv-menno-spinner {
-    width: 0.9rem;
-    height: 0.9rem;
+.rv-menno-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background-color: var(--color-accent);
+    animation: rv-pulse var(--motion-pulse) var(--ease-pulse) infinite;
+}
+
+@keyframes rv-pulse {
+    50% {
+        opacity: 0.3;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rv-menno-dot {
+        animation: none;
+    }
 }

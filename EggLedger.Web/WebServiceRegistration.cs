@@ -31,10 +31,14 @@ public static class WebServiceRegistration {
             logger: sp.GetService<ILogger<IndexedDbMissionStore>>(),
             time: sp.GetRequiredService<TimeProvider>()));
         services.AddScoped<IMissionStore>(sp => sp.GetRequiredService<IndexedDbMissionStore>());
+        services.TryAddSingleton(sp => new LedgerDataStore(sp.GetRequiredService<TimeProvider>()));
+        services.TryAddScoped<IDataOwner, LocalDataOwner>();
+        services.AddScoped(sp => IndexedDbReportSource.Loader(sp.GetRequiredService<IIndexedDb>(), sp.GetRequiredService<IMissionStore>()));
         services.AddScoped<IReportSourceCache>(sp => {
             var cache = new ReportSourceCache(
-                IndexedDbReportSource.Loader(sp.GetRequiredService<IIndexedDb>(), sp.GetRequiredService<IMissionStore>()),
-                sp.GetRequiredService<TimeProvider>());
+                sp.GetRequiredService<LedgerDataStore>(),
+                sp.GetRequiredService<IDataOwner>(),
+                sp.GetRequiredService<Func<string, Task<LedgerReportData>>>());
             cache.AttachHub(sp.GetRequiredService<LedgerDataHub>());
             return cache;
         });
@@ -92,10 +96,15 @@ public static class WebServiceRegistration {
         services.AddScoped<ScreenshotSafetyState>();
         services.AddScoped<AppStateService>();
         services.AddScoped(sp => {
+            var missions = sp.GetRequiredService<IndexedDbMissionStore>();
             var hub = new LedgerDataHub(
+                sp.GetRequiredService<LedgerDataStore>(),
+                sp.GetRequiredService<IDataOwner>(),
+                sp.GetRequiredService<Func<string, Task<LedgerReportData>>>(),
+                new MissionPacker(EiafxMissionConfigSource.Instance),
                 sp.GetRequiredService<MissionQueryHandlers>(),
-                sp.GetRequiredService<IndexedDbMissionStore>(),
-                sp.GetRequiredService<TimeProvider>());
+                missions,
+                inFlightLoader: async accountId => await missions.GetInFlightMissionsAsync(accountId).ConfigureAwait(false));
             hub.AttachFetch(sp.GetRequiredService<FetchOrchestrator>());
             return hub;
         });

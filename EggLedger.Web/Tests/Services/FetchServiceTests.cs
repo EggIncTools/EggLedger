@@ -420,7 +420,11 @@ public sealed class FetchServiceTests {
     }
 
     private sealed class SynchronousProgress<T>(Action<T> handler) : IProgress<T> {
-        public void Report(T value) => handler(value);
+        private readonly Lock _gate = new();
+
+        public void Report(T value) {
+            lock (_gate) handler(value);
+        }
     }
 
     private sealed class StubExporter(Func<IReadOnlyList<string>> run) : IAutoExporter {

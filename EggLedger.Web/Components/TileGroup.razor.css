@@ -40,6 +40,14 @@
 }
 
 .tiles-item-disabled {
-    opacity: 0.4;
+    opacity: 0.45;
     cursor: not-allowed;
+}
+
+.tiles-item-disabled:hover,
+.tiles-item-disabled.tiles-item-active,
+.tiles-item-disabled.tiles-item-active:hover {
+    background-color: var(--color-bg);
+    color: var(--color-muted);
+    border-color: var(--color-border);
 }

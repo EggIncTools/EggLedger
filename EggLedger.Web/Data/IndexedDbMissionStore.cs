@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace EggLedger.Web.Data;
 
-public sealed class IndexedDbMissionStore(IIndexedDb db, IApiPayloadDecoder decoder, MissionPacker? packer = null, IndexedDbAccountStore? accounts = null, ILogger<IndexedDbMissionStore>? logger = null, TimeProvider? time = null) : IMissionStore {
+public sealed class IndexedDbMissionStore(IIndexedDb db, IApiPayloadDecoder decoder, MissionPacker? packer = null, IndexedDbAccountStore? accounts = null, ILogger<IndexedDbMissionStore>? logger = null, TimeProvider? time = null) : IMissionStore, IDisposable {
     private readonly MissionPacker _packer = packer ?? new MissionPacker(EiafxMissionConfigSource.Instance);
     private readonly TimeProvider _time = time ?? TimeProvider.System;
 
@@ -127,6 +127,13 @@ public sealed class IndexedDbMissionStore(IIndexedDb db, IApiPayloadDecoder deco
                 _decodeLru.RemoveLast();
                 _decodeIndex.Remove(last.Value.Key);
             }
+        }
+    }
+
+    public void Dispose() {
+        lock (_decodeGate) {
+            _decodeLru.Clear();
+            _decodeIndex.Clear();
         }
     }
 

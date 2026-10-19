@@ -1,4 +1,3 @@
-using EggIdentity.Resilience;
 using EggLedger.Domain.MissionQuery;
 using EggLedger.Domain.Reports;
 using EggLedger.Web.State;
@@ -10,46 +9,17 @@ public interface IReportSourceCache {
     void Invalidate(string accountId);
 }
 
-public sealed class ReportSourceCache : IReportSourceCache, IDisposable {
-    public const int MaxAccounts = 3;
-
-    public static readonly TimeSpan DefaultTtl = TimeSpan.FromMinutes(5);
-
-    private readonly Func<string, Task<LedgerReportData>> _loader;
-    private readonly TimeSpan _ttl;
-    private readonly TimeProvider _time;
-    private readonly Lock _gate = new();
-    private readonly Dictionary<string, TtlSnapshot<LedgerReportData>> _slots = [with(StringComparer.Ordinal)];
-    private readonly List<string> _order = [];
+public sealed class ReportSourceCache(LedgerDataStore store, IDataOwner owner, Func<string, Task<LedgerReportData>> loader) : IReportSourceCache, IDisposable {
     private Action? _detachHub;
 
-    public ReportSourceCache(Func<string, Task<LedgerReportData>> loader, TimeProvider time)
-        : this(loader, DefaultTtl, time) {
-    }
-
-    internal ReportSourceCache(
-        Func<string, Task<LedgerReportData>> loader,
-        TimeSpan ttl,
-        TimeProvider time) {
-        _loader = loader ?? throw new ArgumentNullException(nameof(loader));
-        _ttl = ttl;
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-    }
-
-    public Task<LedgerReportData> GetAsync(string accountId) {
-        TtlSnapshot<LedgerReportData> slot;
-        lock (_gate) {
-            slot = Touch(accountId);
-        }
-
-        return slot.GetAsync();
+    public async Task<LedgerReportData> GetAsync(string accountId) {
+        var key = await owner.KeyAsync().ConfigureAwait(false);
+        return await store.GetAsync(key, accountId, () => loader(accountId)).ConfigureAwait(false);
     }
 
     public void Invalidate(string accountId) {
-        lock (_gate) {
-            _slots.Remove(accountId);
-            _order.Remove(accountId);
-        }
+        if (owner.CachedKey is { } key) store.Invalidate(key, accountId);
+        else store.InvalidateAccount(accountId);
     }
 
     public void AttachHub(LedgerDataHub hub) {
@@ -63,25 +33,6 @@ public sealed class ReportSourceCache : IReportSourceCache, IDisposable {
     public void Dispose() {
         _detachHub?.Invoke();
         _detachHub = null;
-    }
-
-    private TtlSnapshot<LedgerReportData> Touch(string accountId) {
-        if (_slots.TryGetValue(accountId, out var existing)) {
-            _order.Remove(accountId);
-            _order.Add(accountId);
-            return existing;
-        }
-
-        var slot = new TtlSnapshot<LedgerReportData>(_ttl, async _ => await _loader(accountId).ConfigureAwait(false) ?? LedgerReportData.Empty, _time);
-        _slots[accountId] = slot;
-        _order.Add(accountId);
-        while (_order.Count > MaxAccounts) {
-            var evicted = _order[0];
-            _order.RemoveAt(0);
-            _slots.Remove(evicted);
-        }
-
-        return slot;
     }
 }
 

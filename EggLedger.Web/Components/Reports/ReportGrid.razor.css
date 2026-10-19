@@ -9,6 +9,30 @@
     container-type: inline-size;
 }
 
+.rgrid ::deep .report-grid-cell {
+    contain: strict;
+}
+
+@media (max-width: 47.9375rem) {
+    .rgrid {
+        flex: none;
+        overflow: visible;
+    }
+
+    .rgrid ::deep .report-grid {
+        grid-template-columns: minmax(0, 1fr);
+        grid-auto-rows: 22rem;
+    }
+
+    .rgrid ::deep .report-grid-cell {
+        grid-column: 1 / -1 !important;
+        grid-row: auto !important;
+        height: 22rem;
+        min-height: 0;
+        overflow: hidden;
+    }
+}
+
 .rgrid-msg {
     align-self: flex-end;
     font-size: 0.75rem;

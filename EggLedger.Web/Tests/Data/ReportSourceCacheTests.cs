@@ -1,15 +1,10 @@
 using EggIdentity.Reports;
-using EggLedger.Domain.MissionPacking;
-using EggLedger.Domain.MissionQuery;
 using EggLedger.Domain.Reports;
 using EggLedger.Web.Data;
-using EggLedger.Web.State;
 
 namespace EggLedger.Web.Tests.Data;
 
 public sealed class ReportSourceCacheTests {
-    private static readonly TimeSpan Ttl = TimeSpan.FromMinutes(5);
-
     private sealed class NoWeights : IWeightData {
         public double CraftingWeight(long artifactId, long level) => 1;
         public IReadOnlyList<int> FamilyAfxIds(string familyId) => [];
@@ -24,15 +19,9 @@ public sealed class ReportSourceCacheTests {
 
     private static ReportSourceCache NewCache(
         Func<string, Task<LedgerReportData>>? loader = null,
-        TimeSpan? ttl = null,
-        TimeProvider? clock = null) =>
-        new(loader ?? SourceOf, ttl ?? Ttl, clock ?? TestTime.New());
-
-    private static LedgerDataHub NewHub() =>
-        new(_ => Task.FromResult<IReadOnlyList<DatabaseMission>?>(null),
-            _ => Task.FromResult<Dictionary<string, List<MissionDrop>>?>(null),
-            Ttl,
-            TestTime.New());
+        TimeProvider? clock = null,
+        LedgerDataStore? store = null) =>
+        new(store ?? new LedgerDataStore(clock ?? TestTime.New()), new LocalDataOwner(), loader ?? SourceOf);
 
     [Fact]
     public async Task SecondGet_ForTheSameAccount_DoesNotRescan() {
@@ -86,12 +75,31 @@ public sealed class ReportSourceCacheTests {
     }
 
     [Fact]
-    public async Task FourthAccount_EvictsLeastRecentlyUsedAccount() {
+    public async Task TwoCaches_OverOneStore_ShareTheLoadedDataset() {
+        var calls = 0;
+        var store = new LedgerDataStore(TestTime.New());
+        Task<LedgerReportData> Load(string id) {
+            calls++;
+            return SourceOf(id);
+        }
+        var first = NewCache(Load, store: store);
+        var second = NewCache(Load, store: store);
+
+        var a1 = await first.GetAsync("a");
+        var a2 = await second.GetAsync("a");
+
+        Assert.Same(a1, a2);
+        Assert.Equal(1, calls);
+    }
+
+    [Fact]
+    public async Task RowBudget_EvictsLeastRecentlyUsedAccount() {
         var calls = new Dictionary<string, int>(StringComparer.Ordinal);
+        var store = new LedgerDataStore(TestTime.New(), maxRows: 9);
         var cache = NewCache(id => {
             calls[id] = calls.GetValueOrDefault(id) + 1;
             return SourceOf(id);
-        });
+        }, store: store);
 
         await cache.GetAsync("a");
         await cache.GetAsync("b");
@@ -105,6 +113,7 @@ public sealed class ReportSourceCacheTests {
         Assert.Equal(1, calls["c"]);
         Assert.Equal(1, calls["d"]);
         Assert.Equal(2, calls["b"]);
+        Assert.Equal(3, store.Count);
     }
 
     [Fact]
@@ -184,11 +193,13 @@ public sealed class ReportSourceCacheTests {
     [Fact]
     public async Task HubInvalidation_DropsTheCachedSource() {
         var calls = new Dictionary<string, int>(StringComparer.Ordinal);
-        var cache = NewCache(id => {
+        var store = new LedgerDataStore(TestTime.New());
+        Task<LedgerReportData> Load(string id) {
             calls[id] = calls.GetValueOrDefault(id) + 1;
             return SourceOf(id);
-        });
-        var hub = NewHub();
+        }
+        var cache = NewCache(Load, store: store);
+        var hub = TestHub.New(Load, store);
         cache.AttachHub(hub);
 
         await cache.GetAsync("a");
@@ -203,20 +214,17 @@ public sealed class ReportSourceCacheTests {
 
     [Fact]
     public async Task Dispose_StopsListeningToTheHub() {
-        var calls = 0;
-        var cache = NewCache(id => {
-            calls++;
-            return SourceOf(id);
-        });
-        var hub = NewHub();
+        var invalidated = new List<string>();
+        var cache = NewCache();
+        var hub = TestHub.New();
         cache.AttachHub(hub);
+        hub.AccountInvalidated += invalidated.Add;
 
         await cache.GetAsync("a");
         cache.Dispose();
         hub.Invalidate("a");
-        await cache.GetAsync("a");
 
-        Assert.Equal(1, calls);
+        Assert.Equal(["a"], invalidated);
     }
 
     [Fact]

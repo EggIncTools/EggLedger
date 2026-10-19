@@ -1,6 +1,7 @@
 .ledger-sidebar {
     display: grid;
-    grid-template-rows: auto auto minmax(6rem, 1fr) minmax(6rem, 1fr) auto;
+    grid-template-rows: auto auto auto minmax(0, auto) auto;
+    align-content: start;
     grid-template-columns: minmax(0, 1fr);
     gap: 0.5rem;
     width: clamp(19rem, 23vw, 30rem);
@@ -10,11 +11,10 @@
 }
 
 .ledger-sidebar-reports {
-    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto auto auto;
 }
 
 .sb-panel {
-    min-height: 1.75rem;
     padding: 0.25rem 0.5rem;
     box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
     color: var(--color-muted);
@@ -120,6 +120,14 @@
 }
 
 @media (min-width: 48rem) {
+    .ledger-sidebar {
+        overflow-y: auto;
+    }
+
+    .sidebar-filter:not(.sidebar-panel-closed) {
+        min-height: min-content;
+    }
+
     .ledger-sidebar-rail {
         width: 2.75rem;
         min-width: 2.75rem;
@@ -157,17 +165,23 @@
     }
 }
 
+@media (min-width: 48rem) and (max-width: 79.9375rem) {
+    .ledger-sidebar:not(.ledger-sidebar-rail) {
+        width: 19rem;
+    }
+}
+
 @media (max-width: 47.9375rem) {
     .ledger-sidebar {
         display: contents;
     }
 
     .sidebar-filter {
-        order: 3;
+        order: 1;
     }
 
     .sidebar-options {
-        order: 4;
+        order: 2;
     }
 
     .sidebar-accordion-btn {
@@ -176,6 +190,12 @@
 
     .sidebar-collapse-btn {
         display: none;
+    }
+
+    .sidebar-panel-closed {
+        height: auto;
+        flex-shrink: 0;
+        overflow: visible;
     }
 
     .sidebar-panel-closed .sidebar-panel-body {

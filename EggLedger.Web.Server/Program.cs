@@ -12,6 +12,7 @@ using EggIdentity.Settings;
 using EggIdentity.Settings.Api;
 using EggIdentity.Settings.Store;
 using EggIdentity.Styles;
+using EggIdentity.SubProd;
 using EggIdentity.UI;
 using EggIdentity.UI.Suite;
 using EggIdentity.Visits;
@@ -54,7 +55,11 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.TryAddSingleton(TimeProvider.System);
 
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents(o => o.DetailedErrors = builder.Environment.IsDevelopment());
+    .AddInteractiveServerComponents(o => {
+        o.DetailedErrors = builder.Environment.IsDevelopment();
+        o.DisconnectedCircuitRetentionPeriod = TimeSpan.FromSeconds(30);
+        o.DisconnectedCircuitMaxRetained = 20;
+    });
 
 builder.Services.Configure<ForwardedHeadersOptions>(o => {
     o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
@@ -254,6 +259,8 @@ if (hasDb) {
             sp.GetRequiredService<EggIdentity.Client.IdentityApiClient>(),
             sp.GetRequiredService<SessionRevocationCache>(),
             sp.GetRequiredService<TimeProvider>()));
+    builder.Services.RemoveAll<EggLedger.Web.Data.IDataOwner>();
+    builder.Services.AddScoped<EggLedger.Web.Data.IDataOwner, EggLedger.Web.Server.Storage.UserDataOwner>();
     builder.Services.RemoveAll<IIndexedDb>();
     builder.Services.AddScoped<IIndexedDb>(sp => new EggLedger.Web.Data.ResilientIndexedDb(
         new EggLedger.Web.Server.Storage.PostgresIndexedDb(
@@ -414,6 +421,7 @@ if (!string.IsNullOrEmpty(cfg.AdminApiSecret)) {
 app.MapEggIdentityViewerCookies();
 app.MapEggIdentityDownloads();
 app.MapEggIdentitySuite();
+if (eggIdentitySession is not null) app.MapEggIdentitySubProdSignIn(eggIdentitySession);
 
 app.MapRazorComponents<AppHost>()
     .AddInteractiveServerRenderMode()

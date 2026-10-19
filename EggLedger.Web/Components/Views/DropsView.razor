@@ -4,9 +4,15 @@
 @if (State.AccountId is null) {
     <p class="drops-note">Select an account in the sidebar to view its lifetime data.</p>
 } else if (State.Loading && State.Data is null) {
-    <div class="drops-loading">
-        <span class="drops-loading-text">Compiling lifetime data...</span>
-        <img src="@ContentPaths.Asset("images/loading.gif")" alt="Loading..." class="xl-ico"/>
+    <div class="drops-skeleton" aria-busy="true" aria-label="Loading lifetime drops">
+        @for (var s = 0; s < 3; s++) {
+            <span class="skel skel-heading"></span>
+            <div class="drops-skeleton-grid">
+                @for (var i = 0; i < 12; i++) {
+                    <span class="skel skel-tile"></span>
+                }
+            </div>
+        }
     </div>
 } else if (State.Data is null || State.Data.MissionCount == 0) {
     <NoDataFallback/>
@@ -33,8 +39,13 @@
 
     private bool _widgetsOpen = true;
 
-    protected override async Task OnInitializedAsync() {
+    protected override void OnInitialized() {
         State.Changed += OnStateChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (!firstRender) return;
+        await Task.Yield();
         await State.EnsureInitializedAsync(InvokeAsync);
     }
 

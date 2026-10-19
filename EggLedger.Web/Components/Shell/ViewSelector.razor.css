@@ -68,3 +68,22 @@
 .view-btn-reports {
     --view-accent: var(--color-view-reports);
 }
+
+@media (max-width: 47.9375rem) {
+    .view-btn {
+        height: 100%;
+    }
+
+    .view-btn-sub {
+        max-width: 100%;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+}
+
+@media (max-width: 29.9375rem) {
+    .view-btn-sub {
+        display: none;
+    }
+}

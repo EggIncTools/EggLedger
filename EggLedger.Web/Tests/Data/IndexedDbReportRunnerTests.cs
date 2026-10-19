@@ -13,7 +13,7 @@ public sealed class IndexedDbReportRunnerTests {
     }
 
     private static IndexedDbReportRunner Runner(IIndexedDb db) =>
-        new(new ReportSourceCache(IndexedDbReportSource.Loader(db, new FakeMissionStore()), TestTime.New()), new NoWeights());
+        new(new ReportSourceCache(new LedgerDataStore(TestTime.New()), new LocalDataOwner(), IndexedDbReportSource.Loader(db, new FakeMissionStore())), new NoWeights());
 
     private static ReportQuery CountBy(string source, string dimension) => new(source) {
         GroupBy = [new GroupKey(dimension)],
