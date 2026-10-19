@@ -66,15 +66,25 @@ public static class LedgerReportSources {
         return registry;
     }
 
-    private static async ValueTask<IReadOnlyList<LedgerMissionRow>> LoadMissions(Func<CancellationToken, ValueTask<LedgerReportData>> data, CancellationToken ct) {
-        var report = await data(ct).ConfigureAwait(false);
+    private static async ValueTask<IReadOnlyList<LedgerMissionRow>> LoadMissions(Func<CancellationToken, ValueTask<LedgerReportData>> data, CancellationToken ct) =>
+        MissionRows(await data(ct).ConfigureAwait(false));
+
+    private static async ValueTask<IReadOnlyList<LedgerArtifactRow>> LoadArtifacts(
+        Func<CancellationToken, ValueTask<LedgerReportData>> data, IWeightData weights, CancellationToken ct) =>
+        ArtifactRows(await data(ct).ConfigureAwait(false), weights);
+
+    private static async ValueTask<IReadOnlyList<LedgerFuelRow>> LoadFuel(Func<CancellationToken, ValueTask<LedgerReportData>> data, CancellationToken ct) =>
+        FuelRows(await data(ct).ConfigureAwait(false));
+
+    public static IReadOnlyList<LedgerMissionRow> MissionRows(LedgerReportData report) {
+        ArgumentNullException.ThrowIfNull(report);
         var dropsByMission = report.Drops.ToLookup(d => (d.PlayerId, d.MissionId));
         return [.. report.Missions.Select(m => new LedgerMissionRow(m, [.. dropsByMission[(m.PlayerId, m.MissionId)]]))];
     }
 
-    private static async ValueTask<IReadOnlyList<LedgerArtifactRow>> LoadArtifacts(
-        Func<CancellationToken, ValueTask<LedgerReportData>> data, IWeightData weights, CancellationToken ct) {
-        var report = await data(ct).ConfigureAwait(false);
+    public static IReadOnlyList<LedgerArtifactRow> ArtifactRows(LedgerReportData report, IWeightData weights) {
+        ArgumentNullException.ThrowIfNull(report);
+        ArgumentNullException.ThrowIfNull(weights);
         var missionsByKey = report.Missions.ToDictionary(m => (m.PlayerId, m.MissionId));
         var dropsByMission = report.Drops.ToLookup(d => (d.PlayerId, d.MissionId));
         var familiesByArtifact = new Dictionary<long, HashSet<string>>();
@@ -102,8 +112,8 @@ public static class LedgerReportSources {
         return rows;
     }
 
-    private static async ValueTask<IReadOnlyList<LedgerFuelRow>> LoadFuel(Func<CancellationToken, ValueTask<LedgerReportData>> data, CancellationToken ct) {
-        var report = await data(ct).ConfigureAwait(false);
+    public static IReadOnlyList<LedgerFuelRow> FuelRows(LedgerReportData report) {
+        ArgumentNullException.ThrowIfNull(report);
         var fuelByMission = report.Fuel.ToLookup(f => (f.PlayerId, f.MissionId));
         var dropsByMission = report.Drops.ToLookup(d => (d.PlayerId, d.MissionId));
         List<LedgerFuelRow> rows = [];

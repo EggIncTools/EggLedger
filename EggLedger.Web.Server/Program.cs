@@ -8,6 +8,8 @@ using EggIdentity.Deploy;
 using EggIdentity.Deploy.AdminUi;
 using EggIdentity.Fallback;
 using EggIdentity.Metrics;
+using EggIdentity.Reports;
+using EggIdentity.Reports.Browser;
 using EggIdentity.Settings;
 using EggIdentity.Settings.Api;
 using EggIdentity.Settings.Store;
@@ -16,10 +18,12 @@ using EggIdentity.SubProd;
 using EggIdentity.UI;
 using EggIdentity.UI.Suite;
 using EggIdentity.Visits;
+using EggLedger.Domain.Reports;
 using EggLedger.Web;
 using EggLedger.Web.Data;
 using EggLedger.Web.Server;
 using EggLedger.Web.Server.Components;
+using EggLedger.Web.Server.Reports;
 using EggLedger.Web.Server.SubProd;
 using EggLedger.Web.Server.Sync;
 using EggLedger.Web.Services;
@@ -269,6 +273,16 @@ if (hasDb) {
         sp.GetRequiredService<ILogger<EggLedger.Web.Data.ResilientIndexedDb>>(),
         ex => ex is NpgsqlException { IsTransient: true }));
     builder.Services.AddScoped<EggLedger.Web.Server.Storage.FirstLoginBackfill>();
+    builder.Services.AddScoped<LedgerReportRows>();
+    builder.Services.AddReportSource<LedgerMissionRow, LedgerMissionRowProvider>(LedgerReportSources.Missions);
+    builder.Services.AddReportSource<LedgerArtifactRow, LedgerArtifactRowProvider>(LedgerReportSources.Artifacts);
+    builder.Services.AddReportSource<LedgerFuelRow, LedgerFuelRowProvider>(LedgerReportSources.Fuel);
+    builder.Services.AddEggIdentityBrowserReports(o => {
+        o.ScopeKey = principal => principal.FindFirst(EggLedger.Web.Server.Auth.AuthScheme.UserIdClaim)?.Value;
+        o.MaxCacheBytes = 128L * 1024 * 1024;
+    });
+    builder.Services.RemoveAll<IReportRunner>();
+    builder.Services.AddScoped<IReportRunner, BrowserReportRunner>();
     builder.Services.AddHostedService(sp => new EggLedger.Web.Server.Sync.Db.ExpiredSessionSweeper(
         sp.GetRequiredService<IServiceScopeFactory>(),
         sp.GetRequiredService<TimeProvider>(),
@@ -384,6 +398,7 @@ if (hasDb) {
     if (settingsCache is not null && settingsDataSource is not null) _ = new SettingsChangeListener(settingsDataSource, settingsCache).RunAsync(app.Lifetime.ApplicationStopping);
 
     Api.Map(app, cfg, build);
+    app.MapEggIdentityBrowserReports().RequireAuthorization();
 
     if (!string.IsNullOrEmpty(cfg.BotToken)) {
         var deployDataSource = app.Services.GetRequiredService<NpgsqlDataSource>();

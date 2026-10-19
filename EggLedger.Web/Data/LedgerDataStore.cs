@@ -18,10 +18,14 @@ public sealed class LedgerDataStore(TimeProvider time, long maxRows = LedgerData
 
     public static readonly TimeSpan DefaultTtl = TimeSpan.FromMinutes(5);
 
+    public static readonly TimeSpan VersionWindow = TimeSpan.FromHours(1);
+
     private readonly TimeSpan _ttl = ttl ?? DefaultTtl;
     private readonly Lock _gate = new();
     private readonly Dictionary<(string Owner, string Account), Entry> _entries = [];
     private readonly List<(string Owner, string Account)> _order = [];
+    private readonly Dictionary<string, long> _generations = [with(StringComparer.Ordinal)];
+    private readonly string _epoch = Guid.NewGuid().ToString("N")[..12];
 
     public int Count {
         get {
@@ -47,17 +51,26 @@ public sealed class LedgerDataStore(TimeProvider time, long maxRows = LedgerData
         }
     }
 
+    public string Version(string accountId) {
+        var window = time.GetUtcNow().Ticks / VersionWindow.Ticks;
+        lock (_gate) return $"{_epoch}.{_generations.GetValueOrDefault(accountId)}.{window}";
+    }
+
     public void Invalidate(string owner, string accountId) {
         lock (_gate) {
             Remove((owner, accountId));
+            Bump(accountId);
         }
     }
 
     public void InvalidateAccount(string accountId) {
         lock (_gate) {
             foreach (var key in _order.Where(k => k.Account == accountId).ToList()) Remove(key);
+            Bump(accountId);
         }
     }
+
+    private void Bump(string accountId) => _generations[accountId] = _generations.GetValueOrDefault(accountId) + 1;
 
     private async Task<T> DeriveAsync<T>(Entry entry, string name, Func<LedgerReportData, Task<T>> derive) {
         try {
