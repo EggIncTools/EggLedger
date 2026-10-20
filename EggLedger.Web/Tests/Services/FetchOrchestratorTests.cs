@@ -16,7 +16,7 @@ public sealed class FetchOrchestratorTests {
         var api = EggLedgerApi.Create(handler);
         var settings = new IndexedDbSettings(db);
         var store = new IndexedDbMissionStore(db, new LocalApiPayloadDecoder(new ApiClient()));
-        var accounts = new IndexedDbAccountStore(settings);
+        var accounts = SuiteTestAccounts.Make(settings).Accounts;
         var fetch = new FetchService(api, store, settings, accounts, new LocalApiPayloadDecoder(api), NullLogger<FetchService>.Instance);
         return new FetchOrchestrator(fetch, new AppStateService(), settings, NullLogger<FetchOrchestrator>.Instance);
     }
@@ -121,7 +121,7 @@ public sealed class FetchOrchestratorTests {
         var api = EggLedgerApi.Create(new RoutingHandler("", _ => null));
         var settings = new IndexedDbSettings(db);
         var store = new IndexedDbMissionStore(db, new LocalApiPayloadDecoder(new ApiClient()));
-        var fetch = new FetchService(api, store, settings, new IndexedDbAccountStore(settings), new LocalApiPayloadDecoder(api), NullLogger<FetchService>.Instance);
+        var fetch = new FetchService(api, store, settings, SuiteTestAccounts.Make(settings).Accounts, new LocalApiPayloadDecoder(api), NullLogger<FetchService>.Instance);
         return new FetchOrchestrator(fetch, new AppStateService(), settings, NullLogger<FetchOrchestrator>.Instance, clock);
     }
 

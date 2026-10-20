@@ -74,7 +74,8 @@
     min-width: 0;
 }
 
-.account-main-row ::deep .account-select-btn {
+.account-main-row ::deep .account-select-btn,
+.account-main-row ::deep .account-select-wrap .suite-eid-trigger {
     display: flex;
     flex: 1;
     align-items: center;
@@ -91,7 +92,8 @@
     transition: border-color var(--motion-fast) var(--ease-standard), background-color var(--motion-fast) var(--ease-standard);
 }
 
-.account-main-row ::deep .account-select-btn:hover:not(:disabled) {
+.account-main-row ::deep .account-select-btn:hover:not(:disabled),
+.account-main-row ::deep .account-select-wrap .suite-eid-trigger:hover {
     border-color: var(--color-muted);
 }
 
@@ -285,14 +287,9 @@
     line-height: calc(1 / 0.75);
 }
 
-.account-pop-panel {
-    display: flex;
-    flex-direction: column;
+.account-pop-head {
     width: 24rem;
     max-width: min(24rem, calc(100vw - 2rem));
-}
-
-.account-pop-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -309,44 +306,15 @@
     color: var(--color-fg);
 }
 
-.account-pop-list {
-    flex: 1;
-    min-height: 0;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    overflow-y: auto;
-    font-size: 0.75rem;
-    line-height: calc(1 / 0.75);
-}
-
-.account-pop-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.5rem;
-    padding: 0.625rem 0.75rem;
-    border-bottom: 1px solid var(--color-ledger-hairline);
-    cursor: pointer;
-    transition: background-color var(--motion-base) var(--ease-standard);
-}
-
-.account-pop-item:hover {
-    background-color: var(--color-bg);
-}
-
-.account-pop-check {
-    width: 0.75rem;
-    flex-shrink: 0;
-    margin-top: 0.125rem;
-    color: var(--color-muted);
-}
-
 .account-pop-body {
     flex: 1;
     min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 0.125rem;
+    font-size: 0.75rem;
+    line-height: calc(1 / 0.75);
+    text-align: start;
 }
 
 .account-pop-foot {

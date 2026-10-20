@@ -1,4 +1,6 @@
+@using EggIdentity.Contract
 @using EggIdentity.UI
+@using EggIdentity.UI.Suite
 @using Microsoft.Extensions.DependencyInjection
 @implements IDisposable
 @inject IServiceProvider Services
@@ -31,15 +33,9 @@
         }
         <div class="account-main-row">
             @if (IsLoggedIn) {
-                <Menu @bind-Open="_open" Class="account-select-wrap" TriggerClass="account-select-btn" TriggerLabel="Choose account"
-                      AlignStart="true" MaxHeight="min(70vh, 30rem)" CloseOnSelect="false">
-                    <Trigger>@RenderSummary()</Trigger>
-                    <ChildContent>
-                        <div class="account-pop-panel">
-                            @RenderAccountList()
-                        </div>
-                    </ChildContent>
-                </Menu>
+                <SuiteEidPicker @bind-Open="_open" Class="account-select-wrap" MaxHeight="min(70vh, 30rem)"
+                                TriggerTemplate="@(_ => RenderSummary())" RowTemplate="@RenderAccountRow"
+                                Header="@RenderAccountHead()" Footer="@RenderAccountFoot()"/>
             } else {
                 <div class="account-select-wrap">
                     <button type="button" class="account-select-btn" disabled>@RenderSummary()</button>
@@ -140,66 +136,61 @@
 
     private const double StaleBackupSeconds = 60 * 60 * 24;
 
-    private RenderFragment RenderAccountList() => __builder => {
+    private RenderFragment RenderAccountHead() => __builder => {
         <div class="account-pop-head">
             <span class="account-pop-title">Accounts</span>
             <CloseButton OnClick="ClosePopover" Variant="CloseButton.CloseButtonVariant.Inline"/>
         </div>
-        <ul class="account-pop-list">
-            @foreach (var acct in Accounts) {
-                <li class="account-pop-item" @onclick="() => Select(acct.Id)">
-                    <span class="account-pop-check">
-                        @if (acct.Id == Active.ActiveAccountId) {
-                            <text>&#10003;</text>
-                        }
-                    </span>
-                    <span class="account-pop-body">
-                        <span class="account-line">
-                            <span class="account-nick" style="--acct-color: #@acct.AccountColor">@acct.Nickname</span>
-                            <span class="account-eb">@acct.EBString</span>
-                            @{ var info = InfoFor(acct.Id); }
-                            @if (info is { SeString: not "" }) {
-                                <span class="account-se">@info.SeString SE</span>
-                                <span class="account-pe">@info.PeCount PE</span>
-                                @if (info.TeCount > 0) {
-                                    <span class="account-te">@info.TeCount TE</span>
-                                }
-                            }
-                        </span>
-                        <span class="account-line account-dim">
-                            <span class="account-stamp-value">
-                                <MaskedEid Value="@acct.Id"/>
-                            </span>
-                            @RenderBackupStamp(info)
-                        </span>
-                        <span class="account-line account-dim">
-                            @{ var stats = StatsFor(acct.Id); }
-                            @if (stats is not null) {
-                                <span>@stats.MissionCount missions</span>
-                            }
-                            @RenderShipStamp(stats)
-                        </span>
-                    </span>
-                </li>
-            }
-            <li class="account-pop-foot">
-                <div class="account-pop-actions">
-                    <button type="button" class="account-pop-action account-pop-action-split" @onclick="OpenSettings">
-                        Account Settings
-                    </button>
-                    <button type="button" class="account-pop-action account-pop-action-add" @onclick="OpenAddDialog">
-                        Add Account
-                    </button>
-                </div>
-                @if (IsLoggedIn && !Platform.IsDesktop) {
-                    <form class="account-pop-form" method="post" action="/api/v1/auth/logout">
-                        <button type="submit" class="account-pop-action account-pop-logout">
-                            Log out
-                        </button>
-                    </form>
+    };
+
+    private RenderFragment<ProfileEid> RenderAccountRow => entry => __builder => {
+        var acct = SuiteAccountStore.ToAccount(entry);
+        <span class="account-pop-body">
+            <span class="account-line">
+                <span class="account-nick" style="--acct-color: #@acct.AccountColor">@acct.Nickname</span>
+                <span class="account-eb">@acct.EBString</span>
+                @if (acct.SeString != "") {
+                    <span class="account-se">@acct.SeString SE</span>
+                    <span class="account-pe">@acct.PeCount PE</span>
+                    @if (acct.TeCount > 0) {
+                        <span class="account-te">@acct.TeCount TE</span>
+                    }
                 }
-            </li>
-        </ul>
+            </span>
+            <span class="account-line account-dim">
+                <span class="account-stamp-value">
+                    <MaskedEid Value="@acct.Id"/>
+                </span>
+                @RenderBackupStamp(acct)
+            </span>
+            <span class="account-line account-dim">
+                @{ var stats = StatsFor(acct.Id); }
+                @if (stats is not null) {
+                    <span>@stats.MissionCount missions</span>
+                }
+                @RenderShipStamp(stats)
+            </span>
+        </span>
+    };
+
+    private RenderFragment RenderAccountFoot() => __builder => {
+        <div class="account-pop-foot">
+            <div class="account-pop-actions">
+                <button type="button" class="account-pop-action account-pop-action-split" @onclick="OpenSettings">
+                    Account Settings
+                </button>
+                <button type="button" class="account-pop-action account-pop-action-add" @onclick="OpenAddDialog">
+                    Add Account
+                </button>
+            </div>
+            @if (IsLoggedIn && !Platform.IsDesktop) {
+                <form class="account-pop-form" method="post" action="/api/v1/auth/logout">
+                    <button type="submit" class="account-pop-action account-pop-logout">
+                        Log out
+                    </button>
+                </form>
+            }
+        </div>
     };
 
 }
@@ -326,11 +317,6 @@
 
     private void ClosePopover() {
         _open = false;
-    }
-
-    private void Select(string id) {
-        Active.SetActive(id);
-        ClosePopover();
     }
 
     private void OpenAddDialog() {

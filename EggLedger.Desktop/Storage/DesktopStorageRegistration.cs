@@ -29,7 +29,7 @@ public static class DesktopStorageRegistration {
         services.AddScoped<IStorageManagement>(sp => sp.GetRequiredService<DesktopStorageService>());
 
         services.AddScoped(sp => {
-            var accounts = sp.GetRequiredService<IndexedDbAccountStore>();
+            var accounts = sp.GetRequiredService<SuiteAccountStore>();
             return new DesktopExportService(
                 dataRootDir,
                 accountLookup: async () => (IReadOnlyList<AccountInfo>)await accounts.GetKnownAccountsAsync());

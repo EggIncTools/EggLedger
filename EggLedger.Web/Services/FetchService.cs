@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 
 namespace EggLedger.Web.Services;
 
-public sealed class FetchService(ApiClient api, IndexedDbMissionStore store, IndexedDbSettings settings, IndexedDbAccountStore accounts, IApiPayloadDecoder decoder, ILogger<FetchService> logger, MissionPacker? packer = null, IAutoExporter? autoExporter = null, TimeProvider? time = null) {
+public sealed class FetchService(ApiClient api, IndexedDbMissionStore store, IndexedDbSettings settings, SuiteAccountStore accounts, IApiPayloadDecoder decoder, ILogger<FetchService> logger, MissionPacker? packer = null, IAutoExporter? autoExporter = null, TimeProvider? time = null) {
     private const int DefaultWorkerCount = 1;
     private const int MaxWorkerCount = 10;
     private static readonly TimeSpan BackupMinGap = TimeSpan.FromHours(12);
@@ -210,7 +210,7 @@ public sealed class FetchService(ApiClient api, IndexedDbMissionStore store, Ind
         }
 
         var account = AccountFactory.FromBackup(playerId, fc.Backup!);
-        await accounts.AddKnownAccountAsync(account).ConfigureAwait(false);
+        await accounts.RefreshAccountAsync(account).ConfigureAwait(false);
 
         return (fc, account);
     }

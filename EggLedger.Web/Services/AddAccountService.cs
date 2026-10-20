@@ -5,10 +5,16 @@ using EggLedger.Web.Data;
 
 namespace EggLedger.Web.Services;
 
-public sealed class AddAccountService(ApiClient api, IndexedDbAccountStore accounts, IApiPayloadDecoder decoder) {
+public sealed class AddAccountService(ApiClient api, SuiteAccountStore accounts, IApiPayloadDecoder decoder) {
     private static readonly TimeSpan FirstContactTimeout = TimeSpan.FromSeconds(20);
 
     public async Task<AccountInfo> AddAccountAsync(string eid, CancellationToken cancellationToken = default) {
+        var account = await FirstContactAsync(eid, cancellationToken).ConfigureAwait(false);
+        await accounts.AddAccountAsync(account).ConfigureAwait(false);
+        return account;
+    }
+
+    public async Task<AccountInfo> FirstContactAsync(string eid, CancellationToken cancellationToken = default) {
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         cts.CancelAfter(FirstContactTimeout);
 
@@ -20,8 +26,6 @@ public sealed class AddAccountService(ApiClient api, IndexedDbAccountStore accou
                 $"please double check your ID: error fetching backup for player {eid}: {invalid.Message}", invalid);
         }
 
-        var account = AccountFactory.FromBackup(eid, fc.Backup!);
-        await accounts.AddKnownAccountAsync(account).ConfigureAwait(false);
-        return account;
+        return AccountFactory.FromBackup(eid, fc.Backup!);
     }
 }

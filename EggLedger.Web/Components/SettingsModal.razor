@@ -1,5 +1,9 @@
+@using EggIdentity.Contract
 @using EggIdentity.UI
+@using EggIdentity.UI.Suite
 @implements IDisposable
+@inject SuiteContext Suite
+@inject AddAccountService AddAccount
 @inject IndexedDbSettings Settings
 @inject IPlatformCapabilities Platform
 @inject SettingsWriteCoordinator Writer
@@ -53,6 +57,9 @@
     private RenderFragment GeneralBody => @<OptionsPanel Model="_model" OnSetting="OnSettingAsync"/>;
 
     private RenderFragment AccountDataAndSyncBody => __builder => {
+        <SuiteEidEditor ValidateAsync="ValidateEidAsync" Added="OnEidAddedAsync" OnRemoving="CanRemoveEidAsync"
+                        RemoveConfirmText="RemoveConfirm"/>
+        <hr class="setm-rule"/>
         <AccountDataPanel Accounts="_existing" Changed="ReloadAccountsAsync" Fetching="FetchingCardInfo"/>
         <hr class="setm-rule"/>
         <CloudSyncPanel/>
@@ -93,6 +100,20 @@
         _existing = await Queries.GetExistingDataAsync();
         await Loader.RefreshAsync();
     }
+
+    private async Task<EidSnapshot?> ValidateEidAsync(string eid) =>
+        SuiteAccountStore.ToSnapshot(await AddAccount.FirstContactAsync(eid));
+
+    private async Task OnEidAddedAsync(ProfileEid entry) {
+        await Suite.SetActiveEidAsync(entry.Eid, entry.DisplayName);
+        _ = Fetch.StartFetchAsync(entry.Eid);
+    }
+
+    private Task<bool> CanRemoveEidAsync(ProfileEid entry) =>
+        Task.FromResult(Fetch.IsIdle || Fetch.FetchingAccountId != entry.Eid);
+
+    private static string RemoveConfirm(ProfileEid _) =>
+        "Remove this account from every suite site? Its saved missions stay here.";
 
     private async Task OnSettingAsync((string Key, string Value) change) {
         await Writer.SetAsync(change.Key, change.Value);

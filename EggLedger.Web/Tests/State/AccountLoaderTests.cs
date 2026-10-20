@@ -1,3 +1,4 @@
+using EggIdentity.UI.Suite;
 using EggLedger.Domain.MissionQuery;
 using EggLedger.Web.Data;
 using EggLedger.Web.State;
@@ -6,12 +7,14 @@ using EggLedger.Web.Tests.Data;
 namespace EggLedger.Web.Tests.State;
 
 public sealed class AccountLoaderTests {
-    private static (AccountLoader loader, IndexedDbAccountStore store, AppStateService app, ActiveAccount active) Make() {
-        var db = new FakeIndexedDb();
-        var store = new IndexedDbAccountStore(new IndexedDbSettings(db));
+    private const string Eid1 = "EI1111111111111111";
+    private const string Eid2 = "EI2222222222222222";
+
+    private static (AccountLoader Loader, SuiteAccountStore Store, SuiteContext Suite, AppStateService App, ActiveAccount Active) Make() {
+        var (store, suite) = SuiteTestAccounts.Make(new IndexedDbSettings(new FakeIndexedDb()));
         var app = new AppStateService();
         var active = new ActiveAccount();
-        return (new AccountLoader(store, app, active), store, app, active);
+        return (new AccountLoader(store, suite, app, active), store, suite, app, active);
     }
 
     private static AccountInfo Acct(string id, string nick = "Nick") =>
@@ -19,8 +22,8 @@ public sealed class AccountLoaderTests {
 
     [Fact]
     public async Task EnsureLoadedPopulatesAppStateKnownAccounts() {
-        var (loader, store, app, _) = Make();
-        await store.AddKnownAccountAsync(Acct("EI1", "Alice"));
+        var (loader, store, _, app, _) = Make();
+        await store.AddAccountAsync(Acct(Eid1, "Alice"));
 
         await loader.EnsureLoadedAsync();
 
@@ -30,37 +33,51 @@ public sealed class AccountLoaderTests {
     }
 
     [Fact]
-    public async Task EnsureLoadedRestoresPersistedActiveAccount() {
-        var (loader, store, _, active) = Make();
-        await store.AddKnownAccountAsync(Acct("EI1"));
-        await store.SetActiveAccountIdAsync("EI1");
+    public async Task EnsureLoadedRestoresSuiteActiveAccount() {
+        var (loader, store, suite, _, active) = Make();
+        await store.AddAccountAsync(Acct(Eid1));
+        await suite.SetActiveEidAsync(Eid1);
 
         await loader.EnsureLoadedAsync();
 
-        Assert.Equal("EI1", active.ActiveAccountId);
+        Assert.Equal(Eid1, active.ActiveAccountId);
     }
 
     [Fact]
-    public async Task ActiveChangePersistsToStore() {
-        var (loader, store, _, active) = Make();
+    public async Task ActiveChangeWritesToSuite() {
+        var (loader, store, suite, _, active) = Make();
+        await store.AddAccountAsync(Acct(Eid1));
         await loader.EnsureLoadedAsync();
 
-        active.SetActive("EI7");
+        active.SetActive(Eid1);
 
-        Assert.Equal("EI7", await store.GetActiveAccountIdAsync());
+        Assert.Equal(Eid1, suite.ActiveEid);
         loader.Dispose();
     }
 
     [Fact]
-    public async Task RefreshPicksUpNewlyAddedAccount() {
-        var (loader, store, app, _) = Make();
+    public async Task SuiteRemoveClearsActiveAndList() {
+        var (loader, store, suite, app, active) = Make();
+        await store.AddAccountAsync(Acct(Eid1));
+        await suite.SetActiveEidAsync(Eid1);
+        await loader.EnsureLoadedAsync();
+
+        await suite.RemoveEidAsync(Eid1);
+
+        Assert.Empty(app.KnownAccounts);
+        Assert.Null(active.ActiveAccountId);
+        loader.Dispose();
+    }
+
+    [Fact]
+    public async Task SuiteAddShowsUpWithoutRefresh() {
+        var (loader, store, _, app, _) = Make();
         await loader.EnsureLoadedAsync();
         Assert.Empty(app.KnownAccounts);
 
-        await store.AddKnownAccountAsync(Acct("EI2", "Bob"));
-        await loader.RefreshAsync();
+        await store.AddAccountAsync(Acct(Eid2, "Bob"));
 
-        Assert.Single(app.KnownAccounts);
-        Assert.Equal("Bob", app.KnownAccounts[0].Nickname);
+        Assert.Equal("Bob", Assert.Single(app.KnownAccounts).Nickname);
+        loader.Dispose();
     }
 }

@@ -1,5 +1,5 @@
 @inject IMissionStore Store
-@inject IndexedDbAccountStore AccountStore
+@inject SuiteAccountStore AccountStore
 @inject IDownloadService Downloads
 @inject CloudAutoSyncCoordinator AutoSync
 @inject IndexedDbReportStore ReportStore
@@ -63,7 +63,7 @@
                             </svg>
                             XLSX
                         </button>
-                        <Tooltip Text="Hide from the account list. Missions stay saved.">
+                        <Tooltip Text="Remove from your suite account list. Missions stay saved.">
                             <button type="button" class="btn-mini"
                                     disabled="@_busy" @onclick="() => Delete(acct.Id)">
                                 Forget
@@ -152,7 +152,7 @@
         _busy = true;
         _error = "";
         try {
-            await AccountStore.RemoveKnownAccountAsync(id);
+            if (!await AccountStore.RemoveAccountAsync(id)) _error = "Could not forget that account.";
             await Changed.InvokeAsync();
         } catch (Exception e) {
             _error = e.Message;
@@ -168,7 +168,6 @@
         try {
             await Store.DeleteAllForPlayerAsync(id);
             await ReportStore.DeleteAllForAccountAsync(id);
-            await AccountStore.RemoveKnownAccountAsync(id);
             await Changed.InvokeAsync();
             try {
                 await AutoSync.NotifySettingsChangedAsync();

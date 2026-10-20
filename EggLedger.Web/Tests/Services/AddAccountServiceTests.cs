@@ -10,9 +10,9 @@ namespace EggLedger.Web.Tests.Services;
 public sealed class AddAccountServiceTests {
     private const string Eid = "EI1234567890123456";
 
-    private static AddAccountService Make(FakeIndexedDb db, HttpMessageHandler handler, out IndexedDbAccountStore accounts) {
+    private static AddAccountService Make(FakeIndexedDb db, HttpMessageHandler handler, out SuiteAccountStore accounts) {
         var api = EggLedgerApi.Create(handler);
-        accounts = new IndexedDbAccountStore(new IndexedDbSettings(db));
+        accounts = SuiteTestAccounts.Make(new IndexedDbSettings(db)).Accounts;
         return new AddAccountService(api, accounts, new LocalApiPayloadDecoder(api));
     }
 

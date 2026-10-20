@@ -3,7 +3,7 @@
 @inject CloudSessionStore SessionStore
 @inject CloudAutoSyncCoordinator AutoSync
 @inject IndexedDbSettings Settings
-@inject IndexedDbAccountStore Accounts
+@inject SuiteAccountStore Accounts
 @inject IndexedDbReportStore Reports
 @inject IPlatformCapabilities Platform
 @inject TimeProvider Time
@@ -358,7 +358,7 @@
         try {
             try {
                 var remoteAccounts = await Cloud.GetBlobAsync<List<AccountInfo>>(_session, CloudSyncBlobs.AccountsBlob);
-                foreach (var acct in remoteAccounts ?? []) await Accounts.AddKnownAccountAsync(acct);
+                if (remoteAccounts is { Count: > 0 }) await Accounts.ImportAsync(remoteAccounts);
             } catch (CloudSyncException ex) {
                 Logger.LogDebug(ex, "cloud sync restore found no accounts blob");
                 /* nothing synced yet */

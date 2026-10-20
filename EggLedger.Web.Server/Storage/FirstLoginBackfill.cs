@@ -13,7 +13,7 @@ public sealed class FirstLoginBackfill(
     NpgsqlDataSource source,
     CurrentUser user,
     IBlobCipher cipher,
-    IndexedDbAccountStore accounts,
+    SuiteAccountStore accounts,
     IndexedDbSettings settings,
     IndexedDbReportStore reports,
     IDataProtectionProvider dataProtection,
@@ -24,8 +24,7 @@ public sealed class FirstLoginBackfill(
     public async Task RunIfNeededAsync(CancellationToken ct = default) {
         if (await user.GetUserIdAsync().ConfigureAwait(false) is not { } userId) return;
 
-        var known = await accounts.GetKnownAccountsAsync().ConfigureAwait(false);
-        if (known.Count > 0) return;
+        if ((await settings.GetAllSettingsAsync().ConfigureAwait(false)).Count > 0) return;
 
         var encKey = await EncryptionKeyAsync(userId, ct).ConfigureAwait(false);
         if (string.IsNullOrEmpty(encKey)) return;
@@ -38,8 +37,7 @@ public sealed class FirstLoginBackfill(
     private async Task RestoreAccountsAsync(Guid userId, string encKey, CancellationToken ct) {
         var list = await DecryptBlobAsync<List<AccountInfo>>(userId, encKey, CloudSyncBlobs.AccountsBlob, ct)
             .ConfigureAwait(false);
-        if (list is null) return;
-        foreach (var acct in list) await accounts.AddKnownAccountAsync(acct).ConfigureAwait(false);
+        if (list is { Count: > 0 }) await accounts.ImportAsync(list).ConfigureAwait(false);
     }
 
     private async Task RestoreSettingsAsync(Guid userId, string encKey, CancellationToken ct) {

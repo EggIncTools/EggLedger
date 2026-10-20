@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace EggLedger.Web.Data;
 
-public sealed class IndexedDbMissionStore(IIndexedDb db, IApiPayloadDecoder decoder, MissionPacker? packer = null, IndexedDbAccountStore? accounts = null, ILogger<IndexedDbMissionStore>? logger = null, TimeProvider? time = null) : IMissionStore, IDisposable {
+public sealed class IndexedDbMissionStore(IIndexedDb db, IApiPayloadDecoder decoder, MissionPacker? packer = null, SuiteAccountStore? accounts = null, ILogger<IndexedDbMissionStore>? logger = null, TimeProvider? time = null) : IMissionStore, IDisposable {
     private readonly MissionPacker _packer = packer ?? new MissionPacker(EiafxMissionConfigSource.Instance);
     private readonly TimeProvider _time = time ?? TimeProvider.System;
 

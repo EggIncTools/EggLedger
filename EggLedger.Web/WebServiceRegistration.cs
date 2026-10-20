@@ -21,13 +21,13 @@ public static class WebServiceRegistration {
         services.AddScoped(_ => new HttpClient { BaseAddress = httpBaseAddress });
 
         services.AddScoped<IndexedDbSettings>();
-        services.AddScoped<IndexedDbAccountStore>();
+        services.AddScoped<SuiteAccountStore>();
         services.AddScoped<IndexedDbReportStore>();
         services.AddScoped<IndexedDbPinnedReportStore>();
         services.AddScoped<IndexedDbMissionStore>(sp => new IndexedDbMissionStore(
             sp.GetRequiredService<IIndexedDb>(),
             sp.GetRequiredService<IApiPayloadDecoder>(),
-            accounts: sp.GetRequiredService<IndexedDbAccountStore>(),
+            accounts: sp.GetRequiredService<SuiteAccountStore>(),
             logger: sp.GetService<ILogger<IndexedDbMissionStore>>(),
             time: sp.GetRequiredService<TimeProvider>()));
         services.AddScoped<IMissionStore>(sp => sp.GetRequiredService<IndexedDbMissionStore>());

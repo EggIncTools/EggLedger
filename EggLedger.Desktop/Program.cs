@@ -1,3 +1,4 @@
+using EggIdentity.UI.Suite;
 using EggLedger.Desktop.Export;
 using EggLedger.Desktop.Platform;
 using EggLedger.Desktop.Storage;
@@ -29,6 +30,8 @@ internal static class Program {
 
         var dataRootDir = StoragePaths.ResolveDataRootDir(StoragePaths.DefaultRootDir());
         appBuilder.Services.AddDesktopSqliteStorage(dataRootDir);
+        appBuilder.Services.AddScoped<ISuiteEidStore, SettingsEidStore>();
+        appBuilder.Services.AddEggIdentitySuite("ledger");
 
         var desktopWindow = new PhotinoDesktopWindow();
         appBuilder.Services.AddDesktopPlatformCapabilities(new ProcessRunner(), desktopWindow);

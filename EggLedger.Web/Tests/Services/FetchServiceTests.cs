@@ -26,7 +26,7 @@ public sealed class FetchServiceTests {
             await settings.SetSettingAsync("worker_count", workerCount.ToString());
         }
         var store = new IndexedDbMissionStore(db, new LocalApiPayloadDecoder(new ApiClient()));
-        var accounts = new IndexedDbAccountStore(settings);
+        var accounts = SuiteTestAccounts.Make(settings).Accounts;
         return new FetchService(api, store, settings, accounts, new LocalApiPayloadDecoder(api), NullLogger<FetchService>.Instance, autoExporter: exporter, time: time);
     }
 
@@ -257,8 +257,8 @@ public sealed class FetchServiceTests {
     public async Task FetchPlayerData_RefreshesAccountStatsFromLatestBackup() {
         var db = new FakeIndexedDb();
         var settings = new IndexedDbSettings(db);
-        var accounts = new IndexedDbAccountStore(settings);
-        await accounts.AddKnownAccountAsync(new EggLedger.Domain.MissionQuery.AccountInfo {
+        var accounts = SuiteTestAccounts.Make(settings).Accounts;
+        await accounts.AddAccountAsync(new EggLedger.Domain.MissionQuery.AccountInfo {
             Id = Eid,
             Nickname = "tester",
             EBString = "0",
@@ -271,7 +271,7 @@ public sealed class FetchServiceTests {
 
         await service.FetchPlayerDataAsync(Eid, null, CancellationToken.None);
 
-        var updated = (await accounts.GetKnownAccountsAsync()).Single(a => a.Id == Eid);
+        var updated = (await SuiteTestAccounts.Make(settings).Accounts.GetKnownAccountsAsync()).Single(a => a.Id == Eid);
         Assert.Equal("10.8T", updated.SeString);
     }
 
