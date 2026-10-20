@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7-labs
-FROM mcr.microsoft.com/dotnet/sdk:11.0.100-rc.1 AS build
+FROM mcr.microsoft.com/dotnet/sdk:11.0.100-rc.2 AS build
 WORKDIR /src
 COPY global.json nuget.config Directory.Build.props Directory.Packages.props .editorconfig EggLedger.slnx ./
 COPY .config/ .config/
@@ -22,7 +22,7 @@ RUN --mount=type=cache,target=/root/.nuget/packages \
     BUILD_HEIGHT="$BUILD_HEIGHT" BUILD_SHA="$BUILD_SHA" \
     dotnet publish EggLedger.Web.Server/EggLedger.Web.Server.csproj -c Release -o /app
 
-FROM mcr.microsoft.com/dotnet/aspnet:11.0.0-rc.1 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:11.0.0-rc.2 AS runtime
 ARG BUILD_HEIGHT
 ARG BUILD_SHA
 ENV GIT_SHA=$BUILD_SHA
