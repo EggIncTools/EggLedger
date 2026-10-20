@@ -6,6 +6,7 @@ namespace EggLedger.Domain.Reports;
 public static class LedgerFilters {
     public const string MissionScope = "mission";
     public const string ArtifactScope = "artifact";
+    public const string FuelScope = "fuel";
 
     public static IReadOnlyList<FilterOpDef> DateOps { get; } = [.. FilterOps.Date, new(FilterOps.DayEq, "on")];
 

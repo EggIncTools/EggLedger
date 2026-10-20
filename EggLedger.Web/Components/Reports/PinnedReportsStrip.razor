@@ -10,17 +10,20 @@
         </SearchablePicker>
     </div>
     @if (_reports.Count == 0) {
-        <p class="pins-empty">No pinned reports yet. Add one with the + button.</p>
+        <EmptyState Icon="database" Title="No pinned reports" Hint="Add one with the + button."/>
     } else {
         <div class="pins-grid">
         <EggIdentity.UI.Reports.ReportGrid Placements="_placements" Editable="false">
             <Item Context="placement">
-                <ReportCard Report="_reportsById[placement.ReportId]" AccountId="@AccountId" ShowUnpin="true" OnUnpin="() => UnpinAsync(_pinIdsByReportId[placement.ReportId])"/>
+                <ReportCard Report="_reportsById[placement.ReportId]" AccountId="@AccountId" ShowUnpin="true"
+                            OnUnpin="() => UnpinAsync(_pinIdsByReportId[placement.ReportId])" OnEdit="EditAsync" OnViewChanged="SaveViewAsync"/>
             </Item>
         </EggIdentity.UI.Reports.ReportGrid>
         </div>
     }
 </div>
+
+<ReportBuilderPanel @ref="_builder" AccountId="@AccountId" Saved="LoadAsync"/>
 
 @code {
     [Parameter] [EditorRequired] public string AccountId { get; set; } = "";
@@ -33,6 +36,7 @@
     private Dictionary<string, string> _pinIdsByReportId = [];
     private List<PickerOption> _pickerOptions = [];
     private string _loadedKey = "";
+    private ReportBuilderPanel? _builder;
 
     protected override async Task OnParametersSetAsync() {
         var key = AccountId + ":" + View;
@@ -125,6 +129,41 @@
         });
 
         await LoadAsync();
+    }
+
+    private async Task EditAsync(LedgerReport report) {
+        var pin = PinFor(report);
+        if (pin.Kind == PinnedReportKinds.Template) {
+            report = await ForkAsync(pin, report);
+            await LoadAsync();
+        }
+        if (_builder is not null) await _builder.OpenForEditAsync(report);
+    }
+
+    private async Task SaveViewAsync(LedgerReport report) {
+        var pin = PinFor(report);
+        if (pin.Kind == PinnedReportKinds.Template) {
+            await ForkAsync(pin, report);
+        } else {
+            var existing = await ReportStore.RetrieveReportAsync(report.Id);
+            if (existing is null) return;
+            await ReportStore.UpdateReportAsync(ReportMapping.ToRow(report, existing));
+        }
+        await LoadAsync();
+    }
+
+    private PinnedReportRow PinFor(LedgerReport report) => _pins.First(p => p.Id == _pinIdsByReportId[report.Id]);
+
+    private async Task<LedgerReport> ForkAsync(PinnedReportRow pin, LedgerReport report) {
+        var id = Guid.NewGuid().ToString("D");
+        var fork = report with {
+            Definition = report.Definition with { Id = id },
+            Placement = report.Placement with { ReportId = id, Order = int.MaxValue, Group = null },
+            AccountId = AccountId,
+        };
+        await ReportStore.InsertReportAsync(ReportMapping.ToRow(fork));
+        await PinStore.InsertAsync(pin with { Kind = PinnedReportKinds.User, RefId = id });
+        return fork;
     }
 
     private async Task UnpinAsync(string pinId) {

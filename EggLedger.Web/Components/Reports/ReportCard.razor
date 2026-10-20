@@ -7,7 +7,9 @@
 
 <div class="rc-wrap @(_cube is null && _error is null ? "rc-pending" : "rc-ready")">
     <EggIdentity.UI.Reports.ReportCard Definition="Report.Definition" Cube="DisplayCube" Source="_source" Style="LedgerChartStyle"
-                                        Error="@_error" Loading="@(_cube is null && _error is null)">
+                                        Error="@_error" Loading="@(_cube is null && _error is null)"
+                                        ChartChoices="ChartChoices" OnChartChanged="OnChartChangedAsync"
+                                        NumberFormat="EffectiveNumberFormat" OnNumberFormatChanged="OnNumberFormatChangedAsync">
         <Actions>
             <Tooltip Lines="WeightLines" Class="@($"rc-weight {WeightClass}")" Focusable="true">@WeightLabel</Tooltip>
             @if (EditMode) {
@@ -40,6 +42,9 @@
                     </button>
                 }
             } else {
+                @if (OnEdit.HasDelegate) {
+                    <button type="button" class="rc-chip" @onclick="() => OnEdit.InvokeAsync(Report)">Edit</button>
+                }
                 @if (ShowUnpin) {
                     <button type="button" class="rc-chip rc-chip-danger" @onclick="() => OnUnpin.InvokeAsync()">
                         Unpin
@@ -65,6 +70,7 @@
     [Parameter] public EventCallback OnChanged { get; set; }
     [Parameter] public bool ShowUnpin { get; set; }
     [Parameter] public EventCallback OnUnpin { get; set; }
+    [Parameter] public EventCallback<LedgerReport> OnViewChanged { get; set; }
 
     private ReportCube? _cube;
     private IReportSource? _source;
@@ -115,6 +121,37 @@
         Description = null,
         View = Report.Definition.View with { Heat = null },
     };
+
+    private IReadOnlyList<string>? ChartChoices =>
+        _cube is null ? null : ReportCharts.Compatible(Report.Definition.Query, _cube);
+
+    private ReportNumberFormat EffectiveNumberFormat {
+        get {
+            if (Report.Definition.View.NumberFormat is { } format) return format;
+            var measure = Report.Definition.Query.EffectiveMeasures[0];
+            var kind = measure.IsRowCount ? ValueFormatKind.Integer : _source?.Measure(measure.Key)?.Format.Kind;
+            return kind == ValueFormatKind.Compact ? ReportNumberFormat.Compact : ReportNumberFormat.Full;
+        }
+    }
+
+    private Task OnChartChangedAsync(string chart) =>
+        chart == Report.Definition.View.Chart ? Task.CompletedTask : SaveViewAsync(Report.Definition.View with { Chart = chart });
+
+    private Task OnNumberFormatChangedAsync(ReportNumberFormat format) =>
+        format == EffectiveNumberFormat ? Task.CompletedTask : SaveViewAsync(Report.Definition.View with { NumberFormat = format });
+
+    private async Task SaveViewAsync(ReportView view) {
+        var updated = Report with { Definition = Report.Definition with { View = view } };
+        if (OnViewChanged.HasDelegate) {
+            await OnViewChanged.InvokeAsync(updated);
+            return;
+        }
+
+        var existing = await Store.RetrieveReportAsync(Report.Id);
+        if (existing is null) return;
+        await Store.UpdateReportAsync(ReportMapping.ToRow(updated, existing));
+        await OnChanged.InvokeAsync();
+    }
 
     private async Task OnGroupSelectChanged(ChangeEventArgs e) {
         var groupId = e.Value?.ToString() ?? "";

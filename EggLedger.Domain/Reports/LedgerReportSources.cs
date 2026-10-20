@@ -31,6 +31,9 @@ public static class LedgerReportSources {
     private static readonly FilterFieldDef MissionIdField =
         new(LedgerReportKeys.MissionId, "Mission", FilterValueKind.Text, FilterOps.Equality) { Scope = LedgerFilters.MissionScope };
 
+    private static readonly FilterFieldDef FuelEggField =
+        new(LedgerReportKeys.FuelEgg, "Egg", FilterValueKind.Select, FilterOps.Equality) { Scope = LedgerFilters.FuelScope };
+
     public static ReportSource<LedgerMissionRow> Missions { get; } = new(
         LedgerReportKeys.Missions,
         "Missions",
@@ -50,7 +53,11 @@ public static class LedgerReportSources {
     public static ReportSource<LedgerFuelRow> Fuel { get; } = new(
         LedgerReportKeys.Fuel,
         "Fuel eggs",
-        [.. MissionDimensions(), new ReportDimension(MissionIdField)],
+        [
+            .. MissionDimensions(),
+            new ReportDimension(FuelEggField with { Options = EggOptions() }) { Order = DimensionOrder.OptionOrder },
+            new ReportDimension(MissionIdField),
+        ],
         [AirtimeMeasure(LedgerReportKeys.MissionId), LaunchesMeasure(LedgerReportKeys.MissionId), FuelAmountMeasure()],
         FuelValue) {
         SampleKey = LedgerReportKeys.MissionId,
@@ -156,6 +163,7 @@ public static class LedgerReportSources {
         LedgerReportKeys.Airtime => FilterSubjectValue.Of(Airtime(row.Mission)),
         LedgerReportKeys.Launches => FilterSubjectValue.Of(1.0),
         LedgerReportKeys.FuelAmount => FilterSubjectValue.Of(row.Fuel.Amount),
+        LedgerReportKeys.FuelEgg => FilterSubjectValue.Of((double)row.Fuel.EggId),
         _ => MissionValue(key, row.Mission, row.MissionDrops),
     };
 
@@ -235,7 +243,7 @@ public static class LedgerReportSources {
     private static ReportMeasure FuelAmountMeasure() => new(LedgerReportKeys.FuelAmount, "Eggs used") {
         Aggregations = [Aggregation.Sum],
         Default = Aggregation.Sum,
-        Format = ValueFormat.Decimal(0),
+        Format = ValueFormat.Compact,
     };
 
     private static string NumberKey(long v) => v.ToString(CultureInfo.InvariantCulture);
@@ -248,6 +256,9 @@ public static class LedgerReportSources {
 
     private static IReadOnlyList<FilterOption> TypeOptions() =>
         [.. Enum.GetValues<MissionInfo.MissionType>().Select(v => new FilterOption(Value: NumberKey((long)v), Label: v.Display()))];
+
+    private static IReadOnlyList<FilterOption> EggOptions() =>
+        [.. Enum.GetValues<Egg>().Select(v => new FilterOption(Value: NumberKey((long)v), Label: v.Display()))];
 
     private static IReadOnlyList<FilterOption> LevelOptions() =>
         [.. Enumerable.Range(0, 11).Select(i => new FilterOption(Value: NumberKey(i), Label: $"Level {i}"))];

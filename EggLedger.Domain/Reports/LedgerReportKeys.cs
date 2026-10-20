@@ -22,6 +22,7 @@ public static class LedgerReportKeys {
     public const string Quality = "artifact_quality";
     public const string Family = "artifact_family";
     public const string MissionId = "mission_id";
+    public const string FuelEgg = "fuel_egg";
 
     public const string Airtime = "airtime";
     public const string Launches = "launches";

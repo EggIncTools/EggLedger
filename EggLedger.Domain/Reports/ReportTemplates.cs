@@ -4,6 +4,7 @@ namespace EggLedger.Domain.Reports;
 
 public static class ReportTemplates {
     public const string TotalFuelByShip = "tmpl_total_fuel_by_ship";
+    public const string FuelByEgg = "tmpl_fuel_by_egg";
     public const string ShipMix = "tmpl_ship_mix";
     public const string DurationMix = "tmpl_duration_mix";
     public const string RarityMix = "tmpl_rarity_mix";
@@ -16,6 +17,13 @@ public static class ReportTemplates {
                 Sort = [new SortKey(LedgerReportKeys.FuelAmount, Descending: true)],
             },
             new ReportView(ReportCharts.Bar) { Color = "#f59e0b" }),
+        new ReportDefinition(ReportCodec.CurrentVersion, FuelByEgg, "Eggs Used by Type",
+            new ReportQuery(LedgerReportKeys.Fuel) {
+                GroupBy = [new GroupKey(LedgerReportKeys.FuelEgg)],
+                Measures = [new MeasureRequest(LedgerReportKeys.FuelAmount, Aggregation.Sum)],
+                Sort = [new SortKey(LedgerReportKeys.FuelAmount, Descending: true)],
+            },
+            new ReportView(ReportCharts.Pie)),
         new ReportDefinition(ReportCodec.CurrentVersion, ShipMix, "Fleet Mix",
             new ReportQuery(LedgerReportKeys.Missions) {
                 GroupBy = [new GroupKey(LedgerReportKeys.Ship)],
