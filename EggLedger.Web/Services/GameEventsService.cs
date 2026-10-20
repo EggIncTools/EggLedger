@@ -21,6 +21,9 @@ public sealed record GameEvent {
     public bool Predicted { get; init; }
 
     [JsonIgnore]
+    public double? Confidence { get; init; }
+
+    [JsonIgnore]
     public bool IsDeviceSourced =>
         string.Equals(Source, GameEventsService.DeviceSource, StringComparison.OrdinalIgnoreCase);
 
@@ -190,6 +193,7 @@ public sealed class GameEventsService {
             StartTimestamp = p.PredictedStart,
             EndTimestamp = p.PredictedEnd,
             Predicted = true,
+            Confidence = Math.Clamp(p.Confidence, 0, 1),
         })];
     }
 

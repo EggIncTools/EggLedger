@@ -13,6 +13,9 @@
                     @foreach (var e in day.Events) {
                         <span class="agenda-event @(e.Predicted ? "agenda-event-predicted" : "")" style="@EventStyle(e)">
                             @GameEventDisplay.Title(e.Type, e.Message)
+                            @if (e.Confidence is { } chance) {
+                                <span class="agenda-event-chance">@GameEventDisplay.Chance(chance)</span>
+                            }
                         </span>
                     }
                 </div>

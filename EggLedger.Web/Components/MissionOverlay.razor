@@ -71,20 +71,7 @@
     } else {
         <div class="mov-body">
             <div class="mov-mode-wrap">
-                <div class="segmented" role="group" aria-label="Display mode">
-                    <button type="button"
-                            disabled="@(_multi.Count > MaxSeparate)"
-                            title="@(_multi.Count > MaxSeparate ? $"Separate view is limited to {MaxSeparate} missions" : null)"
-                            class="segmented-opt @(_displayMode == "separate" ? "active" : "")"
-                            @onclick="@(() => _displayMode = "separate")">
-                        Separate
-                    </button>
-                    <button type="button"
-                            class="segmented-opt @(_displayMode == "combined" ? "active" : "")"
-                            @onclick="@(() => _displayMode = "combined")">
-                        Combined
-                    </button>
-                </div>
+                <Segmented T="string" Options="DisplayModes" @bind-Selected="_displayMode" AriaLabel="Display mode"/>
             </div>
 
             <PaneSwap Key="_displayMode" Direction="@(_displayMode == "separate" ? PaneDirection.Back : PaneDirection.Forward)" Class="mov-swap">
@@ -159,6 +146,15 @@
     [Parameter] public MissionSortMethod SortMethod { get; set; } = MissionSortMethod.Default;
     [Parameter] public bool ShowExpectedDrops { get; set; }
     private const int MaxSeparate = 20;
+
+    private bool SeparateTooMany => _multi?.Count > MaxSeparate;
+
+    private IReadOnlyList<SegmentedOption<string>> DisplayModes => [
+        new("separate", "Separate",
+            Title: SeparateTooMany ? $"Separate view is limited to {MaxSeparate} missions" : null,
+            Disabled: SeparateTooMany),
+        new("combined", "Combined")
+    ];
     private bool _open;
     private ViewMissionData? _data;
     private List<ViewMissionData>? _multi;

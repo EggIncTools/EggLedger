@@ -24,7 +24,7 @@
 
     <div class="ledger-content">
         <div class="ledger-content-head">
-            <ViewSelector Current="Shell.View" OnSelect="SelectView"/>
+            <ViewTabs TKey="LedgerView" Tabs="ViewTabList" Active="Shell.View" ActiveChanged="SelectView" AriaLabel="Ledger view"/>
         </div>
 
         <div class="ledger-surface @(Shell.View == LedgerView.Reports ? "ledger-surface-clip" : "")">
@@ -106,6 +106,12 @@
             ApplyRoute();
         }
     }
+
+    private static readonly IReadOnlyList<ViewTab<LedgerView>> ViewTabList = [
+        new(LedgerView.Ships, "Ships", "Mission history", "--color-view-ships"),
+        new(LedgerView.Drops, "Drops", "Lifetime totals", "--color-view-drops"),
+        new(LedgerView.Reports, "Reports", "Saved analysis", "--color-view-reports")
+    ];
 
     private void SelectView(LedgerView view) {
         Shell.SetView(view);

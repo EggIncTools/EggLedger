@@ -20,7 +20,7 @@
 <NavigationLock ConfirmExternalNavigation="@(!Fetch.IsIdle)"/>
 
 <div class="account-bar">
-    <button type="button" class="account-rail-chip" title="@ChipTitle" aria-label="Expand sidebar" @onclick="RequestExpand">
+    <button type="button" class="account-rail-chip" aria-label="@($"Expand sidebar, {ChipTitle}")" @onclick="RequestExpand">
         <span class="account-chip-dot" style="--acct-color: #@ChipColor"></span>
     </button>
 
@@ -43,11 +43,11 @@
             }
 
             @if (Fetch.IsIdle) {
-                <button type="button" class="account-fetch-btn" disabled="@(Active.ActiveAccountId is null)" @onclick="StartFetch">
+                <button type="button" class="btn-mini account-fetch-btn" disabled="@(Active.ActiveAccountId is null)" @onclick="StartFetch">
                     Fetch
                 </button>
             } else {
-                <button type="button" class="account-fetch-btn account-stop-btn" @onclick="StopFetch">
+                <button type="button" class="btn-mini account-fetch-btn account-stop-btn" @onclick="StopFetch">
                     Stop
                 </button>
             }

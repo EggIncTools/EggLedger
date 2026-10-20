@@ -28,7 +28,6 @@ public partial class ClassResolutionTests {
         "timeline-event-",
         "drop-label-",
         "drop-count-",
-        "view-btn-",
         "flog-stage-",
         "picker-trigger-",
         "mov-size-",

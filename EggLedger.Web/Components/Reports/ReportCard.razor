@@ -9,7 +9,7 @@
     <EggIdentity.UI.Reports.ReportCard Definition="Report.Definition" Cube="DisplayCube" Source="_source" Style="LedgerChartStyle"
                                         Error="@_error" Loading="@(_cube is null && _error is null)">
         <Actions>
-            <Tooltip Text="@WeightTitle" Class="@($"rc-weight {WeightClass}")" Focusable="true">@WeightLabel</Tooltip>
+            <Tooltip Lines="WeightLines" Class="@($"rc-weight {WeightClass}")" Focusable="true">@WeightLabel</Tooltip>
             @if (EditMode) {
                 @if (Groups.Count > 0) {
                     <select class="rc-group" value="@(Report.Placement.Group ?? "")" @onchange="OnGroupSelectChanged">
@@ -99,10 +99,10 @@
         _ => "rc-weight-light"
     };
 
-    private string WeightTitle => Weight switch {
-        ReportCostLevel.High => "Heavy: full scan, may be slow on large accounts",
-        ReportCostLevel.Medium => "Medium: partial index usage",
-        _ => "Light: fully indexed"
+    private IReadOnlyList<TooltipLine> WeightLines => Weight switch {
+        ReportCostLevel.High => [new("Heavy", Head: true), new("Full scan"), new("May be slow on large accounts")],
+        ReportCostLevel.Medium => [new("Medium", Head: true), new("Partial index usage")],
+        _ => [new("Light", Head: true), new("Fully indexed")]
     };
 
     private ReportCube? DisplayCube => _combined ?? _cube;

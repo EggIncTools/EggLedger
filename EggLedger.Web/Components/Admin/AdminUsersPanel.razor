@@ -22,7 +22,7 @@
                             <th class="usradm-num">@SortHeader("Reports", "reports")</th>
                             <th class="usradm-num">@SortHeader("Backups", "backups")</th>
                             <th class="usradm-num">@SortHeader("Storage", "storage")</th>
-                            <th class="usradm-num"><Tooltip Text="Last time the Desktop app paired via Discord. Not tracked for web-only logins.">@SortHeader("Last Pairing", "lastLogin")</Tooltip></th>
+                            <th class="usradm-num"><Tooltip Lines="LastPairingHeadLines">@SortHeader("Last Pairing", "lastLogin")</Tooltip></th>
                             <th></th>
                         </tr>
                         </thead>
@@ -35,7 +35,7 @@
                                 <td class="usradm-num">@u.ReportCount</td>
                                 <td class="usradm-num">@u.BackupCount</td>
                                 <td class="usradm-num">@LedgerFormatting.FormatBytes(u.StorageBytes)</td>
-                                <td class="usradm-num usradm-dim"><Tooltip Text="@LastLoginTitle(u.LastSession)" Focusable="true">@LastLoginLabel(u.LastSession)</Tooltip></td>
+                                <td class="usradm-num usradm-dim"><Tooltip Lines="LastLoginLines(u.LastSession)" Focusable="true">@LastLoginLabel(u.LastSession)</Tooltip></td>
                                 <td class="usradm-num">
                                     @if (!u.IsAdmin) {
                                         <button type="button" class="usradm-delete" @onclick="() => OnDelete.InvokeAsync(u.UserId)">
@@ -104,9 +104,15 @@
     private string LastLoginLabel(long? lastSession) =>
         lastSession is { } s ? LedgerFormatting.FormatTimeSince(s, Time.GetUtcNow().ToUnixTimeSeconds()) : "no pairing";
 
-    private string LastLoginTitle(long? lastSession) =>
+    private static readonly IReadOnlyList<TooltipLine> LastPairingHeadLines = [
+        new("Last pairing", Head: true),
+        new("Last time the desktop app paired via Discord"),
+        new("Not tracked for web-only logins")
+    ];
+
+    private IReadOnlyList<TooltipLine> LastLoginLines(long? lastSession) =>
         lastSession is { } s
-            ? TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(s), TzProvider.TimeZone).ToString("yyyy-MM-dd HH:mm")
-            : "Desktop app has never paired via Discord for this user.";
+            ? [new("Last pairing", Head: true), new(TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(s), TzProvider.TimeZone).ToString("yyyy-MM-dd HH:mm"))]
+            : [new("Never paired", Head: true), new("The desktop app has not paired via Discord for this user.")];
 
 }

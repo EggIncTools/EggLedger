@@ -3,11 +3,9 @@
 
 @if (State.AccountId is not null) {
     <div class="sopt">
-        <button type="button" class="sopt-dialog-btn" aria-haspopup="dialog" title="Edit mission card layout, fields and colors"
+        <button type="button" class="btn-mini sopt-dialog-btn" aria-haspopup="dialog" aria-label="Edit mission card layout, fields and colors"
                 @onclick="OpenCardConfigAsync">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" aria-hidden="true">
-                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
-            </svg>
+            <Icon Name="pencil"/>
             <span>Design...</span>
         </button>
         @if (State.ViewMode == ShipsViewMode.List) {
@@ -21,10 +19,32 @@
                 </div>
             </div>
         }
+        @if (State.ViewMode == ShipsViewMode.Calendar) {
+            <div>
+                <span class="sopt-heading">Events</span>
+                <div class="sopt-checks">
+                    <label><input type="checkbox" class="ext-opt-check sopt-check" checked="@State.Opts.CalendarEvents" @onchange="@(e => State.SetOptAsync(MissionViewOptions.KeyCalendarEvents, b => State.Opts.CalendarEvents = b, e))"/> Show events</label>
+                    @foreach (var type in GameEventDisplay.CalendarTypes) {
+                        <label class="sopt-indent @(State.Opts.CalendarEvents ? "" : "sopt-label-disabled")">
+                            <input type="checkbox" class="ext-opt-check sopt-check" checked="@(!State.Opts.CalendarHiddenEventTypes.Contains(type))" disabled="@(!State.Opts.CalendarEvents)" @onchange="@(e => State.SetCalendarEventTypeAsync(type, e))"/>
+                            @GameEventDisplay.Title(type, null)
+                        </label>
+                    }
+                </div>
+                <label class="sopt-slider @(State.Opts.CalendarEvents ? "" : "sopt-label-disabled")">
+                    <span class="sopt-slider-head">
+                        <span>Predicted chance at least</span>
+                        <span class="sopt-slider-value">@State.Opts.CalendarMinChance%</span>
+                    </span>
+                    <input type="range" min="0" max="100" step="5" value="@State.Opts.CalendarMinChance" disabled="@(!State.Opts.CalendarEvents)" aria-label="Minimum predicted event chance"
+                           @oninput="State.PreviewCalendarMinChance" @onchange="State.SetCalendarMinChanceAsync"/>
+                </label>
+            </div>
+        }
         <div>
             <span class="sopt-heading">Drops Sort Method</span>
             <div class="sopt-row">
-                <TileGroup TValue="MissionSortMethod" Options="SortTiles" Selected="State.Opts.SortMethod" OnSelect="State.SetSortMethodAsync" Wrap="true"/>
+                <Segmented T="MissionSortMethod" Options="SortTiles" Selected="State.Opts.SortMethod" SelectedChanged="State.SetSortMethodAsync" Wrap="true" AriaLabel="Drops sort method"/>
             </div>
         </div>
         @if (State.ViewMode == ShipsViewMode.List) {
@@ -49,9 +69,9 @@
 }
 
 @code {
-    private static readonly IReadOnlyList<TileGroup<MissionSortMethod>.Tile> SortTiles = [
-        new(MissionSortMethod.Default, b => b.AddContent(0, "Default")),
-        new(MissionSortMethod.Iv, b => b.AddContent(0, "Inventory Visualizer"))
+    private static readonly IReadOnlyList<SegmentedOption<MissionSortMethod>> SortTiles = [
+        new(MissionSortMethod.Default, "Default"),
+        new(MissionSortMethod.Iv, "Inventory Visualizer")
     ];
 
     private MissionCardConfigModal? _cardConfigModal;

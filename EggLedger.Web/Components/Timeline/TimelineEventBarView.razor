@@ -5,11 +5,17 @@
     <span class="tooltip-point" style="@PointStyle"></span>
     <img class="timeline-event-icon" src="@IconUrl" alt="" loading="lazy" onerror="this.style.display='none'"/>
     <span class="timeline-event-label">@Title</span>
+    @if (Bar.Confidence is { } chance) {
+        <span class="timeline-event-chance">@GameEventDisplay.Chance(chance)</span>
+    }
     <div class="tooltip-floating tooltip-fixed tooltip-toggle timeline-event-tt">
         <span class="timeline-event-tt-name">@Title</span>
         @if (Bar.Predicted) {
             <br/>
             <span class="timeline-event-tt-key">Predicted</span>
+            @if (Bar.Confidence is { } ttChance) {
+                <span class="timeline-event-tt-key">: </span>@GameEventDisplay.Chance(ttChance)
+            }
         }
         @if (Bar.Multiplier > 0) {
             <br/>

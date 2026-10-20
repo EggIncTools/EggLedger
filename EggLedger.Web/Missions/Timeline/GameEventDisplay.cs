@@ -18,5 +18,10 @@ public static class GameEventDisplay {
         _ => message ?? type
     };
 
+    public static readonly IReadOnlyList<string> CalendarTypes = ["mission-capacity", "mission-duration"];
+
     public static string Color(string type) => ColorByType.GetValueOrDefault(type, "#9ca3af");
+
+    public static string Chance(double confidence) =>
+        Math.Round(confidence * 100).ToString("0", System.Globalization.CultureInfo.InvariantCulture) + "%";
 }

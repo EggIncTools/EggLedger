@@ -251,6 +251,28 @@ public sealed class ShipsViewState(
         Changed?.Invoke();
     }
 
+    public async Task SetCalendarEventTypeAsync(string type, ChangeEventArgs e) {
+        var shown = e.Value is bool b ? b : bool.TryParse(e.Value?.ToString(), out var parsed) && parsed;
+        if (shown) {
+            Opts.CalendarHiddenEventTypes.Remove(type);
+        } else {
+            Opts.CalendarHiddenEventTypes.Add(type);
+        }
+        await settings.SetSettingAsync(MissionViewOptions.KeyCalendarHiddenEventTypes, MissionViewOptions.EventTypesToString(Opts.CalendarHiddenEventTypes));
+        Changed?.Invoke();
+    }
+
+    public void PreviewCalendarMinChance(ChangeEventArgs e) {
+        Opts.CalendarMinChance = MissionViewOptions.ParseChance(e.Value?.ToString(), Opts.CalendarMinChance);
+        Changed?.Invoke();
+    }
+
+    public async Task SetCalendarMinChanceAsync(ChangeEventArgs e) {
+        Opts.CalendarMinChance = MissionViewOptions.ParseChance(e.Value?.ToString(), Opts.CalendarMinChance);
+        await settings.SetSettingAsync(MissionViewOptions.KeyCalendarMinChance, Opts.CalendarMinChance.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        Changed?.Invoke();
+    }
+
     public async Task SetMultiViewAsync(MultiViewMode mode) {
         Opts.MultiViewMode = mode;
         MultiSelectedIds.Clear();

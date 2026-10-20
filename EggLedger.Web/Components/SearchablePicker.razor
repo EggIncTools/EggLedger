@@ -5,7 +5,7 @@
 @inject ILogger<SearchablePicker> Logger
 
 @if (TriggerContent is not null) {
-    <Tooltip Text="@Placeholder">
+    <Tooltip Lines="@([new TooltipLine(Placeholder ?? "Choose")])">
         <button type="button" class="picker-trigger picker-trigger-@TriggerVariant.ToString().ToLowerInvariant()" aria-label="@Placeholder" @onclick="Open">@TriggerContent</button>
     </Tooltip>
 } else {

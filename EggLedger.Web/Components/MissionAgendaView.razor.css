@@ -48,6 +48,11 @@
     color: var(--color-muted);
 }
 
+.agenda-event-chance {
+    margin-left: 0.35rem;
+    font-weight: 700;
+}
+
 .agenda-cards {
     display: flex;
     flex-direction: column;

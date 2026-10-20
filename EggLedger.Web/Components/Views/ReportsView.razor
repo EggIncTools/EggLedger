@@ -55,10 +55,10 @@
         </div>
         <div class="rv-actions">
             @if (Menno.IsLoading) {
-                <span class="rv-menno" title="Downloading Menno's community ship data" aria-label="Syncing community data">
+                <Tooltip Lines="MennoSyncLines" Class="rv-menno" Focusable="true">
                     <span class="rv-menno-dot"></span>
                     Community data
-                </span>
+                </Tooltip>
             }
             <button type="button" class="btn-secondary" @onclick="State.RequestNewReportAsync">+ New Report</button>
             <button type="button" class="btn-secondary" @onclick="State.RequestExportAllAsync">Export All</button>
@@ -77,6 +77,11 @@
                     GroupId="@State.SelectedGroup" Saved="OnSavedAsync"/>
 
 @code {
+    private static readonly IReadOnlyList<TooltipLine> MennoSyncLines = [
+        new("Community data", Head: true),
+        new("Downloading Menno's community ship data")
+    ];
+
     private ReportGrid? _grid;
     private ReportBuilderPanel? _builder;
 

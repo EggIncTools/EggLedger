@@ -41,31 +41,6 @@
     margin: 10px 0 0;
 }
 
-.airtime-chip,
-.mcal-bar ::deep .airtime-chip {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 0.3rem;
-    padding: 0.1rem 0.55rem;
-    border-radius: 9999px;
-    border: 1px solid var(--color-border);
-    background-color: var(--color-bg);
-    color: var(--color-fg);
-    font-variant-numeric: tabular-nums;
-}
-
-.airtime-farm {
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    opacity: 0.85;
-}
-
-.mcal-bar ::deep .airtime-filtered {
-    border-style: dashed;
-    color: var(--color-muted);
-}
 
 .mcal-agenda {
     display: none;

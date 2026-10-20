@@ -6,7 +6,7 @@
             <div class="mcc-form">
                 <section class="mcc-section">
                     <span class="mcc-label">Preset</span>
-                    <TileGroup TValue="string" Options="PresetTiles()" Selected="_editingPresetName" OnSelect="SwitchTo" Wrap="true"/>
+                    <Segmented T="string" Options="PresetTiles()" Selected="_editingPresetName" SelectedChanged="SwitchTo" Wrap="true" AriaLabel="Preset"/>
                     @if (_pendingNameAction is { } action) {
                         <div class="mcc-row">
                             <input class="form-input mcc-name" @bind="_pendingNameInput" @bind:event="oninput" placeholder="Preset name" aria-label="Preset name"/>
@@ -28,7 +28,7 @@
 
                 <section class="mcc-section">
                     <span class="mcc-label">Layout</span>
-                    <TileGroup TValue="CardLayout" Options="LayoutTiles" Selected="_form.Layout" OnSelect="SetLayout"/>
+                    <Segmented T="CardLayout" Options="LayoutTiles" Selected="_form.Layout" SelectedChanged="SetLayout" AriaLabel="Layout"/>
                     <span class="mcc-hint">@LayoutHint(_form.Layout)</span>
                 </section>
 
@@ -41,11 +41,11 @@
                                     <input type="checkbox" class="ext-opt-check" checked="@slot.Enabled" @onchange="@(e => SetFieldEnabled(slot, e))"/>
                                     <span class="@(slot.Enabled ? "" : "mcc-off")">@FieldLabel(slot.Field)</span>
                                 </label>
-                                <button type="button" class="icon-btn icon-btn-sm" disabled="@IsFirst(slot)" @onclick="@(() => MoveField(slot, -1))" aria-label="@($"Move {FieldLabel(slot.Field)} up")" title="Move up">
-                                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>
+                                <button type="button" class="btn-mini btn-icon" disabled="@IsFirst(slot)" @onclick="@(() => MoveField(slot, -1))" aria-label="@($"Move {FieldLabel(slot.Field)} up")">
+                                    <Icon Name="chevron-up"/>
                                 </button>
-                                <button type="button" class="icon-btn icon-btn-sm" disabled="@IsLast(slot)" @onclick="@(() => MoveField(slot, 1))" aria-label="@($"Move {FieldLabel(slot.Field)} down")" title="Move down">
-                                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                                <button type="button" class="btn-mini btn-icon" disabled="@IsLast(slot)" @onclick="@(() => MoveField(slot, 1))" aria-label="@($"Move {FieldLabel(slot.Field)} down")">
+                                    <Icon Name="chevron-down"/>
                                 </button>
                             </li>
                         }
@@ -114,10 +114,10 @@
     private string? _cssError;
     private string _editingPresetName = "Classic";
 
-    private static readonly IReadOnlyList<TileGroup<CardLayout>.Tile> LayoutTiles = [
-        new(CardLayout.CompactRow, b => b.AddContent(0, "Compact row")),
-        new(CardLayout.Grid, b => b.AddContent(0, "Grid")),
-        new(CardLayout.Cards, b => b.AddContent(0, "Cards (beta)"))
+    private static readonly IReadOnlyList<SegmentedOption<CardLayout>> LayoutTiles = [
+        new(CardLayout.CompactRow, "Compact row"),
+        new(CardLayout.Grid, "Grid"),
+        new(CardLayout.Cards, "Cards (beta)")
     ];
 
     private static string LayoutHint(CardLayout layout) => layout switch {
@@ -154,8 +154,8 @@
         yield return new("Accent", () => _form.AccentColor, v => _form.AccentColor = v);
     }
 
-    private IReadOnlyList<TileGroup<string>.Tile> PresetTiles() =>
-        [.. PresetSet.Presets.Select(p => new TileGroup<string>.Tile(p.Name, b => b.AddContent(0, p.Name)))];
+    private IReadOnlyList<SegmentedOption<string>> PresetTiles() =>
+        [.. PresetSet.Presets.Select(p => new SegmentedOption<string>(p.Name, p.Name))];
 
     private bool IsClassic => _editingPresetName == "Classic";
 

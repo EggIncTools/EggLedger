@@ -56,11 +56,6 @@
     margin: 0.75rem 0 0.5rem;
 }
 
-.ships-tile-count {
-    margin-left: 0.25rem;
-    color: var(--color-muted);
-}
-
 .list-control-set {
     display: flex;
     flex-wrap: wrap;

@@ -20,24 +20,19 @@
                                  OnPan="Pan"
                                  OnToday="JumpToNow"
                                  DateChanged="JumpToDate"/>
-            <Tooltip Text="@AirtimeTooltip" Class="airtime-stat" PopClass="airtime-tt" Focusable="true">
+            <Tooltip Lines="@AirtimeTooltip" Class="airtime-stat" PopClass="airtime-tt" Focusable="true">
                 <span class="airtime-label">Airtime</span>
                 @if (_flightSlices is not { Count: > 0 } slices) {
-                    <span class="airtime-chip">n/a</span>
+                    <RatioChip/>
                 } else if (slices.Count == 1) {
-                    <span class="airtime-chip" style="@AirtimeChipStyle(slices[0].Ratio)">@Pct(slices[0].Ratio)</span>
+                    <RatioChip Ratio="slices[0].Ratio" Digits="1"/>
                 } else {
                     @foreach (var slice in slices) {
-                        <span class="airtime-chip" style="@AirtimeChipStyle(slice.Ratio)">
-                            <span class="airtime-farm">@(slice.IsVirtue ? "Virtue" : "Home")</span>
-                            @Pct(slice.Ratio)
-                        </span>
+                        <RatioChip Ratio="slice.Ratio" Digits="1" Label="@(slice.IsVirtue ? "Virtue" : "Home")"/>
                     }
                 }
                 @if (FilteredOutRatio is { } filteredOut) {
-                    <Tooltip Text="Airtime from missions excluded by the active filter, for this period." Class="airtime-chip airtime-filtered">
-                        -@Pct(filteredOut) filtered
-                    </Tooltip>
+                    <RatioChip Ratio="filteredOut" Digits="1" Label="Filtered out" Muted="true"/>
                 }
             </Tooltip>
         </div>
@@ -90,7 +85,6 @@
 @code {
     private static readonly string[] WeekHeaderLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     private static readonly double[] WeekHeaderPositions = [100.0 * 6 / 168, 100.0 * 24 / 168, 100.0 * 48 / 168, 100.0 * 72 / 168, 100.0 * 96 / 168, 100.0 * 120 / 168, 100.0 * 144 / 168, 100.0 * 162 / 168];
-    private static readonly string[] OverlayEventTypes = ["mission-capacity", "mission-duration"];
     private static readonly TimelineZoom[] Zooms = [TimelineZoom.Day, TimelineZoom.Week, TimelineZoom.Month];
 
     [Parameter] public IReadOnlyList<DatabaseMission> Missions { get; set; } = Array.Empty<DatabaseMission>();
@@ -99,6 +93,9 @@
     [Parameter] public bool HasActiveFilter { get; set; }
     [Parameter] public bool RecolorDC { get; set; }
     [Parameter] public bool RecolorBC { get; set; }
+    [Parameter] public bool ShowEvents { get; set; } = true;
+    [Parameter] public IReadOnlySet<string> HiddenEventTypes { get; set; } = new HashSet<string>();
+    [Parameter] public int MinEventChance { get; set; }
     [Parameter] public bool UseCards { get; set; }
     [Parameter] public EventCallback<string> OnViewMission { get; set; }
     [Parameter] public RenderFragment? LeadingControls { get; set; }
@@ -201,13 +198,7 @@
             : InFlightMissions.Where(m => !dbIds.Contains(m.MissiondId)).ToList();
         _noDataIds = inFlight.Select(m => m.MissiondId).ToHashSet(StringComparer.Ordinal);
         _merged = Missions.Concat(inFlight).ToList();
-        var observed = GameEvents.Snapshot()
-            .Where(e => OverlayEventTypes.Contains(e.Type, StringComparer.OrdinalIgnoreCase))
-            .ToList();
-        var observedUntil = observed.Count == 0 ? 0 : observed.Max(e => e.EndTimestamp);
-        var predicted = GameEvents.Predictions()
-            .Where(p => OverlayEventTypes.Contains(p.Type, StringComparer.OrdinalIgnoreCase) && p.StartTimestamp >= observedUntil);
-        _overlayEvents = [.. observed, .. predicted];
+        _overlayEvents = ShowEvents ? OverlayEvents() : [];
 
         var now = Time.GetUtcNow();
         var statsStart = _zoom == TimelineZoom.Month ? _visibleStart.AddDays(-7 * (VisibleSlots - 1)) : _visibleStart;
@@ -234,6 +225,18 @@
         _periods = windows
             .Select((w, index) => BuildPeriod(w.Start, w.End, index == center, tz, now))
             .ToList();
+    }
+
+    private IReadOnlyList<GameEvent> OverlayEvents() {
+        bool Shown(GameEvent e) =>
+            GameEventDisplay.CalendarTypes.Contains(e.Type, StringComparer.OrdinalIgnoreCase) && !HiddenEventTypes.Contains(e.Type);
+
+        var observed = GameEvents.Snapshot().Where(Shown).ToList();
+        var observedUntil = observed.Count == 0 ? 0 : observed.Max(e => e.EndTimestamp);
+        double minChance = MinEventChance / 100.0;
+        var predicted = GameEvents.Predictions()
+            .Where(p => Shown(p) && p.StartTimestamp >= observedUntil && (p.Confidence ?? 1) >= minChance);
+        return [.. observed, .. predicted];
     }
 
     private PeriodSlot<object> BuildPeriod(DateTimeOffset start, DateTimeOffset end, bool isCenter, TimeZoneInfo tz, DateTimeOffset now) {
@@ -326,27 +329,24 @@
         return FormattableString.Invariant($"--tick-pos:{leftPercent};");
     }
 
-    private static string Pct(double ratio) {
-        return ratio.ToString("P1", CultureInfo.InvariantCulture);
-    }
-
-    private string AirtimeTooltip {
+    private IReadOnlyList<TooltipLine>? AirtimeTooltip {
         get {
-            if (_occupancyHours is not { Count: > 0 } hours) return "";
+            if (_occupancyHours is not { Count: > 0 } hours) return null;
 
-            return string.Join("\n", hours
-                .Select((h, ships) => FormattableString.Invariant($"{ships} in flight: {h:0.#}h"))
-                .Reverse());
+            var total = hours.Sum();
+            var top = Math.Max(hours.Count - 1, 1);
+            List<TooltipLine> lines = [new("Ships in flight", Head: true, Value: "Hours")];
+            for (var ships = hours.Count - 1; ships >= 0; ships--) {
+                var share = total > 0 ? hours[ships] / total : 0;
+                lines.Add(new(FormattableString.Invariant($"{ships} in flight ({share:P0})"),
+                    Value: FormattableString.Invariant($"{hours[ships]:0.#}h"),
+                    Ratio: (double)ships / top));
+            }
+            if (FilteredOutRatio is { } filteredOut) {
+                lines.Add(new("Excluded by filter", Value: filteredOut.ToString("P1", CultureInfo.InvariantCulture)));
+            }
+            return lines;
         }
-    }
-
-    private static string AirtimeChipStyle(double ratio) {
-        double t = Math.Clamp(ratio, 0, 1);
-        int r = (int)Math.Round(239 + (34 - 239) * t);
-        int g = (int)Math.Round(68 + (197 - 68) * t);
-        int b = (int)Math.Round(68 + (94 - 68) * t);
-        return FormattableString.Invariant(
-            $"color:rgb({r},{g},{b});border-color:color-mix(in srgb, rgb({r},{g},{b}) 55%, transparent);background-color:color-mix(in srgb, rgb({r},{g},{b}) 10%, var(--color-darker));");
     }
 
     private void SetZoom(TimelineZoom zoom) {

@@ -63,7 +63,7 @@
                             </svg>
                             XLSX
                         </button>
-                        <Tooltip Text="Remove from your suite account list. Missions stay saved.">
+                        <Tooltip Lines="ForgetLines">
                             <button type="button" class="btn-mini"
                                     disabled="@_busy" @onclick="() => Delete(acct.Id)">
                                 Forget
@@ -79,7 +79,7 @@
                                 @(_busy ? "Deleting..." : "Delete")
                             </button>
                         } else {
-                            <Tooltip Text="@(Fetching?.Id == acct.Id ? "Wait for the fetch to finish." : "Delete this account's saved missions and reports.")">
+                            <Tooltip Lines="@(Fetching?.Id == acct.Id ? DeleteBusyLines : DeleteLines)">
                                 <button type="button" class="btn-mini acd-danger"
                                         disabled="@(_busy || Fetching?.Id == acct.Id)" @onclick="() => _confirmingDeleteId = acct.Id">
                                     Delete data
@@ -108,6 +108,10 @@
     [Parameter] public bool ShowHeading { get; set; } = true;
 
     [Parameter] public FetchingCard? Fetching { get; set; }
+
+    private static readonly IReadOnlyList<TooltipLine> ForgetLines = [new("Forget", Head: true), new("Removes it from your suite account list"), new("Missions stay saved")];
+    private static readonly IReadOnlyList<TooltipLine> DeleteLines = [new("Delete data", Head: true), new("Deletes this account's saved missions and reports")];
+    private static readonly IReadOnlyList<TooltipLine> DeleteBusyLines = [new("Fetch in progress", Head: true), new("Wait for the fetch to finish")];
 
     public sealed record FetchingCard(string Id, string Nickname, string Color, int Finished, int Total);
 

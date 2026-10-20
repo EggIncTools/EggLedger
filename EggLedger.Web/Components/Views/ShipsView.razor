@@ -30,6 +30,9 @@
                              HasActiveFilter="State.HasActiveFilter"
                              RecolorDC="State.Opts.RecolorDC"
                              RecolorBC="State.Opts.RecolorBC"
+                             ShowEvents="State.Opts.CalendarEvents"
+                             HiddenEventTypes="State.Opts.CalendarHiddenEventTypes"
+                             MinEventChance="State.Opts.CalendarMinChance"
                              UseCards="State.CardPresets.ActivePreset().UsesCards"
                              OnViewMission="ViewMissionAsync"
                              LeadingControls="CalendarLeadingControls"/>
@@ -74,9 +77,9 @@
 }
 
 @code {
-    private static readonly IReadOnlyList<TileGroup<ShipsViewMode>.Tile> ModeTiles = [
-        new(ShipsViewMode.List, b => b.AddContent(0, "List")),
-        new(ShipsViewMode.Calendar, b => b.AddContent(0, "Calendar"))
+    private static readonly IReadOnlyList<SegmentedOption<ShipsViewMode>> ModeTiles = [
+        new(ShipsViewMode.List, "List"),
+        new(ShipsViewMode.Calendar, "Calendar")
     ];
 
     private MissionOverlay? _overlay;
@@ -106,7 +109,7 @@
     }
 
     private RenderFragment RenderModeTiles() => __builder => {
-        <TileGroup TValue="ShipsViewMode" Options="ModeTiles" Selected="State.ViewMode" OnSelect="SetViewMode"/>
+        <Segmented T="ShipsViewMode" Options="ModeTiles" Selected="State.ViewMode" SelectedChanged="SetViewMode" AriaLabel="Mission view"/>
     };
 
     private RenderFragment CalendarLeadingControls => __builder => {
@@ -116,24 +119,22 @@
         }
     };
 
-    private IReadOnlyList<TileGroup<int?>.Tile> TypeTiles() => [
-        new(null, CountLabel("All", State.Filtered?.Count ?? 0)),
-        new(0, CountLabel("Home", State.CountOfType(0))),
-        new(1, CountLabel("Virtue", State.CountOfType(1)))
+    private IReadOnlyList<SegmentedOption<int?>> TypeTiles() => [
+        new(null, "All", State.Filtered?.Count ?? 0),
+        new(0, "Home", State.CountOfType(0)),
+        new(1, "Virtue", State.CountOfType(1))
     ];
 
-    private RenderFragment CountLabel(string label, int count) => __builder => {
-        @label <span class="ships-tile-count">(@count)</span>
-    };
-
     private RenderFragment RenderTileSelector() => __builder => {
-        <TileGroup TValue="int?" Options="TypeTiles()" Selected="State.Opts.MissionTypeTab" OnSelect="SelectTab"/>
+        <Segmented T="int?" Options="TypeTiles()" Selected="State.Opts.MissionTypeTab" SelectedChanged="SelectTab" AriaLabel="Mission type"/>
     };
 
-    private IReadOnlyList<TileGroup<MultiViewMode>.Tile> MultiTiles() => [
-        new(MultiViewMode.Off, b => b.AddContent(0, "Off"), Title: "Multi-select off"),
-        new(MultiViewMode.Row, b => b.AddContent(0, "Row/Date"), State.Opts.SortByDropCount, "Row/Date Select"),
-        new(MultiViewMode.Free, b => b.AddContent(0, "Free"), Title: "Free Select")
+    private IReadOnlyList<SegmentedOption<MultiViewMode>> MultiTiles() => [
+        new(MultiViewMode.Off, "Off", Title: "Multi-select off"),
+        new(MultiViewMode.Row, "Row/Date",
+            Title: State.Opts.SortByDropCount ? "Row/Date select is unavailable while sorting by drop count" : "Select a whole row or date",
+            Disabled: State.Opts.SortByDropCount),
+        new(MultiViewMode.Free, "Free", Title: "Select missions one by one")
     ];
 
     private bool AllMultiSelected =>
@@ -141,7 +142,7 @@
 
     private RenderFragment RenderListControlSet() => __builder => {
         <div class="list-control-set">
-            <TileGroup TValue="MultiViewMode" Options="MultiTiles()" Selected="State.Opts.MultiViewMode" OnSelect="State.SetMultiViewAsync"/>
+            <Segmented T="MultiViewMode" Options="MultiTiles()" Selected="State.Opts.MultiViewMode" SelectedChanged="State.SetMultiViewAsync" AriaLabel="Multi-select"/>
             @if (State.Opts.MultiViewMode == MultiViewMode.Free) {
                 <div class="list-control-actions">
                     <button type="button" class="list-control-action-btn" disabled="@(State.MultiSelectedIds.Count == 0)" @onclick="ViewSelectedMultiAsync">

@@ -38,6 +38,17 @@
     text-overflow: ellipsis;
 }
 
+.timeline-event-chance {
+    flex-shrink: 0;
+    padding: 0.1rem 0.3rem;
+    border-radius: 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--color-white);
+    background: var(--color-darkest);
+}
+
 .timeline-event-cut-l {
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;

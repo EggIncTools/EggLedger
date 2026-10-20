@@ -23,6 +23,9 @@ public sealed class MissionViewOptions {
     public const string KeySortByDropCount = "mission_sort_by_drop_count";
     public const string KeyRecolorDC = "mission_recolor_dc";
     public const string KeyRecolorBC = "mission_recolor_bc";
+    public const string KeyCalendarEvents = "mission_calendar_events";
+    public const string KeyCalendarHiddenEventTypes = "mission_calendar_hidden_event_types";
+    public const string KeyCalendarMinChance = "mission_calendar_min_chance";
 
     public bool ViewByDate { get; set; }
     public bool ViewMissionTimes { get; set; } = true;
@@ -31,8 +34,22 @@ public sealed class MissionViewOptions {
     public bool SortByDropCount { get; set; }
     public bool RecolorDC { get; set; }
     public bool RecolorBC { get; set; }
+    public bool CalendarEvents { get; set; } = true;
+    public HashSet<string> CalendarHiddenEventTypes { get; set; } = [with(StringComparer.OrdinalIgnoreCase)];
+    public int CalendarMinChance { get; set; }
 
     public int? MissionTypeTab { get; set; }
+
+    public static HashSet<string> ParseEventTypes(string? raw) =>
+        new((raw ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries), StringComparer.OrdinalIgnoreCase);
+
+    public static string EventTypesToString(IEnumerable<string> types) =>
+        string.Join(',', types.Order(StringComparer.OrdinalIgnoreCase));
+
+    public static int ParseChance(string? raw, int fallback) =>
+        int.TryParse(raw, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var v)
+            ? Math.Clamp(v, 0, 100)
+            : fallback;
 
     public static bool HasBothMissionTypes(IReadOnlyList<DatabaseMission>? missions) {
         if (missions is null || missions.Count == 0) return false;
@@ -88,6 +105,9 @@ public sealed class MissionViewOptions {
             RecolorDC = ParseBool(rdc, RecolorDC);
         }
         if (settings.TryGetValue(KeyRecolorBC, out var rbc)) RecolorBC = ParseBool(rbc, RecolorBC);
+        if (settings.TryGetValue(KeyCalendarEvents, out var ce)) CalendarEvents = ParseBool(ce, CalendarEvents);
+        if (settings.TryGetValue(KeyCalendarHiddenEventTypes, out var cht)) CalendarHiddenEventTypes = ParseEventTypes(cht);
+        if (settings.TryGetValue(KeyCalendarMinChance, out var cmc)) CalendarMinChance = ParseChance(cmc, CalendarMinChance);
     }
 
     private static bool ParseBool(string raw, bool fallback) =>

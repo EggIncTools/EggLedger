@@ -6,7 +6,7 @@
         <div>
             <span class="dopt-heading">Sort Method</span>
             <div class="dopt-row">
-                <TileGroup TValue="LifetimeSortMethod" Options="SortTiles" Selected="State.SortMethod" OnSelect="State.SetSortAsync" Wrap="true"/>
+                <Segmented T="LifetimeSortMethod" Options="SortTiles" Selected="State.SortMethod" SelectedChanged="State.SetSortAsync" Wrap="true" AriaLabel="Sort method"/>
             </div>
         </div>
         <div>
@@ -23,11 +23,11 @@
 
 @code {
 
-    private static readonly IReadOnlyList<TileGroup<LifetimeSortMethod>.Tile> SortTiles = [
-        new(LifetimeSortMethod.Default, b => b.AddContent(0, "Default")),
-        new(LifetimeSortMethod.Iv, b => b.AddContent(0, "Inventory Visualizer")),
-        new(LifetimeSortMethod.Count, b => b.AddContent(0, "Total Count")),
-        new(LifetimeSortMethod.Random, b => b.AddContent(0, "Random"))
+    private static readonly IReadOnlyList<SegmentedOption<LifetimeSortMethod>> SortTiles = [
+        new(LifetimeSortMethod.Default, "Default"),
+        new(LifetimeSortMethod.Iv, "Inventory Visualizer"),
+        new(LifetimeSortMethod.Count, "Total Count"),
+        new(LifetimeSortMethod.Random, "Random")
     ];
 
     protected override async Task OnInitializedAsync() {

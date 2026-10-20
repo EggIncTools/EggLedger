@@ -13,7 +13,9 @@
                     <span class="mprog-label">@proc.Label</span>
                     <span class="mprog-segs">
                         @foreach (var seg in proc.Segments) {
-                            <span title="@seg.Name" class="mprog-dot @SegmentDotClass(seg.Status)"></span>
+                            <Tooltip Lines="@([new TooltipLine(seg.Name ?? "Step", Head: true), new TooltipLine($"{seg.Status}")])">
+                                <span class="mprog-dot @SegmentDotClass(seg.Status)"></span>
+                            </Tooltip>
                         }
                     </span>
                     <span class="mprog-meta">@RelativeTime(proc.StartedAt)</span>

@@ -85,7 +85,8 @@ public static class TimelineLayoutEngine {
                 WidthPercent: width * 100,
                 ContinuesLeft: start < windowStart,
                 ContinuesRight: end > windowEnd,
-                Predicted: e.Predicted));
+                Predicted: e.Predicted,
+                Confidence: e.Confidence));
         }
 
         return result;

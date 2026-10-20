@@ -30,22 +30,33 @@
     cursor: not-allowed;
 }
 
-.sopt-dialog-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    width: max-content;
-    padding: 0.25rem 0.6rem;
-    border: 1px solid var(--color-border);
-    border-radius: 0.375rem;
-    background-color: var(--color-bg);
-    color: var(--color-fg);
-    font-size: 0.8rem;
-    cursor: pointer;
-    transition: border-color var(--motion-fast) var(--ease-standard), color var(--motion-fast) var(--ease-standard);
+.sopt-indent {
+    padding-left: 1.25rem;
 }
 
-.sopt-dialog-btn:hover {
-    border-color: var(--color-muted);
-    color: var(--color-white);
+.sopt-slider {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+}
+
+.sopt-slider-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.sopt-slider-value {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.sopt-slider input {
+    width: 100%;
+    accent-color: var(--color-accent);
+}
+
+.sopt-dialog-btn {
+    width: max-content;
 }
