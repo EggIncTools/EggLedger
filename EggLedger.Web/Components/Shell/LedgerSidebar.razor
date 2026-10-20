@@ -6,7 +6,9 @@
 
 <aside class="ledger-sidebar @(_collapsed ? "ledger-sidebar-rail" : "") @(IsReports ? "ledger-sidebar-reports" : "")">
     <LedgerAbout/>
-    <AccountFetchHeader OnExpandRequest="Expand"/>
+    <CircuitGuard Name="AccountHeader" Scope="FaultScope.Panel">
+        <AccountFetchHeader OnExpandRequest="Expand"/>
+    </CircuitGuard>
 
     <div class="sb-panel sidebar-panel sidebar-filter @(_filterOpen ? "" : "sidebar-panel-closed")">
         <div class="sidebar-panel-head">

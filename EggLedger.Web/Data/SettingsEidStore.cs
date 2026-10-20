@@ -20,7 +20,7 @@ public sealed class SettingsEidStore(IndexedDbSettings settings, TimeProvider? t
         var eids = Parse(all);
         return new ProfileGame {
             ActiveEid = active,
-            ActiveEidLabel = eids.FirstOrDefault(e => e.Eid == active)?.DisplayName,
+            ActiveEidLabel = eids.FirstOrDefault(e => e.Eid == active)?.Name,
             Eids = eids,
         };
     }

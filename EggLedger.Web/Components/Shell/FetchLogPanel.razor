@@ -1,5 +1,5 @@
 @inject FetchOrchestrator Fetch
-@inject ScreenshotSafetyState ScreenshotSafety
+@inject ScreenshotSafety ScreenshotSafety
 @inject IndexedDbSettings Settings
 @inject IUserTimeZoneProvider TzProvider
 @implements IDisposable
@@ -54,7 +54,7 @@
                     }
                     break;
                 case AppState.Failed:
-                    <div class="flog-err">Data fetching failed. Please try again.</div>
+                    <DependencyNotice Dependency="SuiteDependency.EggIncApi" Feature="Mission fetch"/>
                     @if (Fetch.Progress?.FailedMissions is { Count: > 0 } fails) {
                         <ul class="flog-list flog-fails">
                             @foreach (var f in fails) {

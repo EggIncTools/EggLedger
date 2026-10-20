@@ -1,9 +1,7 @@
 @implements IDisposable
 @inject ShipsViewState State
 
-@if (State.AccountId is null) {
-    <p class="sopt-empty">Select an account to see mission options.</p>
-} else {
+@if (State.AccountId is not null) {
     <div class="sopt">
         <button type="button" class="sopt-dialog-btn" aria-haspopup="dialog" title="Edit mission card layout, fields and colors"
                 @onclick="OpenCardConfigAsync">

@@ -19,12 +19,8 @@
     @if (_reachableChecking) {
         <div class="csync-checking">Checking sync server connection...</div>
     } else if (!_reachable) {
-        <div class="csync-gap">
-            <StatusNote Kind="StatusNoteKind.Warn">
-                <strong>Could not reach the sync server.</strong> Settings sync is unavailable. Try disabling any active VPN, then Retry.
-            </StatusNote>
-            <button type="button" class="btn-secondary csync-gap" @onclick="RecheckReachableAsync">Retry</button>
-        </div>
+        <DependencyNotice Dependency="SuiteDependency.SyncServer" Feature="Settings sync"
+                          Hint="Try disabling any active VPN." OnRetry="RecheckReachableAsync" Class="csync-gap"/>
     } else {
         <div class="csync-row">
             <span class="csync-badge @BadgeClass">@BadgeText</span>

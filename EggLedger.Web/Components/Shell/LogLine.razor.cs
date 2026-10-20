@@ -1,5 +1,4 @@
 using System.Text.RegularExpressions;
-using EggLedger.Web.State;
 using Microsoft.AspNetCore.Components;
 
 namespace EggLedger.Web.Components.Shell;
@@ -23,11 +22,12 @@ public partial class LogLine {
 
     [Parameter] public bool Masked { get; set; }
 
-    [Inject] private ScreenshotSafetyState ScreenshotSafety { get; set; } = default!;
-
     protected override void OnParametersSet() {
-        _runs = Parse(Masked ? ScreenshotSafety.Mask(Text) : Text);
+        _runs = Parse(Masked ? MaskEids(Text) : Text);
     }
+
+    public static string MaskEids(string text) =>
+        string.IsNullOrEmpty(text) ? "" : EidRegex().Replace(text, "EI" + EidBarToken);
 
     public static IReadOnlyList<LogRun> Parse(string text) {
         List<LogRun> runs = [];
@@ -82,6 +82,9 @@ public partial class LogLine {
 
     [GeneratedRegex(@"\G&([0-9a-fA-F]{6})<([^>]*)>")]
     private static partial Regex ColorToken();
+
+    [GeneratedRegex(@"EI\d{16}")]
+    private static partial Regex EidRegex();
 
     [GeneratedRegex(@"\[eid-bar\]|\[img:|&[0-9a-fA-F]{6}<")]
     private static partial Regex NextToken();

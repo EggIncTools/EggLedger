@@ -1,5 +1,4 @@
 @inject IExportManagement Exports
-@inject ScreenshotSafetyState ScreenshotSafety
 
 @* Lists export file groups per account, prunes to a keep-count, and deletes selected pairs.
    Sizes and counts mirror the Go ExportManagementPanel. *@
@@ -43,7 +42,7 @@
                                 @group.Nickname
                             </span>
                         }
-                        <span class="exm-eid">@ScreenshotSafety.Mask(group.Eid)</span>
+                        <EidText Value="@group.Eid" Class="exm-eid"/>
                         <span class="exm-group-meta">@group.Pairs.Count export(s), @FormatSize(GroupSize(group))</span>
                     </button>
                     @if (!collapsed) {

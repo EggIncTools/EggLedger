@@ -2,7 +2,7 @@
 @inject DropsViewState State
 
 @if (State.AccountId is null) {
-    <p class="drops-note">Select an account in the sidebar to view its lifetime data.</p>
+    <NoAccountState/>
 } else if (State.Loading && State.Data is null) {
     <div class="drops-skeleton" aria-busy="true" aria-label="Loading lifetime drops">
         @for (var s = 0; s < 3; s++) {

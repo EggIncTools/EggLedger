@@ -3,7 +3,7 @@
 @inject ShipsViewState State
 
 @if (State.AccountId is null) {
-    <p class="ships-note">Select an account in the sidebar to view its missions.</p>
+    <NoAccountState/>
 } else if (State.Loading && State.AllMissions is null) {
     <div class="ships-skeleton" aria-busy="true" aria-label="Loading missions">
         <div class="ships-skeleton-controls">

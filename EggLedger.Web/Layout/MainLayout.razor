@@ -4,7 +4,7 @@
 @inherits LayoutComponentBase
 @implements IDisposable
 @inject IServiceProvider Services
-@inject ScreenshotSafetyState ScreenshotSafety
+@inject ScreenshotSafety ScreenshotSafety
 @inject IndexedDbSettings Settings
 @inject AccountLoader Loader
 @inject IUserTimeZoneProvider TzProvider
@@ -17,7 +17,9 @@
 <CascadingValue Value="IsLoggedIn" Name="IsLoggedIn">
     <div class="layout">
         <main class="layout-main" @key="TzProvider.TimeZone.Id">
-            @Body
+            <CircuitGuard Name="Page" Scope="FaultScope.Page">
+                @Body
+            </CircuitGuard>
         </main>
     </div>
 </CascadingValue>
@@ -54,8 +56,7 @@
         await Loader.EnsureLoadedAsync();
 
         var settings = await Settings.GetAllSettingsAsync();
-        if (settings.TryGetValue(SettingsModel.KeyScreenshotSafety, out var v))
-            ScreenshotSafety.Enabled = v == "true";
+        ScreenshotSafety.Enabled = settings.TryGetValue(SettingsModel.KeyScreenshotSafety, out var v) && v == "true";
     }
 
     private async Task PreloadAsync(Func<Task> ensureInitialized) {

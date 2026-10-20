@@ -1,20 +1,16 @@
+@using EggIdentity.UI
 @using Microsoft.AspNetCore.Components.Authorization
 <CascadingAuthenticationState>
-    <Router AppAssembly="@typeof(App).Assembly">
+    <Router AppAssembly="@typeof(App).Assembly" NotFoundPage="typeof(FaultNotFound)">
         <Found Context="routeData">
             <AuthorizeView>
                 <Authorized>
                     <BackfillTrigger/>
                 </Authorized>
             </AuthorizeView>
-            <AppErrorBoundary>
+            <CircuitGuard Name="Root" Scope="FaultScope.Page">
                 <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)"/>
-            </AppErrorBoundary>
+            </CircuitGuard>
         </Found>
-        <NotFound>
-            <LayoutView Layout="@typeof(MainLayout)">
-                <p role="alert">Page not found.</p>
-            </LayoutView>
-        </NotFound>
     </Router>
 </CascadingAuthenticationState>

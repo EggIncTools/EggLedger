@@ -3,11 +3,13 @@
 
 <div class="options-host">
     <div class="options-host-body">
-        @if (Shell.View == LedgerView.Drops) {
-            <DropsOptionsPanel/>
-        } else if (Shell.View != LedgerView.Reports) {
-            <ShipsOptionsPanel/>
-        }
+        <CircuitGuard Name="Options" Scope="FaultScope.Panel">
+            @if (Shell.View == LedgerView.Drops) {
+                <DropsOptionsPanel/>
+            } else if (Shell.View != LedgerView.Reports) {
+                <ShipsOptionsPanel/>
+            }
+        </CircuitGuard>
     </div>
 </div>
 

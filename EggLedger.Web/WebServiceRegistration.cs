@@ -93,7 +93,8 @@ public static class WebServiceRegistration {
         services.AddScoped<EggLedger.Web.Settings.SettingsWriteCoordinator>();
 
         services.AddScoped<ActiveAccount>();
-        services.AddScoped<ScreenshotSafetyState>();
+        services.TryAddScoped<ScreenshotSafety>();
+        services.AddScoped<IFaultDetailGate, AdminFaultDetailGate>();
         services.AddScoped<AppStateService>();
         services.AddScoped(sp => {
             var missions = sp.GetRequiredService<IndexedDbMissionStore>();

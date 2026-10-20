@@ -89,7 +89,7 @@ public sealed class SuiteAccountStore(SuiteContext suite, IndexedDbSettings sett
             }
             if (suite.ActiveEid is null && all.TryGetValue(LegacyActiveKey, out var activeId)
                 && suite.Eids.FirstOrDefault(e => e.Eid == activeId) is { } active) {
-                await suite.SetActiveEidAsync(active.Eid, active.DisplayName).ConfigureAwait(false);
+                await suite.SetActiveEidAsync(active.Eid, active.Name).ConfigureAwait(false);
             }
         }
         await settings.RemoveSettingAsync(LegacyAccountsKey).ConfigureAwait(false);

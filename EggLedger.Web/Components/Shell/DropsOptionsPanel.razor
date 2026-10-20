@@ -1,9 +1,7 @@
 @implements IDisposable
 @inject DropsViewState State
 
-@if (State.AccountId is null) {
-    <p class="dopt-empty">Select an account to see drop options.</p>
-} else {
+@if (State.AccountId is not null) {
     <div class="dopt">
         <div>
             <span class="dopt-heading">Sort Method</span>

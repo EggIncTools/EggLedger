@@ -1,12 +1,12 @@
+using EggIdentity.UI;
 using EggLedger.Web.Data;
 using EggLedger.Web.Services;
-using EggLedger.Web.State;
 
 namespace EggLedger.Web.Settings;
 
 public sealed class SettingsWriteCoordinator(
     IndexedDbSettings settings,
-    ScreenshotSafetyState screenshotSafety,
+    ScreenshotSafety screenshotSafety,
     CloudAutoSyncCoordinator autoSync) {
     public async Task SetAsync(string key, string value) {
         await settings.SetSettingAsync(key, value);

@@ -5,9 +5,7 @@
 @inject MennoService Menno
 
 @if (State.AccountId is null) {
-    <div class="rv-empty">
-        <p class="rv-empty-text">Select an account in the sidebar to view its reports.</p>
-    </div>
+    <NoAccountState/>
 } else {
     <div class="rv-toolbar">
         <div class="rv-groups">

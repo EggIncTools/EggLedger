@@ -98,7 +98,7 @@
                     }
                 </span>
                 <span class="account-option-meta account-line account-small account-dim">
-                    <MaskedEid Value="@_active.Id"/>
+                    <EidText Value="@_active.Id" Interactive="false"/>
                     @RenderBackupStamp(activeInfo)
                 </span>
                 <span class="account-option-meta account-line account-small account-dim">
@@ -159,7 +159,7 @@
             </span>
             <span class="account-line account-dim">
                 <span class="account-stamp-value">
-                    <MaskedEid Value="@acct.Id"/>
+                    <EidText Value="@acct.Id" Interactive="false"/>
                 </span>
                 @RenderBackupStamp(acct)
             </span>

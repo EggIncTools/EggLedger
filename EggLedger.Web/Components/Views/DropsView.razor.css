@@ -1,9 +1,3 @@
-.drops-note {
-    margin: 0.75rem 0 0;
-    color: var(--color-muted);
-    font-style: italic;
-}
-
 .drops-skeleton {
     display: flex;
     flex-direction: column;

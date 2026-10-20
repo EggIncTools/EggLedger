@@ -1,0 +1,5 @@
+@inject LedgerShellState Shell
+
+<EmptyState Icon="database" Title="No account selected" Fill="true">
+    <button type="button" class="btn-secondary" @onclick="Shell.RequestAccountPopover">Choose account</button>
+</EmptyState>

@@ -105,7 +105,7 @@
         SuiteAccountStore.ToSnapshot(await AddAccount.FirstContactAsync(eid));
 
     private async Task OnEidAddedAsync(ProfileEid entry) {
-        await Suite.SetActiveEidAsync(entry.Eid, entry.DisplayName);
+        await Suite.SetActiveEidAsync(entry.Eid, entry.Name);
         _ = Fetch.StartFetchAsync(entry.Eid);
     }
 
