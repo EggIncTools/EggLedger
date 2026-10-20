@@ -4,8 +4,13 @@
 }
 
 .ship-display-multi {
-    padding-left: 3rem;
-    padding-right: 3rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+.ship-display-multi ::deep .ddc {
+    margin-left: 0;
+    margin-right: 0;
 }
 
 .ship-display-head {
@@ -111,5 +116,10 @@
     .ship-display-head {
         flex-wrap: nowrap;
         width: fit-content;
+    }
+
+    .ship-display-multi .ship-display-head {
+        flex-wrap: wrap;
+        width: 100%;
     }
 }
