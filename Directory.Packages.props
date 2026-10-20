@@ -6,16 +6,16 @@
   <ItemGroup>
     <PackageVersion Include="bunit" Version="2.9.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
-    <PackageVersion Include="EggIdentity.Admin" Version="285.0.0" />
-    <PackageVersion Include="EggIdentity.Auth" Version="285.0.0" />
-    <PackageVersion Include="EggIdentity.Bot" Version="285.0.0" />
-    <PackageVersion Include="EggIdentity.Brand" Version="285.0.0" />
-    <PackageVersion Include="EggIdentity.CodeStyle" Version="285.0.0" />
-    <PackageVersion Include="EggIdentity.Core" Version="285.0.0" />
-    <PackageVersion Include="EggIdentity.Data" Version="285.0.0" />
-    <PackageVersion Include="EggIdentity.Testing" Version="285.0.0" />
-    <PackageVersion Include="EggIdentity.UI" Version="285.0.0" />
-    <PackageVersion Include="EggIdentity.Web" Version="285.0.0" />
+    <PackageVersion Include="EggIdentity.Admin" Version="287.0.0" />
+    <PackageVersion Include="EggIdentity.Auth" Version="287.0.0" />
+    <PackageVersion Include="EggIdentity.Bot" Version="287.0.0" />
+    <PackageVersion Include="EggIdentity.Brand" Version="287.0.0" />
+    <PackageVersion Include="EggIdentity.CodeStyle" Version="287.0.0" />
+    <PackageVersion Include="EggIdentity.Core" Version="287.0.0" />
+    <PackageVersion Include="EggIdentity.Data" Version="287.0.0" />
+    <PackageVersion Include="EggIdentity.Testing" Version="287.0.0" />
+    <PackageVersion Include="EggIdentity.UI" Version="287.0.0" />
+    <PackageVersion Include="EggIdentity.Web" Version="287.0.0" />
     <PackageVersion Include="EggSharp.Api" Version="34.0.0" />
     <PackageVersion Include="EggSharp.Core" Version="34.0.0" />
     <PackageVersion Include="EggSharp.Ei.ProtobufNet" Version="34.0.0" />
