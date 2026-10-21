@@ -10,10 +10,10 @@
 } else {
     @switch (Item.Kind) {
         case CardKinds.Field:
-            <span class="@FieldClass()" style="@FontSizeStyle()">@MissionFields.Format(FieldId!, Data)</span>
+            <span class="@FieldClass()" style="@FontSizeStyle(MissionFields.Format(FieldId!, Data))">@MissionFields.Format(FieldId!, Data)</span>
             break;
         case CardKinds.Label:
-            <span class="ce-text" style="@FontSizeStyle()">@LabelText</span>
+            <span class="ce-text" style="@FontSizeStyle(LabelText!)">@LabelText</span>
             break;
         case CardKinds.ShipImage:
             <img class="ce-img" src="@ContentPaths.Asset($"images/ships/{Data.Mission.ShipEnumString}.png")" alt="@Data.Mission.ShipString" loading="lazy" decoding="async"/>
@@ -22,10 +22,10 @@
             <TargetDisplay Target="@Data.Mission.Target"/>
             break;
         case CardKinds.Stars:
-            <span class="ce-text" style="@FontSizeStyle()">@Data.Mission.Level<span class="text-goldenstar">&#9733;</span></span>
+            <span class="ce-text" style="@FontSizeStyle(Data.Mission.Level.ToString(CultureInfo.InvariantCulture) + "*")">@Data.Mission.Level<span class="text-goldenstar">&#9733;</span></span>
             break;
         case CardKinds.CapBadge:
-            <span class="ce-badge" style="@FontSizeStyle()">@(Data.Mission.IsBuggedCap ? "0.6x" : "2x")</span>
+            <span class="ce-badge" style="@FontSizeStyle(Data.Mission.IsBuggedCap ? "0.6x" : "2x")">@(Data.Mission.IsBuggedCap ? "0.6x" : "2x")</span>
             break;
         case CardKinds.DropStrip:
             <div class="ce-strip">
@@ -98,8 +98,13 @@
     private int DurationTypeInt() =>
         Data.Mission.DurationType is { } d ? Convert.ToInt32(d, CultureInfo.InvariantCulture) : 3;
 
-    private string? FontSizeStyle() =>
-        Item.Style?.FontSize is null ? "font-size:calc(0.6 * var(--canvas-unit))" : null;
+    private string? FontSizeStyle(string text) {
+        if (Item.Style?.FontSize is not null) return null;
+
+        var chars = Math.Max(1, text.Length);
+        var byWidth = (Item.W / (0.62 * chars)).ToString("0.###", CultureInfo.InvariantCulture);
+        return $"font-size:min(calc(0.6 * var(--canvas-unit)), calc({byWidth} * var(--canvas-unit)))";
+    }
 
     private string DividerClass() =>
         CardPayload.Vertical(Item) == true ? "ce-divider ce-divider-v" : "ce-divider ce-divider-h";

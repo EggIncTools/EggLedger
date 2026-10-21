@@ -75,9 +75,9 @@ public sealed record CardTemplateSet(IReadOnlyList<CardTemplate> Templates, IRea
 }
 
 public static class CardBuiltins {
-    public static CardTemplate Classic { get; } = Build("Classic", 24, 1, [
-        [F(MissionFields.LaunchDate, 4), F(MissionFields.LaunchTime, 3), K(CardKinds.ShipImage, 1), F(MissionFields.Ship, 6),
-            K(CardKinds.Stars, 2), K(CardKinds.TargetImage, 1), F(MissionFields.Target, 5), F(MissionFields.DropCount, 2)],
+    public static CardTemplate Classic { get; } = Build("Classic", 32, 1, [
+        [F(MissionFields.LaunchDate, 5), F(MissionFields.LaunchTime, 4), K(CardKinds.ShipImage, 1), F(MissionFields.Ship, 8),
+            K(CardKinds.Stars, 2), K(CardKinds.TargetImage, 1), F(MissionFields.Target, 8), F(MissionFields.DropCount, 3)],
     ]);
 
     public static CardTemplate CalendarDay { get; } = Build("CalendarDay", 12, 2, [
