@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using EggIdentity.Reports;
 using EggLedger.Domain.Reports;
 using EggLedger.Web.Data;
+using EggLedger.Web.Missions;
 using Microsoft.Extensions.Logging;
 
 namespace EggLedger.Web.Settings;
@@ -39,6 +40,8 @@ public sealed record CloudSyncableSettings {
     public bool LifetimeShowDropsPerShip { get; init; }
     [JsonPropertyName("lifetime_show_expected_totals")]
     public bool LifetimeShowExpectedTotals { get; init; }
+    [JsonPropertyName("mission_card_templates")]
+    public string MissionCardTemplates { get; init; } = "";
 }
 
 public sealed record CloudReportGroup {
@@ -153,6 +156,7 @@ public static class CloudSyncBlobs {
         LifetimeSortMethod = SettingsDictionaryParsing.Str(settings, "lifetime_sort_method", ""),
         LifetimeShowDropsPerShip = SettingsDictionaryParsing.Bool(settings, "lifetime_show_drops_per_ship", false),
         LifetimeShowExpectedTotals = SettingsDictionaryParsing.Bool(settings, "lifetime_show_expected_totals", false),
+        MissionCardTemplates = SettingsDictionaryParsing.Str(settings, MissionViewOptions.KeyCardTemplates, ""),
     };
 
     public static IReadOnlyDictionary<string, string> UnpackSettings(CloudSyncableSettings s) => new Dictionary<string, string> {
@@ -171,6 +175,7 @@ public static class CloudSyncBlobs {
         ["lifetime_sort_method"] = s.LifetimeSortMethod ?? "",
         ["lifetime_show_drops_per_ship"] = SettingsModel.FormatBool(s.LifetimeShowDropsPerShip),
         ["lifetime_show_expected_totals"] = SettingsModel.FormatBool(s.LifetimeShowExpectedTotals),
+        [MissionViewOptions.KeyCardTemplates] = s.MissionCardTemplates ?? "",
     };
 
     public static (List<ReportGroupRow> Groups, List<ReportRow> Reports) SelectReportsToImport(

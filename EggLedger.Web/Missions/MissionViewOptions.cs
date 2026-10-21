@@ -16,10 +16,10 @@ public enum MissionSortMethod {
 public sealed class MissionViewOptions {
 
     public const string KeyViewByDate = "mission_view_by_date";
-    public const string KeyViewTimes = "mission_view_times";
     public const string KeyMultiViewMode = "mission_multi_view_mode";
     public const string KeySortMethod = "mission_sort_method";
     public const string KeyCardPresets = "mission_card_presets";
+    public const string KeyCardTemplates = "mission_card_templates";
     public const string KeySortByDropCount = "mission_sort_by_drop_count";
     public const string KeyRecolorDC = "mission_recolor_dc";
     public const string KeyRecolorBC = "mission_recolor_bc";
@@ -28,7 +28,6 @@ public sealed class MissionViewOptions {
     public const string KeyCalendarMinChance = "mission_calendar_min_chance";
 
     public bool ViewByDate { get; set; }
-    public bool ViewMissionTimes { get; set; } = true;
     public MultiViewMode MultiViewMode { get; set; } = MultiViewMode.Off;
     public MissionSortMethod SortMethod { get; set; } = MissionSortMethod.Default;
     public bool SortByDropCount { get; set; }
@@ -93,9 +92,6 @@ public sealed class MissionViewOptions {
 
     public void LoadFrom(IReadOnlyDictionary<string, string> settings) {
         if (settings.TryGetValue(KeyViewByDate, out var vbd)) ViewByDate = ParseBool(vbd, ViewByDate);
-        if (settings.TryGetValue(KeyViewTimes, out var vt)) {
-            ViewMissionTimes = ParseBool(vt, ViewMissionTimes);
-        }
         if (settings.TryGetValue(KeyMultiViewMode, out var mvm)) MultiViewMode = ParseMultiViewMode(mvm);
         if (settings.TryGetValue(KeySortMethod, out var sm)) {
             SortMethod = ParseSortMethod(sm);

@@ -1,7 +1,7 @@
-@if (!string.IsNullOrEmpty(Config.CustomCss) && CustomCssSanitizer.TryScope(Config.Name, Config.CustomCss, out var scoped, out _) && scoped is not null) {
+@if (!string.IsNullOrEmpty(Template.CustomCss) && CustomCssSanitizer.TryScope(Template.Name, Template.CustomCss, out var scoped, out _) && scoped is not null) {
     <style>@((MarkupString)scoped)</style>
 }
 
 @code {
-    [Parameter] public required MissionCardConfig Config { get; set; }
+    [Parameter] public required CardTemplate Template { get; set; }
 }

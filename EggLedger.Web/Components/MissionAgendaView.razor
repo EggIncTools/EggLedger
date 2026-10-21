@@ -21,14 +21,14 @@
                 </div>
             }
             <div class="agenda-cards">
-                @foreach (var entry in day.Missions) {
-                    <MissionCard Mission="entry.Mission"
-                                 Config="MissionCardConfig.Agenda"
-                                 ViewByDate="@(!entry.Carried)"
-                                 ViewMissionTimes="true"
-                                 RecolorDC="RecolorDC"
-                                 RecolorBC="RecolorBC"
-                                 OnView="OnSelect"/>
+                @if (DataFor is { } dataFor) {
+                    @foreach (var entry in day.Missions) {
+                        <MissionCard Template="Template"
+                                     Data="dataFor(entry.Mission)"
+                                     RecolorDC="RecolorDC"
+                                     RecolorBC="RecolorBC"
+                                     OnView="OnSelect"/>
+                    }
                 }
             </div>
         </section>
@@ -43,6 +43,8 @@
     [Parameter] public bool RecolorDC { get; set; }
     [Parameter] public bool RecolorBC { get; set; }
     [Parameter] public EventCallback<string> OnSelect { get; set; }
+    [Parameter] public CardTemplate Template { get; set; } = CardTemplateSet.Default.For(CardSlot.Agenda);
+    [Parameter] public Func<DatabaseMission, MissionCardData>? DataFor { get; set; }
 
     private List<AgendaDay> _days = [];
 

@@ -33,7 +33,8 @@
                              ShowEvents="State.Opts.CalendarEvents"
                              HiddenEventTypes="State.Opts.CalendarHiddenEventTypes"
                              MinEventChance="State.Opts.CalendarMinChance"
-                             UseCards="State.CardPresets.ActivePreset().UsesCards"
+                             Templates="State.CardTemplates"
+                             DataFor="State.DataFor"
                              OnViewMission="ViewMissionAsync"
                              LeadingControls="CalendarLeadingControls"/>
     } else {
@@ -46,16 +47,16 @@
         </div>
         <MissionResultsTable Grouping="State.Grouping"
                              ViewByDate="State.Opts.ViewByDate"
-                             ViewMissionTimes="State.Opts.ViewMissionTimes"
                              MultiViewMode="State.Opts.MultiViewMode"
                              RecolorDC="State.Opts.RecolorDC"
                              RecolorBC="State.Opts.RecolorBC"
-                             Config="State.CardPresets.ActivePreset()"
+                             Template="State.CardTemplates.For(CardSlot.List)"
+                             DataFor="State.DataFor"
+                             Columns="3"
                              SelectedIds="State.MultiSelectedIds"
                              TabFiltered="State.TabFiltered ?? Array.Empty<DatabaseMission>()"
                              MissionBeingViewed="State.MissionBeingViewed"
                              FlatMissions="State.FlatSorted"
-                             DropCounts="State.DropCounts"
                              OnViewMission="ViewMissionAsync"
                              OnViewRow="ViewRowAsync"
                              OnSelectionChanged="StateHasChanged"
@@ -66,7 +67,7 @@
                     AccountId="@State.AccountId"
                     FilteredMissions="State.FlatSorted ?? State.TabFiltered ?? Array.Empty<DatabaseMission>()"
                     SortMethod="State.Opts.SortMethod"
-                    ShowExpectedDrops="State.CardPresets.ActivePreset().ShowExpectedDropsPerShip"/>
+                    ShowExpectedDrops="true"/>
 
     <Disclosure Label="Reports" @bind-Open="_widgetsOpen" Class="ledger-section ledger-section-inset">
         @if (State.AccountId is { } accountId) {

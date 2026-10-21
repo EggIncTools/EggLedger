@@ -4,7 +4,7 @@
 @using System.Globalization
 @using EggIdentity.UI
 
-<div class="mcal @(UseCards ? "mcal-cards" : "")">
+<div class="mcal mcal-cards">
     <div class="mcal-bar">
         @LeadingControls
         <div class="mcal-center">
@@ -59,17 +59,17 @@
                       ShowHourTicks="@(_zoom == TimelineZoom.Day)"
                       OnCommitScrollPan="OnCommitScrollPan"/>
     </div>
-    @if (UseCards) {
-        <div class="mcal-agenda">
-            <MissionAgendaView Missions="_merged"
-                               Events="_overlayEvents"
-                               WindowStart="_visibleStart"
-                               WindowEnd="_visibleEnd"
-                               RecolorDC="RecolorDC"
-                               RecolorBC="RecolorBC"
-                               OnSelect="OnSelectMission"/>
-        </div>
-    }
+    <div class="mcal-agenda">
+        <MissionAgendaView Missions="_merged"
+                           Events="_overlayEvents"
+                           WindowStart="_visibleStart"
+                           WindowEnd="_visibleEnd"
+                           RecolorDC="RecolorDC"
+                           RecolorBC="RecolorBC"
+                           Template="Templates.For(CardSlot.Agenda)"
+                           DataFor="DataFor"
+                           OnSelect="OnSelectMission"/>
+    </div>
 </div>
 
 @if (_showStillFlying) {
@@ -96,7 +96,8 @@
     [Parameter] public bool ShowEvents { get; set; } = true;
     [Parameter] public IReadOnlySet<string> HiddenEventTypes { get; set; } = new HashSet<string>();
     [Parameter] public int MinEventChance { get; set; }
-    [Parameter] public bool UseCards { get; set; }
+    [Parameter] public CardTemplateSet Templates { get; set; } = CardTemplateSet.Default;
+    [Parameter] public Func<DatabaseMission, MissionCardData>? DataFor { get; set; }
     [Parameter] public EventCallback<string> OnViewMission { get; set; }
     [Parameter] public RenderFragment? LeadingControls { get; set; }
 
@@ -125,7 +126,8 @@
 
     private RenderFragment<object> MissionItemTemplate => item =>
         @<TimelineBarView Bar="((TimelineBar)item)"
-                          CardConfig="@(UseCards ? BarCardConfig : null)"
+                          Template="BarTemplate"
+                          Data="@(DataFor?.Invoke(((TimelineBar)item).Mission))"
                           RecolorDC="RecolorDC"
                           RecolorBC="RecolorBC"
                           OnSelect="OnSelectMission"
@@ -134,11 +136,11 @@
 
     private string ZoomClass => _zoom.ToString().ToLowerInvariant();
 
-    private MissionCardConfig BarCardConfig => _zoom switch {
-        TimelineZoom.Day => MissionCardConfig.CalendarDay,
-        TimelineZoom.Week => MissionCardConfig.CalendarWeek,
-        _ => MissionCardConfig.CalendarMonth
-    };
+    private CardTemplate BarTemplate => Templates.For(_zoom switch {
+        TimelineZoom.Day => CardSlot.CalendarDay,
+        TimelineZoom.Week => CardSlot.CalendarWeek,
+        _ => CardSlot.CalendarMonth
+    });
 
     private int VisibleSlots => _zoom == TimelineZoom.Month ? 5 : 1;
 

@@ -1,0 +1,154 @@
+@using System.Globalization
+@using System.Text.Json
+@using EggIdentity.Canvas
+
+<div class="cdi">
+    @if (HasContent) {
+        <section class="cdi-section">
+            <h3 class="cdi-head">Content</h3>
+            @switch (Item.Kind) {
+                case CardKinds.Field:
+                    <label class="cdi-field">
+                        <span>Field</span>
+                        <select class="form-input" value="@(CardPayload.Field(Item) ?? "")" @onchange="SetFieldAsync">
+                            @foreach (var field in MissionFields.Catalog.Fields) {
+                                <option value="@field.Id">@field.Label</option>
+                            }
+                        </select>
+                    </label>
+                    break;
+                case CardKinds.Label:
+                    <label class="cdi-field">
+                        <span>Text</span>
+                        <input type="text" class="form-input" value="@(CardPayload.Text(Item) ?? "")" @onchange="SetTextAsync"/>
+                    </label>
+                    break;
+                case CardKinds.DropStrip:
+                    <label class="cdi-field">
+                        <span>Top drops</span>
+                        <input type="number" class="form-input" min="1" max="12" step="1" value="@(CardPayload.Top(Item) ?? DefaultTop)" @onchange="SetTopAsync"/>
+                    </label>
+                    break;
+                case CardKinds.Divider:
+                    <label class="form-check">
+                        <input type="checkbox" class="ext-opt-check" checked="@(CardPayload.Vertical(Item) ?? false)" @onchange="SetVerticalAsync"/> Vertical
+                    </label>
+                    break;
+            }
+        </section>
+    }
+
+    <section class="cdi-section">
+        <h3 class="cdi-head">Position</h3>
+        <span class="cdi-ro">
+            <span>X @Item.X</span>
+            <span>Y @Item.Y</span>
+            <span>W @Item.W</span>
+            <span>H @Item.H</span>
+        </span>
+        <label class="cdi-field">
+            <span>Rotation</span>
+            <input type="number" class="form-input" min="-180" max="180" step="1" value="@Num(Item.Rotation)" @onchange="SetRotationAsync"/>
+        </label>
+    </section>
+
+    <section class="cdi-section">
+        <h3 class="cdi-head">Style</h3>
+        <div class="cdi-colors">
+            @(ColorRow("Border", Item.Style?.Border, (s, v) => s with { Border = v }))
+            @(ColorRow("Background", Item.Style?.Background, (s, v) => s with { Background = v }))
+            @(ColorRow("Color", Item.Style?.Color, (s, v) => s with { Color = v }))
+        </div>
+        @(NumberRow("Border width", Item.Style?.BorderWidth, 0, 4, 0.25, (s, v) => s with { BorderWidth = v }))
+        @(NumberRow("Radius", Item.Style?.Radius, 0, 4, 0.25, (s, v) => s with { Radius = v }))
+        @(NumberRow("Padding", Item.Style?.Padding, 0, 4, 0.25, (s, v) => s with { Padding = v }))
+        @(NumberRow("Font size", Item.Style?.FontSize, 0.25, 4, 0.25, (s, v) => s with { FontSize = v }))
+        @(NumberRow("Font weight", Item.Style?.FontWeight, 100, 900, 100, (s, v) => s with { FontWeight = Weight(v) }))
+        @(NumberRow("Opacity", Item.Style?.Opacity, 0, 1, 0.05, (s, v) => s with { Opacity = v }))
+        <div class="cdi-field">
+            <span>Align</span>
+            <Segmented T="TextAlign?" Options="AlignOptions" Selected="Item.Style?.Align" SelectedChanged="SetAlignAsync" AriaLabel="Text align"/>
+        </div>
+    </section>
+
+    <section class="cdi-section">
+        <h3 class="cdi-head">Layer</h3>
+        <div class="cdi-row">
+            <button type="button" class="btn-mini" disabled="@IsTop" @onclick="() => CommitDocAsync(CanvasOps.BringForward(Doc, Item.Id))">Forward</button>
+            <button type="button" class="btn-mini" disabled="@IsBottom" @onclick="() => CommitDocAsync(CanvasOps.SendBack(Doc, Item.Id))">Back</button>
+            <button type="button" class="btn-mini" disabled="@IsTop" @onclick="() => CommitDocAsync(CanvasOps.BringToFront(Doc, Item.Id))">To front</button>
+            <button type="button" class="btn-mini" disabled="@IsBottom" @onclick="() => CommitDocAsync(CanvasOps.SendToBack(Doc, Item.Id))">To back</button>
+        </div>
+        <button type="button" class="btn-mini cdz-danger" @onclick="() => CommitDocAsync(CanvasOps.Remove(Doc, Item.Id))">Remove</button>
+    </section>
+</div>
+
+@code {
+    const int DefaultTop = 6;
+    static readonly ItemStyle EmptyStyle = new();
+
+    static readonly IReadOnlyList<SegmentedOption<TextAlign?>> AlignOptions = [
+        new(TextAlign.Start, "Start"),
+        new(TextAlign.Center, "Center"),
+        new(TextAlign.End, "End"),
+    ];
+
+    [Parameter, EditorRequired] public CanvasItem Item { get; set; } = default!;
+    [Parameter, EditorRequired] public CanvasDoc Doc { get; set; } = default!;
+    [Parameter] public EventCallback<CanvasDoc> DocChanged { get; set; }
+
+    bool HasContent => Item.Kind is CardKinds.Field or CardKinds.Label or CardKinds.DropStrip or CardKinds.Divider;
+
+    bool IsTop => Doc.Items.All(i => i.Id == Item.Id || i.Z < Item.Z);
+
+    bool IsBottom => Doc.Items.All(i => i.Id == Item.Id || i.Z > Item.Z);
+
+    RenderFragment ColorRow(string label, string? value, Func<ItemStyle, string?, ItemStyle> apply) => @<div class="cdi-color">
+        <span class="cdi-color-label">@label</span>
+        <ColorPicker Value="@(value ?? ColorPickerMath.Fallback)" ValueChanged="@(v => SetStyleAsync(s => apply(s, v)))"/>
+        <button type="button" class="btn-mini" disabled="@(value is null)" @onclick="() => SetStyleAsync(s => apply(s, null))">Reset</button>
+    </div>;
+
+    RenderFragment NumberRow(string label, double? value, double min, double max, double step, Func<ItemStyle, double?, ItemStyle> apply) => @<label class="cdi-field">
+        <span>@label</span>
+        <input type="number" class="form-input" min="@Num(min)" max="@Num(max)" step="@Num(step)" value="@Num(value)"
+               @onchange="e => SetStyleAsync(s => apply(s, Clamp(Parse(e), min, max)))"/>
+    </label>;
+
+    Task SetFieldAsync(ChangeEventArgs e) => SetPayloadAsync("field", e.Value?.ToString() is { Length: > 0 } id ? id : MissionFields.Ship);
+
+    Task SetTextAsync(ChangeEventArgs e) => SetPayloadAsync("text", e.Value?.ToString() ?? "");
+
+    Task SetTopAsync(ChangeEventArgs e) => SetPayloadAsync("top", (int)Math.Round(Clamp(Parse(e), 1, 12) ?? DefaultTop));
+
+    Task SetVerticalAsync(ChangeEventArgs e) => SetPayloadAsync("vertical", e.Value is true);
+
+    Task SetPayloadAsync(string key, object value) =>
+        CommitAsync(Item with { Payload = JsonSerializer.Serialize(new Dictionary<string, object> { [key] = value }) });
+
+    Task SetRotationAsync(ChangeEventArgs e) {
+        var degrees = Clamp(Parse(e), -180, 180) is { } v ? (int)Math.Round(v) : 0;
+        return CommitAsync(Item with { Rotation = degrees == 0 ? null : degrees });
+    }
+
+    Task SetAlignAsync(TextAlign? align) => SetStyleAsync(s => s with { Align = align });
+
+    Task SetStyleAsync(Func<ItemStyle, ItemStyle> change) {
+        var next = change(Item.Style ?? EmptyStyle);
+        return CommitAsync(Item with { Style = next == EmptyStyle ? null : next });
+    }
+
+    Task CommitAsync(CanvasItem changed) =>
+        DocChanged.InvokeAsync(Doc with { Items = Doc.Items.Select(i => i.Id == Item.Id ? changed : i).ToList() });
+
+    Task CommitDocAsync(CanvasDoc next) => next.Equals(Doc) ? Task.CompletedTask : DocChanged.InvokeAsync(next);
+
+    static int? Weight(double? value) => value is { } w ? (int)(Math.Round(w / 100) * 100) : null;
+
+    static double? Parse(ChangeEventArgs e) =>
+        double.TryParse(e.Value?.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var v) && double.IsFinite(v) ? v : null;
+
+    static double? Clamp(double? value, double min, double max) => value is { } v ? Math.Clamp(v, min, max) : null;
+
+    static string Num(double? value) => value?.ToString("0.###", CultureInfo.InvariantCulture) ?? "";
+}

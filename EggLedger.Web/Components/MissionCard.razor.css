@@ -1,14 +1,13 @@
 .mc {
     container-type: inline-size;
+    position: relative;
     display: flex;
     align-items: center;
     gap: 0.5rem;
     min-width: 0;
     padding: 0.375rem 0.625rem;
     border-radius: 0.375rem;
-    font-size: 0.875rem;
-    line-height: calc(1.25 / 0.875);
-    white-space: nowrap;
+    background: var(--color-ledger-panel-muted);
     overflow: hidden;
 }
 
@@ -20,200 +19,41 @@
     color: var(--color-fg);
 }
 
+.mc-viewed {
+    box-shadow: 0 0 0 1px var(--color-selectedmission);
+}
+
+.mc-dubcap {
+    box-shadow: 0 0 0 1px var(--color-dubcap);
+}
+
+.mc-buggedcap {
+    box-shadow: 0 0 0 1px var(--color-buggedcap);
+}
+
 .mc-check {
     flex-shrink: 0;
 }
 
 .mc-btn {
-    display: flex;
+    display: block;
     flex: 1;
-    align-items: center;
-    gap: 0.5rem;
     min-width: 0;
+    height: 100%;
     padding: 0;
     border: 0;
     background: transparent;
     color: inherit;
     font: inherit;
-    font-weight: 700;
     text-align: left;
     cursor: pointer;
     overflow: hidden;
 }
 
-.mc-f {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    flex-shrink: 0;
+.mc ::deep .mc-canvas {
+    width: 100%;
 }
 
-.mc-ship {
-    flex-shrink: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.mc-muted {
-    color: var(--color-muted);
-    font-weight: 400;
-}
-
-.mc-ico,
-.mc ::deep .target-ico {
-    height: 1.5rem;
-    width: 1.5rem;
-    object-fit: contain;
-    flex-shrink: 0;
-}
-
-.mc-embedded .mc-ico,
-.mc-embedded ::deep .target-ico {
-    height: min(1.5rem, calc(var(--bar-h) - 0.4rem));
-    width: min(1.5rem, calc(var(--bar-h) - 0.4rem));
-}
-
-.mc-badge {
-    padding: 0 0.375rem;
-    border-radius: 9999px;
-    font-size: 0.75rem;
-    line-height: 1rem;
-    background-color: var(--color-darkerer);
-    color: var(--color-fg);
-}
-
-.mission-card-grid {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 0.5rem 1rem;
-    border-radius: 0.375rem;
-    text-align: center;
-}
-
-.mission-card-grid-check {
-    align-self: flex-start;
-}
-
-.mission-card-grid-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    color: inherit;
-    cursor: pointer;
-}
-
-.mission-item-3 {
-    display: flex;
-    align-items: center;
-    flex: 0 0 calc(33.33% - 10px);
-    min-width: 0;
-    box-sizing: border-box;
-    font-size: 0.875rem;
-    line-height: calc(1.25 / 0.875);
-}
-
-.mission-item-check {
-    margin-right: 0.5rem;
-    flex-shrink: 0;
-}
-
-.mission-item-btn {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0 0.375rem;
-    flex: 1;
-    min-width: 0;
-    margin-right: 1.25rem;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    color: inherit;
-    font-size: 0.875rem;
-    line-height: calc(1.25 / 0.875);
-    font-weight: 700;
-    text-align: left;
-    cursor: pointer;
-}
-
-.mission-item-field {
-    flex-shrink: 0;
-    white-space: nowrap;
-    color: var(--color-muted);
-    margin-left: 0.5rem;
-}
-
-.mission-item-date {
-    flex-shrink: 0;
-    white-space: nowrap;
-    color: var(--color-muted);
-}
-
-.mission-item-btn .drop-count-badge,
-.mission-card-grid-btn .drop-count-badge {
-    margin-left: 0.5rem;
-}
-
-@media (min-width: 48rem) and (max-width: 79.9375rem) {
-    .mission-item-3 {
-        flex: 0 0 calc(50% - 10px);
-    }
-}
-
-@media (max-width: 47.9375rem) {
-    .mission-item-3 {
-        flex: 1 1 100%;
-    }
-
-    .mission-item-date {
-        flex-basis: 100%;
-    }
-
-    .mission-item-date + .mission-item-field {
-        margin-left: 0;
-    }
-}
-
-.drop-count-badge {
-    display: inline-flex;
-    align-items: center;
-    height: 1rem;
-    padding: 0 0.375rem;
-    font-size: 0.75rem;
-    line-height: 1rem;
-    border-radius: 9999px;
-    background-color: var(--color-darkerer);
-    color: var(--color-ledger-egg-yellow);
-    box-shadow: 0 0 0 1px var(--color-yellow-700);
-}
-
-@container (max-width: 18rem) {
-    .mc-r3 {
-        display: none;
-    }
-}
-
-@container (max-width: 11rem) {
-    .mc-r2 {
-        display: none;
-    }
-}
-
-@container (max-width: 6rem) {
-    .mc-r1 {
-        display: none;
-    }
-}
-
-@container (max-width: 2.25rem) {
-    .mc-r0 {
-        display: none;
-    }
+.mc-embedded ::deep .mc-canvas {
+    height: 100%;
 }

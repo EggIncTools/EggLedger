@@ -175,7 +175,10 @@
     private static readonly TimeSpan ProgressInterval = TimeSpan.FromMilliseconds(100);
 
     private string SizeClass =>
-        _multi is null ? "mov-size-single" : _isLoading ? "mov-size-loading" : "mov-size-multi";
+        _multi is null ? "mov-size-single"
+        : _isLoading ? "mov-size-loading"
+        : _displayMode == "separate" && !SeparateTooMany ? "mov-size-multi"
+        : "mov-size-combined";
 
     public async Task OpenAsync(string missionId) {
         _multi = null;

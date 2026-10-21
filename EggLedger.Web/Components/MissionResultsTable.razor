@@ -1,4 +1,5 @@
 @using System.Globalization
+@using Microsoft.AspNetCore.Components.Web.Virtualization
 @* Year/month/day collapse tree, each mission a clickable row. Multi-view: Row/Date adds a
    per-day "View row" button; Free Select adds a per-mission checkbox. *@
 
@@ -6,7 +7,7 @@
     <p class="mrt-empty">No missions to display.</p>
 } else {
     <div id="missionListDiv" class="mrt">
-        <MissionCardCustomStyle Config="Config"/>
+        <MissionCardCustomStyle Template="Template"/>
         <div class="mrt-sticky">
             <div class="mrt-head">
                 <span class="mrt-title">
@@ -19,22 +20,11 @@
             <hr class="mrt-rule"/>
         </div>
 
-        @if (FlatMissions is not null) {
-            <div class="mission-grid @GridClass mission-items-full mrt-flat">
-                @foreach (var mission in FlatMissions) {
-                    <MissionCard Mission="mission"
-                                 Config="Config"
-                                 IsSelected="@SelectedIds.Contains(mission.MissiondId)"
-                                 IsBeingViewed="@(MissionBeingViewed == mission.MissiondId)"
-                                 ViewByDate="@false"
-                                 ViewMissionTimes="ViewMissionTimes"
-                                 MultiViewMode="MultiViewMode"
-                                 RecolorDC="RecolorDC"
-                                 RecolorBC="RecolorBC"
-                                 DropCount="@GetDropCount(mission.MissiondId)"
-                                 OnView="OnView"
-                                 OnToggleSelected="ToggleSelected"/>
-                }
+        @if (FlatMissions is { } flat) {
+            <div class="mission-grid-cards mrt-flat">
+                <Virtualize Items="ChunksFor(flat, () => flat)" ItemSize="56" Context="row" OverscanCount="6">
+                    @RenderRow(row)
+                </Virtualize>
             </div>
         } else {
             @foreach (var yearIndex in Enumerable.Range(0, Grouping.Missions.Count)) {
@@ -58,21 +48,11 @@
                                     </button>
 
                                     @if (month.Enabled && FlattenDays) {
-                                        <div class="mission-grid @GridClass mission-items-full mrt-nest">
-                                            @foreach (var mission in Grouping.Missions[yearIndex][monthIndex].SelectMany(d => d)) {
-                                                <MissionCard Mission="mission"
-                                                             Config="Config"
-                                                             IsSelected="@SelectedIds.Contains(mission.MissiondId)"
-                                                             IsBeingViewed="@(MissionBeingViewed == mission.MissiondId)"
-                                                             ViewByDate="ViewByDate"
-                                                             ViewMissionTimes="ViewMissionTimes"
-                                                             MultiViewMode="MultiViewMode"
-                                                             RecolorDC="RecolorDC"
-                                                             RecolorBC="RecolorBC"
-                                                             DropCount="@GetDropCount(mission.MissiondId)"
-                                                             OnView="OnView"
-                                                             OnToggleSelected="ToggleSelected"/>
-                                            }
+                                        var monthDays = Grouping.Missions[yearIndex][monthIndex];
+                                        <div class="mission-grid-cards mrt-nest">
+                                            <Virtualize Items="ChunksFor(monthDays, () => monthDays.SelectMany(d => d))" ItemSize="56" Context="row" OverscanCount="6">
+                                                @RenderRow(row)
+                                            </Virtualize>
                                         </div>
                                     } else if (month.Enabled) {
                                         @foreach (var dayIndex in Enumerable.Range(0, Grouping.Missions[yearIndex][monthIndex].Count)) {
@@ -95,21 +75,10 @@
                                                                 View row
                                                             </button>
                                                         }
-                                                        <div class="mission-grid @GridClass mission-items-full mrt-day-grid">
+                                                        <div class="mission-grid-cards mrt-day-grid">
                                                             @if (DayVisible(yearIndex, monthIndex, dayIndex)) {
-                                                                @foreach (var mission in Grouping.Missions[yearIndex][monthIndex][dayIndex]) {
-                                                                    <MissionCard Mission="mission"
-                                                                                 Config="Config"
-                                                                                 IsSelected="@SelectedIds.Contains(mission.MissiondId)"
-                                                                                 IsBeingViewed="@(MissionBeingViewed == mission.MissiondId)"
-                                                                                 ViewByDate="ViewByDate"
-                                                                                 ViewMissionTimes="ViewMissionTimes"
-                                                                                 MultiViewMode="MultiViewMode"
-                                                                                 RecolorDC="RecolorDC"
-                                                                                 RecolorBC="RecolorBC"
-                                                                                 DropCount="@GetDropCount(mission.MissiondId)"
-                                                                                 OnView="OnView"
-                                                                                 OnToggleSelected="ToggleSelected"/>
+                                                                @foreach (var row in Chunk(Grouping.Missions[yearIndex][monthIndex][dayIndex], Columns)) {
+                                                                    @RenderRow(row)
                                                                 }
                                                             }
                                                         </div>
@@ -136,11 +105,12 @@
 @code {
     [Parameter] public MissionGrouping? Grouping { get; set; }
     [Parameter] public bool ViewByDate { get; set; }
-    [Parameter] public bool ViewMissionTimes { get; set; }
     [Parameter] public MultiViewMode MultiViewMode { get; set; } = MultiViewMode.Off;
     [Parameter] public bool RecolorDC { get; set; }
     [Parameter] public bool RecolorBC { get; set; }
-    [Parameter] public MissionCardConfig Config { get; set; } = MissionCardConfig.Classic;
+    [Parameter] public CardTemplate Template { get; set; } = CardTemplateSet.Default.For(CardSlot.List);
+    [Parameter] public required Func<DatabaseMission, MissionCardData> DataFor { get; set; }
+    [Parameter] public int Columns { get; set; } = 3;
 
     [Parameter] public HashSet<string> SelectedIds { get; set; } = new();
 
@@ -150,8 +120,6 @@
 
     [Parameter] public IReadOnlyList<DatabaseMission>? FlatMissions { get; set; }
 
-    [Parameter] public Dictionary<string, int>? DropCounts { get; set; }
-
     [Parameter] public EventCallback<string> OnViewMission { get; set; }
 
     [Parameter] public EventCallback<IReadOnlyList<string>> OnViewRow { get; set; }
@@ -160,7 +128,19 @@
 
     [Parameter] public EventCallback OnGroupingChanged { get; set; }
 
-    private string GridClass => Config.UsesCards ? "mission-grid-cards" : "";
+    private readonly Dictionary<object, List<IReadOnlyList<DatabaseMission>>> _chunks = new(ReferenceEqualityComparer.Instance);
+    private MissionGrouping? _chunkGrouping;
+    private IReadOnlyList<DatabaseMission>? _chunkFlat;
+    private int _chunkColumns;
+
+    protected override void OnParametersSet() {
+        if (ReferenceEquals(_chunkGrouping, Grouping) && ReferenceEquals(_chunkFlat, FlatMissions) && _chunkColumns == Columns) return;
+
+        _chunks.Clear();
+        _chunkGrouping = Grouping;
+        _chunkFlat = FlatMissions;
+        _chunkColumns = Columns;
+    }
 
     private async Task OnView(string missionId) {
         await OnViewMission.InvokeAsync(missionId);
@@ -264,11 +244,36 @@
         await NotifyAsync();
     }
 
-    private int? GetDropCount(string missionId) {
-        return DropCounts is not null && DropCounts.TryGetValue(missionId, out var count) ? count : null;
-    }
-
     private async Task NotifyAsync() {
         await OnGroupingChanged.InvokeAsync();
     }
+
+    private List<IReadOnlyList<DatabaseMission>> ChunksFor(object source, Func<IEnumerable<DatabaseMission>> missions) {
+        if (_chunks.TryGetValue(source, out var cached)) return cached;
+
+        var chunks = Chunk(missions(), Columns);
+        _chunks[source] = chunks;
+        return chunks;
+    }
+
+    private static List<IReadOnlyList<DatabaseMission>> Chunk(IEnumerable<DatabaseMission> missions, int columns) =>
+        [.. missions.Chunk(Math.Max(1, columns))];
+
+    private RenderFragment RenderRow(IReadOnlyList<DatabaseMission> row) => __builder => {
+        <div class="mrt-vrow">
+            @foreach (var mission in row) {
+                <div class="mrt-vcell">
+                    <MissionCard Template="Template"
+                                 Data="DataFor(mission)"
+                                 IsSelected="@SelectedIds.Contains(mission.MissiondId)"
+                                 IsBeingViewed="@(MissionBeingViewed == mission.MissiondId)"
+                                 MultiViewMode="MultiViewMode"
+                                 RecolorDC="RecolorDC"
+                                 RecolorBC="RecolorBC"
+                                 OnView="OnView"
+                                 OnToggleSelected="ToggleSelected"/>
+                </div>
+            }
+        </div>
+    };
 }

@@ -1,0 +1,112 @@
+@using System.Globalization
+@using EggIdentity.Canvas
+@using EggIdentity.Styles
+
+<div class="ce">
+@if (!HasData()) {
+    @if (Editing) {
+        <span class="ce-muted ce-placeholder">@PlaceholderLabel()</span>
+    }
+} else {
+    @switch (Item.Kind) {
+        case CardKinds.Field:
+            <span class="@FieldClass()" style="@FontSizeStyle()">@MissionFields.Format(FieldId!, Data)</span>
+            break;
+        case CardKinds.Label:
+            <span class="ce-text" style="@FontSizeStyle()">@LabelText</span>
+            break;
+        case CardKinds.ShipImage:
+            <img class="ce-img" src="@ContentPaths.Asset($"images/ships/{Data.Mission.ShipEnumString}.png")" alt="@Data.Mission.ShipString" loading="lazy" decoding="async"/>
+            break;
+        case CardKinds.TargetImage:
+            <TargetDisplay Target="@Data.Mission.Target"/>
+            break;
+        case CardKinds.Stars:
+            <span class="ce-text" style="@FontSizeStyle()">@Data.Mission.Level<span class="text-goldenstar">&#9733;</span></span>
+            break;
+        case CardKinds.CapBadge:
+            <span class="ce-badge" style="@FontSizeStyle()">@(Data.Mission.IsBuggedCap ? "0.6x" : "2x")</span>
+            break;
+        case CardKinds.DropStrip:
+            <div class="ce-strip">
+                @foreach (var drop in Data.Drops!.Top) {
+                    <img class="ce-strip-img @RarityTokens.Background(drop.SpecType == "Artifact" ? drop.Rarity : 0)" src="@DropImagePath(drop)" alt="@drop.GameName" loading="lazy" decoding="async"/>
+                }
+            </div>
+            break;
+        case CardKinds.RarityBar:
+            <StackedBar Class="ce-fill" Values="@([.. Data.Drops!.RarityCounts.Select(c => (double)c)])" Colors="@([RarityTokens.Var(0), RarityTokens.Var(1), RarityTokens.Var(2), RarityTokens.Var(3)])"/>
+            break;
+        case CardKinds.DropTypeBars:
+            <StackedBar Class="ce-fill" Values="@([(double)Data.Drops!.Artifacts, Data.Drops!.Stones, Data.Drops!.Ingredients, Data.Drops!.Fragments])"/>
+            break;
+        case CardKinds.Expected:
+            <Gauge Class="ce-fill" Value="@((double)(Data.DropCount ?? 0))" Max="@(Data.ExpectedDrops ?? 1)"/>
+            break;
+        case CardKinds.Box:
+            <div class="ce-box"></div>
+            break;
+        case CardKinds.Divider:
+            <div class="@DividerClass()"></div>
+            break;
+    }
+}
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required CanvasItem Item { get; set; }
+    [Parameter, EditorRequired] public required MissionCardData Data { get; set; }
+    [Parameter] public bool Colorize { get; set; }
+    [Parameter] public bool Editing { get; set; }
+
+    private string? FieldId => CardPayload.Field(Item);
+    private string? LabelText => CardPayload.Text(Item);
+
+    private bool HasData() => Item.Kind switch {
+        CardKinds.Field => MissionFields.Resolve(FieldId ?? "", Data) is not null,
+        CardKinds.Label => !string.IsNullOrEmpty(LabelText),
+        CardKinds.ShipImage => !string.IsNullOrEmpty(Data.Mission.ShipEnumString),
+        CardKinds.TargetImage => TargetImagePaths.Resolve(Data.Mission.Target).Path is not null,
+        CardKinds.Stars => Data.Mission.Level > 0,
+        CardKinds.CapBadge => Data.Mission.IsDubCap || Data.Mission.IsBuggedCap,
+        CardKinds.DropStrip => Data.Drops is { Top.Count: > 0 },
+        CardKinds.RarityBar => Data.Drops is not null,
+        CardKinds.DropTypeBars => Data.Drops is not null,
+        CardKinds.Expected => Data.ExpectedDrops is not null,
+        _ => true,
+    };
+
+    private string PlaceholderLabel() => Item.Kind switch {
+        CardKinds.Field => MissionFields.Catalog.Find(FieldId ?? "")?.Label ?? "Field",
+        CardKinds.Label => "Label",
+        CardKinds.ShipImage => "Ship",
+        CardKinds.TargetImage => "Target",
+        CardKinds.Stars => "Stars",
+        CardKinds.CapBadge => "Cap badge",
+        CardKinds.DropStrip => "Drop strip",
+        CardKinds.RarityBar => "Rarity bar",
+        CardKinds.DropTypeBars => "Drop types",
+        CardKinds.Expected => "Expected",
+        _ => Item.Kind,
+    };
+
+    private string FieldClass() {
+        if (FieldId == MissionFields.Ship) return "ce-text" + (Colorize ? " text-duration-" + DurationTypeInt() : "");
+        return "ce-text ce-muted";
+    }
+
+    private int DurationTypeInt() =>
+        Data.Mission.DurationType is { } d ? Convert.ToInt32(d, CultureInfo.InvariantCulture) : 3;
+
+    private string? FontSizeStyle() =>
+        Item.Style?.FontSize is null ? "font-size:calc(0.6 * var(--canvas-unit))" : null;
+
+    private string DividerClass() =>
+        CardPayload.Vertical(Item) == true ? "ce-divider ce-divider-v" : "ce-divider ce-divider-h";
+
+    private static string DropImagePath(MissionDrop item) {
+        var offset = item.SpecType == "Stone" ? 2 : 1;
+        var fixedName = ArtifactNameFixups.ApplyDisplayNameOverrides(item.Name.Replace("_FRAGMENT", "", StringComparison.Ordinal));
+        return ContentPaths.GameAsset($"images/artifacts/{fixedName}/{fixedName}_{item.Level + offset}.png");
+    }
+}

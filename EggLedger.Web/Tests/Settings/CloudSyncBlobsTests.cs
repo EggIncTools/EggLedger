@@ -64,9 +64,18 @@ public sealed class CloudSyncBlobsTests {
             "mission_view_times", "mission_recolor_dc", "mission_recolor_bc",
             "mission_show_expected_drops", "mission_multi_view_mode", "mission_sort_method",
             "lifetime_sort_method", "lifetime_show_drops_per_ship", "lifetime_show_expected_totals",
+            "mission_card_templates",
         }) {
             Assert.Contains($"\"{key}\"", json, StringComparison.Ordinal);
         }
+    }
+
+    [Fact]
+    public void PackSettings_CarriesCardTemplatesVerbatim() {
+        const string json = "{\"version\":1,\"templates\":[],\"slots\":{}}";
+        var s = CloudSyncBlobs.PackSettings(new Dictionary<string, string> { ["mission_card_templates"] = json });
+        Assert.Equal(json, s.MissionCardTemplates);
+        Assert.Equal(json, CloudSyncBlobs.UnpackSettings(s)["mission_card_templates"]);
     }
 
     [Fact]

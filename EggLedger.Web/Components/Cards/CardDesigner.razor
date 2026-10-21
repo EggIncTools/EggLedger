@@ -1,0 +1,332 @@
+@using EggIdentity.Canvas
+@using EggIdentity.UI.Canvas
+
+@if (_open) {
+    <div class="cdz" role="dialog" aria-modal="true" aria-label="Card designer" tabindex="-1" @ref="_root" @onkeydown="OnKeyDown" @onclick="() => _justDeselected = false">
+        <div class="cdz-bar">
+            <div class="cdz-group">
+                <span class="cdz-label">Template</span>
+                <Segmented T="string" Options="TemplateOptions" Selected="_editingName" SelectedChanged="SwitchTo" Wrap="true" AriaLabel="Template"/>
+            </div>
+
+            <div class="cdz-group">
+                @if (_pendingNameAction is { } action) {
+                    <div class="cdz-row">
+                        <input class="form-input cdz-name" @bind="_nameInput" @bind:event="oninput" @onkeydown="OnNameKeyDown" placeholder="Template name" aria-label="Template name"/>
+                        <button type="button" class="btn-mini" disabled="@(!CanConfirmNaming)" @onclick="ConfirmNaming">@ConfirmLabel(action)</button>
+                        <button type="button" class="btn-mini" @onclick="CancelNaming">Cancel</button>
+                    </div>
+                    @if (NameError is { } nameError) {
+                        <span class="cdz-error">@nameError</span>
+                    }
+                } else {
+                    <div class="cdz-row">
+                        <button type="button" class="btn-mini" @onclick="() => BeginNaming(NameAction.SaveAsNew)">Save as new</button>
+                        <button type="button" class="btn-mini" @onclick="() => BeginNaming(NameAction.Duplicate)">Duplicate</button>
+                        <button type="button" class="btn-mini" disabled="@IsBuiltin" @onclick="() => BeginNaming(NameAction.Rename)">Rename</button>
+                        <button type="button" class="btn-mini cdz-danger" disabled="@IsBuiltin" @onclick="Delete">Delete</button>
+                    </div>
+                }
+            </div>
+
+            <div class="cdz-group">
+                <span class="cdz-label">Used for</span>
+                <div class="cdz-row" role="group" aria-label="Slots">
+                    @foreach (var slot in Enum.GetValues<CardSlot>()) {
+                        var on = IsAssigned(slot);
+                        <button type="button" class="@ChipCss(on)" aria-pressed="@(on ? "true" : "false")" @onclick="() => AssignSlot(slot)">@SlotLabel(slot)</button>
+                    }
+                </div>
+            </div>
+
+            @if (Samples.Count > 0) {
+                <div class="cdz-group">
+                    <span class="cdz-label">Sample</span>
+                    <Segmented T="int" Options="SampleOptions" Selected="SampleIndex" SelectedChanged="i => _sampleIndex = i" Wrap="true" AriaLabel="Sample mission"/>
+                </div>
+            }
+
+            <div class="cdz-group cdz-row">
+                <label class="form-check">
+                    <input type="checkbox" class="ext-opt-check" checked="@_working.ColorizeByDuration" @onchange="SetColorize"/> Colorize by duration
+                </label>
+                <button type="button" class="btn-mini" aria-expanded="@(_advanced ? "true" : "false")" @onclick="() => _advanced = !_advanced">Advanced</button>
+            </div>
+
+            <div class="cdz-actions">
+                <button type="button" class="btn-secondary" @onclick="Close">Cancel</button>
+                <button type="button" class="btn-primary" disabled="@(_cssError is not null)" @onclick="SaveAsync">Save</button>
+            </div>
+
+            @if (_advanced) {
+                <div class="cdz-css">
+                    <label class="cdz-label" for="cdz-css-input">Custom CSS</label>
+                    <textarea id="cdz-css-input" class="form-input cdz-css-input" rows="6" spellcheck="false" value="@_working.CustomCss" @oninput="SetCss"></textarea>
+                    <div class="cdz-css-foot">
+                        <span class="cdz-error">@_cssError</span>
+                        <span class="cdz-hint">@(_working.CustomCss?.Length ?? 0) / 20000</span>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="cdz-body">
+            <CanvasEditor @key="_editingName" Doc="_working.Doc" DocChanged="SetDoc" Palette="CardPalette.Entries" CellSize="28" Selected="@_selected" SelectedChanged="SetSelected" Class="cdz-editor">
+                <ItemBody Context="item">
+                    @if (CurrentSample is { } sample) {
+                        <CardElement Item="item" Data="sample" Colorize="_working.ColorizeByDuration" Editing="true"/>
+                    } else {
+                        <span class="cdz-placeholder">@KindLabel(item.Kind)</span>
+                    }
+                </ItemBody>
+                <Inspector Context="item">
+                    <CardInspector Item="item" Doc="_working.Doc" DocChanged="SetDoc"/>
+                </Inspector>
+                <Preview>
+                    @if (CurrentSample is { } sample) {
+                        <MissionCardCustomStyle Template="_working"/>
+                        <div class="cdz-previews">
+                            <div class="cdz-prev-block">
+                                <span class="cdz-label">List</span>
+                                <div class="cdz-prev cdz-prev-list">
+                                    <MissionCard Template="_working" Data="sample" Embedded="true"/>
+                                </div>
+                            </div>
+                            <div class="cdz-prev-block">
+                                <span class="cdz-label">Calendar day</span>
+                                <div class="cdz-prev cdz-prev-day">
+                                    <MissionCard Template="_working" Data="sample" Embedded="true"/>
+                                </div>
+                            </div>
+                            <div class="cdz-prev-block">
+                                <span class="cdz-label">Agenda</span>
+                                <div class="cdz-prev cdz-prev-agenda">
+                                    <MissionCard Template="_working" Data="sample" Embedded="true"/>
+                                </div>
+                            </div>
+                        </div>
+                    } else {
+                        <EmptyState Icon="layout-grid" Title="Load missions to preview"/>
+                    }
+                </Preview>
+            </CanvasEditor>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public CardTemplateSet Set { get; set; } = CardTemplateSet.Default;
+    [Parameter] public EventCallback<CardTemplateSet> OnSave { get; set; }
+    [Parameter] public IReadOnlyList<MissionCardData> Samples { get; set; } = [];
+
+    enum NameAction {
+        SaveAsNew,
+        Duplicate,
+        Rename
+    }
+
+    const string DuplicateNameError = "A template with that name already exists.";
+
+    ElementReference _root;
+    bool _open;
+    bool _focusPending;
+    bool _advanced;
+    bool _justDeselected;
+    CardTemplateSet _set = CardTemplateSet.Default;
+    CardTemplate _working = CardBuiltins.Classic;
+    string _editingName = CardBuiltins.Classic.Name;
+    string? _selected;
+    int _sampleIndex;
+    string? _cssError;
+    NameAction? _pendingNameAction;
+    string _nameInput = "";
+
+    IReadOnlyList<SegmentedOption<string>> TemplateOptions =>
+        [.. _set.Templates.Select(t => new SegmentedOption<string>(t.Name, t.Name))];
+
+    IReadOnlyList<SegmentedOption<int>> SampleOptions =>
+        [.. Samples.Select((s, i) => new SegmentedOption<int>(i, SampleLabel(s, i)))];
+
+    int SampleIndex => Samples.Count == 0 ? 0 : Math.Clamp(_sampleIndex, 0, Samples.Count - 1);
+
+    MissionCardData? CurrentSample => Samples.Count == 0 ? null : Samples[SampleIndex];
+
+    bool IsBuiltin => CardTemplateSet.IsBuiltin(_editingName);
+
+    string TrimmedName => _nameInput.Trim();
+
+    bool NameTaken => !(_pendingNameAction == NameAction.Rename && TrimmedName == _editingName)
+                      && (CardTemplateSet.IsBuiltin(TrimmedName) || _set.Templates.Any(t => t.Name == TrimmedName));
+
+    bool CanConfirmNaming => TrimmedName.Length > 0 && !NameTaken;
+
+    string? NameError => TrimmedName.Length > 0 && NameTaken ? DuplicateNameError : null;
+
+    public Task OpenAsync(CardSlot slot) {
+        _set = Set;
+        _working = Set.For(slot);
+        _editingName = _working.Name;
+        _selected = null;
+        _sampleIndex = 0;
+        _advanced = !string.IsNullOrEmpty(_working.CustomCss);
+        _pendingNameAction = null;
+        ValidateCss();
+        _open = true;
+        _focusPending = true;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    public void Close() {
+        _open = false;
+        _pendingNameAction = null;
+        _selected = null;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (!_open || !_focusPending) return;
+        _focusPending = false;
+        try {
+            await _root.FocusAsync();
+        } catch (Exception ex) when (ex is JSException or JSDisconnectedException or TaskCanceledException) {
+        }
+    }
+
+    void SetSelected(string? id) {
+        _justDeselected = id is null && _selected is not null;
+        _selected = id;
+    }
+
+    void OnKeyDown(KeyboardEventArgs e) {
+        var deselected = _justDeselected;
+        _justDeselected = false;
+        if (e.Key != "Escape" || deselected) return;
+        if (_pendingNameAction is not null) {
+            CancelNaming();
+            return;
+        }
+        Close();
+    }
+
+    void OnNameKeyDown(KeyboardEventArgs e) {
+        if (e.Key == "Enter") ConfirmNaming();
+    }
+
+    void SwitchTo(string name) {
+        if (_set.Templates.FirstOrDefault(t => t.Name == name) is not { } template) return;
+        _working = template;
+        _editingName = name;
+        _selected = null;
+        _pendingNameAction = null;
+        ValidateCss();
+    }
+
+    void SetDoc(CanvasDoc doc) {
+        _working = _working with { Doc = doc };
+        if (_selected is not null && !doc.Items.Any(i => i.Id == _selected)) _selected = null;
+    }
+
+    void SetColorize(ChangeEventArgs e) {
+        _working = _working with { ColorizeByDuration = e.Value is true };
+    }
+
+    void SetCss(ChangeEventArgs e) {
+        var css = e.Value?.ToString();
+        _working = _working with { CustomCss = string.IsNullOrEmpty(css) ? null : css };
+        ValidateCss();
+    }
+
+    void ValidateCss() {
+        CustomCssSanitizer.TryScope(_working.Name, _working.CustomCss, out _, out _cssError);
+    }
+
+    bool IsAssigned(CardSlot slot) => _set.Slots.TryGetValue(slot, out var name) && name == _working.Name;
+
+    void AssignSlot(CardSlot slot) {
+        _set = _set.Assign(slot, _working.Name);
+    }
+
+    void BeginNaming(NameAction action) {
+        _pendingNameAction = action;
+        _nameInput = action switch {
+            NameAction.Duplicate => _editingName + " copy",
+            NameAction.Rename => _editingName,
+            _ => ""
+        };
+    }
+
+    void CancelNaming() {
+        _pendingNameAction = null;
+        _nameInput = "";
+    }
+
+    void ConfirmNaming() {
+        if (_pendingNameAction is not { } action || !CanConfirmNaming) return;
+        var name = TrimmedName;
+        switch (action) {
+            case NameAction.SaveAsNew:
+                _working = _working with { Name = name };
+                _set = _set.With(_working);
+                break;
+            case NameAction.Duplicate:
+                var source = _set.Templates.FirstOrDefault(t => t.Name == _editingName) ?? _working;
+                _working = source with { Name = name };
+                _set = _set.With(_working);
+                break;
+            case NameAction.Rename:
+                if (name != _editingName) {
+                    var old = _editingName;
+                    _working = _working with { Name = name };
+                    _set = new CardTemplateSet(
+                        [.. _set.Templates.Select(t => t.Name == old ? _working : t)],
+                        _set.Slots.ToDictionary(kv => kv.Key, kv => kv.Value == old ? name : kv.Value));
+                }
+                break;
+        }
+        _editingName = name;
+        _selected = null;
+        CancelNaming();
+        ValidateCss();
+    }
+
+    void Delete() {
+        if (IsBuiltin) return;
+        _set = _set.Without(_editingName);
+        _working = _set.Templates.FirstOrDefault(t => t.Name == CardBuiltins.Classic.Name) ?? CardBuiltins.Classic;
+        _editingName = _working.Name;
+        _selected = null;
+        ValidateCss();
+    }
+
+    async Task SaveAsync() {
+        ValidateCss();
+        if (_cssError is not null) return;
+        await OnSave.InvokeAsync(_set.With(_working));
+        Close();
+    }
+
+    static string ChipCss(bool on) => on ? "btn-mini cdz-chip-on" : "btn-mini";
+
+    static string ConfirmLabel(NameAction action) => action switch {
+        NameAction.Rename => "Rename",
+        NameAction.Duplicate => "Duplicate",
+        _ => "Save"
+    };
+
+    static string SlotLabel(CardSlot slot) => slot switch {
+        CardSlot.List => "List",
+        CardSlot.CalendarDay => "Calendar day",
+        CardSlot.CalendarWeek => "Calendar week",
+        CardSlot.CalendarMonth => "Calendar month",
+        _ => "Agenda"
+    };
+
+    static string SampleLabel(MissionCardData data, int index) {
+        if (index == 0) return "First";
+        if (data.Mission.IsBuggedCap) return "Bugged cap";
+        if (data.Mission.IsDubCap) return "Dubcap";
+        return data.Mission.DurationType?.ToString() ?? "Sample";
+    }
+
+    static string KindLabel(string kind) => CardPalette.Entries.FirstOrDefault(e => e.Kind == kind)?.Label ?? kind;
+}

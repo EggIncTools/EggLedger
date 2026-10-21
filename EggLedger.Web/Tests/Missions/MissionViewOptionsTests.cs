@@ -10,7 +10,6 @@ public sealed class MissionViewOptionsTests {
     public void Defaults_MatchVue() {
         var o = new MissionViewOptions();
         Assert.False(o.ViewByDate);
-        Assert.True(o.ViewMissionTimes);
         Assert.Equal(MultiViewMode.Off, o.MultiViewMode);
         Assert.Equal(MissionSortMethod.Default, o.SortMethod);
         Assert.False(o.SortByDropCount);
@@ -74,13 +73,11 @@ public sealed class MissionViewOptionsTests {
         var o = new MissionViewOptions();
         o.LoadFrom(new Dictionary<string, string> {
             [MissionViewOptions.KeyViewByDate] = "true",
-            [MissionViewOptions.KeyViewTimes] = "false",
             [MissionViewOptions.KeyMultiViewMode] = "free",
             [MissionViewOptions.KeySortMethod] = "iv",
             [MissionViewOptions.KeySortByDropCount] = "true",
         });
         Assert.True(o.ViewByDate);
-        Assert.False(o.ViewMissionTimes);
         Assert.Equal(MultiViewMode.Free, o.MultiViewMode);
         Assert.Equal(MissionSortMethod.Iv, o.SortMethod);
         Assert.True(o.SortByDropCount);
@@ -91,6 +88,5 @@ public sealed class MissionViewOptionsTests {
         var o = new MissionViewOptions();
         o.LoadFrom(new Dictionary<string, string>());
         Assert.False(o.ViewByDate);
-        Assert.True(o.ViewMissionTimes);
     }
 }

@@ -223,7 +223,8 @@
 }
 
 @media (min-width: 48rem) {
-    .mov-size-single {
+    .mov-size-single,
+    .mov-size-combined {
         --modal-card-w: 60vw;
         --modal-card-max: 60vw;
     }

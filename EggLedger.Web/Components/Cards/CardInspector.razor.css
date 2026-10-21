@@ -1,0 +1,72 @@
+.cdi {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 0;
+}
+
+.cdi-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.cdi-head {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-muted);
+}
+
+.cdi-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+    font-size: 0.75rem;
+    color: var(--color-muted);
+}
+
+.cdi-ro {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    font-size: 0.75rem;
+    color: var(--color-fg);
+    font-variant-numeric: tabular-nums;
+}
+
+.cdi-colors {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.cdi-color {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.cdi-color-label {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.75rem;
+    color: var(--color-muted);
+}
+
+.cdi-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+}
+
+.cdz-danger {
+    align-self: flex-start;
+    color: var(--color-err);
+}
+
+.cdz-danger:not(:disabled):hover {
+    background-color: color-mix(in srgb, var(--color-err) 15%, transparent);
+}

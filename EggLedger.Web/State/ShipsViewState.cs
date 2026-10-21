@@ -70,11 +70,15 @@ public sealed class ShipsViewState(
 
     public bool HasBothTypes { get; private set; }
 
-    public CardPresetSet CardPresets { get; private set; } = CardPresetSet.Default;
+    public CardTemplateSet CardTemplates { get; private set; } = CardTemplateSet.Default;
+
+    public IReadOnlyDictionary<string, MissionDropSummary> DropSummaries { get; private set; } = new Dictionary<string, MissionDropSummary>();
 
     public Dictionary<string, int> DropCounts { get; private set; } = [];
 
     public IShipsViewActions? Actions { get; set; }
+
+    public IReadOnlyList<MissionCardData> DesignerSamples { get; private set; } = [];
 
     public string? AccountId => active.ActiveAccountId;
 
@@ -93,9 +97,22 @@ public sealed class ShipsViewState(
         timeZones.Changed += OnAccountChanged;
         var stored = await settings.GetAllSettingsAsync();
         Opts.LoadFrom(stored);
-        CardPresets = stored.TryGetValue(MissionViewOptions.KeyCardPresets, out var json) && !string.IsNullOrEmpty(json)
-            ? JsonSerializer.Deserialize<CardPresetSet>(json, CardJsonOptions) ?? CardPresetSet.Default
-            : CardPresetSet.Default;
+        if (stored.TryGetValue(MissionViewOptions.KeyCardTemplates, out var templatesJson) && !string.IsNullOrEmpty(templatesJson)) {
+            CardTemplates = CardTemplateCodec.Deserialize(templatesJson);
+        } else if (stored.TryGetValue(MissionViewOptions.KeyCardPresets, out var legacyJson) && !string.IsNullOrEmpty(legacyJson)) {
+            CardPresetSet legacy;
+            try {
+                legacy = JsonSerializer.Deserialize<CardPresetSet>(legacyJson, CardJsonOptions) ?? CardPresetSet.Default;
+            } catch (JsonException ex) {
+                logger.LogDebug(ex, "legacy card presets unreadable");
+                legacy = CardPresetSet.Default;
+            }
+            CardTemplates = LegacyCardUpgrade.FromPresetSet(legacy);
+            await settings.SetSettingAsync(MissionViewOptions.KeyCardTemplates, CardTemplateCodec.Serialize(CardTemplates));
+        } else {
+            CardTemplates = CardTemplateSet.Default;
+        }
+
         await LoadAsync();
     }
 
@@ -117,6 +134,7 @@ public sealed class ShipsViewState(
         ResultText = "";
         _allDrops = null;
         DropCounts = [];
+        DropSummaries = new Dictionary<string, MissionDropSummary>();
         FlatSorted = null;
         HasActiveFilter = false;
 
@@ -145,6 +163,9 @@ public sealed class ShipsViewState(
         if (filterGeneration == _filterGeneration) Filtered = missions;
 
         Regroup();
+        await EnsureDropSummariesAsync();
+        if (generation != _loadGeneration) return;
+
         Loading = false;
         Changed?.Invoke();
     }
@@ -210,12 +231,20 @@ public sealed class ShipsViewState(
         return (result, counts);
     }
 
-    public async Task SaveCardPresetSetAsync(CardPresetSet updated) {
-        CardPresets = updated;
-        var json = JsonSerializer.Serialize(CardPresets, CardJsonOptions);
-        await settings.SetSettingAsync(MissionViewOptions.KeyCardPresets, json);
+    public async Task SaveCardTemplatesAsync(CardTemplateSet set) {
+        CardTemplates = set;
+        await settings.SetSettingAsync(MissionViewOptions.KeyCardTemplates, CardTemplateCodec.Serialize(set));
+        await EnsureDropSummariesAsync();
         Changed?.Invoke();
     }
+
+    public MissionCardData DataFor(DatabaseMission m) =>
+        new(
+            m,
+            timeZones.TimeZone,
+            DropCounts.TryGetValue(m.MissiondId, out var count) ? count : null,
+            DropSummaries.TryGetValue(m.MissiondId, out var s) ? s : null,
+            null);
 
     public void SetViewMode(ShipsViewMode mode) {
         ViewMode = mode;
@@ -314,10 +343,45 @@ public sealed class ShipsViewState(
         return _allDrops.TryGetValue(missionId, out var drops) ? drops : [];
     }
 
+    private async Task EnsureDropSummariesAsync() {
+        if (!Enum.GetValues<CardSlot>().Any(slot => CardKinds.NeedsDrops(CardTemplates.For(slot).Doc))) return;
+        if (DropSummaries.Count > 0) return;
+        if (AllMissions is not { } missions || active.ActiveAccountId is not { } id) return;
+
+        _allDrops ??= await hub.GetDropsAsync(id) ?? [];
+        var summaries = new Dictionary<string, MissionDropSummary>();
+        foreach (var mission in missions) {
+            if (_allDrops.TryGetValue(mission.MissiondId, out var drops) && drops.Count > 0) {
+                summaries[mission.MissiondId] = MissionDropSummary.From(drops, 12);
+            }
+        }
+
+        DropSummaries = summaries;
+        DesignerSamples = BuildDesignerSamples();
+    }
+
+    private List<MissionCardData> BuildDesignerSamples() {
+        if (TabFiltered is not { Count: > 0 } missions) return [];
+
+        IEnumerable<DatabaseMission?> picks = [
+            missions[0],
+            missions.FirstOrDefault(m => m.IsDubCap),
+            missions.FirstOrDefault(m => m.IsBuggedCap),
+            .. missions.DistinctBy(m => m.DurationType)
+        ];
+
+        return [.. picks
+            .OfType<DatabaseMission>()
+            .DistinctBy(m => m.MissiondId)
+            .Take(8)
+            .Select(DataFor)];
+    }
+
     private void Regroup() {
         TabFiltered = MissionViewOptions.TabFilteredMissions(Filtered, Opts.MissionTypeTab);
         TabFilteredAll = MissionViewOptions.TabFilteredMissions(AllMissions, Opts.MissionTypeTab);
         Grouping = MissionGrouper.Group(TabFiltered, ts => MissionFilterMatcher.LedgerDate(ts, timeZones.TimeZone), true);
+        DesignerSamples = BuildDesignerSamples();
 
         if (Opts.SortByDropCount && DropCounts.Count > 0 && TabFiltered is { Count: > 0 }) {
             var sorted = new List<DatabaseMission>(TabFiltered);

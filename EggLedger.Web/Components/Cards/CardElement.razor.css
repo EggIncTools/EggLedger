@@ -1,0 +1,87 @@
+.ce {
+    display: contents;
+}
+
+.ce-text {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    line-height: 1;
+}
+
+.ce-muted {
+    color: var(--color-muted);
+}
+
+.ce-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    border: 1px dashed var(--color-border);
+    text-align: center;
+}
+
+.ce-img,
+.ce ::deep .target-ico {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.ce-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    border-radius: 9999px;
+    background-color: var(--color-darkerer);
+    color: var(--color-fg);
+    white-space: nowrap;
+}
+
+.ce-strip {
+    display: flex;
+    align-items: center;
+    gap: calc(0.1 * var(--canvas-unit));
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.ce-strip-img {
+    height: 100%;
+    width: auto;
+    object-fit: contain;
+    border-radius: calc(0.08 * var(--canvas-unit));
+}
+
+.ce ::deep .ce-fill {
+    width: 100%;
+    height: 100%;
+}
+
+.ce-box {
+    width: 100%;
+    height: 100%;
+}
+
+.ce-divider {
+    background-color: var(--color-border);
+}
+
+.ce-divider-h {
+    width: 100%;
+    height: 1px;
+}
+
+.ce-divider-v {
+    width: 1px;
+    height: 100%;
+}

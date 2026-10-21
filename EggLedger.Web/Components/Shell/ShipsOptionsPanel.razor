@@ -1,9 +1,10 @@
 @implements IDisposable
+@using EggLedger.Web.Components.Cards
 @inject ShipsViewState State
 
 @if (State.AccountId is not null) {
     <div class="sopt">
-        <button type="button" class="btn-mini sopt-dialog-btn" aria-haspopup="dialog" aria-label="Edit mission card layout, fields and colors"
+        <button type="button" class="btn-mini sopt-dialog-btn" aria-haspopup="dialog" aria-label="Design mission cards"
                 @onclick="OpenCardConfigAsync">
             <Icon Name="pencil"/>
             <span>Design...</span>
@@ -13,7 +14,6 @@
                 <span class="sopt-heading">Display</span>
                 <div class="sopt-checks">
                     <label><input type="checkbox" class="ext-opt-check sopt-check" checked="@State.Opts.ViewByDate" @onchange="@(e => State.SetOptAsync(MissionViewOptions.KeyViewByDate, b => State.Opts.ViewByDate = b, e))"/> Separate missions by day</label>
-                    <label><input type="checkbox" class="ext-opt-check sopt-check" checked="@State.Opts.ViewMissionTimes" @onchange="@(e => State.SetOptAsync(MissionViewOptions.KeyViewTimes, b => State.Opts.ViewMissionTimes = b, e))"/> Show launch times</label>
                     <label><input type="checkbox" class="ext-opt-check sopt-check" checked="@State.Opts.RecolorDC" @onchange="@(e => State.SetOptAsync(MissionViewOptions.KeyRecolorDC, b => State.Opts.RecolorDC = b, e))"/> Re-color dubcaps</label>
                     <label><input type="checkbox" class="ext-opt-check sopt-check" checked="@State.Opts.RecolorBC" @onchange="@(e => State.SetOptAsync(MissionViewOptions.KeyRecolorBC, b => State.Opts.RecolorBC = b, e))"/> Re-color bugged caps</label>
                 </div>
@@ -62,10 +62,7 @@
 }
 
 @if (State.AccountId is not null) {
-    <MissionCardConfigModal @ref="_cardConfigModal"
-                            PresetSet="State.CardPresets"
-                            PreviewMission="State.TabFiltered?.FirstOrDefault()"
-                            OnSave="State.SaveCardPresetSetAsync"/>
+    <CardDesigner @ref="_designer" Set="State.CardTemplates" Samples="State.DesignerSamples" OnSave="State.SaveCardTemplatesAsync"/>
 }
 
 @code {
@@ -74,7 +71,7 @@
         new(MissionSortMethod.Iv, "Inventory Visualizer")
     ];
 
-    private MissionCardConfigModal? _cardConfigModal;
+    private CardDesigner? _designer;
 
     protected override async Task OnInitializedAsync() {
         State.Changed += OnStateChanged;
@@ -86,7 +83,7 @@
     }
 
     private Task OpenCardConfigAsync() {
-        return _cardConfigModal?.OpenAsync() ?? Task.CompletedTask;
+        return _designer?.OpenAsync(State.ViewMode == ShipsViewMode.Calendar ? CardSlot.CalendarDay : CardSlot.List) ?? Task.CompletedTask;
     }
 
     public void Dispose() {
