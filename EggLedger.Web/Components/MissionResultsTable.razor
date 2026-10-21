@@ -256,11 +256,13 @@
         return chunks;
     }
 
+    private string RowStyle => FormattableString.Invariant($"--mrt-cols:{Math.Max(1, Columns)}");
+
     private static List<IReadOnlyList<DatabaseMission>> Chunk(IEnumerable<DatabaseMission> missions, int columns) =>
         [.. missions.Chunk(Math.Max(1, columns))];
 
     private RenderFragment RenderRow(IReadOnlyList<DatabaseMission> row) => __builder => {
-        <div class="mrt-vrow">
+        <div class="mrt-vrow" style="@RowStyle">
             @foreach (var mission in row) {
                 <div class="mrt-vcell">
                     <MissionCard Template="Template"

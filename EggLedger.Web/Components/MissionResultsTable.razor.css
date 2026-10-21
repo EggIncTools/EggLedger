@@ -59,7 +59,7 @@
 }
 
 .mrt-vcell {
-    flex: 1 1 0;
+    flex: 0 0 calc((100% - 0.5rem * (var(--mrt-cols) - 1)) / var(--mrt-cols));
     min-width: 0;
 }
 

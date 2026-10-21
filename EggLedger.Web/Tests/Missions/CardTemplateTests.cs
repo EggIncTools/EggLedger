@@ -39,9 +39,9 @@ public class CardTemplateTests {
     public void Classic_LaysTheOldRowOutLeftToRight() {
         var doc = CardBuiltins.Classic.Doc;
 
-        Assert.Equal((24, 2), (doc.Cols, doc.Rows));
+        Assert.Equal((24, 1), (doc.Cols, doc.Rows));
         Assert.Equal(["launch_date", "launch_time", "ship_img", "ship", "stars", "target_img", "target", "drop_count"], doc.Items.Select(i => i.Id));
-        Assert.Equal([1, 4, 7, 8, 13, 15, 16, 21], doc.Items.Select(i => i.X));
+        Assert.Equal([1, 5, 8, 9, 15, 17, 18, 23], doc.Items.Select(i => i.X));
         Assert.All(doc.Items, i => Assert.Equal(1, i.Y));
         Assert.All(doc.Items, i => Assert.Null(i.Style));
         Assert.Equal(CardKinds.ShipImage, Item(CardBuiltins.Classic, "ship_img").Kind);
